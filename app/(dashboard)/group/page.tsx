@@ -59,7 +59,7 @@ export default function GroupPage() {
         .in("user_id", memberIds)
         .eq("status", "active")
 
-      const activeSubscribers = new Set(subscriptions?.map((s: any) => s.user_id) || [])
+      const activeSubscribers = new Set(subscriptions?.map((s: { user_id: string }) => s.user_id) || [])
 
       // Get referral counts for each member
       const { data: referralCounts } = await supabase
@@ -68,13 +68,22 @@ export default function GroupPage() {
         .in("referrer_id", memberIds)
         .eq("status", "active")
 
-      const referralCountMap = referralCounts?.reduce((acc: Record<string, number>, r: any) => {
+      const referralCountMap = referralCounts?.reduce((acc: Record<string, number>, r: { referrer_id: string }) => {
         acc[r.referrer_id] = (acc[r.referrer_id] || 0) + 1
         return acc
       }, {} as Record<string, number>) || {}
 
       // Format member data
-      const formattedMembers = members.map((m: any) => ({
+      const formattedMembers = members.map((m: {
+        member_id: string
+        level: number
+        users: {
+          id: string
+          name: string | null
+          email: string
+          created_at: string
+        }
+      }) => ({
         id: m.users.id,
         name: m.users.name || "Unknown",
         email: m.users.email,
