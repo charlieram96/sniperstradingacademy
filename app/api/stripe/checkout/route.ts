@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { stripe, MONTHLY_PRICE, INITIAL_PAYMENT } from "@/lib/stripe/server"
+import { getStripe, MONTHLY_PRICE, INITIAL_PAYMENT } from "@/lib/stripe/server"
 import { createClient } from "@/lib/supabase/server"
 
 export async function POST(req: NextRequest) {
@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
       .eq("id", session.user.id)
       .single()
 
+    const stripe = getStripe()
     let customerId = user?.stripe_customer_id
 
     if (!customerId) {

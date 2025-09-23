@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { stripe, COMMISSION_RATE, MONTHLY_PRICE } from "@/lib/stripe/server"
+import { getStripe, COMMISSION_RATE, MONTHLY_PRICE } from "@/lib/stripe/server"
 import { createClient } from "@/lib/supabase/server"
 import Stripe from "stripe"
 
@@ -8,6 +8,7 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 export async function POST(req: NextRequest) {
   const body = await req.text()
   const signature = req.headers.get("stripe-signature")!
+  const stripe = getStripe()
 
   let event: Stripe.Event
 
