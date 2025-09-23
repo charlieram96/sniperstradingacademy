@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check-env": "node -e \"console.log('AUTH_SECRET:', !!process.env.AUTH_SECRET, '\\nNEXTAUTH_URL:', process.env.NEXTAUTH_URL || 'NOT SET', '\\nAUTH_URL:', process.env.AUTH_URL || 'NOT SET')\""
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.12",
