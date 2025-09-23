@@ -7,11 +7,13 @@ import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/utils"
-import { CreditCard, CheckCircle, XCircle, Clock } from "lucide-react"
+import { CreditCard, CheckCircle, XCircle, Clock, Lock, Unlock } from "lucide-react"
 
 function PaymentsContent() {
   const { data: session } = useSession()
   const searchParams = useSearchParams()
+  const [initialPaymentCompleted, setInitialPaymentCompleted] = useState(false)
+  const [processingInitial, setProcessingInitial] = useState(false)
   const [subscription, setSubscription] = useState<{
     id: string
     status: string
@@ -46,6 +48,17 @@ function PaymentsContent() {
       if (!session?.user?.id) return
       
       const supabase = createClient()
+      
+      // Get user data
+      const { data: userData } = await supabase
+        .from("users")
+        .select("initial_payment_completed")
+        .eq("id", session.user.id)
+        .single()
+      
+      if (userData) {
+        setInitialPaymentCompleted(userData.initial_payment_completed || false)
+      }
       
       // Get subscription
       const { data: sub } = await supabase
@@ -93,13 +106,56 @@ function PaymentsContent() {
     fetchPaymentData()
   }, [session])
 
+  async function handleInitialPayment() {
+    setProcessingInitial(true)
+    
+    try {
+      const response = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ paymentType: "initial" }),
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        console.error("Checkout error:", error)
+        alert(error.error || "Failed to create checkout session")
+        return
+      }
+      
+      const data = await response.json()
+      
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch (error) {
+      console.error("Initial payment error:", error)
+      alert("Failed to start checkout. Please try again.")
+    } finally {
+      setProcessingInitial(false)
+    }
+  }
+
   async function handleSubscribe() {
     setSubscribing(true)
     
     try {
       const response = await fetch("/api/stripe/checkout", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ paymentType: "subscription" }),
       })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        console.error("Checkout error:", error)
+        alert(error.error || "Failed to create checkout session")
+        return
+      }
       
       const data = await response.json()
       
@@ -108,6 +164,7 @@ function PaymentsContent() {
       }
     } catch (error) {
       console.error("Subscribe error:", error)
+      alert("Failed to start checkout. Please try again.")
     } finally {
       setSubscribing(false)
     }
@@ -166,6 +223,35 @@ function PaymentsContent() {
         </Card>
       )}
 
+      {/* Initial Membership Payment */}
+      {!initialPaymentCompleted && (
+        <Card className="mb-8 border-red-200 bg-red-50">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Lock className="h-5 w-5 text-red-600" />
+              <CardTitle className="text-red-900">Unlock Your Membership</CardTitle>
+            </div>
+            <CardDescription className="text-red-700">
+              One-time payment to unlock your 3 referral slots and start building your team
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4">
+              <p className="text-2xl font-bold text-red-900">{formatCurrency(50000)}</p>
+              <p className="text-sm text-red-700">One-time membership fee</p>
+            </div>
+            <Button 
+              onClick={handleInitialPayment} 
+              disabled={processingInitial}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              <Unlock className="h-4 w-4 mr-2" />
+              {processingInitial ? "Processing..." : "Unlock Membership"}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Subscription Status */}
       <Card className="mb-8">
         <CardHeader>
@@ -204,13 +290,27 @@ function PaymentsContent() {
             </div>
           ) : (
             <div>
-              <p className="text-gray-600 mb-4">
-                Subscribe to start earning 10% commission from your referrals
-              </p>
-              <Button onClick={handleSubscribe} disabled={subscribing}>
-                <CreditCard className="h-4 w-4 mr-2" />
-                {subscribing ? "Processing..." : "Subscribe for $200/month"}
-              </Button>
+              {!initialPaymentCompleted ? (
+                <div>
+                  <p className="text-yellow-600 mb-4">
+                    Complete the initial membership payment first before subscribing
+                  </p>
+                  <Button disabled className="opacity-50">
+                    <Lock className="h-4 w-4 mr-2" />
+                    Subscription Locked
+                  </Button>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-gray-600 mb-4">
+                    Subscribe to start earning 10% commission from your referrals
+                  </p>
+                  <Button onClick={handleSubscribe} disabled={subscribing}>
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    {subscribing ? "Processing..." : "Subscribe for $200/month"}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
