@@ -74,10 +74,17 @@ export default function GroupPage() {
       }, {} as Record<string, number>) || {}
 
       // Format member data
+      interface UserData {
+        id: string
+        name: string | null
+        email: string
+        created_at: string
+      }
+      
       interface MemberData {
         member_id: string
         level: number
-        users: any
+        users: UserData | UserData[]
       }
       
       const formattedMembers = members.map((m: MemberData) => {
@@ -262,7 +269,7 @@ export default function GroupPage() {
                               }`}>
                                 {member.subscription_status === 'active' ? 'Active' : 'Inactive'}
                               </span>
-                              {member.referrals_count > 0 && (
+                              {member.referrals_count && member.referrals_count > 0 && (
                                 <span className="text-sm text-gray-500">
                                   {member.referrals_count} referral{member.referrals_count !== 1 ? 's' : ''}
                                 </span>

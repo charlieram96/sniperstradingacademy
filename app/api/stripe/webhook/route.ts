@@ -32,9 +32,12 @@ export async function POST(req: NextRequest) {
 
         if (userId && subscriptionId) {
           // Get subscription details
-          const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId) as Stripe.Subscription
 
           // Save subscription to database
+          const periodStart = 'current_period_start' in subscription ? subscription.current_period_start as number : Date.now() / 1000
+          const periodEnd = 'current_period_end' in subscription ? subscription.current_period_end as number : (Date.now() / 1000) + 30 * 24 * 60 * 60
+          
           await supabase
             .from("subscriptions")
             .insert({
@@ -42,8 +45,8 @@ export async function POST(req: NextRequest) {
               stripe_subscription_id: subscriptionId,
               stripe_price_id: subscription.items.data[0].price.id,
               status: subscription.status,
-              current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+              current_period_start: new Date(periodStart * 1000).toISOString(),
+              current_period_end: new Date(periodEnd * 1000).toISOString(),
             })
 
           // Update referral status to active
@@ -57,7 +60,7 @@ export async function POST(req: NextRequest) {
 
       case "invoice.payment_succeeded": {
         const invoice = event.data.object as Stripe.Invoice
-        const subscriptionId = invoice.subscription as string
+        const subscriptionId = ('subscription' in invoice ? invoice.subscription : null) as string | null
         const customerId = invoice.customer as string
 
         // Get user by Stripe customer ID
@@ -73,9 +76,9 @@ export async function POST(req: NextRequest) {
             .from("payments")
             .insert({
               user_id: user.id,
-              stripe_payment_intent_id: invoice.payment_intent as string,
-              amount: invoice.amount_paid / 100, // Convert from cents
-              currency: invoice.currency,
+              stripe_payment_intent_id: ('payment_intent' in invoice ? invoice.payment_intent : '') as string,
+              amount: ('amount_paid' in invoice ? invoice.amount_paid as number : 0) / 100, // Convert from cents
+              currency: ('currency' in invoice ? invoice.currency : 'usd') as string,
               status: "succeeded",
             })
             .select()
@@ -96,17 +99,21 @@ export async function POST(req: NextRequest) {
               })
           }
 
-          // Update subscription
-          const subscription = await stripe.subscriptions.retrieve(subscriptionId)
-          
-          await supabase
-            .from("subscriptions")
-            .update({
-              status: subscription.status,
-              current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-            })
-            .eq("stripe_subscription_id", subscriptionId)
+          // Update subscription if we have a subscription ID
+          if (subscriptionId) {
+            const subscription = await stripe.subscriptions.retrieve(subscriptionId) as Stripe.Subscription
+            const periodStart = 'current_period_start' in subscription ? subscription.current_period_start as number : Date.now() / 1000
+            const periodEnd = 'current_period_end' in subscription ? subscription.current_period_end as number : (Date.now() / 1000) + 30 * 24 * 60 * 60
+            
+            await supabase
+              .from("subscriptions")
+              .update({
+                status: subscription.status,
+                current_period_start: new Date(periodStart * 1000).toISOString(),
+                current_period_end: new Date(periodEnd * 1000).toISOString(),
+              })
+              .eq("stripe_subscription_id", subscriptionId)
+          }
         }
         break
       }
@@ -138,14 +145,16 @@ export async function POST(req: NextRequest) {
 
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription
+        const periodStart = 'current_period_start' in subscription ? subscription.current_period_start as number : Date.now() / 1000
+        const periodEnd = 'current_period_end' in subscription ? subscription.current_period_end as number : (Date.now() / 1000) + 30 * 24 * 60 * 60
         
         await supabase
           .from("subscriptions")
           .update({
             status: subscription.status,
             cancel_at_period_end: subscription.cancel_at_period_end,
-            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            current_period_start: new Date(periodStart * 1000).toISOString(),
+            current_period_end: new Date(periodEnd * 1000).toISOString(),
           })
           .eq("stripe_subscription_id", subscription.id)
         break

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSession } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/utils"
 import { CreditCard, CheckCircle, XCircle, Clock } from "lucide-react"
 
-export default function PaymentsPage() {
+function PaymentsContent() {
   const { data: session } = useSession()
   const searchParams = useSearchParams()
   const [subscription, setSubscription] = useState<{
@@ -17,6 +17,7 @@ export default function PaymentsPage() {
     status: string
     current_period_end: string
     cancel_at_period_end: boolean
+    created_at: string
   } | null>(null)
   const [payments, setPayments] = useState<Array<{
     id: string
@@ -29,6 +30,10 @@ export default function PaymentsPage() {
     amount: number
     status: string
     created_at: string
+    referred?: {
+      name: string | null
+      email: string
+    }
   }>>([])
   const [loading, setLoading] = useState(true)
   const [subscribing, setSubscribing] = useState(false)
@@ -283,5 +288,17 @@ export default function PaymentsPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function PaymentsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-gray-500">Loading payment data...</div>
+      </div>
+    }>
+      <PaymentsContent />
+    </Suspense>
   )
 }
