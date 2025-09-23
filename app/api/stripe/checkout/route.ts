@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { stripe, MONTHLY_PRICE } from "@/lib/stripe/server"
+import { stripe, MONTHLY_PRICE, INITIAL_PAYMENT } from "@/lib/stripe/server"
 import { createClient } from "@/lib/supabase/server"
 
 export async function POST(req: NextRequest) {
@@ -14,12 +14,13 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const { paymentType = "subscription" } = await req.json()
     const supabase = await createClient()
     
     // Get or create Stripe customer
     const { data: user } = await supabase
       .from("users")
-      .select("stripe_customer_id, email")
+      .select("stripe_customer_id, email, membership_status, initial_payment_completed")
       .eq("id", session.user.id)
       .single()
 
@@ -42,33 +43,80 @@ export async function POST(req: NextRequest) {
         .eq("id", session.user.id)
     }
 
-    // Create checkout session
-    const checkoutSession = await stripe.checkout.sessions.create({
-      customer: customerId,
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: "Trading Hub Monthly Subscription",
-              description: "Access to trading network and earn commissions",
+    let checkoutSession
+
+    if (paymentType === "initial") {
+      // Check if user already paid initial payment
+      if (user?.initial_payment_completed) {
+        return NextResponse.json(
+          { error: "Initial payment already completed" },
+          { status: 400 }
+        )
+      }
+
+      // Create one-time payment session for $500 initial payment
+      checkoutSession = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ["card"],
+        line_items: [
+          {
+            price_data: {
+              currency: "usd",
+              product_data: {
+                name: "Snipers Trading Academy Membership",
+                description: "One-time membership fee to unlock your 3 referral slots and start earning",
+              },
+              unit_amount: INITIAL_PAYMENT,
             },
-            unit_amount: MONTHLY_PRICE,
-            recurring: {
-              interval: "month",
-            },
+            quantity: 1,
           },
-          quantity: 1,
+        ],
+        mode: "payment",
+        success_url: `${req.nextUrl.origin}/dashboard?initial_payment=success`,
+        cancel_url: `${req.nextUrl.origin}/payments?canceled=true`,
+        metadata: {
+          userId: session.user.id,
+          paymentType: "initial",
         },
-      ],
-      mode: "subscription",
-      success_url: `${req.nextUrl.origin}/dashboard?success=true`,
-      cancel_url: `${req.nextUrl.origin}/payments?canceled=true`,
-      metadata: {
-        userId: session.user.id,
-      },
-    })
+      })
+    } else {
+      // Check if user has completed initial payment
+      if (!user?.initial_payment_completed) {
+        return NextResponse.json(
+          { error: "Please complete initial payment first" },
+          { status: 400 }
+        )
+      }
+
+      // Create subscription checkout session for $200 monthly
+      checkoutSession = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ["card"],
+        line_items: [
+          {
+            price_data: {
+              currency: "usd",
+              product_data: {
+                name: "Snipers Trading Academy Monthly Subscription",
+                description: "Monthly subscription - Earn 10% commission from your team pool",
+              },
+              unit_amount: MONTHLY_PRICE,
+              recurring: {
+                interval: "month",
+              },
+            },
+            quantity: 1,
+          },
+        ],
+        mode: "subscription",
+        success_url: `${req.nextUrl.origin}/dashboard?subscription=success`,
+        cancel_url: `${req.nextUrl.origin}/payments?canceled=true`,
+        metadata: {
+          userId: session.user.id,
+          paymentType: "subscription",
+        },
+      })
+    }
 
     return NextResponse.json({ url: checkoutSession.url })
   } catch (error) {

@@ -13,7 +13,16 @@ export default function ReferralsPage() {
   const { data: session } = useSession()
   const [referralCode, setReferralCode] = useState("")
   const [copied, setCopied] = useState(false)
-  const [referrals, setReferrals] = useState<any[]>([])
+  const [referrals, setReferrals] = useState<Array<{
+    id: string
+    status: string
+    created_at: string
+    referred: {
+      name: string
+      email: string
+      created_at: string
+    }
+  }>>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -109,7 +118,7 @@ export default function ReferralsPage() {
         <CardHeader>
           <CardTitle>Your Referral Link</CardTitle>
           <CardDescription>
-            Share this link with others. You'll earn 10% commission on their monthly payments.
+            Share this link with others. You&apos;ll earn 10% commission on their monthly payments.
           </CardDescription>
         </CardHeader>
         <CardContent>

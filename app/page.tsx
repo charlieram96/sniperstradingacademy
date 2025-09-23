@@ -16,16 +16,17 @@ import {
   CheckCircle,
   ChevronRight
 } from "lucide-react"
+import Image from "next/image"
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* Navigation */}
-      <nav className="border-b bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
+      <nav className="border-b backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <BarChart3 className="h-6 w-6 text-primary" />
-            <span className="font-bold text-xl">Trading Hub</span>
+            <Image src="/logo.svg" alt="Snipers Trading Academy" width={32} height={32} />
+            <span className="font-bold text-xl">Snipers Trading Academy</span>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/login">
@@ -43,19 +44,19 @@ export default function HomePage() {
         <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
           <Badge variant="outline" className="mb-4">
             <Sparkles className="h-3 w-3 mr-1" />
-            Launching Trading Network Platform
+            3-Wide, 6-Level Deep MLM Structure
           </Badge>
           
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400 bg-clip-text text-transparent">
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent animate-fade-in">
             Build Your Trading Empire
           </h1>
           
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl">
-            Join the premier options trading network. Connect with traders, share strategies, 
-            and earn <span className="font-semibold text-foreground">10% commission</span> on every referral.
+          <p className="text-xl text-muted-foreground mb-8 max-w-2xl animate-fade-in-up animation-delay-200">
+            Join the elite trading academy. Build your team with up to <span className="font-semibold text-foreground">3 direct referrals</span>, 
+            grow 6 levels deep, and earn <span className="font-semibold text-foreground">10% commission</span> from your entire team pool.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 mb-12">
+          <div className="flex flex-col sm:flex-row gap-4 mb-12 animate-fade-in-up animation-delay-400">
             <Link href="/register">
               <Button size="lg" className="gap-2">
                 Start Earning Today <ArrowRight className="h-4 w-4" />
@@ -69,18 +70,18 @@ export default function HomePage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-8 md:gap-16">
+          <div className="grid grid-cols-3 gap-8 md:gap-16 animate-fade-in-up animation-delay-600">
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-primary">$200</div>
-              <div className="text-sm text-muted-foreground">Monthly</div>
+              <div className="text-3xl md:text-4xl font-bold text-primary">$500</div>
+              <div className="text-sm text-muted-foreground">Initial Payment</div>
             </div>
             <div className="text-center">
               <div className="text-3xl md:text-4xl font-bold text-primary">10%</div>
               <div className="text-sm text-muted-foreground">Commission</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-primary">∞</div>
-              <div className="text-sm text-muted-foreground">Network Depth</div>
+              <div className="text-3xl md:text-4xl font-bold text-primary">1,092</div>
+              <div className="text-sm text-muted-foreground">Max Team Size</div>
             </div>
           </div>
         </div>
@@ -97,8 +98,8 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="border-2 hover:border-primary/50 transition-colors">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-stagger-in">
+          <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:scale-105 hover:shadow-xl animate-fade-in-up">
             <CardHeader>
               <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                 <DollarSign className="h-6 w-6 text-primary" />
@@ -107,13 +108,13 @@ export default function HomePage() {
             </CardHeader>
             <CardContent>
               <CardDescription>
-                Earn 10% commission on every referral's monthly subscription. 
-                Build a sustainable passive income that grows with your network.
+                Earn 10% commission from your entire team pool. 
+                With up to 1,092 members paying $200/month, earn up to $21,840 monthly.
               </CardDescription>
             </CardContent>
           </Card>
 
-          <Card className="border-2 hover:border-primary/50 transition-colors">
+          <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:scale-105 hover:shadow-xl animate-fade-in-up">
             <CardHeader>
               <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                 <Network className="h-6 w-6 text-primary" />
@@ -122,13 +123,13 @@ export default function HomePage() {
             </CardHeader>
             <CardContent>
               <CardDescription>
-                Watch your network grow exponentially as your referrals bring in their own members. 
-                Track your entire trading group hierarchy.
+                Each member can have 3 direct referrals, growing up to 6 levels deep. 
+                That&apos;s a potential team of 3 + 9 + 27 + 81 + 243 + 729 members.
               </CardDescription>
             </CardContent>
           </Card>
 
-          <Card className="border-2 hover:border-primary/50 transition-colors">
+          <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:scale-105 hover:shadow-xl animate-fade-in-up">
             <CardHeader>
               <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                 <BarChart3 className="h-6 w-6 text-primary" />
@@ -143,7 +144,7 @@ export default function HomePage() {
             </CardContent>
           </Card>
 
-          <Card className="border-2 hover:border-primary/50 transition-colors">
+          <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:scale-105 hover:shadow-xl animate-fade-in-up">
             <CardHeader>
               <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                 <Shield className="h-6 w-6 text-primary" />
@@ -158,7 +159,7 @@ export default function HomePage() {
             </CardContent>
           </Card>
 
-          <Card className="border-2 hover:border-primary/50 transition-colors">
+          <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:scale-105 hover:shadow-xl animate-fade-in-up">
             <CardHeader>
               <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                 <Zap className="h-6 w-6 text-primary" />
@@ -167,13 +168,13 @@ export default function HomePage() {
             </CardHeader>
             <CardContent>
               <CardDescription>
-                Start earning immediately after subscription. 
-                Your referral link is generated instantly upon registration.
+                Pay $500 once to unlock your 3 referral slots. 
+                Start earning commissions as soon as your team members join.
               </CardDescription>
             </CardContent>
           </Card>
 
-          <Card className="border-2 hover:border-primary/50 transition-colors">
+          <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:scale-105 hover:shadow-xl animate-fade-in-up">
             <CardHeader>
               <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                 <Users className="h-6 w-6 text-primary" />
@@ -191,7 +192,7 @@ export default function HomePage() {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="py-20 bg-gray-50 dark:bg-gray-900/50">
+      <section id="how-it-works" className="py-20 bg-gray-50">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
@@ -213,8 +214,8 @@ export default function HomePage() {
                 <div className="flex-grow">
                   <h3 className="text-xl font-semibold mb-2">Create Your Account</h3>
                   <p className="text-muted-foreground">
-                    Sign up and subscribe for $200/month to unlock all platform features 
-                    and start building your network.
+                    Sign up and pay the one-time $500 membership fee to unlock your 3 referral slots. 
+                    Then subscribe for $200/month to maintain your membership.
                   </p>
                 </div>
               </div>
@@ -247,8 +248,8 @@ export default function HomePage() {
                 <div className="flex-grow">
                   <h3 className="text-xl font-semibold mb-2">Earn Monthly Commissions</h3>
                   <p className="text-muted-foreground">
-                    Receive 10% commission ($20) for every active member in your direct network. 
-                    Payments are processed automatically each month.
+                    Receive 10% of your entire team pool (up to 6 levels deep). 
+                    With a full team, earn up to $21,840 per month automatically.
                   </p>
                 </div>
               </div>
@@ -274,21 +275,30 @@ export default function HomePage() {
               POPULAR
             </div>
             <CardHeader className="text-center pb-8">
-              <CardTitle className="text-2xl mb-2">Trading Hub Premium</CardTitle>
-              <div className="text-5xl font-bold mb-2">$200</div>
-              <CardDescription>per month</CardDescription>
+              <CardTitle className="text-2xl mb-2">Snipers Academy Membership</CardTitle>
+              <div className="space-y-2">
+                <div>
+                  <div className="text-3xl font-bold">$500</div>
+                  <CardDescription className="text-xs">One-time membership fee</CardDescription>
+                </div>
+                <div className="text-sm">+</div>
+                <div>
+                  <div className="text-3xl font-bold">$200</div>
+                  <CardDescription className="text-xs">Monthly subscription</CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3">
                 {[
-                  "Full access to trading network",
-                  "10% commission on direct referrals",
-                  "Real-time analytics dashboard",
-                  "Unlimited referral depth",
-                  "Payment tracking & history",
-                  "Group management tools",
-                  "Priority support",
-                  "Secure Stripe payments"
+                  "3 direct referral slots",
+                  "Build team up to 6 levels deep",
+                  "10% commission from entire team pool",
+                  "Up to 1,092 team members",
+                  "Potential $21,840 monthly earnings",
+                  "Real-time team analytics",
+                  "Automated commission payments",
+                  "Stripe Connect integration"
                 ].map((feature) => (
                   <div key={feature} className="flex items-start gap-2">
                     <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
@@ -340,13 +350,13 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t py-12 bg-white dark:bg-gray-950">
+      <footer className="border-t py-12 bg-white">
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
-                <BarChart3 className="h-6 w-6 text-primary" />
-                <span className="font-bold text-xl">Trading Hub</span>
+                <Image src="/logo.svg" alt="Snipers Trading Academy" width={32} height={32} />
+                <span className="font-bold text-xl">Snipers Trading Academy</span>
               </div>
               <p className="text-sm text-muted-foreground">
                 The premier network for options traders to connect and earn.
@@ -384,7 +394,7 @@ export default function HomePage() {
           <Separator className="my-8" />
           
           <div className="text-center text-sm text-muted-foreground">
-            © 2024 Trading Hub. All rights reserved.
+            © 2024 Snipers Trading Academy. All rights reserved.
           </div>
         </div>
       </footer>

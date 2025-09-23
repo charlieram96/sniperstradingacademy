@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { BarChart3, Loader2, UserPlus } from "lucide-react"
+import { Loader2, UserPlus } from "lucide-react"
+import Image from "next/image"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -84,13 +85,13 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white p-4">
       <Link href="/" className="flex items-center space-x-2 mb-8">
-        <BarChart3 className="h-8 w-8 text-primary" />
-        <span className="font-bold text-2xl">Trading Hub</span>
+        <Image src="/logo.svg" alt="Snipers Trading Academy" width={40} height={40} />
+        <span className="font-bold text-2xl">Snipers Trading Academy</span>
       </Link>
       
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md animate-scale-up">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
           <CardDescription className="text-center">
@@ -152,7 +153,7 @@ export default function RegisterPage() {
               </p>
             </div>
             {error && (
-              <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-950/50 rounded-md">
+              <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
                 {error}
               </div>
             )}

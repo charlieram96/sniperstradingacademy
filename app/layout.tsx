@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Trading Hub - Options Traders Network",
-  description: "Build your trading network and earn commissions",
+  title: "Snipers Trading Academy - Elite Options Trading Network",
+  description: "Join the elite trading network and earn commissions",
 };
 
 export default function RootLayout({
