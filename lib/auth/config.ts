@@ -9,6 +9,14 @@ const loginSchema = z.object({
   password: z.string().min(6),
 })
 
+// Get the correct base URL for callbacks
+const getBaseUrl = () => {
+  if (process.env.NEXTAUTH_URL) return process.env.NEXTAUTH_URL
+  if (process.env.AUTH_URL) return process.env.AUTH_URL
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
+  return "http://localhost:3000"
+}
+
 export const authConfig: NextAuthConfig = {
   providers: [
     // Only add Google if credentials are available
@@ -20,7 +28,8 @@ export const authConfig: NextAuthConfig = {
           params: {
             prompt: "consent",
             access_type: "offline",
-            response_type: "code"
+            response_type: "code",
+            redirect_uri: `${getBaseUrl()}/api/auth/callback/google`
           }
         }
       })
@@ -90,6 +99,27 @@ export const authConfig: NextAuthConfig = {
         token.sub = user.id
       }
       return token
+    },
+    async redirect({ url, baseUrl }) {
+      // Always use the production URL if available
+      const productionUrl = process.env.NEXTAUTH_URL || process.env.AUTH_URL || baseUrl
+      
+      // If the URL is relative, make it absolute with the correct base
+      if (url.startsWith("/")) {
+        return `${productionUrl}${url}`
+      }
+      
+      // If the URL is for localhost but we're in production, replace it
+      if (url.includes("localhost") && productionUrl.includes("sniperstradingacademy")) {
+        return url.replace(/http:\/\/localhost:\d+/, productionUrl)
+      }
+      
+      // Allow callback URLs on the same origin
+      if (new URL(url).origin === productionUrl) {
+        return url
+      }
+      
+      return productionUrl
     },
   },
   session: {
