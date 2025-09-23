@@ -1,13 +1,12 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import { SignOutButton } from "@/components/sign-out-button"
 import { 
   LayoutDashboard, 
   Users, 
   CreditCard, 
-  Share2,
-  LogOut
+  Share2
 } from "lucide-react"
 
 export default async function DashboardLayout({
@@ -64,20 +63,7 @@ export default async function DashboardLayout({
         <div className="absolute bottom-0 w-64 p-6">
           <div className="border-t border-gray-800 pt-4">
             <p className="text-sm text-gray-400 mb-3">{session.user?.email}</p>
-            <form action={async () => {
-              "use server"
-              const { signOut } = await import("@/lib/auth")
-              await signOut({ redirectTo: "/" })
-            }}>
-              <Button 
-                type="submit"
-                variant="ghost" 
-                className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-800"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign out
-              </Button>
-            </form>
+            <SignOutButton />
           </div>
         </div>
       </aside>
