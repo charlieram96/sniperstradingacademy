@@ -70,7 +70,7 @@ async function getDashboardData(userId: string) {
     level4: teamMembers?.filter(m => m.level === 4).length || 0,
     level5: teamMembers?.filter(m => m.level === 5).length || 0,
     level6: teamMembers?.filter(m => m.level === 6).length || 0,
-  }
+  } 
 
   // Calculate team pool (only active subscriptions count)
   const activeMembers = teamMembers?.filter(m => m.subscription_status === 'active').length || 0
