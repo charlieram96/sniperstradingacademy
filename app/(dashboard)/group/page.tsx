@@ -74,24 +74,24 @@ export default function GroupPage() {
       }, {} as Record<string, number>) || {}
 
       // Format member data
-      const formattedMembers = members.map((m: {
+      interface MemberData {
         member_id: string
         level: number
-        users: {
-          id: string
-          name: string | null
-          email: string
-          created_at: string
+        users: any
+      }
+      
+      const formattedMembers = members.map((m: MemberData) => {
+        const user = Array.isArray(m.users) ? m.users[0] : m.users
+        return {
+          id: user.id,
+          name: user.name || "Unknown",
+          email: user.email,
+          level: m.level,
+          created_at: user.created_at,
+          subscription_status: activeSubscribers.has(user.id) ? "active" : "inactive",
+          referrals_count: referralCountMap[user.id] || 0
         }
-      }) => ({
-        id: m.users.id,
-        name: m.users.name || "Unknown",
-        email: m.users.email,
-        level: m.level,
-        created_at: m.users.created_at,
-        subscription_status: activeSubscribers.has(m.users.id) ? "active" : "inactive",
-        referrals_count: referralCountMap[m.users.id] || 0
-      }))
+      })
 
       setGroupMembers(formattedMembers)
 
