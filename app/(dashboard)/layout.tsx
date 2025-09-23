@@ -67,7 +67,7 @@ export default async function DashboardLayout({
             <form action={async () => {
               "use server"
               const { signOut } = await import("@/lib/auth")
-              await signOut()
+              await signOut({ redirectTo: "/" })
             }}>
               <Button 
                 type="submit"
