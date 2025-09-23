@@ -26,53 +26,53 @@ export default function ReferralsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (session?.user?.id) {
-      fetchReferralData()
-    }
-  }, [session])
+    async function fetchReferralData() {
+      if (!session?.user?.id) return
+      
+      // Use mock data for test user
+      if (isTestUser(session.user.id)) {
+        setReferralCode("DEMO1234")
+        setReferrals(mockReferrals)
+        setLoading(false)
+        return
+      }
 
-  async function fetchReferralData() {
-    // Use mock data for test user
-    if (isTestUser(session?.user?.id)) {
-      setReferralCode("DEMO1234")
-      setReferrals(mockReferrals)
+      const supabase = createClient()
+      
+      // Get user's referral code
+      const { data: user } = await supabase
+        .from("users")
+        .select("referral_code")
+        .eq("id", session.user.id)
+        .single()
+      
+      if (user) {
+        setReferralCode(user.referral_code)
+      }
+
+      // Get referrals
+      const { data: referralData } = await supabase
+        .from("referrals")
+        .select(`
+          *,
+          referred:referred_id (
+            name,
+            email,
+            created_at
+          )
+        `)
+        .eq("referrer_id", session.user.id)
+        .order("created_at", { ascending: false })
+
+      if (referralData) {
+        setReferrals(referralData)
+      }
+
       setLoading(false)
-      return
     }
-
-    const supabase = createClient()
     
-    // Get user's referral code
-    const { data: user } = await supabase
-      .from("users")
-      .select("referral_code")
-      .eq("id", session?.user?.id)
-      .single()
-    
-    if (user) {
-      setReferralCode(user.referral_code)
-    }
-
-    // Get referrals
-    const { data: referralData } = await supabase
-      .from("referrals")
-      .select(`
-        *,
-        referred:referred_id (
-          name,
-          email,
-          created_at
-        )
-      `)
-      .eq("referrer_id", session?.user?.id)
-      .order("created_at", { ascending: false })
-
-    if (referralData) {
-      setReferrals(referralData)
-    }
-
-    setLoading(false)
-  }
+    fetchReferralData()
+  }, [session])
 
   const referralLink = `${window.location.origin}/register?ref=${referralCode}`
 

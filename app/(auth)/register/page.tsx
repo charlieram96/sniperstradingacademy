@@ -77,7 +77,7 @@ export default function RegisterPage() {
       }
 
       router.push("/login?message=Check your email to confirm your account")
-    } catch (error) {
+    } catch {
       setError("An error occurred. Please try again.")
     } finally {
       setIsLoading(false)
@@ -107,7 +107,7 @@ export default function RegisterPage() {
                   <p className="text-sm font-medium">Referred by</p>
                   <p className="text-xs text-muted-foreground">Code: {referralCode}</p>
                 </div>
-                <Badge variant="success">10% Bonus</Badge>
+                <Badge className="bg-green-100 text-green-800">10% Bonus</Badge>
               </div>
             </div>
           )}

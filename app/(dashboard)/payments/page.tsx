@@ -12,9 +12,24 @@ import { CreditCard, CheckCircle, XCircle, Clock } from "lucide-react"
 export default function PaymentsPage() {
   const { data: session } = useSession()
   const searchParams = useSearchParams()
-  const [subscription, setSubscription] = useState<any>(null)
-  const [payments, setPayments] = useState<any[]>([])
-  const [commissions, setCommissions] = useState<any[]>([])
+  const [subscription, setSubscription] = useState<{
+    id: string
+    status: string
+    current_period_end: string
+    cancel_at_period_end: boolean
+  } | null>(null)
+  const [payments, setPayments] = useState<Array<{
+    id: string
+    amount: number
+    status: string
+    created_at: string
+  }>>([])
+  const [commissions, setCommissions] = useState<Array<{
+    id: string
+    amount: number
+    status: string
+    created_at: string
+  }>>([])
   const [loading, setLoading] = useState(true)
   const [subscribing, setSubscribing] = useState(false)
 
@@ -22,56 +37,56 @@ export default function PaymentsPage() {
   const canceled = searchParams.get("canceled")
 
   useEffect(() => {
-    if (session?.user?.id) {
-      fetchPaymentData()
+    async function fetchPaymentData() {
+      if (!session?.user?.id) return
+      
+      const supabase = createClient()
+      
+      // Get subscription
+      const { data: sub } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .eq("status", "active")
+        .single()
+      
+      setSubscription(sub)
+
+      // Get payments
+      const { data: paymentData } = await supabase
+        .from("payments")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .order("created_at", { ascending: false })
+        .limit(10)
+
+      if (paymentData) {
+        setPayments(paymentData)
+      }
+
+      // Get commissions earned
+      const { data: commissionData } = await supabase
+        .from("commissions")
+        .select(`
+          *,
+          referred:referred_id (
+            name,
+            email
+          )
+        `)
+        .eq("referrer_id", session.user.id)
+        .order("created_at", { ascending: false })
+        .limit(10)
+
+      if (commissionData) {
+        setCommissions(commissionData)
+      }
+
+      setLoading(false)
     }
+    
+    fetchPaymentData()
   }, [session])
-
-  async function fetchPaymentData() {
-    const supabase = createClient()
-    
-    // Get subscription
-    const { data: sub } = await supabase
-      .from("subscriptions")
-      .select("*")
-      .eq("user_id", session?.user?.id)
-      .eq("status", "active")
-      .single()
-    
-    setSubscription(sub)
-
-    // Get payments
-    const { data: paymentData } = await supabase
-      .from("payments")
-      .select("*")
-      .eq("user_id", session?.user?.id)
-      .order("created_at", { ascending: false })
-      .limit(10)
-
-    if (paymentData) {
-      setPayments(paymentData)
-    }
-
-    // Get commissions earned
-    const { data: commissionData } = await supabase
-      .from("commissions")
-      .select(`
-        *,
-        referred:referred_id (
-          name,
-          email
-        )
-      `)
-      .eq("referrer_id", session?.user?.id)
-      .order("created_at", { ascending: false })
-      .limit(10)
-
-    if (commissionData) {
-      setCommissions(commissionData)
-    }
-
-    setLoading(false)
-  }
 
   async function handleSubscribe() {
     setSubscribing(true)

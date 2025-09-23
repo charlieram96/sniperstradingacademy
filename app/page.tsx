@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { 
   ArrowRight, 
-  TrendingUp, 
   Users, 
   DollarSign, 
   Shield, 

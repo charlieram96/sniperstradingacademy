@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -28,13 +28,9 @@ export default function GroupPage() {
   const [loading, setLoading] = useState(true)
   const [expandedLevels, setExpandedLevels] = useState<Set<number>>(new Set([1]))
 
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchGroupData()
-    }
-  }, [session])
-
-  async function fetchGroupData() {
+  const fetchGroupData = useCallback(async () => {
+    if (!session?.user?.id) return
+    
     const supabase = createClient()
     
     // Get all group members
@@ -50,7 +46,7 @@ export default function GroupPage() {
           created_at
         )
       `)
-      .eq("group_owner_id", session?.user?.id)
+      .eq("group_owner_id", session.user.id)
       .order("level", { ascending: true })
 
     if (members) {
@@ -63,7 +59,7 @@ export default function GroupPage() {
         .in("user_id", memberIds)
         .eq("status", "active")
 
-      const activeSubscribers = new Set(subscriptions?.map(s => s.user_id) || [])
+      const activeSubscribers = new Set(subscriptions?.map((s: any) => s.user_id) || [])
 
       // Get referral counts for each member
       const { data: referralCounts } = await supabase
@@ -72,13 +68,13 @@ export default function GroupPage() {
         .in("referrer_id", memberIds)
         .eq("status", "active")
 
-      const referralCountMap = referralCounts?.reduce((acc, r) => {
+      const referralCountMap = referralCounts?.reduce((acc: Record<string, number>, r: any) => {
         acc[r.referrer_id] = (acc[r.referrer_id] || 0) + 1
         return acc
       }, {} as Record<string, number>) || {}
 
       // Format member data
-      const formattedMembers = members.map(m => ({
+      const formattedMembers = members.map((m: any) => ({
         id: m.users.id,
         name: m.users.name || "Unknown",
         email: m.users.email,
@@ -107,7 +103,11 @@ export default function GroupPage() {
     }
 
     setLoading(false)
-  }
+  }, [session?.user?.id])
+
+  useEffect(() => {
+    fetchGroupData()
+  }, [fetchGroupData])
 
   function toggleLevel(level: number) {
     const newExpanded = new Set(expandedLevels)
@@ -130,7 +130,7 @@ export default function GroupPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-gray-500">Loading...</div>
+        <div className="text-gray-500">Loading group data...</div>
       </div>
     )
   }
@@ -138,140 +138,134 @@ export default function GroupPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">My Trading Group</h1>
-        <p className="text-gray-600 mt-2">View and manage your network of traders</p>
+        <h1 className="text-3xl font-bold text-gray-900">Your Trading Group</h1>
+        <p className="text-gray-600 mt-2">
+          View and manage your network of traders across all levels
+        </p>
       </div>
 
-      {/* Group Stats */}
+      {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Members</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              <Users className="h-4 w-4 inline mr-2" />
+              Total Members
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{groupStats.totalMembers}</div>
-            <p className="text-xs text-muted-foreground">
-              In your network
-            </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Subscribers</CardTitle>
-            <UserPlus className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              <UserPlus className="h-4 w-4 inline mr-2" />
+              Active Subscribers
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{groupStats.activeMembers}</div>
-            <p className="text-xs text-muted-foreground">
-              Paying monthly
-            </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Network Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              <DollarSign className="h-4 w-4 inline mr-2" />
+              Monthly Revenue
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${groupStats.totalMonthlyRevenue}</div>
-            <p className="text-xs text-muted-foreground">
-              Monthly total
-            </p>
+            <div className="text-2xl font-bold">
+              ${groupStats.totalMonthlyRevenue.toLocaleString()}
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Network Depth</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              <TrendingUp className="h-4 w-4 inline mr-2" />
+              Your Commission
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{Object.keys(groupStats.levels).length}</div>
-            <p className="text-xs text-muted-foreground">
-              Referral levels
-            </p>
+            <div className="text-2xl font-bold text-green-600">
+              ${(groupStats.totalMonthlyRevenue * 0.1).toLocaleString()}
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Group Members Tree */}
+      {/* Members by Level */}
       <Card>
         <CardHeader>
-          <CardTitle>Network Members</CardTitle>
+          <CardTitle>Network Structure</CardTitle>
           <CardDescription>
-            Your trading network organized by referral level
+            Members organized by level (up to 6 levels deep)
           </CardDescription>
         </CardHeader>
         <CardContent>
           {Object.keys(groupedMembers).length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              <Users className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-              <p>No group members yet</p>
-              <p className="text-sm mt-2">Share your referral link to grow your network</p>
+              No members in your group yet. Start inviting traders to build your network!
             </div>
           ) : (
             <div className="space-y-4">
-              {Object.entries(groupedMembers)
-                .sort(([a], [b]) => Number(a) - Number(b))
-                .map(([level, members]) => (
+              {[1, 2, 3, 4, 5, 6].map(level => {
+                const members = groupedMembers[level] || []
+                const isExpanded = expandedLevels.has(level)
+                
+                return (
                   <div key={level} className="border rounded-lg">
                     <button
-                      onClick={() => toggleLevel(Number(level))}
+                      onClick={() => toggleLevel(level)}
                       className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
                     >
-                      <div className="flex items-center">
-                        <ChevronRight 
-                          className={`h-4 w-4 mr-2 transition-transform ${
-                            expandedLevels.has(Number(level)) ? "rotate-90" : ""
-                          }`}
-                        />
-                        <span className="font-medium">
-                          Level {level} ({members.length} member{members.length !== 1 ? "s" : ""})
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium">Level {level}</span>
+                        <span className="text-sm text-gray-500">
+                          {members.length} member{members.length !== 1 ? 's' : ''}
                         </span>
                       </div>
-                      <span className="text-sm text-gray-500">
-                        {members.filter(m => m.subscription_status === "active").length} active
-                      </span>
+                      <ChevronRight 
+                        className={`h-4 w-4 transition-transform ${
+                          isExpanded ? 'rotate-90' : ''
+                        }`}
+                      />
                     </button>
                     
-                    {expandedLevels.has(Number(level)) && (
-                      <div className="border-t">
-                        {members.map((member) => (
-                          <div
-                            key={member.id}
-                            className="px-4 py-3 flex items-center justify-between hover:bg-gray-50"
-                            style={{ paddingLeft: `${(Number(level) + 1) * 1}rem` }}
-                          >
-                            <div className="flex-1">
-                              <p className="font-medium">{member.name}</p>
-                              <p className="text-sm text-gray-600">{member.email}</p>
-                              <p className="text-xs text-gray-500 mt-1">
-                                Joined {new Date(member.created_at).toLocaleDateString()}
-                                {member.referrals_count > 0 && (
-                                  <span className="ml-2">
-                                    • {member.referrals_count} referral{member.referrals_count !== 1 ? "s" : ""}
-                                  </span>
-                                )}
-                              </p>
+                    {isExpanded && members.length > 0 && (
+                      <div className="border-t divide-y">
+                        {members.map(member => (
+                          <div key={member.id} className="px-4 py-3 flex items-center justify-between">
+                            <div>
+                              <div className="font-medium">{member.name}</div>
+                              <div className="text-sm text-gray-500">{member.email}</div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                member.subscription_status === "active"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-gray-100 text-gray-800"
+                            <div className="flex items-center gap-3">
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                member.subscription_status === 'active'
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-gray-100 text-gray-700'
                               }`}>
-                                {member.subscription_status}
+                                {member.subscription_status === 'active' ? 'Active' : 'Inactive'}
                               </span>
+                              {member.referrals_count > 0 && (
+                                <span className="text-sm text-gray-500">
+                                  {member.referrals_count} referral{member.referrals_count !== 1 ? 's' : ''}
+                                </span>
+                              )}
                             </div>
                           </div>
                         ))}
                       </div>
                     )}
                   </div>
-                ))}
+                )
+              })}
             </div>
           )}
         </CardContent>
