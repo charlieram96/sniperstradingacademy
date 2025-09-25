@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
-import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -17,7 +16,6 @@ import {
   CreditCard,
   Download,
   ArrowUpRight,
-  ArrowDownRight,
   Wallet
 } from "lucide-react"
 
@@ -64,7 +62,7 @@ export default function FinancePage() {
     async function fetchFinancialData() {
       if (!session?.user?.id) return
 
-      const supabase = createClient()
+      // const supabase = createClient()
 
       // Mock data for demonstration - replace with actual API calls
       const mockDirectBonuses: DirectBonus[] = [

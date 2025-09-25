@@ -31,7 +31,7 @@ interface TeamMember {
   subscription_status?: string
   referrals_count?: number
   is_direct_referral?: boolean
-  spillover_from?: string
+  spillover_from?: string | null
   position?: number // Position in the 3-wide structure (1, 2, or 3)
 }
 
@@ -100,13 +100,20 @@ export default function TeamPage() {
       }, {} as Record<string, number>) || {}
 
       // Format member data
+      interface UserData {
+        id: string
+        name: string | null
+        email: string
+        created_at: string
+      }
+      
       interface MemberData {
         member_id: string
         level: number
         is_direct_referral: boolean
         spillover_from: string | null
         position: number
-        users: any
+        users: UserData | UserData[]
       }
       
       const formattedMembers = members.map((m: MemberData) => {
@@ -479,7 +486,7 @@ export default function TeamPage() {
             <CardHeader>
               <CardTitle>Spillover Tracking</CardTitle>
               <CardDescription>
-                Members placed in your team from your upline's overflow
+                Members placed in your team from your upline&apos;s overflow
               </CardDescription>
             </CardHeader>
             <CardContent>
