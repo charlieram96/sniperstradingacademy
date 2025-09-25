@@ -6,6 +6,9 @@ export default auth((req) => {
   const isAuthPage = req.nextUrl.pathname.startsWith("/login") || 
                      req.nextUrl.pathname.startsWith("/register")
   const isDashboard = req.nextUrl.pathname.startsWith("/dashboard") ||
+                      req.nextUrl.pathname.startsWith("/academy") ||
+                      req.nextUrl.pathname.startsWith("/team") ||
+                      req.nextUrl.pathname.startsWith("/finance") ||
                       req.nextUrl.pathname.startsWith("/group") ||
                       req.nextUrl.pathname.startsWith("/payments") ||
                       req.nextUrl.pathname.startsWith("/referrals")

@@ -6,7 +6,9 @@ import {
   LayoutDashboard, 
   Users, 
   CreditCard, 
-  Share2
+  Share2,
+  GraduationCap,
+  DollarSign
 } from "lucide-react"
 
 export default async function DashboardLayout({
@@ -38,11 +40,25 @@ export default async function DashboardLayout({
             Dashboard
           </Link>
           <Link 
-            href="/group"
+            href="/academy"
+            className="flex items-center px-6 py-3 hover:bg-gray-800 transition-colors"
+          >
+            <GraduationCap className="h-5 w-5 mr-3" />
+            Academy
+          </Link>
+          <Link 
+            href="/team"
             className="flex items-center px-6 py-3 hover:bg-gray-800 transition-colors"
           >
             <Users className="h-5 w-5 mr-3" />
-            My Group
+            My Team
+          </Link>
+          <Link 
+            href="/finance"
+            className="flex items-center px-6 py-3 hover:bg-gray-800 transition-colors"
+          >
+            <DollarSign className="h-5 w-5 mr-3" />
+            Finance
           </Link>
           <Link 
             href="/payments"
