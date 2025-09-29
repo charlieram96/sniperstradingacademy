@@ -182,7 +182,7 @@ function PaymentsContent() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-gray-500">Loading...</div>
+        <div className="text-muted-foreground">Loading...</div>
       </div>
     )
   }
@@ -190,19 +190,19 @@ function PaymentsContent() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Payments</h1>
-        <p className="text-gray-600 mt-2">Manage your subscription and view payment history</p>
+        <h1 className="text-3xl font-bold text-foreground">Payments</h1>
+        <p className="text-muted-foreground mt-2">Manage your subscription and view payment history</p>
       </div>
 
       {/* Success/Cancel Messages */}
       {success && (
-        <Card className="mb-6 border-green-200 bg-green-50">
+        <Card className="mb-6 border-green-500/20 bg-green-500/5">
           <CardHeader>
-            <CardTitle className="text-green-900 flex items-center">
-              <CheckCircle className="h-5 w-5 mr-2" />
+            <CardTitle className="text-foreground flex items-center">
+              <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
               Subscription Activated!
             </CardTitle>
-            <CardDescription className="text-green-700">
+            <CardDescription className="text-muted-foreground">
               Your subscription is now active. You can start earning commissions from referrals.
             </CardDescription>
           </CardHeader>
@@ -210,13 +210,13 @@ function PaymentsContent() {
       )}
 
       {canceled && (
-        <Card className="mb-6 border-yellow-200 bg-yellow-50">
+        <Card className="mb-6 border-yellow-500/20 bg-yellow-500/5">
           <CardHeader>
-            <CardTitle className="text-yellow-900 flex items-center">
-              <XCircle className="h-5 w-5 mr-2" />
+            <CardTitle className="text-foreground flex items-center">
+              <XCircle className="h-5 w-5 mr-2 text-yellow-500" />
               Subscription Canceled
             </CardTitle>
-            <CardDescription className="text-yellow-700">
+            <CardDescription className="text-muted-foreground">
               Your subscription process was canceled. You can try again anytime.
             </CardDescription>
           </CardHeader>
@@ -225,25 +225,24 @@ function PaymentsContent() {
 
       {/* Initial Membership Payment */}
       {!initialPaymentCompleted && (
-        <Card className="mb-8 border-red-200 bg-red-50">
+        <Card className="mb-8 border-primary/20 bg-primary/5">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Lock className="h-5 w-5 text-red-600" />
-              <CardTitle className="text-red-900">Unlock Your Membership</CardTitle>
+              <Lock className="h-5 w-5 text-primary" />
+              <CardTitle className="text-foreground">Unlock Your Membership</CardTitle>
             </div>
-            <CardDescription className="text-red-700">
+            <CardDescription className="text-muted-foreground">
               One-time payment to unlock your 3 referral slots and start building your team
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="mb-4">
-              <p className="text-2xl font-bold text-red-900">{formatCurrency(50000)}</p>
-              <p className="text-sm text-red-700">One-time membership fee</p>
+              <p className="text-2xl font-bold text-foreground">{formatCurrency(50000)}</p>
+              <p className="text-sm text-muted-foreground">One-time membership fee</p>
             </div>
             <Button 
               onClick={handleInitialPayment} 
               disabled={processingInitial}
-              className="bg-red-600 hover:bg-red-700"
             >
               <Unlock className="h-4 w-4 mr-2" />
               {processingInitial ? "Processing..." : "Unlock Membership"}
@@ -266,7 +265,7 @@ function PaymentsContent() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-2xl font-bold">{formatCurrency(20000)}/month</p>
-                  <p className="text-sm text-gray-600">Trading Hub Premium</p>
+                  <p className="text-sm text-muted-foreground">Trading Hub Premium</p>
                 </div>
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
                   Active
@@ -274,11 +273,11 @@ function PaymentsContent() {
               </div>
               <div className="space-y-2 text-sm">
                 <p>
-                  <span className="text-gray-600">Next billing date:</span>{" "}
+                  <span className="text-muted-foreground">Next billing date:</span>{" "}
                   {new Date(subscription.current_period_end).toLocaleDateString()}
                 </p>
                 <p>
-                  <span className="text-gray-600">Member since:</span>{" "}
+                  <span className="text-muted-foreground">Member since:</span>{" "}
                   {new Date(subscription.created_at).toLocaleDateString()}
                 </p>
               </div>
@@ -302,7 +301,7 @@ function PaymentsContent() {
                 </div>
               ) : (
                 <div>
-                  <p className="text-gray-600 mb-4">
+                  <p className="text-muted-foreground mb-4">
                     Subscribe to start earning 10% commission from your referrals
                   </p>
                   <Button onClick={handleSubscribe} disabled={subscribing}>
@@ -324,21 +323,21 @@ function PaymentsContent() {
         </CardHeader>
         <CardContent>
           {payments.length === 0 ? (
-            <p className="text-gray-500 text-center py-4">No payments yet</p>
+            <p className="text-muted-foreground text-center py-4">No payments yet</p>
           ) : (
             <div className="space-y-3">
               {payments.map((payment) => (
                 <div key={payment.id} className="flex items-center justify-between py-3 border-b last:border-0">
                   <div>
                     <p className="font-medium">{formatCurrency(payment.amount * 100)}</p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       {new Date(payment.created_at).toLocaleDateString()}
                     </p>
                   </div>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                     payment.status === "succeeded" 
                       ? "bg-green-100 text-green-800" 
-                      : "bg-gray-100 text-gray-800"
+                      : "bg-muted text-muted-foreground"
                   }`}>
                     {payment.status}
                   </span>
@@ -357,17 +356,17 @@ function PaymentsContent() {
         </CardHeader>
         <CardContent>
           {commissions.length === 0 ? (
-            <p className="text-gray-500 text-center py-4">No commissions earned yet</p>
+            <p className="text-muted-foreground text-center py-4">No commissions earned yet</p>
           ) : (
             <div className="space-y-3">
               {commissions.map((commission) => (
                 <div key={commission.id} className="flex items-center justify-between py-3 border-b last:border-0">
                   <div>
                     <p className="font-medium">{formatCurrency(commission.amount * 100)}</p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       From {commission.referred?.name || commission.referred?.email}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       {new Date(commission.created_at).toLocaleDateString()}
                     </p>
                   </div>
@@ -376,7 +375,7 @@ function PaymentsContent() {
                       ? "bg-green-100 text-green-800" 
                       : commission.status === "pending"
                       ? "bg-yellow-100 text-yellow-800"
-                      : "bg-gray-100 text-gray-800"
+                      : "bg-muted text-muted-foreground"
                   }`}>
                     <Clock className="h-3 w-3 mr-1" />
                     {commission.status}
@@ -395,7 +394,7 @@ export default function PaymentsPage() {
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-gray-500">Loading payment data...</div>
+        <div className="text-muted-foreground">Loading payment data...</div>
       </div>
     }>
       <PaymentsContent />

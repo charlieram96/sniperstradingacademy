@@ -133,33 +133,33 @@ export default function AcademyPage() {
   const getLevelColor = (level: string) => {
     switch (level) {
       case "Beginner":
-        return "bg-green-100 text-green-800"
+        return "bg-primary/10 text-primary"
       case "Intermediate":
-        return "bg-yellow-100 text-yellow-800"
+        return "bg-amber-500/10 text-amber-400"
       case "Advanced":
-        return "bg-red-100 text-red-800"
+        return "bg-destructive/10 text-destructive"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-muted text-muted-foreground"
     }
   }
 
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Trading Academy</h1>
-        <p className="text-gray-600 mt-2">
+        <h1 className="text-3xl font-bold text-foreground">Trading Academy</h1>
+        <p className="text-muted-foreground mt-2">
           Master options trading with our comprehensive education resources
         </p>
       </div>
 
       {/* Next Class Highlight */}
       {nextClass && (
-        <Card className="mb-8 border-blue-200 bg-blue-50">
+        <Card className="mb-8 border-primary/20 bg-primary/5">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-blue-600" />
-                <CardTitle className="text-blue-900">Next Class</CardTitle>
+                <Calendar className="h-5 w-5 text-primary" />
+                <CardTitle className="text-foreground">Next Class</CardTitle>
               </div>
               <Badge className={getLevelColor(nextClass.level)}>
                 {nextClass.level}
@@ -169,12 +169,12 @@ export default function AcademyPage() {
           <CardContent>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <h3 className="text-xl font-semibold text-blue-900 mb-2">
+                <h3 className="text-xl font-semibold text-foreground mb-2">
                   {nextClass.title}
                 </h3>
-                <p className="text-blue-700 mb-1">Topic: {nextClass.topic}</p>
-                <p className="text-blue-700 mb-1">Instructor: {nextClass.instructor}</p>
-                <div className="flex items-center gap-4 mt-2 text-sm text-blue-600">
+                <p className="text-muted-foreground mb-1">Topic: {nextClass.topic}</p>
+                <p className="text-muted-foreground mb-1">Instructor: {nextClass.instructor}</p>
+                <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
                     {new Date(nextClass.date).toLocaleDateString()}
@@ -187,7 +187,7 @@ export default function AcademyPage() {
               </div>
               <div className="flex items-center justify-end">
                 {nextClass.zoomLink && (
-                  <Button className="bg-blue-600 hover:bg-blue-700">
+                  <Button>
                     <Video className="h-4 w-4 mr-2" />
                     Join Class
                     <ExternalLink className="h-3 w-3 ml-2" />
@@ -237,13 +237,13 @@ export default function AcademyPage() {
           {/* Resources Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredResources.map(resource => (
-              <Card key={resource.id} className="hover:shadow-lg transition-shadow">
+              <Card key={resource.id} className="hover:shadow-md transition-all duration-200 hover:border-primary/20">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
-                      {resource.type === "video" && <PlayCircle className="h-5 w-5 text-blue-600" />}
-                      {resource.type === "pdf" && <FileText className="h-5 w-5 text-red-600" />}
-                      {resource.type === "article" && <BookOpen className="h-5 w-5 text-green-600" />}
+                      {resource.type === "video" && <PlayCircle className="h-5 w-5 text-primary" />}
+                      {resource.type === "pdf" && <FileText className="h-5 w-5 text-destructive" />}
+                      {resource.type === "article" && <BookOpen className="h-5 w-5 text-primary" />}
                       <Badge variant="outline">{resource.category}</Badge>
                     </div>
                   </div>
@@ -251,7 +251,7 @@ export default function AcademyPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-muted-foreground">
                       {resource.duration || resource.size || "Article"}
                     </span>
                     <Button size="sm" variant="outline">
@@ -286,7 +286,7 @@ export default function AcademyPage() {
             <CardContent>
               <div className="space-y-4">
                 {upcomingClasses.map(classItem => (
-                  <div key={classItem.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                  <div key={classItem.id} className="border border-border rounded-lg p-4 hover:bg-accent transition-colors duration-200">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
@@ -295,8 +295,8 @@ export default function AcademyPage() {
                             {classItem.level}
                           </Badge>
                         </div>
-                        <p className="text-gray-600 mb-2">{classItem.topic}</p>
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <p className="text-muted-foreground mb-2">{classItem.topic}</p>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Users className="h-4 w-4" />
                             {classItem.instructor}
@@ -339,28 +339,28 @@ export default function AcademyPage() {
                 <div className="p-4 border rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-medium">Beginner Course</span>
-                    <span className="text-sm text-gray-500">75% Complete</span>
+                    <span className="text-sm text-muted-foreground">75% Complete</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: "75%" }}></div>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div className="bg-primary h-2 rounded-full transition-all duration-300" style={{ width: "75%" }}></div>
                   </div>
                 </div>
                 <div className="p-4 border rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-medium">Intermediate Course</span>
-                    <span className="text-sm text-gray-500">30% Complete</span>
+                    <span className="text-sm text-muted-foreground">30% Complete</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: "30%" }}></div>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div className="bg-primary h-2 rounded-full transition-all duration-300" style={{ width: "30%" }}></div>
                   </div>
                 </div>
                 <div className="p-4 border rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-medium">Advanced Course</span>
-                    <span className="text-sm text-gray-500">Not Started</span>
+                    <span className="text-sm text-muted-foreground">Not Started</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: "0%" }}></div>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div className="bg-primary h-2 rounded-full transition-all duration-300" style={{ width: "0%" }}></div>
                   </div>
                 </div>
               </div>

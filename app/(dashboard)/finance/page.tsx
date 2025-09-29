@@ -18,6 +18,8 @@ import {
   ArrowUpRight,
   Wallet
 } from "lucide-react"
+import { AccountStatusCard } from "@/components/account-status-card"
+import { QualificationCountdown } from "@/components/qualification-countdown"
 
 interface DirectBonus {
   id: string
@@ -43,6 +45,16 @@ export default function FinancePage() {
   const { data: session } = useSession()
   const [directBonuses, setDirectBonuses] = useState<DirectBonus[]>([])
   const [monthlyEarnings, setMonthlyEarnings] = useState<MonthlyEarning[]>([])
+  const [accountStatus] = useState({
+    accountActive: true,
+    activatedAt: new Date("2024-01-01"),
+    monthlyPaymentDueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 days from now
+    lastPaymentDate: new Date("2024-01-01"),
+    qualificationDeadline: new Date("2024-12-31"),
+    qualifiedAt: null as Date | null,
+    directReferralsCount: 2,
+    accumulatedResidual: 3500
+  })
   const [financialStats, setFinancialStats] = useState({
     totalSniperVolume: 0,
     currentMonthVolume: 0,
@@ -163,29 +175,61 @@ export default function FinancePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-gray-500">Loading financial data...</div>
+        <div className="text-muted-foreground">Loading financial data...</div>
       </div>
     )
+  }
+
+  const handlePayNow = () => {
+    // Handle payment logic
+    console.log("Processing payment...")
+  }
+
+  const handleShareReferralLink = () => {
+    // Handle sharing referral link
+    console.log("Sharing referral link...")
   }
 
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Finance Dashboard</h1>
-        <p className="text-gray-600 mt-2">
+        <h1 className="text-3xl font-bold text-foreground">Finance Dashboard</h1>
+        <p className="text-muted-foreground mt-2">
           Track your earnings, bonuses, and team volume
         </p>
       </div>
 
-      {/* Qualification Status */}
-      {!financialStats.isQualified && (
-        <Card className="mb-6 border-yellow-200 bg-yellow-50">
+      {/* Account Status Card */}
+      <div className="mb-6">
+        <AccountStatusCard
+          accountActive={accountStatus.accountActive}
+          monthlyPaymentDueDate={accountStatus.monthlyPaymentDueDate}
+          lastPaymentDate={accountStatus.lastPaymentDate}
+          onPayNow={handlePayNow}
+        />
+      </div>
+
+      {/* Qualification Countdown */}
+      <div className="mb-6">
+        <QualificationCountdown
+          activatedAt={accountStatus.activatedAt}
+          qualificationDeadline={accountStatus.qualificationDeadline}
+          qualifiedAt={accountStatus.qualifiedAt}
+          directReferralsCount={accountStatus.directReferralsCount}
+          accumulatedResidual={accountStatus.accumulatedResidual}
+          onShareReferralLink={handleShareReferralLink}
+        />
+      </div>
+
+      {/* Legacy Qualification Status - Hidden when using new countdown */}
+      {false && !financialStats.isQualified && (
+        <Card className="mb-6 border-yellow-500/20 bg-yellow-500/5">
           <CardHeader>
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-yellow-600" />
-              <CardTitle className="text-yellow-900">Earnings Not Yet Unlocked</CardTitle>
+              <CardTitle className="text-foreground">Earnings Not Yet Unlocked</CardTitle>
             </div>
-            <CardDescription className="text-yellow-700">
+            <CardDescription className="text-muted-foreground">
               Refer 3 people to unlock residual income from your team volume
             </CardDescription>
           </CardHeader>
@@ -196,7 +240,7 @@ export default function FinancePage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               <DollarSign className="h-4 w-4 inline mr-2" />
               Lifetime Earnings
             </CardTitle>
@@ -205,28 +249,28 @@ export default function FinancePage() {
             <div className="text-2xl font-bold">
               ${financialStats.lifetimeEarnings.toLocaleString()}
             </div>
-            <p className="text-xs text-gray-500">All time total</p>
+            <p className="text-xs text-muted-foreground">All time total</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               <TrendingUp className="h-4 w-4 inline mr-2" />
               Current Month Residual
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-primary">
               ${financialStats.currentMonthResidual.toLocaleString()}
             </div>
-            <p className="text-xs text-gray-500">10% of team volume</p>
+            <p className="text-xs text-muted-foreground">10% of team volume</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               <Users className="h-4 w-4 inline mr-2" />
               Direct Bonuses
             </CardTitle>
@@ -235,24 +279,24 @@ export default function FinancePage() {
             <div className="text-2xl font-bold">
               ${financialStats.totalDirectBonuses.toLocaleString()}
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               ${financialStats.pendingBonuses} pending
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-green-200 bg-green-50">
+        <Card className="border-primary/20 bg-primary/5">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-green-800">
+            <CardTitle className="text-sm font-medium text-primary">
               <Wallet className="h-4 w-4 inline mr-2" />
               Next Payout
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-800">
+            <div className="text-2xl font-bold text-primary">
               ${financialStats.nextPayoutAmount.toLocaleString()}
             </div>
-            <p className="text-xs text-green-600">{financialStats.nextPayoutDate}</p>
+            <p className="text-xs text-primary/80">{financialStats.nextPayoutDate}</p>
           </CardContent>
         </Card>
       </div>
@@ -280,31 +324,31 @@ export default function FinancePage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 border rounded-lg">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-gray-600">Current Month Volume</span>
+                      <span className="text-sm text-muted-foreground">Current Month Volume</span>
                       <Badge variant="outline">January 2024</Badge>
                     </div>
                     <div className="text-3xl font-bold">
                       ${financialStats.currentMonthVolume.toLocaleString()}
                     </div>
                     <div className="flex items-center gap-2 mt-2">
-                      <ArrowUpRight className="h-4 w-4 text-green-600" />
-                      <span className="text-sm text-green-600">+25% from last month</span>
+                      <ArrowUpRight className="h-4 w-4 text-primary" />
+                      <span className="text-sm text-primary">+25% from last month</span>
                     </div>
                   </div>
                   
-                  <div className="p-4 border rounded-lg bg-green-50 border-green-200">
+                  <div className="p-4 border rounded-lg bg-primary/5 border-primary/20">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-gray-600">Your Residual (10%)</span>
+                      <span className="text-sm text-muted-foreground">Your Residual (10%)</span>
                       {financialStats.isQualified ? (
-                        <Badge className="bg-green-100 text-green-700">Qualified</Badge>
+                        <Badge className="bg-primary/10 text-primary">Qualified</Badge>
                       ) : (
-                        <Badge className="bg-yellow-100 text-yellow-700">Not Qualified</Badge>
+                        <Badge className="bg-amber-500/10 text-amber-400">Not Qualified</Badge>
                       )}
                     </div>
-                    <div className="text-3xl font-bold text-green-700">
+                    <div className="text-3xl font-bold text-primary">
                       ${financialStats.isQualified ? financialStats.currentMonthResidual.toLocaleString() : "0"}
                     </div>
-                    <div className="text-sm text-green-600 mt-2">
+                    <div className="text-sm text-primary/80 mt-2">
                       {financialStats.isQualified ? "Earning 10% commission" : "Refer 3 to unlock"}
                     </div>
                   </div>
@@ -314,17 +358,17 @@ export default function FinancePage() {
                   <h4 className="font-medium mb-3">Volume Breakdown</h4>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Active Members</span>
+                      <span className="text-sm text-muted-foreground">Active Members</span>
                       <span className="font-medium">75 × $200 = $15,000</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Your Commission Rate</span>
+                      <span className="text-sm text-muted-foreground">Your Commission Rate</span>
                       <span className="font-medium">10%</span>
                     </div>
                     <div className="border-t pt-2 mt-2">
                       <div className="flex items-center justify-between">
                         <span className="font-medium">Monthly Residual Income</span>
-                        <span className="font-bold text-green-600">
+                        <span className="font-bold text-primary">
                           ${financialStats.currentMonthResidual.toLocaleString()}
                         </span>
                       </div>
@@ -348,8 +392,8 @@ export default function FinancePage() {
             <CardContent>
               <div className="space-y-4">
                 {directBonuses.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Users className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Users className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
                     <p>No direct referrals yet</p>
                     <p className="text-sm mt-2">Share your referral link to earn $250 per person</p>
                   </div>
@@ -357,16 +401,16 @@ export default function FinancePage() {
                   <>
                     <div className="grid grid-cols-3 gap-4 mb-6">
                       <div className="p-4 border rounded-lg">
-                        <div className="text-sm text-gray-600 mb-1">Total Bonuses</div>
+                        <div className="text-sm text-muted-foreground mb-1">Total Bonuses</div>
                         <div className="text-2xl font-bold">${financialStats.totalDirectBonuses}</div>
                       </div>
                       <div className="p-4 border rounded-lg">
-                        <div className="text-sm text-gray-600 mb-1">Paid</div>
-                        <div className="text-2xl font-bold text-green-600">${financialStats.paidBonuses}</div>
+                        <div className="text-sm text-muted-foreground mb-1">Paid</div>
+                        <div className="text-2xl font-bold text-primary">${financialStats.paidBonuses}</div>
                       </div>
                       <div className="p-4 border rounded-lg">
-                        <div className="text-sm text-gray-600 mb-1">Pending</div>
-                        <div className="text-2xl font-bold text-yellow-600">${financialStats.pendingBonuses}</div>
+                        <div className="text-sm text-muted-foreground mb-1">Pending</div>
+                        <div className="text-2xl font-bold text-amber-400">${financialStats.pendingBonuses}</div>
                       </div>
                     </div>
 
@@ -376,8 +420,8 @@ export default function FinancePage() {
                           <div className="flex items-center justify-between">
                             <div>
                               <div className="font-medium">{bonus.referredUser.name}</div>
-                              <div className="text-sm text-gray-500">{bonus.referredUser.email}</div>
-                              <div className="text-xs text-gray-400 mt-1">
+                              <div className="text-sm text-muted-foreground">{bonus.referredUser.email}</div>
+                              <div className="text-xs text-muted-foreground/70 mt-1">
                                 Joined {new Date(bonus.referredUser.joinedAt).toLocaleDateString()}
                               </div>
                             </div>
@@ -385,18 +429,18 @@ export default function FinancePage() {
                               <div className="text-xl font-bold">${bonus.bonusAmount}</div>
                               {bonus.status === "paid" ? (
                                 <>
-                                  <Badge className="bg-green-100 text-green-700">
+                                  <Badge className="bg-primary/10 text-primary">
                                     <CheckCircle className="h-3 w-3 mr-1" />
                                     Paid
                                   </Badge>
                                   {bonus.paidAt && (
-                                    <div className="text-xs text-gray-500 mt-1">
+                                    <div className="text-xs text-muted-foreground mt-1">
                                       {new Date(bonus.paidAt).toLocaleDateString()}
                                     </div>
                                   )}
                                 </>
                               ) : (
-                                <Badge className="bg-yellow-100 text-yellow-700">
+                                <Badge className="bg-amber-500/10 text-amber-400">
                                   <Clock className="h-3 w-3 mr-1" />
                                   Pending
                                 </Badge>
@@ -428,10 +472,10 @@ export default function FinancePage() {
                   <div key={earning.month} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <Calendar className="h-5 w-5 text-gray-400" />
+                        <Calendar className="h-5 w-5 text-muted-foreground" />
                         <span className="font-medium">{earning.month}</span>
                         {index === 0 && (
-                          <Badge className="bg-blue-100 text-blue-700">Current</Badge>
+                          <Badge className="bg-primary/10 text-primary">Current</Badge>
                         )}
                       </div>
                       <div className="text-xl font-bold">
@@ -440,15 +484,15 @@ export default function FinancePage() {
                     </div>
                     <div className="grid grid-cols-3 gap-4 text-sm">
                       <div>
-                        <span className="text-gray-600">Sniper Volume</span>
+                        <span className="text-muted-foreground">Sniper Volume</span>
                         <div className="font-medium">${earning.sniperVolume.toLocaleString()}</div>
                       </div>
                       <div>
-                        <span className="text-gray-600">Residual (10%)</span>
+                        <span className="text-muted-foreground">Residual (10%)</span>
                         <div className="font-medium">${earning.residualIncome.toLocaleString()}</div>
                       </div>
                       <div>
-                        <span className="text-gray-600">Direct Bonuses</span>
+                        <span className="text-muted-foreground">Direct Bonuses</span>
                         <div className="font-medium">${earning.directBonuses.toLocaleString()}</div>
                       </div>
                     </div>
@@ -480,13 +524,13 @@ export default function FinancePage() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-3">
-                        <CreditCard className="h-5 w-5 text-gray-400" />
+                        <CreditCard className="h-5 w-5 text-muted-foreground" />
                         <div>
                           <div className="font-medium">Bank Account</div>
-                          <div className="text-sm text-gray-500">****1234</div>
+                          <div className="text-sm text-muted-foreground">****1234</div>
                         </div>
                       </div>
-                      <Badge className="bg-green-100 text-green-700">Active</Badge>
+                      <Badge className="bg-primary/10 text-primary">Active</Badge>
                     </div>
                     <Button variant="outline" className="w-full">
                       Update Payment Method
@@ -498,15 +542,15 @@ export default function FinancePage() {
                   <h4 className="font-medium mb-3">Payout Schedule</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Frequency</span>
+                      <span className="text-muted-foreground">Frequency</span>
                       <span className="font-medium">Monthly</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Next Payout Date</span>
+                      <span className="text-muted-foreground">Next Payout Date</span>
                       <span className="font-medium">{financialStats.nextPayoutDate}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Minimum Payout</span>
+                      <span className="text-muted-foreground">Minimum Payout</span>
                       <span className="font-medium">$100</span>
                     </div>
                   </div>
@@ -514,7 +558,7 @@ export default function FinancePage() {
 
                 <div className="border rounded-lg p-4">
                   <h4 className="font-medium mb-3">Tax Information</h4>
-                  <p className="text-sm text-gray-600 mb-3">
+                  <p className="text-sm text-muted-foreground mb-3">
                     Download your earnings statements for tax purposes
                   </p>
                   <Button variant="outline">

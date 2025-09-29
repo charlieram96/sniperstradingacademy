@@ -1,7 +1,8 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import Link from "next/link"
+import Image from "next/image"
 import { SignOutButton } from "@/components/sign-out-button"
+import { NavigationLink } from "@/components/navigation-link"
 import { 
   LayoutDashboard, 
   Users, 
@@ -23,69 +24,92 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex bg-background">
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-900 text-white">
-        <div className="p-6">
-          <h1 className="text-2xl font-bold">Trading Hub</h1>
-          <p className="text-sm text-gray-400 mt-1">Options Traders Network</p>
+      <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col fixed h-full z-40">
+        <div className="p-6 border-b border-sidebar-border">
+          <div className="flex items-center gap-3">
+            <Image 
+              src="/gold-logo.svg" 
+              alt="Trading Hub Logo" 
+              width={40} 
+              height={40}
+              className="w-10 h-10"
+            />
+            <div>
+              <h1 className="text-xl font-semibold text-sidebar-foreground">Trading Hub</h1>
+              <p className="text-xs text-muted-foreground">Options Network</p>
+            </div>
+          </div>
         </div>
         
-        <nav className="mt-8">
-          <Link 
+        <nav className="flex-1 py-4 overflow-y-auto">
+          <NavigationLink 
             href="/dashboard"
-            className="flex items-center px-6 py-3 hover:bg-gray-800 transition-colors"
+            className="flex items-center gap-3 px-4 py-2.5 mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
-            <LayoutDashboard className="h-5 w-5 mr-3" />
-            Dashboard
-          </Link>
-          <Link 
+            <LayoutDashboard className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+            <span className="text-sm font-medium">Dashboard</span>
+          </NavigationLink>
+          <NavigationLink 
             href="/academy"
-            className="flex items-center px-6 py-3 hover:bg-gray-800 transition-colors"
+            className="flex items-center gap-3 px-4 py-2.5 mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
-            <GraduationCap className="h-5 w-5 mr-3" />
-            Academy
-          </Link>
-          <Link 
+            <GraduationCap className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+            <span className="text-sm font-medium">Academy</span>
+          </NavigationLink>
+          <NavigationLink 
             href="/team"
-            className="flex items-center px-6 py-3 hover:bg-gray-800 transition-colors"
+            className="flex items-center gap-3 px-4 py-2.5 mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
-            <Users className="h-5 w-5 mr-3" />
-            My Team
-          </Link>
-          <Link 
+            <Users className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+            <span className="text-sm font-medium">My Team</span>
+          </NavigationLink>
+          <NavigationLink 
             href="/finance"
-            className="flex items-center px-6 py-3 hover:bg-gray-800 transition-colors"
+            className="flex items-center gap-3 px-4 py-2.5 mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
-            <DollarSign className="h-5 w-5 mr-3" />
-            Finance
-          </Link>
-          <Link 
+            <DollarSign className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+            <span className="text-sm font-medium">Finance</span>
+          </NavigationLink>
+          <NavigationLink 
             href="/payments"
-            className="flex items-center px-6 py-3 hover:bg-gray-800 transition-colors"
+            className="flex items-center gap-3 px-4 py-2.5 mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
-            <CreditCard className="h-5 w-5 mr-3" />
-            Payments
-          </Link>
-          <Link 
+            <CreditCard className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+            <span className="text-sm font-medium">Payments</span>
+          </NavigationLink>
+          <NavigationLink 
             href="/referrals"
-            className="flex items-center px-6 py-3 hover:bg-gray-800 transition-colors"
+            className="flex items-center gap-3 px-4 py-2.5 mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
-            <Share2 className="h-5 w-5 mr-3" />
-            Referrals
-          </Link>
+            <Share2 className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+            <span className="text-sm font-medium">Referrals</span>
+          </NavigationLink>
         </nav>
 
-        <div className="absolute bottom-0 w-64 p-6">
-          <div className="border-t border-gray-800 pt-4">
-            <p className="text-sm text-gray-400 mb-3">{session.user?.email}</p>
+        <div className="p-4 border-t border-sidebar-border">
+          <div className="flex items-center gap-3 px-2 py-2">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white text-sm font-medium shadow-lg shadow-red-900/50">
+              {session.user?.email?.[0]?.toUpperCase() || "U"}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-sidebar-foreground truncate">
+                {session.user?.name || "User"}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {session.user?.email}
+              </p>
+            </div>
+          </div>
+          <div className="mt-3">
             <SignOutButton />
           </div>
         </div>
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 bg-gray-50">
+      <main className="flex-1 overflow-auto ml-64">
         <div className="p-8">
           {children}
         </div>

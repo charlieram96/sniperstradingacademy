@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, Suspense } from "react"
-import Link from "next/link"
+import { NavigationLink } from "@/components/navigation-link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
@@ -85,11 +85,11 @@ function RegisterForm() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white p-4">
-      <Link href="/" className="flex items-center space-x-2 mb-8">
-        <Image src="/logo.svg" alt="Snipers Trading Academy" width={40} height={40} />
-        <span className="font-bold text-2xl">Snipers Trading Academy</span>
-      </Link>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+      <NavigationLink href="/" className="flex items-center space-x-3 mb-8">
+        <Image src="/gold-logo.svg" alt="Trading Hub" width={48} height={48} className="w-12 h-12" />
+        <span className="font-bold text-2xl text-foreground">Trading Hub</span>
+      </NavigationLink>
       
       <Card className="w-full max-w-md animate-scale-up">
         <CardHeader className="space-y-1">
@@ -215,21 +215,21 @@ function RegisterForm() {
           
           <p className="mt-4 text-xs text-center text-muted-foreground">
             By creating an account, you agree to our{" "}
-            <Link href="/terms" className="underline hover:text-foreground">
+            <NavigationLink href="/terms" className="underline hover:text-foreground">
               Terms of Service
-            </Link>{" "}
+            </NavigationLink>{" "}
             and{" "}
-            <Link href="/privacy" className="underline hover:text-foreground">
+            <NavigationLink href="/privacy" className="underline hover:text-foreground">
               Privacy Policy
-            </Link>
+            </NavigationLink>
           </p>
         </CardContent>
         <CardFooter>
           <p className="text-sm text-center w-full text-muted-foreground">
             Already have an account?{" "}
-            <Link href="/login" className="font-semibold text-primary hover:underline">
+            <NavigationLink href="/login" className="font-semibold text-primary hover:underline">
               Sign in
-            </Link>
+            </NavigationLink>
           </p>
         </CardFooter>
       </Card>

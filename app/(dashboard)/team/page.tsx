@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { StructureDropdown } from "@/components/team/structure-dropdown"
+import { AddTestMembersButton } from "@/components/team/add-test-members-button"
 import { 
   Users, 
   UserPlus, 
@@ -33,6 +35,7 @@ interface TeamMember {
   is_direct_referral?: boolean
   spillover_from?: string | null
   position?: number // Position in the 3-wide structure (1, 2, or 3)
+  structure?: number // Which structure this member belongs to (1-6)
 }
 
 export default function TeamPage() {
@@ -45,7 +48,11 @@ export default function TeamPage() {
     directReferralsCount: 0,
     totalMonthlyVolume: 0,
     qualificationStatus: false,
-    levels: {} as Record<number, number>
+    levels: {} as Record<number, number>,
+    structures: 1,
+    commissionRate: 0.10,
+    completedStructures: 0,
+    currentStructureProgress: 0
   })
   const [loading, setLoading] = useState(true)
   const [expandedLevels, setExpandedLevels] = useState<Set<number>>(new Set([1]))
@@ -144,15 +151,35 @@ export default function TeamPage() {
       }, {} as Record<number, number>)
 
       const activeCount = formattedMembers.filter(m => m.subscription_status === "active").length
-      const totalVolume = activeCount * 200 // $200 per active member
+      const totalMembers = formattedMembers.length
+      
+      // Calculate structures
+      const maxPerStructure = 1092 // 3 + 9 + 27 + 81 + 243 + 729
+      const completedStructures = Math.floor(totalMembers / maxPerStructure)
+      const currentStructureProgress = totalMembers % maxPerStructure
+      
+      // Calculate unlocked structures based on direct referrals
+      let unlockedStructures = 1
+      if (completedStructures >= 1 && directs.length >= 6) unlockedStructures = 2
+      if (completedStructures >= 2 && directs.length >= 9) unlockedStructures = 3
+      if (completedStructures >= 3 && directs.length >= 12) unlockedStructures = 4
+      if (completedStructures >= 4 && directs.length >= 15) unlockedStructures = 5
+      if (completedStructures >= 5 && directs.length >= 18) unlockedStructures = 6
+      
+      const commissionRate = 0.10 + (Math.min(unlockedStructures - 1, 5) * 0.01)
+      const totalVolume = activeCount * 200 * commissionRate // $200 per active member * commission rate
 
       setTeamStats({
-        totalMembers: formattedMembers.length,
+        totalMembers,
         activeMembers: activeCount,
         directReferralsCount: directs.length,
         totalMonthlyVolume: totalVolume,
         qualificationStatus: directs.length >= 3,
-        levels
+        levels,
+        structures: unlockedStructures,
+        commissionRate,
+        completedStructures,
+        currentStructureProgress
       })
     }
 
@@ -188,7 +215,7 @@ export default function TeamPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-gray-500">Loading team data...</div>
+        <div className="text-muted-foreground">Loading team data...</div>
       </div>
     )
   }
@@ -196,30 +223,157 @@ export default function TeamPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">My Team</h1>
-        <p className="text-gray-600 mt-2">
-          Build and manage your 3-wide, 6-deep trading network
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">My Team</h1>
+            <p className="text-muted-foreground mt-2">
+              Build and manage your 3-wide, 6-deep trading network
+            </p>
+          </div>
+          <AddTestMembersButton />
+        </div>
       </div>
+
+      {/* Current Structure - PRIMARY FOCUS */}
+      <Card className="mb-6 border-primary">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-xl">
+            <Crown className="h-6 w-6 text-primary" />
+            Current Structure Progress
+          </CardTitle>
+          <CardDescription className="text-base">
+            Build your 3-wide, 6-deep structure to maximize earnings
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* Current Structure Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+            <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+              <p className="text-sm text-muted-foreground">Total Members</p>
+              <p className="text-3xl font-bold text-primary">{teamStats.totalMembers}/1092</p>
+              <Progress value={(teamStats.totalMembers / 1092) * 100} className="h-2 mt-2" />
+            </div>
+            <div className="p-4 rounded-lg bg-muted/50">
+              <p className="text-sm text-muted-foreground">Active Members</p>
+              <p className="text-3xl font-bold">{teamStats.activeMembers}</p>
+              <p className="text-xs text-muted-foreground mt-1">With subscription</p>
+            </div>
+            <div className="p-4 rounded-lg bg-muted/50">
+              <p className="text-sm text-muted-foreground">Monthly Earnings</p>
+              <p className="text-3xl font-bold text-primary">${teamStats.totalMonthlyVolume.toFixed(0)}</p>
+              <p className="text-xs text-muted-foreground mt-1">At current rate</p>
+            </div>
+          </div>
+
+          {/* Level by Level Breakdown */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Level Breakdown</h4>
+            {[1, 2, 3, 4, 5, 6].map(level => {
+              const members = groupedMembers[level] || []
+              const maxAtLevel = maxPerLevel[level - 1]
+              const percentage = (members.length / maxAtLevel) * 100
+              
+              return (
+                <div key={level} className="flex items-center gap-4">
+                  <div className="w-20 text-sm font-medium">Level {level}</div>
+                  <div className="flex-1">
+                    <Progress value={percentage} className="h-3" />
+                  </div>
+                  <div className="w-24 text-right text-sm text-muted-foreground">
+                    {members.length}/{maxAtLevel}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Structure Overview - SECONDARY */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            Structure Overview
+          </CardTitle>
+          <CardDescription>
+            Build multiple structures to increase your commission rate up to 16%
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div className="p-3 rounded-lg bg-muted/50">
+              <p className="text-sm text-muted-foreground">Active Structures</p>
+              <p className="text-2xl font-bold">{teamStats.structures}/6</p>
+            </div>
+            <div className="p-3 rounded-lg bg-muted/50">
+              <p className="text-sm text-muted-foreground">Commission Rate</p>
+              <p className="text-2xl font-bold text-primary">{(teamStats.commissionRate * 100).toFixed(0)}%</p>
+            </div>
+            <div className="p-3 rounded-lg bg-muted/50">
+              <p className="text-sm text-muted-foreground">Completed Structures</p>
+              <p className="text-2xl font-bold">{teamStats.completedStructures}</p>
+            </div>
+            <div className="p-3 rounded-lg bg-muted/50">
+              <p className="text-sm text-muted-foreground">Next Structure At</p>
+              <p className="text-2xl font-bold">{1092 - teamStats.currentStructureProgress}</p>
+            </div>
+          </div>
+          
+          {/* Interactive Structure Dropdowns */}
+          <div className="space-y-3">
+            {Array.from({ length: 6 }, (_, i) => i + 1).map((structureNum) => {
+              const isUnlocked = structureNum <= teamStats.structures
+              const isComplete = structureNum <= teamStats.completedStructures
+              
+              // Filter members for this specific structure
+              // In a real implementation, you'd need to track which members belong to which structure
+              // For now, we'll distribute members across structures
+              const structureMembers = teamMembers.filter((_, index) => {
+                const structureIndex = Math.floor(index / 1092) + 1
+                return structureIndex === structureNum
+              })
+              
+              const membersInStructure = structureNum === 1 ? 
+                Math.min(teamStats.totalMembers, 1092) :
+                structureNum <= teamStats.completedStructures ? 1092 :
+                structureNum === teamStats.completedStructures + 1 ? teamStats.currentStructureProgress : 0
+              
+              return (
+                <StructureDropdown
+                  key={structureNum}
+                  structureNum={structureNum}
+                  isActive={isUnlocked}
+                  isComplete={isComplete}
+                  members={structureMembers}
+                  totalMembers={membersInStructure}
+                  maxMembers={1092}
+                  commissionRate={10 + (structureNum - 1)}
+                />
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Qualification Status Alert */}
       {!teamStats.qualificationStatus && (
-        <Card className="mb-6 border-yellow-200 bg-yellow-50">
+        <Card className="mb-6 border-amber-500/20 bg-amber-500/5">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-yellow-600" />
-              <CardTitle className="text-yellow-900">Unlock Your Earnings</CardTitle>
+              <AlertCircle className="h-5 w-5 text-amber-400" />
+              <CardTitle className="text-foreground">Unlock Your Earnings</CardTitle>
             </div>
-            <CardDescription className="text-yellow-700">
+            <CardDescription className="text-muted-foreground">
               Refer {3 - teamStats.directReferralsCount} more {3 - teamStats.directReferralsCount === 1 ? 'person' : 'people'} to unlock residual income
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Progress 
               value={(teamStats.directReferralsCount / 3) * 100} 
-              className="h-2"
+              className="h-2 bg-muted"
             />
-            <p className="text-sm text-yellow-600 mt-2">
+            <p className="text-sm text-muted-foreground mt-2">
               {teamStats.directReferralsCount}/3 direct referrals completed
             </p>
           </CardContent>
@@ -230,27 +384,27 @@ export default function TeamPage() {
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               <Users className="h-4 w-4 inline mr-2" />
               Total Team
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{teamStats.totalMembers}</div>
-            <p className="text-xs text-gray-500">of {totalMaxMembers} possible</p>
+            <p className="text-xs text-muted-foreground">of {totalMaxMembers} possible</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               <UserCheck className="h-4 w-4 inline mr-2" />
               Direct Referrals
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{teamStats.directReferralsCount}/3</div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               {teamStats.qualificationStatus ? "Qualified ✓" : "Not qualified"}
             </p>
           </CardContent>
@@ -258,20 +412,20 @@ export default function TeamPage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               <UserPlus className="h-4 w-4 inline mr-2" />
               Active Members
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{teamStats.activeMembers}</div>
-            <p className="text-xs text-gray-500">with subscription</p>
+            <p className="text-xs text-muted-foreground">with subscription</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               <DollarSign className="h-4 w-4 inline mr-2" />
               Sniper Volume
             </CardTitle>
@@ -280,22 +434,22 @@ export default function TeamPage() {
             <div className="text-2xl font-bold">
               ${teamStats.totalMonthlyVolume.toLocaleString()}
             </div>
-            <p className="text-xs text-gray-500">monthly team volume</p>
+            <p className="text-xs text-muted-foreground">monthly team volume</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               <TrendingUp className="h-4 w-4 inline mr-2" />
               Your Residual
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-primary">
               ${teamStats.qualificationStatus ? (teamStats.totalMonthlyVolume * 0.1).toLocaleString() : "0"}
             </div>
-            <p className="text-xs text-gray-500">10% commission</p>
+            <p className="text-xs text-muted-foreground">10% commission</p>
           </CardContent>
         </Card>
       </div>
@@ -319,7 +473,7 @@ export default function TeamPage() {
             </CardHeader>
             <CardContent>
               {Object.keys(groupedMembers).length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-muted-foreground">
                   No members in your team yet. Start inviting traders to build your network!
                 </div>
               ) : (
@@ -333,16 +487,16 @@ export default function TeamPage() {
                       <div key={level} className="border rounded-lg">
                         <button
                           onClick={() => toggleLevel(level)}
-                          className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                          className="w-full px-4 py-3 flex items-center justify-between hover:bg-accent transition-colors cursor-pointer"
                         >
                           <div className="flex items-center gap-3">
                             <span className="font-medium">Level {level}</span>
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-muted-foreground">
                               {members.length}/{maxAtLevel} positions filled
                             </span>
                             <Progress 
                               value={(members.length / maxAtLevel) * 100} 
-                              className="w-20 h-2"
+                              className="w-20 h-2 bg-muted"
                             />
                           </div>
                           <ChevronRight 
@@ -360,7 +514,7 @@ export default function TeamPage() {
                                   <div className="flex items-center gap-2">
                                     <div className="font-medium">{member.name}</div>
                                     {member.is_direct_referral && (
-                                      <Badge className="bg-blue-100 text-blue-700" variant="secondary">
+                                      <Badge className="bg-primary/10 text-primary" variant="secondary">
                                         <Crown className="h-3 w-3 mr-1" />
                                         Direct
                                       </Badge>
@@ -372,18 +526,18 @@ export default function TeamPage() {
                                       </Badge>
                                     )}
                                   </div>
-                                  <div className="text-sm text-gray-500">{member.email}</div>
+                                  <div className="text-sm text-muted-foreground">{member.email}</div>
                                 </div>
                                 <div className="flex items-center gap-3">
                                   <span className={`px-2 py-1 rounded text-xs font-medium ${
                                     member.subscription_status === 'active'
-                                      ? 'bg-green-100 text-green-700'
-                                      : 'bg-gray-100 text-gray-700'
+                                      ? 'bg-primary/10 text-primary'
+                                      : 'bg-muted text-muted-foreground'
                                   }`}>
                                     {member.subscription_status === 'active' ? 'Active' : 'Inactive'}
                                   </span>
                                   {member.referrals_count && member.referrals_count > 0 && (
-                                    <span className="text-sm text-gray-500">
+                                    <span className="text-sm text-muted-foreground">
                                       {member.referrals_count} referral{member.referrals_count !== 1 ? 's' : ''}
                                     </span>
                                   )}
@@ -412,8 +566,8 @@ export default function TeamPage() {
             </CardHeader>
             <CardContent>
               {directReferrals.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <UserPlus className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <div className="text-center py-8 text-muted-foreground">
+                  <UserPlus className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
                   <p>No direct referrals yet</p>
                   <p className="text-sm mt-2">Share your referral link to start earning bonuses</p>
                 </div>
@@ -427,27 +581,27 @@ export default function TeamPage() {
                         {referral ? (
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                              <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                <UserCheck className="h-5 w-5 text-blue-600" />
+                              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                <UserCheck className="h-5 w-5 text-primary" />
                               </div>
                               <div>
                                 <div className="font-medium">{referral.name}</div>
-                                <div className="text-sm text-gray-500">{referral.email}</div>
-                                <div className="text-xs text-gray-400 mt-1">
+                                <div className="text-sm text-muted-foreground">{referral.email}</div>
+                                <div className="text-xs text-muted-foreground/70 mt-1">
                                   Joined {new Date(referral.created_at).toLocaleDateString()}
                                 </div>
                               </div>
                             </div>
                             <div className="text-right">
-                              <Badge className="bg-green-100 text-green-700">
+                              <Badge className="bg-primary/10 text-primary">
                                 <CheckCircle className="h-3 w-3 mr-1" />
                                 $250 Bonus
                               </Badge>
                               <div className="mt-2">
                                 <span className={`px-2 py-1 rounded text-xs font-medium ${
                                   referral.subscription_status === 'active'
-                                    ? 'bg-green-100 text-green-700'
-                                    : 'bg-gray-100 text-gray-700'
+                                    ? 'bg-primary/10 text-primary'
+                                    : 'bg-muted text-muted-foreground'
                                 }`}>
                                   {referral.subscription_status === 'active' ? 'Active' : 'Inactive'}
                                 </span>
@@ -457,12 +611,12 @@ export default function TeamPage() {
                         ) : (
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                              <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
-                                <UserPlus className="h-5 w-5 text-gray-400" />
+                              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                                <UserPlus className="h-5 w-5 text-muted-foreground" />
                               </div>
                               <div>
-                                <div className="font-medium text-gray-400">Slot {slot} - Empty</div>
-                                <div className="text-sm text-gray-400">Invite someone to fill this slot</div>
+                                <div className="font-medium text-muted-foreground">Slot {slot} - Empty</div>
+                                <div className="text-sm text-muted-foreground">Invite someone to fill this slot</div>
                               </div>
                             </div>
                             <Button variant="outline" size="sm">
@@ -491,8 +645,8 @@ export default function TeamPage() {
             </CardHeader>
             <CardContent>
               {teamMembers.filter(m => m.spillover_from).length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <Sparkles className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <div className="text-center py-8 text-muted-foreground">
+                  <Sparkles className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
                   <p>No spillover members yet</p>
                   <p className="text-sm mt-2">When your upline refers more than 3 people, extras will spill into your team</p>
                 </div>
@@ -508,16 +662,16 @@ export default function TeamPage() {
                               Level {member.level}
                             </Badge>
                           </div>
-                          <div className="text-sm text-gray-500">{member.email}</div>
-                          <div className="text-xs text-gray-400 mt-1">
+                          <div className="text-sm text-muted-foreground">{member.email}</div>
+                          <div className="text-xs text-muted-foreground/70 mt-1">
                             Spillover from your upline • Position {member.position}
                           </div>
                         </div>
                         <div>
                           <span className={`px-2 py-1 rounded text-xs font-medium ${
                             member.subscription_status === 'active'
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-gray-100 text-gray-700'
+                              ? 'bg-primary/10 text-primary'
+                              : 'bg-muted text-muted-foreground'
                           }`}>
                             {member.subscription_status === 'active' ? 'Active' : 'Inactive'}
                           </span>

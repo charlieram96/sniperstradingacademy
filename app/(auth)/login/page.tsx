@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
+import { NavigationLink } from "@/components/navigation-link"
 import { useRouter } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
@@ -71,11 +71,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white p-4">
-      <Link href="/" className="flex items-center space-x-2 mb-8">
-        <Image src="/logo.svg" alt="Snipers Trading Academy" width={40} height={40} />
-        <span className="font-bold text-2xl">Snipers Trading Academy</span>
-      </Link>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+      <NavigationLink href="/" className="flex items-center space-x-3 mb-8">
+        <Image src="/gold-logo.svg" alt="Trading Hub" width={48} height={48} className="w-12 h-12" />
+        <span className="font-bold text-2xl text-foreground">Trading Hub</span>
+      </NavigationLink>
       
       <Card className="w-full max-w-md animate-scale-up">
         <CardHeader className="space-y-1">
@@ -101,9 +101,9 @@ export default function LoginPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+                <NavigationLink href="/forgot-password" className="text-sm text-primary hover:underline">
                   Forgot password?
-                </Link>
+                </NavigationLink>
               </div>
               <Input
                 id="password"
@@ -197,9 +197,9 @@ export default function LoginPage() {
         <CardFooter>
           <p className="text-sm text-center w-full text-muted-foreground">
             Don&apos;t have an account?{" "}
-            <Link href="/register" className="font-semibold text-primary hover:underline">
+            <NavigationLink href="/register" className="font-semibold text-primary hover:underline">
               Sign up
-            </Link>
+            </NavigationLink>
           </p>
         </CardFooter>
       </Card>

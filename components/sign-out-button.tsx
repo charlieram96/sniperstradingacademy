@@ -30,7 +30,7 @@ export function SignOutButton() {
       onClick={handleSignOut}
       disabled={isLoading}
       variant="ghost" 
-      className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-800"
+      className="w-full justify-start text-muted-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"
     >
       <LogOut className="h-4 w-4 mr-2" />
       {isLoading ? "Signing out..." : "Sign out"}

@@ -2,398 +2,540 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { 
-  ArrowRight, 
-  Users, 
-  DollarSign, 
-  Shield, 
+  TrendingUp, 
+  BookOpen, 
+  Target,
+  Shield,
+  ChartBar,
+  Users,
   Zap,
-  BarChart3,
-  Network,
-  Sparkles,
   CheckCircle,
-  ChevronRight
+  ArrowRight,
+  Play,
+  Brain,
+  GraduationCap,
+  LineChart,
+  Trophy
 } from "lucide-react"
-import Image from "next/image"
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      {/* Navigation */}
-      <nav className="border-b backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Image src="/logo.svg" alt="Snipers Trading Academy" width={32} height={32} />
-            <span className="font-bold text-xl">Snipers Trading Academy</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/login">
-              <Button variant="ghost">Sign In</Button>
-            </Link>
-            <Link href="/register">
-              <Button>Get Started</Button>
-            </Link>
+    <div className="min-h-screen">
+      {/* Fixed Navigation */}
+      <nav className="fixed top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <TrendingUp className="h-8 w-8 text-primary" />
+              <span className="text-xl font-bold">Snipers Trading Academy</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <Link href="#features">
+                <Button variant="ghost">Features</Button>
+              </Link>
+              <Link href="#curriculum">
+                <Button variant="ghost">Curriculum</Button>
+              </Link>
+              <Link href="#pricing">
+                <Button variant="ghost">Pricing</Button>
+              </Link>
+              <Link href="/login">
+                <Button variant="outline">Login</Button>
+              </Link>
+              <Link href="/register">
+                <Button>Get Started</Button>
+              </Link>
+            </div>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-6 py-20 md:py-32">
-        <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
-          <Badge variant="outline" className="mb-4">
-            <Sparkles className="h-3 w-3 mr-1" />
-            3-Wide, 6-Level Deep MLM Structure
-          </Badge>
-          
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent animate-fade-in">
-            Build Your Trading Empire
-          </h1>
-          
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl animate-fade-in-up animation-delay-200">
-            Join the elite trading academy. Build your team with up to <span className="font-semibold text-foreground">3 direct referrals</span>, 
-            grow 6 levels deep, and earn <span className="font-semibold text-foreground">10% commission</span> from your entire team pool.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 mb-12 animate-fade-in-up animation-delay-400">
-            <Link href="/register">
-              <Button size="lg" className="gap-2">
-                Start Earning Today <ArrowRight className="h-4 w-4" />
+      <section className="pt-32 pb-20 px-4">
+        <div className="container mx-auto text-center">
+          <div className="max-w-4xl mx-auto">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-6">
+              <Zap className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">Master Options Trading in 90 Days</span>
+            </div>
+            
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+              Learn to Trade Options Like a Professional
+            </h1>
+            
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Join thousands of successful traders who&apos;ve transformed their financial future through our comprehensive options trading education platform.
+            </p>
+            
+            <div className="flex gap-4 justify-center mb-12">
+              <Link href="/register">
+                <Button size="lg" className="gap-2">
+                  Start Learning Today
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Button size="lg" variant="outline" className="gap-2">
+                <Play className="h-4 w-4" />
+                Watch Demo
               </Button>
-            </Link>
-            <Link href="#how-it-works">
-              <Button size="lg" variant="outline">
-                Learn More
-              </Button>
-            </Link>
-          </div>
+            </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-8 md:gap-16 animate-fade-in-up animation-delay-600">
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-primary">$500</div>
-              <div className="text-sm text-muted-foreground">Initial Payment</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-primary">10%</div>
-              <div className="text-sm text-muted-foreground">Commission</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-primary">1,092</div>
-              <div className="text-sm text-muted-foreground">Max Team Size</div>
+            {/* Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
+              <div>
+                <div className="text-4xl font-bold text-primary">10,000+</div>
+                <div className="text-muted-foreground">Active Students</div>
+              </div>
+              <div>
+                <div className="text-4xl font-bold text-primary">87%</div>
+                <div className="text-muted-foreground">Success Rate</div>
+              </div>
+              <div>
+                <div className="text-4xl font-bold text-primary">4.9/5</div>
+                <div className="text-muted-foreground">Student Rating</div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section className="container mx-auto px-6 py-20">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Everything You Need to Succeed
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Our platform provides all the tools and features you need to build a thriving trading network.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-stagger-in">
-          <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:scale-105 hover:shadow-xl animate-fade-in-up">
-            <CardHeader>
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <DollarSign className="h-6 w-6 text-primary" />
-              </div>
-              <CardTitle>Passive Income Stream</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
-                Earn 10% commission from your entire team pool. 
-                With up to 1,092 members paying $200/month, earn up to $21,840 monthly.
-              </CardDescription>
-            </CardContent>
-          </Card>
-
-          <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:scale-105 hover:shadow-xl animate-fade-in-up">
-            <CardHeader>
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <Network className="h-6 w-6 text-primary" />
-              </div>
-              <CardTitle>Multi-Level Network</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
-                Each member can have 3 direct referrals, growing up to 6 levels deep. 
-                That&apos;s a potential team of 3 + 9 + 27 + 81 + 243 + 729 members.
-              </CardDescription>
-            </CardContent>
-          </Card>
-
-          <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:scale-105 hover:shadow-xl animate-fade-in-up">
-            <CardHeader>
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <BarChart3 className="h-6 w-6 text-primary" />
-              </div>
-              <CardTitle>Real-Time Analytics</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
-                Track your earnings, network growth, and member activity with comprehensive 
-                dashboard analytics and insights.
-              </CardDescription>
-            </CardContent>
-          </Card>
-
-          <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:scale-105 hover:shadow-xl animate-fade-in-up">
-            <CardHeader>
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <Shield className="h-6 w-6 text-primary" />
-              </div>
-              <CardTitle>Secure Payments</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
-                All transactions are processed securely through Stripe. 
-                Your financial data is protected with bank-level encryption.
-              </CardDescription>
-            </CardContent>
-          </Card>
-
-          <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:scale-105 hover:shadow-xl animate-fade-in-up">
-            <CardHeader>
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <Zap className="h-6 w-6 text-primary" />
-              </div>
-              <CardTitle>Instant Activation</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
-                Pay $500 once to unlock your 3 referral slots. 
-                Start earning commissions as soon as your team members join.
-              </CardDescription>
-            </CardContent>
-          </Card>
-
-          <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:scale-105 hover:shadow-xl animate-fade-in-up">
-            <CardHeader>
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <Users className="h-6 w-6 text-primary" />
-              </div>
-              <CardTitle>Community Access</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
-                Connect with successful traders, share strategies, 
-                and learn from the collective knowledge of the network.
-              </CardDescription>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section id="how-it-works" className="py-20 bg-gray-50">
-        <div className="container mx-auto px-6">
+      {/* Features Section */}
+      <section id="features" className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Start Earning in 3 Simple Steps
+              Everything You Need to Succeed
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Get started in minutes and begin building your trading network today.
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Our comprehensive platform provides all the tools and education you need to become a profitable options trader.
             </p>
           </div>
 
-          <div className="max-w-4xl mx-auto">
-            <div className="space-y-8">
-              <div className="flex gap-4">
-                <div className="flex-shrink-0">
-                  <div className="h-12 w-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
-                    1
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            <Card className="border-2 hover:border-primary transition-colors">
+              <CardHeader>
+                <BookOpen className="h-12 w-12 text-primary mb-4" />
+                <CardTitle>Structured Learning Path</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Follow our proven curriculum from basics to advanced strategies. Each module builds on the previous one for optimal learning.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 hover:border-primary transition-colors">
+              <CardHeader>
+                <ChartBar className="h-12 w-12 text-primary mb-4" />
+                <CardTitle>Live Market Analysis</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Watch experienced traders analyze real markets in real-time. Learn to spot opportunities as they happen.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 hover:border-primary transition-colors">
+              <CardHeader>
+                <Target className="h-12 w-12 text-primary mb-4" />
+                <CardTitle>Practice Trading</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Use our paper trading simulator to practice strategies risk-free before trading with real capital.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 hover:border-primary transition-colors">
+              <CardHeader>
+                <Users className="h-12 w-12 text-primary mb-4" />
+                <CardTitle>Community Support</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Join a community of like-minded traders. Share insights, ask questions, and learn from others&apos; experiences.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 hover:border-primary transition-colors">
+              <CardHeader>
+                <Shield className="h-12 w-12 text-primary mb-4" />
+                <CardTitle>Risk Management</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Master essential risk management techniques to protect your capital and maximize long-term profitability.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 hover:border-primary transition-colors">
+              <CardHeader>
+                <Brain className="h-12 w-12 text-primary mb-4" />
+                <CardTitle>Trading Psychology</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Develop the mental discipline and emotional control needed to execute your trading plan consistently.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* What You&apos;ll Learn Section */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6">
+                What You&apos;ll Learn
+              </h2>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <h4 className="font-semibold">Options Fundamentals</h4>
+                    <p className="text-sm text-muted-foreground">Master calls, puts, and how options are priced</p>
                   </div>
                 </div>
-                <div className="flex-grow">
-                  <h3 className="text-xl font-semibold mb-2">Create Your Account</h3>
-                  <p className="text-muted-foreground">
-                    Sign up and pay the one-time $500 membership fee to unlock your 3 referral slots. 
-                    Then subscribe for $200/month to maintain your membership.
-                  </p>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="flex gap-4">
-                <div className="flex-shrink-0">
-                  <div className="h-12 w-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
-                    2
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <h4 className="font-semibold">Technical Analysis</h4>
+                    <p className="text-sm text-muted-foreground">Read charts and identify high-probability setups</p>
                   </div>
                 </div>
-                <div className="flex-grow">
-                  <h3 className="text-xl font-semibold mb-2">Share Your Referral Link</h3>
-                  <p className="text-muted-foreground">
-                    Get your unique referral code and share it with other traders. 
-                    Each signup through your link becomes part of your network.
-                  </p>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="flex gap-4">
-                <div className="flex-shrink-0">
-                  <div className="h-12 w-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
-                    3
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <h4 className="font-semibold">Strategy Development</h4>
+                    <p className="text-sm text-muted-foreground">Build and test your own profitable trading strategies</p>
                   </div>
                 </div>
-                <div className="flex-grow">
-                  <h3 className="text-xl font-semibold mb-2">Earn Monthly Commissions</h3>
-                  <p className="text-muted-foreground">
-                    Receive 10% of your entire team pool (up to 6 levels deep). 
-                    With a full team, earn up to $21,840 per month automatically.
-                  </p>
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <h4 className="font-semibold">Risk Management</h4>
+                    <p className="text-sm text-muted-foreground">Protect your capital with professional risk controls</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <h4 className="font-semibold">Portfolio Management</h4>
+                    <p className="text-sm text-muted-foreground">Diversify and manage multiple positions effectively</p>
+                  </div>
                 </div>
               </div>
             </div>
+            <div className="relative">
+              <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
+                <LineChart className="h-32 w-32 text-muted-foreground" />
+              </div>
+              <div className="absolute -bottom-6 -right-6 bg-primary text-primary-foreground rounded-lg p-4 shadow-lg">
+                <Trophy className="h-8 w-8 mb-2" />
+                <p className="font-semibold">Certification</p>
+                <p className="text-sm opacity-90">Upon completion</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Curriculum Section */}
+      <section id="curriculum" className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-4xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Comprehensive Curriculum
+            </h2>
+            <p className="text-xl text-muted-foreground">
+              From fundamentals to advanced strategies, we cover everything.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-primary">Module 1:</span> Options Fundamentals
+                    </CardTitle>
+                    <CardDescription>4 weeks • 12 lessons • Beginner</CardDescription>
+                  </div>
+                  <GraduationCap className="h-8 w-8 text-muted-foreground" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Understanding calls and puts</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Option pricing and Greeks</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Reading option chains</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Basic option strategies</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-primary">Module 2:</span> Trading Strategies
+                    </CardTitle>
+                    <CardDescription>4 weeks • 16 lessons • Intermediate</CardDescription>
+                  </div>
+                  <ChartBar className="h-8 w-8 text-muted-foreground" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Covered calls and cash-secured puts</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Vertical, horizontal, and diagonal spreads</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Iron condors and butterflies</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Earnings and event-based strategies</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-primary">Module 3:</span> Advanced Techniques
+                    </CardTitle>
+                    <CardDescription>4 weeks • 14 lessons • Advanced</CardDescription>
+                  </div>
+                  <Trophy className="h-8 w-8 text-muted-foreground" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Volatility trading strategies</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Portfolio management and hedging</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Market maker strategies</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <span>Algorithmic and systematic trading</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
 
       {/* Pricing Section */}
-      <section className="container mx-auto px-6 py-20">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Simple, Transparent Pricing
-          </h2>
-          <p className="text-lg text-muted-foreground">
-            One plan, unlimited potential
-          </p>
-        </div>
+      <section id="pricing" className="py-20 px-4">
+        <div className="container mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Simple, Transparent Pricing
+            </h2>
+            <p className="text-xl text-muted-foreground">
+              One membership, complete access to everything
+            </p>
+          </div>
 
-        <div className="max-w-lg mx-auto">
-          <Card className="border-2 border-primary relative overflow-hidden">
-            <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-3 py-1 text-sm rounded-bl-lg">
-              POPULAR
-            </div>
-            <CardHeader className="text-center pb-8">
-              <CardTitle className="text-2xl mb-2">Snipers Academy Membership</CardTitle>
-              <div className="space-y-2">
-                <div>
-                  <div className="text-3xl font-bold">$500</div>
-                  <CardDescription className="text-xs">One-time membership fee</CardDescription>
-                </div>
-                <div className="text-sm">+</div>
-                <div>
-                  <div className="text-3xl font-bold">$200</div>
-                  <CardDescription className="text-xs">Monthly subscription</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                {[
-                  "3 direct referral slots",
-                  "Build team up to 6 levels deep",
-                  "10% commission from entire team pool",
-                  "Up to 1,092 team members",
-                  "Potential $21,840 monthly earnings",
-                  "Real-time team analytics",
-                  "Automated commission payments",
-                  "Stripe Connect integration"
-                ].map((feature) => (
-                  <div key={feature} className="flex items-start gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{feature}</span>
+          <div className="max-w-lg mx-auto">
+            <Card className="border-primary shadow-xl">
+              <CardHeader>
+                <div className="text-center">
+                  <CardTitle className="text-2xl mb-2">Full Access Membership</CardTitle>
+                  <CardDescription className="text-base">
+                    Unlock your trading potential with complete academy access
+                  </CardDescription>
+                  <div className="pt-6 space-y-2">
+                    <div>
+                      <span className="text-4xl font-bold">$500</span>
+                      <span className="text-muted-foreground"> one-time activation</span>
+                    </div>
+                    <div className="text-xl">
+                      <span className="font-semibold">+</span>
+                    </div>
+                    <div>
+                      <span className="text-4xl font-bold">$200</span>
+                      <span className="text-muted-foreground">/month</span>
+                    </div>
                   </div>
-                ))}
-              </div>
-              
-              <Separator />
-              
-              <div className="space-y-3">
-                <Link href="/register" className="block">
-                  <Button className="w-full" size="lg">
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="text-center pb-4">
+                    <Badge className="bg-primary/10 text-primary">Everything Included</Badge>
+                  </div>
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                      <span>Full access to all video lessons and courses</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                      <span>Live daily trading sessions with experts</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                      <span>1-on-1 mentorship sessions</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                      <span>Advanced trading tools and scanners</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                      <span>Private Discord community access</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                      <span>Weekly strategy workshops</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                      <span>Trade alerts and market analysis</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                      <span>Certification upon course completion</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
+                      <span>Priority support and assistance</span>
+                    </li>
+                  </ul>
+                </div>
+                <Link href="/register">
+                  <Button className="w-full mt-8" size="lg">
                     Get Started Now
-                    <ChevronRight className="h-4 w-4 ml-2" />
+                    <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
-                <p className="text-xs text-center text-muted-foreground">
-                  Cancel anytime. No hidden fees.
+                <p className="text-center text-sm text-muted-foreground mt-4">
+                  Cancel your monthly subscription anytime
                 </p>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-primary text-primary-foreground">
-        <div className="container mx-auto px-6 text-center">
+      <section className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Ready to Build Your Trading Empire?
+            Ready to Start Your Trading Journey?
           </h2>
-          <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            Join thousands of traders who are already earning passive income through our referral network.
+          <p className="text-xl text-muted-foreground mb-8">
+            Join thousands of successful traders who started their journey with us.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex gap-4 justify-center">
             <Link href="/register">
-              <Button size="lg" variant="secondary" className="gap-2">
-                Start Your Free Trial <ArrowRight className="h-4 w-4" />
+              <Button size="lg" className="gap-2">
+                Get Started Now
+                <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <Link href="/login">
-              <Button size="lg" variant="outline" className="bg-transparent text-primary-foreground border-primary-foreground hover:bg-primary-foreground/10">
-                Sign In to Dashboard
-              </Button>
-            </Link>
+            <Button size="lg" variant="outline">
+              Schedule a Demo
+            </Button>
           </div>
+          <p className="text-sm text-muted-foreground mt-6">
+            No credit card required • 7-day free trial • Cancel anytime
+          </p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t py-12 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="grid md:grid-cols-4 gap-8">
+      <footer className="border-t py-12 px-4">
+        <div className="container mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
-                <Image src="/logo.svg" alt="Snipers Trading Academy" width={32} height={32} />
-                <span className="font-bold text-xl">Snipers Trading Academy</span>
+                <TrendingUp className="h-6 w-6 text-primary" />
+                <span className="font-bold">Snipers Trading Academy</span>
               </div>
               <p className="text-sm text-muted-foreground">
-                The premier network for options traders to connect and earn.
+                Your path to professional options trading success.
               </p>
             </div>
             
             <div>
-              <h3 className="font-semibold mb-3">Product</h3>
+              <h4 className="font-semibold mb-3">Academy</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/features" className="hover:text-foreground">Features</Link></li>
-                <li><Link href="/pricing" className="hover:text-foreground">Pricing</Link></li>
-                <li><Link href="/dashboard" className="hover:text-foreground">Dashboard</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">Courses</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">Resources</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">Community</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">Blog</Link></li>
               </ul>
             </div>
             
             <div>
-              <h3 className="font-semibold mb-3">Company</h3>
+              <h4 className="font-semibold mb-3">Support</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/about" className="hover:text-foreground">About</Link></li>
-                <li><Link href="/contact" className="hover:text-foreground">Contact</Link></li>
-                <li><Link href="/blog" className="hover:text-foreground">Blog</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">Help Center</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">Contact Us</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">FAQ</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">Status</Link></li>
               </ul>
             </div>
             
             <div>
-              <h3 className="font-semibold mb-3">Legal</h3>
+              <h4 className="font-semibold mb-3">Legal</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/privacy" className="hover:text-foreground">Privacy</Link></li>
-                <li><Link href="/terms" className="hover:text-foreground">Terms</Link></li>
-                <li><Link href="/cookies" className="hover:text-foreground">Cookies</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">Terms of Service</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">Risk Disclosure</Link></li>
+                <li><Link href="#" className="hover:text-primary transition-colors">Refund Policy</Link></li>
               </ul>
             </div>
           </div>
           
-          <Separator className="my-8" />
-          
-          <div className="text-center text-sm text-muted-foreground">
-            © 2024 Snipers Trading Academy. All rights reserved.
+          <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
+            <p>© 2024 Snipers Trading Academy. All rights reserved.</p>
+            <p className="mt-2 text-xs">
+              Trading options involves risk and is not suitable for all investors. Past performance is not indicative of future results.
+            </p>
           </div>
         </div>
       </footer>
