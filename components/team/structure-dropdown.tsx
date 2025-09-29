@@ -279,7 +279,7 @@ export function StructureDropdown({
                       structureNum={structureNum}
                     />
                   </div>
-                </div>
+                </div> 
               )}
             </div>
           </div>
