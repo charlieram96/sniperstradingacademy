@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/utils"
-import { CreditCard, CheckCircle, XCircle, Clock, Lock, Unlock } from "lucide-react"
+import { CreditCard, CheckCircle, XCircle, Clock, Lock, Unlock, ArrowDownToLine, ArrowUpFromLine, Wallet } from "lucide-react"
 
 function PaymentsContent() {
   const { data: session } = useSession()
@@ -36,6 +36,15 @@ function PaymentsContent() {
       name: string | null
       email: string
     }
+  }>>([])
+  const [payouts, setPayouts] = useState<Array<{
+    id: string
+    amount: number
+    currency: string
+    arrival_date: number
+    status: string
+    type: string
+    created: number
   }>>([])
   const [loading, setLoading] = useState(true)
   const [subscribing, setSubscribing] = useState(false)
@@ -98,6 +107,19 @@ function PaymentsContent() {
 
       if (commissionData) {
         setCommissions(commissionData)
+      }
+
+      // Get payouts from Stripe Connect
+      try {
+        const response = await fetch('/api/stripe/connect/payouts')
+        if (response.ok) {
+          const payoutsData = await response.json()
+          if (payoutsData.payouts) {
+            setPayouts(payoutsData.payouts)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching payouts:', error)
       }
 
       setLoading(false)
@@ -380,6 +402,70 @@ function PaymentsContent() {
                     <Clock className="h-3 w-3 mr-1" />
                     {commission.status}
                   </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Payout History */}
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle>Payout History</CardTitle>
+          <CardDescription>Your commission payouts to bank account</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {payouts.length === 0 ? (
+            <div className="text-center py-8">
+              <Wallet className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+              <p className="text-muted-foreground">No payouts yet</p>
+              <p className="text-sm text-muted-foreground/70 mt-2">
+                Connect your bank account to start receiving automatic monthly payouts
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {payouts.map((payout) => (
+                <div key={payout.id} className="flex items-center justify-between py-3 border-b last:border-0">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-full ${
+                      payout.status === 'paid' 
+                        ? 'bg-green-100 text-green-700' 
+                        : payout.status === 'pending'
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : 'bg-muted text-muted-foreground'
+                    }`}>
+                      <ArrowDownToLine className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="font-medium">
+                        {formatCurrency(payout.amount)} {payout.currency.toUpperCase()}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Arrival: {new Date(payout.arrival_date * 1000).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      payout.status === 'paid' 
+                        ? 'bg-green-100 text-green-800' 
+                        : payout.status === 'pending'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : payout.status === 'in_transit'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {payout.status === 'paid' && <CheckCircle className="h-3 w-3 mr-1" />}
+                      {payout.status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
+                      {payout.status === 'in_transit' && <ArrowUpFromLine className="h-3 w-3 mr-1" />}
+                      {payout.status}
+                    </span>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {new Date(payout.created * 1000).toLocaleDateString()}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>

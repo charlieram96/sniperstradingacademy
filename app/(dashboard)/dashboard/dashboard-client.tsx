@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import Image from "next/image"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -8,7 +9,7 @@ import { Progress } from "@/components/ui/progress"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { formatCurrency } from "@/lib/utils"
-import { Users, DollarSign, TrendingUp, UserPlus, Lock, Unlock, CreditCard, AlertTriangle, Share2, Medal, Trophy, Star, Award, Target, Crown, GraduationCap, BookOpen, PlayCircle, CheckCircle2 } from "lucide-react"
+import { Users, DollarSign, TrendingUp, UserPlus, Lock, Unlock, CreditCard, AlertTriangle, Share2, Medal, Trophy, Star, Award, Target, Crown, GraduationCap, BookOpen, PlayCircle, CheckCircle2, Wallet, ExternalLink, XCircle, Clock } from "lucide-react"
 import { NavigationLink } from "@/components/navigation-link"
 import { isTestUser } from "@/lib/mock-data"
 import { QualificationCountdownWidget } from "@/components/qualification-countdown-widget"
@@ -88,7 +89,69 @@ export function DashboardClient({ data, session }: {
   }
 }) {
   const [selectedStructure, setSelectedStructure] = useState("1")
+  const [connectStatus, setConnectStatus] = useState<{
+    connected: boolean
+    onboarded: boolean
+    payouts_enabled?: boolean
+    charges_enabled?: boolean
+    account?: {
+      id: string
+      email?: string | null
+      created: number
+    }
+  }>({ connected: false, onboarded: false })
+  const [connectLoading, setConnectLoading] = useState(true)
   const rankInfo = getRankInfo(data.unlockedStructures, data.completedStructures)
+  
+  // Check Stripe Connect status
+  useEffect(() => {
+    async function checkConnectStatus() {
+      if (isTestUser(session.user.id)) {
+        setConnectStatus({
+          connected: true,
+          onboarded: true,
+          payouts_enabled: true,
+          charges_enabled: true
+        })
+        setConnectLoading(false)
+        return
+      }
+      
+      try {
+        const response = await fetch('/api/stripe/connect/onboarding')
+        if (response.ok) {
+          const status = await response.json()
+          setConnectStatus(status)
+        }
+      } catch (error) {
+        console.error('Error checking Connect status:', error)
+      } finally {
+        setConnectLoading(false)
+      }
+    }
+    
+    checkConnectStatus()
+  }, [session.user.id])
+  
+  async function handleConnectOnboarding() {
+    try {
+      const response = await fetch('/api/stripe/connect/onboarding', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      if (response.ok) {
+        const { url } = await response.json()
+        if (url) {
+          window.location.href = url
+        }
+      }
+    } catch (error) {
+      console.error('Error starting Connect onboarding:', error)
+    }
+  }
   
   // Mock account status for demo
   const accountStatus = {
@@ -179,6 +242,113 @@ export function DashboardClient({ data, session }: {
           </div>
         </CardContent>
       </Card>
+
+      {/* Connect Bank Account Section */}
+      {data.initialPaymentCompleted && (
+        <Card className="mb-6 border-green-500/20 bg-gradient-to-r from-green-500/5 to-green-600/10">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Wallet className="h-5 w-5 text-green-600" />
+                  Bank Account for Payouts
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Connect your bank account to receive monthly commission payouts automatically
+                </CardDescription>
+              </div>
+              {!connectLoading && connectStatus.onboarded && (
+                <Badge className="bg-green-500 text-white">
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  Connected
+                </Badge>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {connectLoading ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Clock className="h-4 w-4 animate-pulse" />
+                Checking connection status...
+              </div>
+            ) : connectStatus.onboarded ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-3 rounded-lg bg-card">
+                    <p className="text-sm text-muted-foreground">Payouts Status</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      {connectStatus.payouts_enabled ? (
+                        <>
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          <span className="text-sm font-medium">Enabled</span>
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="h-4 w-4 text-yellow-500" />
+                          <span className="text-sm font-medium">Pending Verification</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-card">
+                    <p className="text-sm text-muted-foreground">Next Payout</p>
+                    <p className="text-sm font-medium mt-1">1st of next month</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-card">
+                    <p className="text-sm text-muted-foreground">Estimated Commission</p>
+                    <p className="text-sm font-medium mt-1 text-primary">{formatCurrency(data.monthlyCommission)}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 p-3 bg-green-500/10 rounded-lg">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <p className="text-sm">
+                    Your bank account is connected. Commissions will be paid out automatically on the 1st of each month.
+                  </p>
+                </div>
+                <Button variant="outline" onClick={handleConnectOnboarding}>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Update Bank Details
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Bank account not connected</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Connect your bank account to receive automatic monthly commission payouts. This only takes 2 minutes.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">What happens next:</p>
+                  <ul className="space-y-1 text-sm text-muted-foreground">
+                    <li className="flex items-center gap-2">
+                      <div className="w-1 h-1 rounded-full bg-muted-foreground" />
+                      Quick setup with Stripe (2 minutes)
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-1 h-1 rounded-full bg-muted-foreground" />
+                      Automatic monthly payouts on the 1st
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-1 h-1 rounded-full bg-muted-foreground" />
+                      Direct deposit to your bank account
+                    </li>
+                  </ul>
+                </div>
+                <Button onClick={handleConnectOnboarding} className="w-full md:w-auto">
+                  <Wallet className="h-4 w-4 mr-2" />
+                  Connect Bank Account
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Qualification Countdown Widget */}
       <div className="mb-6">
@@ -355,10 +525,12 @@ export function DashboardClient({ data, session }: {
                       }`}>
                         <div className="flex flex-col items-center space-y-2">
                           <div className={`w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center shadow-md ${data.completedStructures < 6 ? 'opacity-50' : ''}`}>
-                            <img 
+                            <Image 
                               src="/gold-logo.svg" 
                               alt="Sniper" 
-                              className="w-8 h-8 brightness-0 invert"
+                              width={32}
+                              height={32}
+                              className="brightness-0 invert"
                             />
                           </div>
                           <div className="text-center">
