@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -26,8 +27,14 @@ export default function HomePage() {
       <nav className="fixed top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="h-8 w-8 text-primary" />
+            <div className="flex items-center space-x-3">
+              <Image 
+                src="/gold-logo.svg" 
+                alt="Snipers Trading Academy" 
+                width={40}
+                height={40}
+                className="brightness-0 invert dark:brightness-100 dark:invert-0"
+              />
               <span className="text-xl font-bold">Snipers Trading Academy</span>
             </div>
             <div className="flex items-center gap-4">
