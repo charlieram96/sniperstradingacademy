@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Loader2, UserPlus, Search, CheckCircle, XCircle, Eye, EyeOff } from "lucide-react"
+import { Loader2, Search, CheckCircle, XCircle, Eye, EyeOff } from "lucide-react"
 import Image from "next/image"
 
 interface ReferrerInfo {
@@ -606,7 +606,6 @@ function RegisterForm() {
           </p>
         </CardFooter>
       </Card>
-          </div>
         </div>
       </div>
     </div>
