@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useSession } from "next-auth/react"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -39,7 +38,7 @@ interface TeamMember {
 }
 
 export default function TeamPage() {
-  const { data: session } = useSession()
+  const [userId, setUserId] = useState<string | null>(null)
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [directReferrals, setDirectReferrals] = useState<TeamMember[]>([])
   const [teamStats, setTeamStats] = useState({
@@ -57,9 +56,20 @@ export default function TeamPage() {
   const [loading, setLoading] = useState(true)
   const [expandedLevels, setExpandedLevels] = useState<Set<number>>(new Set([1]))
 
+  useEffect(() => {
+    async function getUser() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUserId(user.id)
+      }
+    }
+    getUser()
+  }, [])
+
   const fetchTeamData = useCallback(async () => {
-    if (!session?.user?.id) return
-    
+    if (!userId) return
+
     const supabase = createClient()
     
     // Get all team members including spillover info
@@ -78,7 +88,7 @@ export default function TeamPage() {
           created_at
         )
       `)
-      .eq("group_owner_id", session.user.id)
+      .eq("group_owner_id", userId)
       .order("level", { ascending: true })
       .order("position", { ascending: true })
 
@@ -184,7 +194,7 @@ export default function TeamPage() {
     }
 
     setLoading(false)
-  }, [session?.user?.id])
+  }, [userId])
 
   useEffect(() => {
     fetchTeamData()

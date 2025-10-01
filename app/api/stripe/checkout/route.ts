@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
 import { getStripe, MONTHLY_PRICE, INITIAL_PAYMENT } from "@/lib/stripe/server"
 import { createClient } from "@/lib/supabase/server"
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth()
-    
-    if (!session?.user?.id) {
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -15,40 +15,39 @@ export async function POST(req: NextRequest) {
     }
 
     const { paymentType = "subscription" } = await req.json()
-    const supabase = await createClient()
-    
+
     // Get or create Stripe customer
-    const { data: user } = await supabase
+    const { data: userData } = await supabase
       .from("users")
       .select("stripe_customer_id, email, membership_status, initial_payment_completed")
-      .eq("id", session.user.id)
+      .eq("id", user.id)
       .single()
 
     const stripe = getStripe()
-    let customerId = user?.stripe_customer_id
+    let customerId = userData?.stripe_customer_id
 
     if (!customerId) {
       const customer = await stripe.customers.create({
-        email: user?.email || session.user.email!,
+        email: userData?.email || user.email!,
         metadata: {
-          userId: session.user.id,
+          userId: user.id,
         },
       })
-      
+
       customerId = customer.id
 
       // Update user with Stripe customer ID
       await supabase
         .from("users")
         .update({ stripe_customer_id: customerId })
-        .eq("id", session.user.id)
+        .eq("id", user.id)
     }
 
     let checkoutSession
 
     if (paymentType === "initial") {
       // Check if user already paid initial payment
-      if (user?.initial_payment_completed) {
+      if (userData?.initial_payment_completed) {
         return NextResponse.json(
           { error: "Initial payment already completed" },
           { status: 400 }
@@ -76,13 +75,13 @@ export async function POST(req: NextRequest) {
         success_url: `${req.nextUrl.origin}/dashboard?initial_payment=success`,
         cancel_url: `${req.nextUrl.origin}/payments?canceled=true`,
         metadata: {
-          userId: session.user.id,
+          userId: user.id,
           paymentType: "initial",
         },
       })
     } else {
       // Check if user has completed initial payment
-      if (!user?.initial_payment_completed) {
+      if (!userData?.initial_payment_completed) {
         return NextResponse.json(
           { error: "Please complete initial payment first" },
           { status: 400 }
@@ -113,7 +112,7 @@ export async function POST(req: NextRequest) {
         success_url: `${req.nextUrl.origin}/dashboard?subscription=success`,
         cancel_url: `${req.nextUrl.origin}/payments?canceled=true`,
         metadata: {
-          userId: session.user.id,
+          userId: user.id,
           paymentType: "subscription",
         },
       })

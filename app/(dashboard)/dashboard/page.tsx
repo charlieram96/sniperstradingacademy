@@ -1,7 +1,7 @@
-import { auth } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { isTestUser, mockDashboardData } from "@/lib/mock-data"
 import { DashboardClient } from "./dashboard-client"
+import { redirect } from "next/navigation"
 
 async function getDashboardData(userId: string) {
   // Return mock data for test user
@@ -150,23 +150,25 @@ async function getDashboardData(userId: string) {
 }
 
 export default async function DashboardPage() {
-  const session = await auth()
-  if (!session?.user?.id || !session.user.email) {
-    return null
+  const supabase = await createClient()
+  const { data: { user }, error } = await supabase.auth.getUser()
+
+  if (error || !user) {
+    redirect("/login")
   }
 
-  const data = await getDashboardData(session.user.id)
+  const data = await getDashboardData(user.id)
 
   return (
-    <DashboardClient 
-      data={data} 
+    <DashboardClient
+      data={data}
       session={{
         user: {
-          id: session.user.id,
-          email: session.user.email,
-          name: session.user.name || undefined
+          id: user.id,
+          email: user.email!,
+          name: user.user_metadata?.name || undefined
         }
-      }} 
+      }}
     />
   )
 }

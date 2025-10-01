@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { NavigationLink } from "@/components/navigation-link"
 import { useRouter } from "next/navigation"
-import { signIn } from "next-auth/react"
+import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -28,15 +28,15 @@ export default function LoginPage() {
     const password = formData.get("password") as string
 
     try {
-      const result = await signIn("credentials", {
+      const supabase = createClient()
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
-        redirect: false,
       })
 
-      if (result?.error) {
+      if (error) {
         setError("Invalid email or password")
-      } else {
+      } else if (data.session) {
         router.push("/dashboard")
         router.refresh()
       }
@@ -52,21 +52,42 @@ export default function LoginPage() {
     setError("")
 
     try {
-      const result = await signIn("credentials", {
+      const supabase = createClient()
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: "test@example.com",
         password: "testpass123",
-        redirect: false,
       })
 
-      if (result?.error) {
+      if (error) {
         setError("Test account error")
-      } else {
+      } else if (data.session) {
         router.push("/dashboard")
         router.refresh()
       }
     } catch {
       setError("An error occurred with test account")
     } finally {
+      setIsLoading(false)
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    setIsLoading(true)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      })
+
+      if (error) {
+        setError("Failed to sign in with Google")
+        setIsLoading(false)
+      }
+    } catch {
+      setError("An error occurred with Google sign in")
       setIsLoading(false)
     }
   }
@@ -205,7 +226,7 @@ export default function LoginPage() {
                 type="button"
                 variant="outline"
                 className="w-full h-11"
-                onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+                onClick={handleGoogleSignIn}
                 disabled={isLoading}
               >
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">

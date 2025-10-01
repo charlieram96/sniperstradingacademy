@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
 import { getStripe } from "@/lib/stripe/server"
 import { createClient } from "@/lib/supabase/server"
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth()
-    
-    if (!session?.user?.id) {
+    const supabase = await createClient()
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !authUser) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -15,13 +15,12 @@ export async function POST(req: NextRequest) {
     }
 
     const stripe = getStripe()
-    const supabase = await createClient()
-    
+
     // Check if user already has a connected account
     const { data: user } = await supabase
       .from("users")
       .select("stripe_connect_account_id, email, name")
-      .eq("id", session.user.id)
+      .eq("id", authUser.id)
       .single()
 
     let accountId = user?.stripe_connect_account_id
@@ -30,9 +29,9 @@ export async function POST(req: NextRequest) {
     if (!accountId) {
       const account = await stripe.accounts.create({
         type: "express",
-        email: user?.email || session.user.email,
+        email: user?.email || authUser.email,
         metadata: {
-          userId: session.user.id,
+          userId: authUser.id,
         },
         capabilities: {
           card_payments: { requested: true },
@@ -40,14 +39,14 @@ export async function POST(req: NextRequest) {
         },
         business_type: "individual",
       })
-      
+
       accountId = account.id
 
       // Save the connected account ID to the database
       await supabase
         .from("users")
         .update({ stripe_connect_account_id: accountId })
-        .eq("id", session.user.id)
+        .eq("id", authUser.id)
     }
 
     // Create an account link for onboarding
@@ -71,22 +70,21 @@ export async function POST(req: NextRequest) {
 // GET endpoint to check Connect account status
 export async function GET() {
   try {
-    const session = await auth()
-    
-    if (!session?.user?.id) {
+    const supabase = await createClient()
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !authUser) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       )
     }
 
-    const supabase = await createClient()
-    
     // Get user's connected account ID
     const { data: user } = await supabase
       .from("users")
       .select("stripe_connect_account_id")
-      .eq("id", session.user.id)
+      .eq("id", authUser.id)
       .single()
 
     if (!user?.stripe_connect_account_id) {

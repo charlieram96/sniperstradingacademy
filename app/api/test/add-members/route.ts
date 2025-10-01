@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { auth } from '@/lib/auth'
 
 // Generate random names for test members
 const firstNames = ['John', 'Jane', 'Mike', 'Sarah', 'David', 'Emma', 'Chris', 'Lisa', 'Tom', 'Amy', 'Ryan', 'Kate', 'James', 'Anna', 'Robert', 'Maria', 'Daniel', 'Laura', 'Mark', 'Emily']
@@ -14,14 +13,14 @@ function getRandomName() {
 
 export async function POST() {
   try {
-    const session = await auth()
-    
-    if (!session?.user?.id) {
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    
-    const supabase = await createClient()
-    const userId = session.user.id
+
+    const userId = user.id
     
     console.log('Adding test members for user:', userId)
     

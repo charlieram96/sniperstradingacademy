@@ -4,7 +4,6 @@ import { useState, useEffect, Suspense } from "react"
 import { NavigationLink } from "@/components/navigation-link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -339,10 +338,23 @@ function RegisterForm() {
                         type="button"
                         variant="outline"
                         className="w-full h-11"
-                        onClick={() => {
+                        onClick={async () => {
+                          if (!referrerInfo) return
+
                           // Store referral info in localStorage for Google OAuth
                           localStorage.setItem('pending_referral', JSON.stringify(referrerInfo))
-                          signIn("google", { callbackUrl: "/complete-signup" })
+
+                          const supabase = createClient()
+                          const { error } = await supabase.auth.signInWithOAuth({
+                            provider: 'google',
+                            options: {
+                              redirectTo: `${window.location.origin}/auth/callback?next=/complete-signup`,
+                            },
+                          })
+
+                          if (error) {
+                            setError("Failed to sign in with Google")
+                          }
                         }}
                       >
                         <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">

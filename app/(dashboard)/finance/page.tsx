@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
+import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -42,7 +42,7 @@ interface MonthlyEarning {
 }
 
 export default function FinancePage() {
-  const { data: session } = useSession()
+  const [userId, setUserId] = useState<string | null>(null)
   const [directBonuses, setDirectBonuses] = useState<DirectBonus[]>([])
   const [monthlyEarnings, setMonthlyEarnings] = useState<MonthlyEarning[]>([])
   const [accountStatus] = useState({
@@ -71,8 +71,19 @@ export default function FinancePage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    async function getUser() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUserId(user.id)
+      }
+    }
+    getUser()
+  }, [])
+
+  useEffect(() => {
     async function fetchFinancialData() {
-      if (!session?.user?.id) return
+      if (!userId) return
 
       // const supabase = createClient()
 
@@ -170,7 +181,7 @@ export default function FinancePage() {
     }
 
     fetchFinancialData()
-  }, [session])
+  }, [userId])
 
   if (loading) {
     return (

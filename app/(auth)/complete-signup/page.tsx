@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useSession } from "next-auth/react"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, CheckCircle } from "lucide-react"
@@ -17,54 +16,54 @@ interface ReferrerInfo {
 
 export default function CompleteSignupPage() {
   const router = useRouter()
-  const { data: session, status } = useSession()
   const [isProcessing, setIsProcessing] = useState(true)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
     async function completeSignup() {
-      // Wait for session to load
-      if (status === "loading") return
-
-      // If not authenticated, redirect to register
-      if (status === "unauthenticated") {
-        router.push("/register")
-        return
-      }
-
-      // Get pending referral from localStorage
-      const pendingReferralStr = localStorage.getItem('pending_referral')
-
-      const supabase = createClient()
-
-      if (!session?.user?.email) {
-        throw new Error("No user email found")
-      }
-
-      // Check if user already exists in database and has a referral
-      const { data: existingUser } = await supabase
-        .from("users")
-        .select("id, referred_by")
-        .eq("email", session.user.email)
-        .single()
-
-      // If user already has a referral, redirect to dashboard
-      if (existingUser?.referred_by) {
-        localStorage.removeItem('pending_referral')
-        router.push("/dashboard")
-        return
-      }
-
-      // If no pending referral in localStorage, redirect back to register
-      if (!pendingReferralStr) {
-        setError("Please select a referral code to complete your signup.")
-        setIsProcessing(false)
-        setTimeout(() => router.push("/register"), 2000)
-        return
-      }
-
       try {
+        const supabase = createClient()
+
+        // Get current Supabase session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+        // If not authenticated, redirect to register
+        if (sessionError || !session) {
+          router.push("/register")
+          return
+        }
+
+        const userEmail = session.user.email
+        if (!userEmail) {
+          throw new Error("No user email found")
+        }
+
+        // Check if user already exists in database and has a referral
+        const { data: existingUser } = await supabase
+          .from("users")
+          .select("id, referred_by")
+          .eq("email", userEmail)
+          .single()
+
+        // If user already has a referral, redirect to dashboard
+        if (existingUser?.referred_by) {
+          localStorage.removeItem('pending_referral')
+          router.push("/dashboard")
+          return
+        }
+
+        // Get pending referral from localStorage
+        const pendingReferralStr = localStorage.getItem('pending_referral')
+
+        // If no pending referral in localStorage, redirect back to register
+        if (!pendingReferralStr) {
+          setError("Please select a referral code to complete your signup.")
+          setIsProcessing(false)
+          setTimeout(() => router.push("/register"), 2000)
+          return
+        }
+
         const referrerInfo: ReferrerInfo = JSON.parse(pendingReferralStr)
 
         // Update user with referral information
@@ -85,7 +84,7 @@ export default function CompleteSignupPage() {
             })
         } else {
           // This shouldn't happen, but handle it anyway
-          // The user should have been created by the auth provider
+          // The user should have been created by the database trigger
           console.error("User not found in database after OAuth")
         }
 
@@ -106,7 +105,7 @@ export default function CompleteSignupPage() {
     }
 
     completeSignup()
-  }, [session, status, router])
+  }, [router])
 
   return (
     <div className="min-h-screen flex">

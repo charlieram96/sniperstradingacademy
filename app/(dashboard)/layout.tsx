@@ -1,12 +1,12 @@
-import { auth } from "@/lib/auth"
+import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import Image from "next/image"
 import { SignOutButton } from "@/components/sign-out-button"
 import { NavigationLink } from "@/components/navigation-link"
-import { 
-  LayoutDashboard, 
-  Users, 
-  CreditCard, 
+import {
+  LayoutDashboard,
+  Users,
+  CreditCard,
   Share2,
   GraduationCap,
   DollarSign
@@ -17,9 +17,10 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const session = await auth()
-  
-  if (!session) {
+  const supabase = await createClient()
+  const { data: { user }, error } = await supabase.auth.getUser()
+
+  if (error || !user) {
     redirect("/login")
   }
 
@@ -91,14 +92,14 @@ export default async function DashboardLayout({
         <div className="p-4 border-t border-sidebar-border">
           <div className="flex items-center gap-3 px-2 py-2">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white text-sm font-medium shadow-lg shadow-red-900/50">
-              {session.user?.email?.[0]?.toUpperCase() || "U"}
+              {user.email?.[0]?.toUpperCase() || "U"}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-sidebar-foreground truncate">
-                {session.user?.name || "User"}
+                {user.user_metadata?.name || "User"}
               </p>
               <p className="text-xs text-muted-foreground truncate">
-                {session.user?.email}
+                {user.email}
               </p>
             </div>
           </div>

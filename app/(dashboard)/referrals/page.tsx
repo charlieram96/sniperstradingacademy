@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -12,7 +11,7 @@ import { Copy, Check, Share2, Users, Globe, Link2, Edit } from "lucide-react"
 import { isTestUser, mockReferrals } from "@/lib/mock-data"
 
 export default function ReferralsPage() {
-  const { data: session } = useSession()
+  const [userId, setUserId] = useState<string | null>(null)
   const [referralCode, setReferralCode] = useState("")
   const [urlSlug, setUrlSlug] = useState("")
   const [copied, setCopied] = useState(false)
@@ -30,11 +29,22 @@ export default function ReferralsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    async function getUser() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUserId(user.id)
+      }
+    }
+    getUser()
+  }, [])
+
+  useEffect(() => {
     async function fetchReferralData() {
-      if (!session?.user?.id) return
-      
+      if (!userId) return
+
       // Use mock data for test user
-      if (isTestUser(session.user.id)) {
+      if (isTestUser(userId)) {
         setReferralCode("DEMO1234")
         setUrlSlug("demo-trader")
         setReferrals(mockReferrals)
@@ -48,7 +58,7 @@ export default function ReferralsPage() {
       const { data: user } = await supabase
         .from("users")
         .select("referral_code, url_slug")
-        .eq("id", session.user.id)
+        .eq("id", userId)
         .single()
       
       if (user) {
@@ -69,7 +79,7 @@ export default function ReferralsPage() {
             created_at
           )
         `)
-        .eq("referrer_id", session.user.id)
+        .eq("referrer_id", userId)
         .order("created_at", { ascending: false })
       
       if (referralsData) {
@@ -81,7 +91,7 @@ export default function ReferralsPage() {
     }
 
     fetchReferralData()
-  }, [session])
+  }, [userId])
 
   const referralLink = typeof window !== 'undefined' 
     ? `${window.location.origin}/register?ref=${referralCode}`

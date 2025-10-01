@@ -2,20 +2,21 @@
 
 import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
-import { signOut } from "next-auth/react"
+import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
 
 export function SignOutButton() {
   const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
 
   const handleSignOut = async () => {
     try {
       setIsLoading(true)
-      // Use window.location for a hard redirect as a fallback
-      await signOut({ 
-        redirect: false 
-      })
-      window.location.href = "/"
+      const supabase = createClient()
+      await supabase.auth.signOut()
+      router.push("/")
+      router.refresh()
     } catch (error) {
       console.error("Sign out error:", error)
       // Fallback: clear session and redirect

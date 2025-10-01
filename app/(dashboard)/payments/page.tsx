@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
-import { useSession } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,7 +9,7 @@ import { formatCurrency } from "@/lib/utils"
 import { CreditCard, CheckCircle, XCircle, Clock, Lock, Unlock, ArrowDownToLine, ArrowUpFromLine, Wallet } from "lucide-react"
 
 function PaymentsContent() {
-  const { data: session } = useSession()
+  const [userId, setUserId] = useState<string | null>(null)
   const searchParams = useSearchParams()
   const [initialPaymentCompleted, setInitialPaymentCompleted] = useState(false)
   const [processingInitial, setProcessingInitial] = useState(false)
@@ -53,16 +52,27 @@ function PaymentsContent() {
   const canceled = searchParams.get("canceled")
 
   useEffect(() => {
+    async function getUser() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUserId(user.id)
+      }
+    }
+    getUser()
+  }, [])
+
+  useEffect(() => {
     async function fetchPaymentData() {
-      if (!session?.user?.id) return
-      
+      if (!userId) return
+
       const supabase = createClient()
       
       // Get user data
       const { data: userData } = await supabase
         .from("users")
         .select("initial_payment_completed")
-        .eq("id", session.user.id)
+        .eq("id", userId)
         .single()
       
       if (userData) {
@@ -73,7 +83,7 @@ function PaymentsContent() {
       const { data: sub } = await supabase
         .from("subscriptions")
         .select("*")
-        .eq("user_id", session.user.id)
+        .eq("user_id", userId)
         .eq("status", "active")
         .single()
       
@@ -83,7 +93,7 @@ function PaymentsContent() {
       const { data: paymentData } = await supabase
         .from("payments")
         .select("*")
-        .eq("user_id", session.user.id)
+        .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(10)
 
@@ -101,7 +111,7 @@ function PaymentsContent() {
             email
           )
         `)
-        .eq("referrer_id", session.user.id)
+        .eq("referrer_id", userId)
         .order("created_at", { ascending: false })
         .limit(10)
 
@@ -124,9 +134,9 @@ function PaymentsContent() {
 
       setLoading(false)
     }
-    
+
     fetchPaymentData()
-  }, [session])
+  }, [userId])
 
   async function handleInitialPayment() {
     setProcessingInitial(true)

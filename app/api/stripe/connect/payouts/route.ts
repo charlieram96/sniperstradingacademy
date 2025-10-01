@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
 import { getStripe } from "@/lib/stripe/server"
 import { createClient } from "@/lib/supabase/server"
 
 // Create a manual payout (for testing or manual trigger)
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth()
-    
-    if (!session?.user?.id) {
+    const supabase = await createClient()
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !authUser) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { amount } = await req.json()
-    
+
     if (!amount || amount < 100) {
       return NextResponse.json(
         { error: "Invalid amount (minimum $1.00)" },
@@ -25,13 +25,12 @@ export async function POST(req: NextRequest) {
     }
 
     const stripe = getStripe()
-    const supabase = await createClient()
-    
+
     // Get user's connected account ID
     const { data: user } = await supabase
       .from("users")
       .select("stripe_connect_account_id")
-      .eq("id", session.user.id)
+      .eq("id", authUser.id)
       .single()
 
     if (!user?.stripe_connect_account_id) {
@@ -46,9 +45,9 @@ export async function POST(req: NextRequest) {
       amount: amount, // Amount in cents
       currency: "usd",
       destination: user.stripe_connect_account_id,
-      transfer_group: `commission_${session.user.id}_${Date.now()}`,
+      transfer_group: `commission_${authUser.id}_${Date.now()}`,
       metadata: {
-        userId: session.user.id,
+        userId: authUser.id,
         type: "commission",
       },
     })
@@ -57,8 +56,8 @@ export async function POST(req: NextRequest) {
     await supabase
       .from("commissions")
       .insert({
-        referrer_id: session.user.id,
-        referred_id: session.user.id, // Self for manual payouts
+        referrer_id: authUser.id,
+        referred_id: authUser.id, // Self for manual payouts
         amount: amount / 100, // Convert to dollars for DB
         status: "paid",
         paid_at: new Date().toISOString(),
@@ -82,22 +81,21 @@ export async function POST(req: NextRequest) {
 // GET endpoint to retrieve payout history
 export async function GET() {
   try {
-    const session = await auth()
-    
-    if (!session?.user?.id) {
+    const supabase = await createClient()
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !authUser) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       )
     }
 
-    const supabase = await createClient()
-    
     // Get user's connected account ID
     const { data: user } = await supabase
       .from("users")
       .select("stripe_connect_account_id")
-      .eq("id", session.user.id)
+      .eq("id", authUser.id)
       .single()
 
     if (!user?.stripe_connect_account_id) {
