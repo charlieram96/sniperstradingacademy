@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, Suspense } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { NavigationLink } from "@/components/navigation-link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
@@ -10,24 +10,143 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Loader2, UserPlus } from "lucide-react"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Loader2, UserPlus, Search, CheckCircle, XCircle, Eye, EyeOff } from "lucide-react"
 import Image from "next/image"
+
+interface ReferrerInfo {
+  id: string
+  name: string
+  email: string
+  referralCode: string
+}
 
 function RegisterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const referralCode = searchParams.get("ref")
+  const urlReferralCode = searchParams.get("ref")
+
+  const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [referralCodeInput, setReferralCodeInput] = useState("")
+  const [referrerInfo, setReferrerInfo] = useState<ReferrerInfo | null>(null)
+  const [confirmedReferrer, setConfirmedReferrer] = useState<ReferrerInfo | null>(null)
+  const [searchingCode, setSearchingCode] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+
+  // Load referral code on mount
+  useEffect(() => {
+    async function loadReferral() {
+      if (urlReferralCode) {
+        // If referral code is in URL, validate it
+        await validateReferralCode(urlReferralCode)
+      } else {
+        // Load default referral code (user #1)
+        await loadDefaultReferral()
+      }
+    }
+    loadReferral()
+  }, [urlReferralCode])
+
+  async function loadDefaultReferral() {
+    try {
+      const response = await fetch("/api/referral/default")
+      const data = await response.json()
+
+      if (response.ok && data.user) {
+        setReferrerInfo(data.user)
+        setReferralCodeInput(data.user.referralCode)
+      }
+    } catch (err) {
+      console.error("Error loading default referral:", err)
+    }
+  }
+
+  async function validateReferralCode(code: string) {
+    if (!code.trim()) {
+      setError("Please enter a referral code")
+      return
+    }
+
+    setSearchingCode(true)
+    setError("")
+
+    try {
+      const response = await fetch("/api/referral/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ referralCode: code }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.valid) {
+        setReferrerInfo(data.user)
+        setError("")
+      } else {
+        setReferrerInfo(null)
+        setError(data.error || "Invalid referral code")
+      }
+    } catch (err) {
+      console.error("Error validating referral code:", err)
+      setError("Failed to validate referral code")
+      setReferrerInfo(null)
+    } finally {
+      setSearchingCode(false)
+    }
+  }
+
+  function handleSearchCode() {
+    validateReferralCode(referralCodeInput)
+  }
+
+  function handleConfirmReferrer() {
+    if (referrerInfo) {
+      setConfirmedReferrer(referrerInfo)
+      setStep(2)
+    }
+  }
+
+  function handleChangeReferrer() {
+    setReferrerInfo(null)
+    setConfirmedReferrer(null)
+    setReferralCodeInput("")
+    setStep(1)
+  }
+
+  function getInitials(name: string) {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2)
+  }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsLoading(true)
     setError("")
 
+    // Validate password confirmation
+    if (password !== confirmPassword) {
+      setError("Passwords do not match")
+      setIsLoading(false)
+      return
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long")
+      setIsLoading(false)
+      return
+    }
+
     const formData = new FormData(event.currentTarget)
     const email = formData.get("email") as string
-    const password = formData.get("password") as string
     const name = formData.get("name") as string
 
     const supabase = createClient()
@@ -40,7 +159,7 @@ function RegisterForm() {
         options: {
           data: {
             name,
-            referral_code: referralCode,
+            referral_code: confirmedReferrer?.referralCode,
           },
         },
       })
@@ -50,30 +169,21 @@ function RegisterForm() {
         return
       }
 
-      if (authData.user && referralCode) {
-        // Find referrer by referral code
-        const { data: referrer } = await supabase
+      if (authData.user && confirmedReferrer) {
+        // Update user with referrer
+        await supabase
           .from("users")
-          .select("id")
-          .eq("referral_code", referralCode)
-          .single()
+          .update({ referred_by: confirmedReferrer.id })
+          .eq("id", authData.user.id)
 
-        if (referrer) {
-          // Update user with referrer
-          await supabase
-            .from("users")
-            .update({ referred_by: referrer.id })
-            .eq("id", authData.user.id)
-
-          // Create referral record
-          await supabase
-            .from("referrals")
-            .insert({
-              referrer_id: referrer.id,
-              referred_id: authData.user.id,
-              status: "pending",
-            })
-        }
+        // Create referral record
+        await supabase
+          .from("referrals")
+          .insert({
+            referrer_id: confirmedReferrer.id,
+            referred_id: authData.user.id,
+            status: "pending",
+          })
       }
 
       router.push("/login?message=Check your email to confirm your account")
@@ -84,34 +194,246 @@ function RegisterForm() {
     }
   }
 
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
-      <NavigationLink href="/" className="flex items-center space-x-3 mb-8">
-        <Image src="/gold-logo.svg" alt="Trading Hub" width={48} height={48} className="w-12 h-12" />
-        <span className="font-bold text-2xl text-foreground">Trading Hub</span>
-      </NavigationLink>
-      
-      <Card className="w-full max-w-md animate-scale-up">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
-          <CardDescription className="text-center">
-            Join the trading network and start earning commissions
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {referralCode && (
-            <div className="mb-4">
-              <div className="flex items-center gap-2 p-3 bg-primary/10 rounded-lg border border-primary/20">
-                <UserPlus className="h-4 w-4 text-primary" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Referred by</p>
-                  <p className="text-xs text-muted-foreground">Code: {referralCode}</p>
+  // Step 1: Referral Code Selection
+  if (step === 1) {
+    return (
+      <div className="min-h-screen flex">
+        {/* Left Side - Visual */}
+        <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary via-primary/90 to-primary/80 p-12 flex-col justify-between">
+          <NavigationLink href="/" className="flex items-center space-x-3">
+            <Image src="/gold-logo.svg" alt="Trading Hub" width={48} height={48} className="w-12 h-12" />
+            <span className="font-bold text-2xl text-white">Trading Hub</span>
+          </NavigationLink>
+
+          <div className="space-y-6 text-white">
+            <h1 className="text-4xl font-bold leading-tight">
+              Join the most successful trading network
+            </h1>
+            <p className="text-lg text-white/90">
+              Learn from expert traders, earn commissions, and build your financial future.
+            </p>
+            <div className="space-y-3 pt-8">
+              <div className="flex items-center gap-3">
+                <CheckCircle className="h-6 w-6" />
+                <span>Expert-led trading courses</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <CheckCircle className="h-6 w-6" />
+                <span>Earn $250 per referral + 10% residual</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <CheckCircle className="h-6 w-6" />
+                <span>Live trading sessions daily</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-sm text-white/60">
+            © 2024 Trading Hub. All rights reserved.
+          </div>
+        </div>
+
+        {/* Right Side - Referral Form */}
+        <div className="flex-1 flex items-center justify-center p-8 bg-background">
+          <div className="w-full max-w-md">
+            {/* Mobile Logo */}
+            <div className="lg:hidden mb-8 text-center">
+              <NavigationLink href="/" className="inline-flex items-center space-x-3">
+                <Image src="/gold-logo.svg" alt="Trading Hub" width={40} height={40} className="w-10 h-10" />
+                <span className="font-bold text-xl text-foreground">Trading Hub</span>
+              </NavigationLink>
+            </div>
+
+            <Card className="border-0 shadow-lg">
+              <CardHeader className="space-y-1 pb-4">
+                <CardTitle className="text-3xl font-bold">Welcome!</CardTitle>
+                <CardDescription className="text-base">
+                  Who referred you to Trading Hub?
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Referral Code Input */}
+                <div className="space-y-3">
+                  <Label htmlFor="referralCode">Referral Code</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="referralCode"
+                      value={referralCodeInput}
+                      onChange={(e) => setReferralCodeInput(e.target.value.toUpperCase())}
+                      placeholder="Enter referral code"
+                      className="flex-1 uppercase"
+                      disabled={searchingCode}
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleSearchCode}
+                      disabled={searchingCode || !referralCodeInput.trim()}
+                      size="icon"
+                    >
+                      {searchingCode ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Search className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Enter the referral code from the person who invited you
+                  </p>
                 </div>
-                <Badge className="bg-green-100 text-green-800">10% Bonus</Badge>
+
+                {/* Error Message */}
+                {error && (
+                  <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 rounded-md">
+                    <XCircle className="h-4 w-4 shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                {/* Referrer Preview */}
+                {referrerInfo && (
+                  <div className="space-y-4">
+                    <div className="p-4 border rounded-lg bg-muted/30">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="h-16 w-16">
+                          <AvatarFallback className="text-lg font-semibold bg-primary text-primary-foreground">
+                            {getInitials(referrerInfo.name || "??")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg">{referrerInfo.name}</h3>
+                          <p className="text-sm text-muted-foreground">{referrerInfo.email}</p>
+                          <div className="flex items-center gap-1 mt-1">
+                            <Badge variant="outline" className="text-xs">
+                              Code: {referrerInfo.referralCode}
+                            </Badge>
+                          </div>
+                        </div>
+                        <CheckCircle className="h-6 w-6 text-green-600" />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        onClick={handleConfirmReferrer}
+                        className="flex-1"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Confirm & Continue
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          setReferrerInfo(null)
+                          setReferralCodeInput("")
+                          setError("")
+                        }}
+                        variant="outline"
+                      >
+                        Change
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+          <CardFooter className="flex-col space-y-4">
+            <p className="text-sm text-center w-full text-muted-foreground">
+              Already have an account?{" "}
+              <NavigationLink href="/login" className="font-semibold text-primary hover:underline">
+                Sign in
+              </NavigationLink>
+            </p>
+          </CardFooter>
+        </Card>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Step 2: Registration Form
+  return (
+    <div className="min-h-screen flex">
+      {/* Left Side - Visual */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary via-primary/90 to-primary/80 p-12 flex-col justify-between">
+        <NavigationLink href="/" className="flex items-center space-x-3">
+          <Image src="/gold-logo.svg" alt="Trading Hub" width={48} height={48} className="w-12 h-12" />
+          <span className="font-bold text-2xl text-white">Trading Hub</span>
+        </NavigationLink>
+
+        <div className="space-y-6 text-white">
+          <h1 className="text-4xl font-bold leading-tight">
+            Start your journey to financial freedom
+          </h1>
+          <p className="text-lg text-white/90">
+            Create your account and unlock access to expert trading courses, live sessions, and unlimited earning potential.
+          </p>
+          <div className="space-y-3 pt-8">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-6 w-6" />
+              <span>Earn $250 per referral</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-6 w-6" />
+              <span>10% monthly residual income</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-6 w-6" />
+              <span>30-day money-back guarantee</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="text-sm text-white/60">
+          © 2024 Trading Hub. All rights reserved.
+        </div>
+      </div>
+
+      {/* Right Side - Registration Form */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-background">
+        <div className="w-full max-w-md">
+          {/* Mobile Logo */}
+          <div className="lg:hidden mb-8 text-center">
+            <NavigationLink href="/" className="inline-flex items-center space-x-3">
+              <Image src="/gold-logo.svg" alt="Trading Hub" width={40} height={40} className="w-10 h-10" />
+              <span className="font-bold text-xl text-foreground">Trading Hub</span>
+            </NavigationLink>
+          </div>
+
+          <Card className="border-0 shadow-lg">
+            <CardHeader className="space-y-1 pb-4">
+              <CardTitle className="text-3xl font-bold">Create an account</CardTitle>
+              <CardDescription className="text-base">
+                Join the trading network and start earning commissions
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+          {confirmedReferrer && (
+            <div className="mb-4">
+              <div className="flex items-center gap-3 p-3 bg-primary/10 rounded-lg border border-primary/20">
+                <Avatar className="h-10 w-10">
+                  <AvatarFallback className="text-sm font-semibold bg-primary text-primary-foreground">
+                    {getInitials(confirmedReferrer.name || "??")}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Referred by {confirmedReferrer.name}</p>
+                  <p className="text-xs text-muted-foreground">Code: {confirmedReferrer.referralCode}</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleChangeReferrer}
+                  className="text-xs"
+                >
+                  Change
+                </Button>
               </div>
             </div>
           )}
-          
+
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
@@ -122,7 +444,7 @@ function RegisterForm() {
                 placeholder="John Doe"
                 required
                 disabled={isLoading}
-                className="w-full"
+                className="h-11"
               />
             </div>
             <div className="space-y-2">
@@ -134,23 +456,74 @@ function RegisterForm() {
                 placeholder="trader@example.com"
                 required
                 disabled={isLoading}
-                className="w-full"
+                className="h-11"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                minLength={6}
-                required
-                disabled={isLoading}
-                className="w-full"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  minLength={8}
+                  required
+                  disabled={isLoading}
+                  className="h-11 pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground">
-                Must be at least 6 characters
+                Must be at least 8 characters
               </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  minLength={8}
+                  required
+                  disabled={isLoading}
+                  className="h-11 pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
+              {confirmPassword && password !== confirmPassword && (
+                <p className="text-xs text-red-600">
+                  Passwords do not match
+                </p>
+              )}
             </div>
             {error && (
               <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
@@ -159,8 +532,8 @@ function RegisterForm() {
             )}
             <Button
               type="submit"
-              className="w-full"
-              disabled={isLoading}
+              className="w-full h-11"
+              disabled={isLoading || password !== confirmPassword}
             >
               {isLoading ? (
                 <>
@@ -172,7 +545,7 @@ function RegisterForm() {
               )}
             </Button>
           </form>
-          
+
           <div className="my-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -185,11 +558,11 @@ function RegisterForm() {
               </div>
             </div>
           </div>
-          
+
           <Button
             type="button"
             variant="outline"
-            className="w-full"
+            className="w-full h-11"
             disabled={isLoading}
           >
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -212,7 +585,7 @@ function RegisterForm() {
             </svg>
             Continue with Google
           </Button>
-          
+
           <p className="mt-4 text-xs text-center text-muted-foreground">
             By creating an account, you agree to our{" "}
             <NavigationLink href="/terms" className="underline hover:text-foreground">
@@ -224,7 +597,7 @@ function RegisterForm() {
             </NavigationLink>
           </p>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex-col space-y-4">
           <p className="text-sm text-center w-full text-muted-foreground">
             Already have an account?{" "}
             <NavigationLink href="/login" className="font-semibold text-primary hover:underline">
@@ -233,6 +606,9 @@ function RegisterForm() {
           </p>
         </CardFooter>
       </Card>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

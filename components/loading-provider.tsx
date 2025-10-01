@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect } from "react"
+import { createContext, useContext, useState, useEffect, useRef } from "react"
 import { usePathname } from "next/navigation"
 import { LoadingSpinner } from "./loading-spinner"
 
@@ -21,11 +21,18 @@ export function useLoading() {
 export function LoadingProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false)
   const pathname = usePathname()
+  const isFirstRender = useRef(true)
 
   useEffect(() => {
+    // Skip loading spinner on initial page load
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+
     // Start loading when pathname changes
     setIsLoading(true)
-    
+
     // Stop loading after a short delay
     const timer = setTimeout(() => {
       setIsLoading(false)
