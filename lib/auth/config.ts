@@ -88,6 +88,35 @@ export const authConfig: NextAuthConfig = {
     signOut: "/",
   },
   callbacks: {
+    async signIn({ user, account }) {
+      // Only handle Google OAuth
+      if (account?.provider === "google") {
+        const supabase = await createClient()
+
+        // Check if user exists in our database
+        const { data: existingUser } = await supabase
+          .from("users")
+          .select("id, referred_by")
+          .eq("email", user.email)
+          .single()
+
+        // If user doesn't exist, create them (they'll need to complete signup with referral)
+        if (!existingUser) {
+          const { error } = await supabase
+            .from("users")
+            .insert({
+              email: user.email,
+              name: user.name,
+              // Don't set referred_by yet - they need to complete signup
+            })
+
+          if (error) {
+            console.error("Error creating user:", error)
+          }
+        }
+      }
+      return true
+    },
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.sub!
@@ -103,22 +132,30 @@ export const authConfig: NextAuthConfig = {
     async redirect({ url, baseUrl }) {
       // Always use the production URL if available
       const productionUrl = process.env.NEXTAUTH_URL || process.env.AUTH_URL || baseUrl
-      
+
+      // If explicitly going to /complete-signup, allow it
+      if (url.includes('/complete-signup')) {
+        if (url.startsWith("/")) {
+          return `${productionUrl}${url}`
+        }
+        return url
+      }
+
       // If the URL is relative, make it absolute with the correct base
       if (url.startsWith("/")) {
         return `${productionUrl}${url}`
       }
-      
+
       // If the URL is for localhost but we're in production, replace it
       if (url.includes("localhost") && productionUrl.includes("sniperstradingacademy")) {
         return url.replace(/http:\/\/localhost:\d+/, productionUrl)
       }
-      
+
       // Allow callback URLs on the same origin
       if (new URL(url).origin === productionUrl) {
         return url
       }
-      
+
       return productionUrl
     },
   },
