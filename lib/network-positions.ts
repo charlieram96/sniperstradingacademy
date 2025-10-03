@@ -16,6 +16,7 @@
 export interface NetworkPosition {
   level: number
   position: number
+  pos?: number // Alias for database compatibility
   positionId: string
 }
 

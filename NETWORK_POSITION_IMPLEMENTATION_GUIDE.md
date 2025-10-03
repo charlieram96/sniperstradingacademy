@@ -193,12 +193,30 @@ Calculation:
 
 ### 1. Database Migration
 
+**There are TWO migration files to run in order:**
+
+#### Step 1a: Run Main Migration
 ```bash
-# Run the schema migration in Supabase SQL Editor
+# Run in Supabase SQL Editor
 # File: supabase-network-position-schema.sql
 ```
+This adds:
+- New network position columns
+- All core functions
+- Vacant positions table
+- Indexes
 
-**IMPORTANT:** This will add new columns and functions. Existing users will have NULL network positions.
+#### Step 1b: Run Cleanup Migration
+```bash
+# Run in Supabase SQL Editor (AFTER step 1a)
+# File: supabase-network-position-cleanup.sql
+```
+This removes:
+- Old `direct_referral_slots` column (redundant)
+- Old `member_slots` table (redundant)
+- Adds helper functions for tree children
+
+**IMPORTANT:** Existing users will have NULL network positions after migration.
 
 ### 2. Clear Test Data (CRITICAL!)
 

@@ -7,6 +7,9 @@
 -- - Network Position IDs follow format: L{level:3}P{position:10}
 -- - Placement uses breadth-first search within referrer's subtree
 
+-- NOTE: If you already have direct_referral_slots column or member_slots table,
+-- run supabase-network-position-cleanup.sql AFTER this migration.
+
 -- ============================================
 -- PART 1: SCHEMA UPDATES
 -- ============================================
@@ -38,11 +41,11 @@ CREATE TABLE IF NOT EXISTS public.vacant_positions (
 
 -- Function to parse network position ID into (level, position)
 CREATE OR REPLACE FUNCTION public.parse_network_position_id(position_id TEXT)
-RETURNS TABLE(level INTEGER, position BIGINT) AS $$
+RETURNS TABLE(level INTEGER, pos BIGINT) AS $$
 BEGIN
     RETURN QUERY SELECT
         SUBSTRING(position_id FROM 2 FOR 3)::INTEGER as level,
-        SUBSTRING(position_id FROM 6)::BIGINT as position;
+        SUBSTRING(position_id FROM 6)::BIGINT as pos;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
@@ -114,7 +117,7 @@ DECLARE
     i INTEGER;
 BEGIN
     -- Parse referrer's position
-    SELECT p.level, p.position INTO ref_level, ref_position
+    SELECT p.level, p.pos INTO ref_level, ref_position
     FROM public.parse_network_position_id(referrer_position_id) p;
 
     -- Search level by level (breadth-first)
@@ -190,7 +193,7 @@ BEGIN
     -- Walk up the tree until we reach the root
     LOOP
         -- Get current position details
-        SELECT p.level, p.position INTO current_level, current_position
+        SELECT p.level, p.pos INTO current_level, current_position
         FROM public.parse_network_position_id(current_pos_id) p;
 
         -- Return current user if exists
@@ -247,7 +250,7 @@ DECLARE
     structures INTEGER;
 BEGIN
     -- Parse position
-    SELECT p.level, p.position INTO p_level, p_position
+    SELECT p.level, p.pos INTO p_level, p_position
     FROM public.parse_network_position_id(p_network_position_id) p;
 
     -- Count all users in subtree (this is a simplified version)

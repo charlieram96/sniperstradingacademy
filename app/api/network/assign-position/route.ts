@@ -4,38 +4,79 @@ import { createClient } from '@/lib/supabase/server'
 /**
  * API endpoint to assign network position to a user
  * This should be called after user signup and referral creation
+ *
+ * Security: Allows unauthenticated calls for new user signups
+ * - Position can only be assigned once per user
+ * - Validates user exists before assignment
+ * - Server-side only with service role credentials
  */
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
-    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-
-    if (authError || !authUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
 
     const body = await request.json()
     const { userId, referrerId } = body
 
-    // Verify the requesting user is either the user being positioned or an admin
-    if (userId !== authUser.id) {
-      // TODO: Add admin check here if needed
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    if (!userId) {
+      return NextResponse.json({ error: 'userId is required' }, { status: 400 })
     }
 
-    // Check if user already has a position
-    const { data: existingUser } = await supabase
+    // Verify user exists and get their details
+    const { data: existingUser, error: userError } = await supabase
       .from('users')
-      .select('network_position_id')
+      .select('id, network_position_id, created_at')
       .eq('id', userId)
       .single()
 
-    if (existingUser?.network_position_id) {
+    if (userError || !existingUser) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    // Check if user already has a position
+    if (existingUser.network_position_id) {
       return NextResponse.json({
         success: true,
         message: 'User already has a network position',
         positionId: existingUser.network_position_id
       })
+    }
+
+    // Optional: Verify user was created recently (within 10 minutes)
+    // This prevents old users from being assigned positions maliciously
+    const userCreatedAt = new Date(existingUser.created_at)
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000)
+
+    if (userCreatedAt < tenMinutesAgo) {
+      return NextResponse.json(
+        { error: 'Position assignment window expired. User must have been created within last 10 minutes.' },
+        { status: 400 }
+      )
+    }
+
+    // If referrer provided, verify they exist
+    if (referrerId) {
+      const { data: referrer, error: referrerError } = await supabase
+        .from('users')
+        .select('id, network_position_id')
+        .eq('id', referrerId)
+        .single()
+
+      if (referrerError || !referrer) {
+        return NextResponse.json(
+          { error: 'Referrer not found' },
+          { status: 404 }
+        )
+      }
+
+      if (!referrer.network_position_id) {
+        return NextResponse.json(
+          { error: 'Referrer does not have a network position yet' },
+          { status: 400 }
+        )
+      }
     }
 
     // Call the database function to assign position

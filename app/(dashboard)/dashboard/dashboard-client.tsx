@@ -14,16 +14,6 @@ import { NavigationLink } from "@/components/navigation-link"
 import { isTestUser } from "@/lib/mock-data"
 import { QualificationCountdownWidget } from "@/components/qualification-countdown-widget"
 
-interface MemberSlot {
-  slot_number: number
-  filled_by_user_id: string | null
-  filled_by: {
-    id: string
-    name: string
-    email: string
-  } | null
-}
-
 interface DashboardData {
   user?: {
     id: string
@@ -36,9 +26,6 @@ interface DashboardData {
   }
   membershipStatus: string
   initialPaymentCompleted: boolean
-  directReferralSlots: number
-  filledSlots: number
-  memberSlots: MemberSlot[]
   totalReferrals: number
   activeReferrals: number
   directReferrals: number
@@ -593,76 +580,6 @@ export function DashboardClient({ data, session }: {
                     )
                   })()}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Referral Slots for Selected Structure */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Structure {selectedStructure} - Direct Referral Slots</CardTitle>
-              <CardDescription>
-                Each structure allows 3 direct referrals
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-4">
-                {[1, 2, 3].map((slotNumber) => {
-                  const structureIndex = parseInt(selectedStructure) - 1
-                  const globalSlotNumber = structureIndex * 3 + slotNumber
-                  const slot = data.memberSlots?.find(s => s.slot_number === globalSlotNumber)
-                  const isOccupied = slot?.filled_by_user_id !== null && slot?.filled_by
-                  const isStructureUnlocked = parseInt(selectedStructure) <= data.unlockedStructures
-                  
-                  return (
-                    <div
-                      key={slotNumber}
-                      className={`p-4 rounded-lg border-2 transition-all duration-200 ${
-                        !isStructureUnlocked
-                          ? 'bg-muted/30 border-border opacity-50'
-                          : isOccupied
-                          ? 'bg-primary/5 border-primary/30'
-                          : 'bg-muted/50 border-border border-dashed'
-                      }`}
-                    >
-                      <div className="text-center space-y-3">
-                        <div className="text-sm font-medium text-muted-foreground">
-                          Slot {slotNumber}
-                        </div>
-                        {!isStructureUnlocked ? (
-                          <>
-                            <div className="w-12 h-12 mx-auto rounded-full bg-muted border-2 border-dashed border-border flex items-center justify-center">
-                              <Lock className="h-5 w-5 text-muted-foreground" />
-                            </div>
-                            <Badge variant="outline">Structure Locked</Badge>
-                          </>
-                        ) : isOccupied ? (
-                          <>
-                            <div className="w-12 h-12 mx-auto rounded-full bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white font-medium shadow-lg shadow-red-900/50">
-                              {slot.filled_by?.name?.[0]?.toUpperCase() || slot.filled_by?.email?.[0]?.toUpperCase() || 'U'}
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium truncate">
-                                {slot.filled_by?.name || 'Unknown'}
-                              </p>
-                              <p className="text-xs text-muted-foreground truncate">
-                                {slot.filled_by?.email}
-                              </p>
-                            </div>
-                            <Badge className="bg-primary text-primary-foreground">Active</Badge>
-                          </>
-                        ) : (
-                          <>
-                            <div className="w-12 h-12 mx-auto rounded-full bg-muted border-2 border-dashed border-border flex items-center justify-center">
-                              <UserPlus className="h-5 w-5 text-muted-foreground" />
-                            </div>
-                            <Badge variant="outline">Available</Badge>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
               </div>
             </CardContent>
           </Card>

@@ -86,21 +86,9 @@ export async function POST(req: NextRequest) {
               membership_status: "unlocked",
               initial_payment_completed: true,
               initial_payment_date: new Date().toISOString(),
-              direct_referral_slots: 3,
             })
             .eq("id", userId)
-          
-          // Create 3 member slots
-          const slots = [1, 2, 3].map(slot_number => ({
-            user_id: userId,
-            slot_number,
-          }))
-          
-          await supabase
-            .from("member_slots")
-            .insert(slots)
-            .select()
-          
+
           // Update referral status if user was referred
           await supabase
             .from("referrals")

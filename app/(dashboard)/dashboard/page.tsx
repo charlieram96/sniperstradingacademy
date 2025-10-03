@@ -10,13 +10,6 @@ async function getDashboardData(userId: string) {
       ...mockDashboardData,
       membershipStatus: 'unlocked',
       initialPaymentCompleted: true,
-      directReferralSlots: 3,
-      filledSlots: 2,
-      memberSlots: [
-        { slot_number: 1, filled_by_user_id: 'user1', filled_by: { id: 'user1', name: 'John Smith', email: 'john@example.com' } },
-        { slot_number: 2, filled_by_user_id: 'user2', filled_by: { id: 'user2', name: 'Sarah Johnson', email: 'sarah@example.com' } },
-        { slot_number: 3, filled_by_user_id: null, filled_by: null },
-      ],
       directReferrals: 2,
       teamPool: 4000,
       monthlyCommission: 400,
@@ -52,22 +45,6 @@ async function getDashboardData(userId: string) {
     .eq("user_id", userId)
     .eq("status", "active")
     .single()
-
-  // Get member slots with user details
-  const { data: memberSlots } = await supabase
-    .from("member_slots")
-    .select(`
-      *,
-      filled_by:users!member_slots_filled_by_user_id_fkey (
-        id,
-        name,
-        email
-      )
-    `)
-    .eq("user_id", userId)
-    .order("slot_number")
-
-  const filledSlots = memberSlots?.filter(slot => slot.filled_by_user_id !== null).length || 0
 
   // Get team hierarchy
   const { data: teamMembers } = await supabase
@@ -130,9 +107,6 @@ async function getDashboardData(userId: string) {
     subscription,
     membershipStatus: user?.membership_status || 'locked',
     initialPaymentCompleted: user?.initial_payment_completed || false,
-    directReferralSlots: user?.direct_referral_slots || 0,
-    filledSlots,
-    memberSlots: memberSlots || [],
     totalReferrals: referrals?.length || 0,
     activeReferrals: referrals?.filter(r => r.status === "active").length || 0,
     directReferrals,
