@@ -56,7 +56,7 @@ export default function CompleteSignupPage() {
         // Get pending referral from localStorage
         const pendingReferralStr = localStorage.getItem('pending_referral')
 
-        // If no pending referral in localStorage, redirect back to register
+        // If no pending referral in localStorage, redirect back to register to select one
         if (!pendingReferralStr) {
           setError("Please select a referral code to complete your signup.")
           setIsProcessing(false)
@@ -66,31 +66,36 @@ export default function CompleteSignupPage() {
 
         const referrerInfo: ReferrerInfo = JSON.parse(pendingReferralStr)
 
+        // Check if this is a bypass code (principal user)
+        const isBypassCode = !referrerInfo.id || referrerInfo.id === ""
+
         // Update user with referral information
         if (existingUser) {
-          // Update existing user
-          await supabase
-            .from("users")
-            .update({ referred_by: referrerInfo.id })
-            .eq("id", existingUser.id)
+          if (!isBypassCode) {
+            // Normal referral flow - update user with referrer
+            await supabase
+              .from("users")
+              .update({ referred_by: referrerInfo.id })
+              .eq("id", existingUser.id)
 
-          // Create referral record
-          await supabase
-            .from("referrals")
-            .insert({
-              referrer_id: referrerInfo.id,
-              referred_id: existingUser.id,
-              status: "pending",
-            })
+            // Create referral record
+            await supabase
+              .from("referrals")
+              .insert({
+                referrer_id: referrerInfo.id,
+                referred_id: existingUser.id,
+                status: "pending",
+              })
+          }
 
-          // Assign network position
+          // Assign network position (works for both bypass and normal referrals)
           try {
             const positionResponse = await fetch("/api/network/assign-position", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 userId: existingUser.id,
-                referrerId: referrerInfo.id,
+                referrerId: isBypassCode ? null : referrerInfo.id,
               }),
             })
 

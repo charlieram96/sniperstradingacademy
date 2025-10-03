@@ -12,13 +12,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const codeUpperCase = referralCode.toUpperCase()
+
+    // Check for bypass code (for principal/root user)
+    if (codeUpperCase === "PRINCIPAL" || codeUpperCase === "SKIP" || codeUpperCase === "ROOT") {
+      return NextResponse.json({
+        valid: true,
+        bypass: true,
+        user: null,
+        message: "Bypass code accepted - user will be assigned as root/principal user"
+      })
+    }
+
     const supabase = await createClient()
 
     // Find user by referral code
     const { data: user, error } = await supabase
       .from("users")
       .select("id, name, email, referral_code")
-      .eq("referral_code", referralCode.toUpperCase())
+      .eq("referral_code", codeUpperCase)
       .single()
 
     if (error || !user) {
@@ -31,6 +43,7 @@ export async function POST(request: NextRequest) {
     // Return user info (without sensitive data)
     return NextResponse.json({
       valid: true,
+      bypass: false,
       user: {
         id: user.id,
         name: user.name,

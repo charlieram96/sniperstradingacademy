@@ -85,7 +85,17 @@ function RegisterForm() {
       const data = await response.json()
 
       if (response.ok && data.valid) {
-        setReferrerInfo(data.user)
+        if (data.bypass) {
+          // Bypass code - create a special referrer object for principal user
+          setReferrerInfo({
+            id: "", // Empty ID for bypass
+            name: "Principal User",
+            email: "You will be the first user (root/principal)",
+            referralCode: code.toUpperCase()
+          })
+        } else {
+          setReferrerInfo(data.user)
+        }
         setError("")
       } else {
         setReferrerInfo(null)
@@ -170,29 +180,35 @@ function RegisterForm() {
       }
 
       if (authData.user && confirmedReferrer) {
-        // Update user with referrer
-        await supabase
-          .from("users")
-          .update({ referred_by: confirmedReferrer.id })
-          .eq("id", authData.user.id)
+        // Check if this is a bypass code (principal user)
+        const isBypassCode = !confirmedReferrer.id || confirmedReferrer.id === ""
 
-        // Create referral record
-        await supabase
-          .from("referrals")
-          .insert({
-            referrer_id: confirmedReferrer.id,
-            referred_id: authData.user.id,
-            status: "pending",
-          })
+        if (!isBypassCode) {
+          // Normal referral flow
+          // Update user with referrer
+          await supabase
+            .from("users")
+            .update({ referred_by: confirmedReferrer.id })
+            .eq("id", authData.user.id)
 
-        // Assign network position
+          // Create referral record
+          await supabase
+            .from("referrals")
+            .insert({
+              referrer_id: confirmedReferrer.id,
+              referred_id: authData.user.id,
+              status: "pending",
+            })
+        }
+
+        // Assign network position (works for both bypass and normal referrals)
         try {
           const positionResponse = await fetch("/api/network/assign-position", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               userId: authData.user.id,
-              referrerId: confirmedReferrer.id,
+              referrerId: isBypassCode ? null : confirmedReferrer.id,
             }),
           })
 
