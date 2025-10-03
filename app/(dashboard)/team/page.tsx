@@ -27,12 +27,16 @@ interface TeamMember {
   id: string
   name: string
   email: string
+  network_position_id?: string
+  network_level?: number
+  network_position?: number
   level: number
   created_at: string
   subscription_status?: string
   referrals_count?: number
   is_direct_referral?: boolean
-  spillover_from?: string | null
+  tree_parent_id?: string | null
+  spillover_from?: string | null // For backwards compatibility
   position?: number // Position in the 3-wide structure (1, 2, or 3)
   structure?: number // Which structure this member belongs to (1-6)
 }
@@ -70,127 +74,106 @@ export default function TeamPage() {
   const fetchTeamData = useCallback(async () => {
     if (!userId) return
 
-    const supabase = createClient()
-    
-    // Get all team members including spillover info
-    const { data: members } = await supabase
-      .from("group_members")
-      .select(`
-        member_id,
-        level,
-        is_direct_referral,
-        spillover_from,
-        position,
-        users!inner(
-          id,
-          name,
-          email,
-          created_at
-        )
-      `)
-      .eq("group_owner_id", userId)
-      .order("level", { ascending: true })
-      .order("position", { ascending: true })
+    try {
+      // Fetch network stats from API
+      const statsResponse = await fetch(`/api/network/stats?userId=${userId}`)
+      const stats = await statsResponse.json()
 
-    if (members) {
-      // Get subscription status for each member
-      const memberIds = members.map(m => m.member_id)
-      
+      const supabase = createClient()
+
+      // Get current user's network position
+      const { data: currentUser } = await supabase
+        .from("users")
+        .select("network_position_id")
+        .eq("id", userId)
+        .single()
+
+      if (!currentUser?.network_position_id) {
+        // User doesn't have a network position yet
+        setLoading(false)
+        return
+      }
+
+      // Get all downline members using the database function
+      const { data: downlineMembers } = await supabase
+        .rpc("get_downline_contributors", { p_user_id: userId })
+
+      // Get all direct referrals
+      const { data: directRefs } = await supabase
+        .from("users")
+        .select("id, name, email, network_position_id, network_level, is_active, created_at")
+        .eq("referred_by", userId)
+
+      // Get subscription status for all members
+      const allMemberIds = downlineMembers?.map((m: { contributor_id: string }) => m.contributor_id) || []
+
       const { data: subscriptions } = await supabase
         .from("subscriptions")
         .select("user_id, status")
-        .in("user_id", memberIds)
+        .in("user_id", allMemberIds)
         .eq("status", "active")
 
       const activeSubscribers = new Set(subscriptions?.map((s: { user_id: string }) => s.user_id) || [])
 
-      // Get referral counts for each member
-      const { data: referralCounts } = await supabase
-        .from("referrals")
-        .select("referrer_id")
-        .in("referrer_id", memberIds)
-        .eq("status", "active")
-
-      const referralCountMap = referralCounts?.reduce((acc: Record<string, number>, r: { referrer_id: string }) => {
-        acc[r.referrer_id] = (acc[r.referrer_id] || 0) + 1
-        return acc
-      }, {} as Record<string, number>) || {}
-
       // Format member data
-      interface UserData {
-        id: string
-        name: string | null
-        email: string
-        created_at: string
-      }
-      
-      interface MemberData {
-        member_id: string
-        level: number
-        is_direct_referral: boolean
-        spillover_from: string | null
-        position: number
-        users: UserData | UserData[]
-      }
-      
-      const formattedMembers = members.map((m: MemberData) => {
-        const user = Array.isArray(m.users) ? m.users[0] : m.users
+      const formattedMembers: TeamMember[] = downlineMembers?.map((m: {
+        contributor_id: string
+        contributor_name: string
+        contributor_position_id: string
+        is_active: boolean
+      }) => {
+        const isDirectReferral = directRefs?.some(d => d.id === m.contributor_id) || false
+
         return {
-          id: user.id,
-          name: user.name || "Unknown",
-          email: user.email,
-          level: m.level,
-          created_at: user.created_at,
-          subscription_status: activeSubscribers.has(user.id) ? "active" : "inactive",
-          referrals_count: referralCountMap[user.id] || 0,
-          is_direct_referral: m.is_direct_referral,
-          spillover_from: m.spillover_from,
-          position: m.position
+          id: m.contributor_id,
+          name: m.contributor_name || "Unknown",
+          email: "",
+          network_position_id: m.contributor_position_id,
+          level: 1, // Will be calculated from network position
+          created_at: new Date().toISOString(),
+          subscription_status: activeSubscribers.has(m.contributor_id) ? "active" : "inactive",
+          is_direct_referral: isDirectReferral,
+          referrals_count: 0
         }
-      })
+      }) || []
 
       // Separate direct referrals
-      const directs = formattedMembers.filter(m => m.is_direct_referral)
+      const directs = directRefs?.map(d => ({
+        id: d.id,
+        name: d.name || "Unknown",
+        email: d.email,
+        network_position_id: d.network_position_id || "",
+        network_level: d.network_level || 0,
+        level: 1,
+        created_at: d.created_at,
+        subscription_status: activeSubscribers.has(d.id) ? "active" : "inactive",
+        is_direct_referral: true,
+        referrals_count: 0
+      })) || []
+
       setDirectReferrals(directs)
       setTeamMembers(formattedMembers)
 
-      // Calculate stats
-      const levels = formattedMembers.reduce((acc, m) => {
-        acc[m.level] = (acc[m.level] || 0) + 1
-        return acc
-      }, {} as Record<number, number>)
+      // Use stats from API
+      if (stats.network && stats.structures && stats.earnings) {
+        const levels = {} as Record<number, number>
+        // Group by level (would need to parse from network_position_id)
 
-      const activeCount = formattedMembers.filter(m => m.subscription_status === "active").length
-      const totalMembers = formattedMembers.length
-      
-      // Calculate structures
-      const maxPerStructure = 1092 // 3 + 9 + 27 + 81 + 243 + 729
-      const completedStructures = Math.floor(totalMembers / maxPerStructure)
-      const currentStructureProgress = totalMembers % maxPerStructure
-      
-      // Calculate unlocked structures based on direct referrals
-      let unlockedStructures = 1
-      if (completedStructures >= 1 && directs.length >= 6) unlockedStructures = 2
-      if (completedStructures >= 2 && directs.length >= 9) unlockedStructures = 3
-      if (completedStructures >= 3 && directs.length >= 12) unlockedStructures = 4
-      if (completedStructures >= 4 && directs.length >= 15) unlockedStructures = 5
-      if (completedStructures >= 5 && directs.length >= 18) unlockedStructures = 6
-      
-      const commissionRate = 0.10 + (Math.min(unlockedStructures - 1, 5) * 0.01)
-      const totalVolume = activeCount * 200 * commissionRate // $200 per active member * commission rate
-
-      setTeamStats({
-        totalMembers,
-        activeMembers: activeCount,
-        directReferralsCount: directs.length,
-        totalMonthlyVolume: totalVolume,
-        qualificationStatus: directs.length >= 3,
-        levels,
-        structures: unlockedStructures,
-        commissionRate,
-        completedStructures,
-        currentStructureProgress
-      })
+        setTeamStats({
+          totalMembers: stats.network.totalMembers,
+          activeMembers: stats.network.activeMembers,
+          directReferralsCount: stats.network.directReferrals,
+          totalMonthlyVolume: stats.earnings.actualMonthlyEarnings,
+          qualificationStatus: stats.earnings.canWithdraw,
+          levels,
+          structures: stats.structures.current,
+          commissionRate: stats.earnings.commissionRate,
+          completedStructures: stats.structures.completed,
+          currentStructureProgress: stats.structures.progress
+        })
+      }
+    } catch (error) {
+      console.error("Error fetching team data:", error)
     }
 
     setLoading(false)

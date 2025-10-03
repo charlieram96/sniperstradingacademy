@@ -82,6 +82,25 @@ export default function CompleteSignupPage() {
               referred_id: existingUser.id,
               status: "pending",
             })
+
+          // Assign network position
+          try {
+            const positionResponse = await fetch("/api/network/assign-position", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                userId: existingUser.id,
+                referrerId: referrerInfo.id,
+              }),
+            })
+
+            if (!positionResponse.ok) {
+              console.error("Failed to assign network position")
+            }
+          } catch (err) {
+            console.error("Error assigning network position:", err)
+            // Don't block signup if position assignment fails
+          }
         } else {
           // This shouldn't happen, but handle it anyway
           // The user should have been created by the database trigger

@@ -184,6 +184,43 @@ function RegisterForm() {
             referred_id: authData.user.id,
             status: "pending",
           })
+
+        // Assign network position
+        try {
+          const positionResponse = await fetch("/api/network/assign-position", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: authData.user.id,
+              referrerId: confirmedReferrer.id,
+            }),
+          })
+
+          if (!positionResponse.ok) {
+            console.error("Failed to assign network position")
+          }
+        } catch (err) {
+          console.error("Error assigning network position:", err)
+          // Don't block signup if position assignment fails
+        }
+      } else if (authData.user && !confirmedReferrer) {
+        // No referrer - this might be the principal user
+        try {
+          const positionResponse = await fetch("/api/network/assign-position", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: authData.user.id,
+              referrerId: null,
+            }),
+          })
+
+          if (!positionResponse.ok) {
+            console.error("Failed to assign network position")
+          }
+        } catch (err) {
+          console.error("Error assigning network position:", err)
+        }
       }
 
       router.push("/login?message=Check your email to confirm your account")

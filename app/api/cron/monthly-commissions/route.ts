@@ -58,23 +58,44 @@ export async function GET(req: NextRequest) {
 
     for (const user of eligibleUsers) {
       try {
-        // Calculate this user's team pool and commission
-        const { data: poolData } = await supabase
-          .rpc("calculate_team_pool", { user_id: user.id })
-          .single() as { data: { total_pool: number, active_members: number, commission: number } | null }
-        
-        if (!poolData || poolData.commission <= 0) {
+        // Calculate this user's monthly earnings based on network position
+        const { data: earningsData } = await supabase
+          .rpc("calculate_user_monthly_earnings", { p_user_id: user.id })
+          .single() as { data: {
+            total_network_size: number,
+            active_network_size: number,
+            direct_referrals: number,
+            completed_structures: number,
+            total_contribution: number,
+            commission_rate: number,
+            gross_earnings: number,
+            can_withdraw: boolean,
+            required_referrals: number
+          } | null }
+
+        if (!earningsData || earningsData.gross_earnings <= 0) {
           results.push({
             userId: user.id,
             email: user.email,
             status: "skipped",
-            reason: "No commission to pay"
+            reason: "No earnings to pay"
+          })
+          continue
+        }
+
+        // Check if user can withdraw (has enough direct referrals)
+        if (!earningsData.can_withdraw) {
+          results.push({
+            userId: user.id,
+            email: user.email,
+            status: "skipped",
+            reason: `Need ${earningsData.required_referrals - earningsData.direct_referrals} more direct referrals to withdraw`
           })
           continue
         }
 
         // Convert commission to cents for Stripe
-        const amountInCents = Math.round(poolData.commission * 100)
+        const amountInCents = Math.round(earningsData.gross_earnings * 100)
 
         // Check if account is ready for payouts
         const account = await stripe.accounts.retrieve(user.stripe_connect_account_id)
@@ -96,13 +117,15 @@ export async function GET(req: NextRequest) {
           currency: "usd",
           destination: user.stripe_connect_account_id,
           transfer_group: `monthly_commission_${new Date().toISOString().slice(0, 7)}`,
-          description: `Monthly commission for team pool (${poolData.active_members} members)`,
+          description: `Monthly commission for network (${earningsData.active_network_size} active members, ${earningsData.completed_structures} structures)`,
           metadata: {
             userId: user.id,
             month: new Date().toISOString().slice(0, 7),
             type: "monthly_commission",
-            team_pool: poolData.total_pool.toString(),
-            active_members: poolData.active_members.toString(),
+            total_contribution: earningsData.total_contribution.toString(),
+            active_members: earningsData.active_network_size.toString(),
+            commission_rate: earningsData.commission_rate.toString(),
+            completed_structures: earningsData.completed_structures.toString(),
           },
         })
 
@@ -111,8 +134,8 @@ export async function GET(req: NextRequest) {
           .from("commissions")
           .insert({
             referrer_id: user.id,
-            referred_id: user.id, // Self for team pool commissions
-            amount: poolData.commission,
+            referred_id: user.id, // Self for network commissions
+            amount: earningsData.gross_earnings,
             status: "paid",
             paid_at: new Date().toISOString(),
             payment_id: transfer.id, // Store Stripe transfer ID
@@ -122,8 +145,8 @@ export async function GET(req: NextRequest) {
         await supabase
           .from("users")
           .update({
-            total_team_pool: poolData.total_pool,
-            monthly_commission: poolData.commission,
+            total_team_pool: earningsData.total_contribution,
+            monthly_commission: earningsData.gross_earnings,
           })
           .eq("id", user.id)
 
@@ -133,12 +156,15 @@ export async function GET(req: NextRequest) {
           status: "success",
           transferId: transfer.id,
           amount: amountInCents,
+          networkSize: earningsData.total_network_size,
+          activeMembers: earningsData.active_network_size,
+          structures: earningsData.completed_structures,
         })
-        
-        totalCommissionsPaid += poolData.commission
+
+        totalCommissionsPaid += earningsData.gross_earnings
         successCount++
-        
-        console.log(`[CRON] Successfully paid $${poolData.commission} to ${user.email}`)
+
+        console.log(`[CRON] Successfully paid $${earningsData.gross_earnings} to ${user.email} (${earningsData.active_network_size} active members, ${earningsData.completed_structures} structures)`)
       } catch (error) {
         console.error(`[CRON] Failed to process payout for user ${user.email}:`, error)
         results.push({
