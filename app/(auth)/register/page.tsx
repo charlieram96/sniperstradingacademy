@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Loader2, Search, CheckCircle, XCircle, Eye, EyeOff } from "lucide-react"
+import { Loader2, Search, CheckCircle, XCircle, Eye, EyeOff, Mail, RefreshCw } from "lucide-react"
 import Image from "next/image"
 
 interface ReferrerInfo {
@@ -37,6 +37,8 @@ function RegisterForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [waitingForVerification, setWaitingForVerification] = useState(false)
+  const [userEmail, setUserEmail] = useState("")
 
   // Load referral code on mount
   useEffect(() => {
@@ -51,6 +53,29 @@ function RegisterForm() {
     }
     loadReferral()
   }, [urlReferralCode])
+
+  // Listen for email verification
+  useEffect(() => {
+    if (!waitingForVerification) return
+
+    const supabase = createClient()
+
+    // Listen for auth state changes
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state change:', event, session?.user?.email_confirmed_at)
+
+      // When user confirms email, they'll be automatically signed in
+      if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
+        console.log('Email verified! Redirecting to dashboard...')
+        router.push('/dashboard')
+      }
+    })
+
+    // Cleanup listener on unmount
+    return () => {
+      authListener?.subscription?.unsubscribe()
+    }
+  }, [waitingForVerification, router])
 
   async function loadDefaultReferral() {
     try {
@@ -239,12 +264,155 @@ function RegisterForm() {
         }
       }
 
-      router.push("/login?message=Check your email to confirm your account")
+      // Instead of redirecting to login, show verification waiting screen
+      setUserEmail(email)
+      setWaitingForVerification(true)
+      setIsLoading(false)
     } catch {
       setError("An error occurred. Please try again.")
+      setIsLoading(false)
+    }
+  }
+
+  async function handleResendEmail() {
+    if (!userEmail) return
+
+    setIsLoading(true)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: userEmail
+      })
+
+      if (error) {
+        setError(error.message)
+      } else {
+        setError("")
+        // Show success message briefly
+        alert("Verification email resent! Please check your inbox.")
+      }
+    } catch {
+      setError("Failed to resend email. Please try again.")
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Waiting for Email Verification Screen
+  if (waitingForVerification) {
+    return (
+      <div className="min-h-screen flex">
+        {/* Left Side - Visual */}
+        <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary via-primary/90 to-primary/80 p-12 flex-col justify-between">
+          <NavigationLink href="/" className="flex items-center space-x-3">
+            <Image src="/gold-logo.svg" alt="Trading Hub" width={48} height={48} className="w-12 h-12" />
+            <span className="font-bold text-2xl text-white">Trading Hub</span>
+          </NavigationLink>
+
+          <div className="space-y-6 text-white">
+            <h1 className="text-4xl font-bold leading-tight">
+              Almost there!
+            </h1>
+            <p className="text-lg text-white/90">
+              We&apos;ve sent you a verification email. Click the link to activate your account and get started.
+            </p>
+          </div>
+
+          <div className="text-sm text-white/60">
+            © 2024 Trading Hub. All rights reserved.
+          </div>
+        </div>
+
+        {/* Right Side - Verification Message */}
+        <div className="flex-1 flex items-center justify-center p-8 bg-background">
+          <div className="w-full max-w-md">
+            {/* Mobile Logo */}
+            <div className="lg:hidden mb-8 text-center">
+              <NavigationLink href="/" className="inline-flex items-center space-x-3">
+                <Image src="/gold-logo.svg" alt="Trading Hub" width={40} height={40} className="w-10 h-10" />
+                <span className="font-bold text-xl text-foreground">Trading Hub</span>
+              </NavigationLink>
+            </div>
+
+            <Card className="border-0 shadow-lg">
+              <CardHeader className="space-y-1 pb-4">
+                <div className="flex justify-center mb-4">
+                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Mail className="h-8 w-8 text-primary animate-pulse" />
+                  </div>
+                </div>
+                <CardTitle className="text-3xl font-bold text-center">
+                  Check your email
+                </CardTitle>
+                <CardDescription className="text-base text-center">
+                  We sent a verification link to
+                </CardDescription>
+                <p className="text-center font-medium text-foreground">{userEmail}</p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">Click the verification link</p>
+                      <p className="text-xs text-muted-foreground">
+                        Open your email and click the link to verify your account
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Loader2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0 animate-spin" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">Waiting for verification...</p>
+                      <p className="text-xs text-muted-foreground">
+                        This page will automatically redirect once verified
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {error && (
+                  <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                    <p className="text-sm text-destructive">{error}</p>
+                  </div>
+                )}
+
+                <div className="space-y-3 pt-2">
+                  <p className="text-sm text-muted-foreground text-center">
+                    Didn&apos;t receive the email?
+                  </p>
+                  <Button
+                    onClick={handleResendEmail}
+                    disabled={isLoading}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Resend verification email
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                <div className="pt-4 text-center">
+                  <p className="text-xs text-muted-foreground">
+                    Check your spam folder if you don&apos;t see the email
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // Step 1: Referral Code Selection
