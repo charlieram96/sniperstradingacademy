@@ -53,16 +53,22 @@ export default function ReferralsPage() {
       }
 
       const supabase = createClient()
-      
+
       // Get user's referral code and URL slug
-      const { data: user } = await supabase
+      const { data: user, error: userError } = await supabase
         .from("users")
         .select("referral_code, url_slug")
         .eq("id", userId)
         .single()
-      
+
+      if (userError) {
+        console.error("Error fetching user data:", userError)
+      }
+
+      console.log("User data from database:", user)
+
       if (user) {
-        setReferralCode(user.referral_code)
+        setReferralCode(user.referral_code || "")
         setUrlSlug(user.url_slug || "")
       }
       

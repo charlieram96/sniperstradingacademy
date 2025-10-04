@@ -228,6 +228,12 @@ function RegisterForm() {
 
         // Assign network position (works for both bypass and normal referrals)
         try {
+          console.log('Attempting to assign network position...', {
+            userId: authData.user.id,
+            referrerId: isBypassCode ? null : confirmedReferrer.id,
+            isBypassCode
+          })
+
           const positionResponse = await fetch("/api/network/assign-position", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -237,8 +243,12 @@ function RegisterForm() {
             }),
           })
 
+          const positionData = await positionResponse.json()
+
           if (!positionResponse.ok) {
-            console.error("Failed to assign network position")
+            console.error("Failed to assign network position:", positionData)
+          } else {
+            console.log("Network position assigned successfully:", positionData)
           }
         } catch (err) {
           console.error("Error assigning network position:", err)
@@ -247,6 +257,8 @@ function RegisterForm() {
       } else if (authData.user && !confirmedReferrer) {
         // No referrer - this might be the principal user
         try {
+          console.log('Attempting to assign network position without referrer...')
+
           const positionResponse = await fetch("/api/network/assign-position", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -256,8 +268,12 @@ function RegisterForm() {
             }),
           })
 
+          const positionData = await positionResponse.json()
+
           if (!positionResponse.ok) {
-            console.error("Failed to assign network position")
+            console.error("Failed to assign network position:", positionData)
+          } else {
+            console.log("Network position assigned successfully:", positionData)
           }
         } catch (err) {
           console.error("Error assigning network position:", err)

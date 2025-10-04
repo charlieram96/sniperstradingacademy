@@ -5,7 +5,26 @@ export async function GET() {
   try {
     const supabase = await createClient()
 
-    // Get the first user (user #1) ordered by created_at
+    // Try to get the Snipers Trading Academy company user first
+    const { data: companyUser } = await supabase
+      .from("users")
+      .select("id, name, email, referral_code")
+      .eq("id", "00000000-0000-0000-0000-000000000000")
+      .single()
+
+    // If company user exists, return it as default
+    if (companyUser) {
+      return NextResponse.json({
+        user: {
+          id: companyUser.id,
+          name: companyUser.name,
+          email: companyUser.email,
+          referralCode: companyUser.referral_code,
+        },
+      })
+    }
+
+    // Fallback: Get the first user (user #1) ordered by created_at
     const { data: user, error } = await supabase
       .from("users")
       .select("id, name, email, referral_code")
