@@ -26,14 +26,15 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient()
 
-    // Find user by referral code
+    // Find user by referral code (case-insensitive)
     const { data: user, error } = await supabase
       .from("users")
       .select("id, name, email, referral_code")
-      .eq("referral_code", codeUpperCase)
+      .ilike("referral_code", codeUpperCase)
       .single()
 
     if (error || !user) {
+      console.error("Referral code not found:", { code: codeUpperCase, error })
       return NextResponse.json(
         { error: "Invalid referral code" },
         { status: 404 }
