@@ -40,12 +40,12 @@ export default async function MemberLandingPage({
   }
 
   const supabase = await createClient()
-  
-  // Get member data by URL slug
+
+  // Get member data by referral code
   const { data: member, error } = await supabase
     .from("member_public_profile")
     .select("*")
-    .eq("url_slug", params.slug)
+    .eq("referral_code", params.slug.toUpperCase())
     .single()
 
   if (error || !member) {
@@ -68,13 +68,13 @@ export default async function MemberLandingPage({
 interface MemberProfile {
   id: string
   name: string
-  url_slug: string
+  referral_code: string
   custom_message?: string
   profile_views: number
-  referral_code: string
   created_at: string
   total_referrals?: number
   active_referrals?: number
+  url_slug?: string // Optional, kept for backwards compatibility
 }
 
 function renderPage(member: MemberProfile) {

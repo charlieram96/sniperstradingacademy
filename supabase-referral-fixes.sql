@@ -176,3 +176,33 @@ $$ LANGUAGE plpgsql;
 
 -- Test tree children function
 -- SELECT * FROM public.get_tree_children('your-user-id');
+
+-- ============================================
+-- FIX 7: Update member_public_profile view to use referral_code
+-- ============================================
+-- Landing pages now use /ref/{referral_code} instead of /ref/{url_slug}
+-- This ensures every user can share their page immediately without needing url_slug
+-- ============================================
+
+DROP VIEW IF EXISTS public.member_public_profile;
+
+CREATE OR REPLACE VIEW public.member_public_profile AS
+SELECT
+    u.id,
+    u.name,
+    u.referral_code,
+    u.custom_message,
+    u.profile_views,
+    u.created_at,
+    u.url_slug, -- kept for backwards compatibility, but referral_code is primary
+    COUNT(DISTINCT r.referred_id) as total_referrals,
+    COUNT(DISTINCT CASE WHEN r.status = 'active' THEN r.referred_id END) as active_referrals
+FROM public.users u
+LEFT JOIN public.referrals r ON r.referrer_id = u.id
+GROUP BY u.id, u.name, u.referral_code, u.custom_message, u.profile_views, u.created_at, u.url_slug;
+
+-- Grant permissions
+GRANT SELECT ON public.member_public_profile TO anon;
+
+-- Verify the view works
+-- SELECT * FROM public.member_public_profile WHERE referral_code = 'SNIPERS';

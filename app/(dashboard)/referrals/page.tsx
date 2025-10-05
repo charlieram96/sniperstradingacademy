@@ -13,7 +13,6 @@ import { isTestUser, mockReferrals } from "@/lib/mock-data"
 export default function ReferralsPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [referralCode, setReferralCode] = useState("")
-  const [urlSlug, setUrlSlug] = useState("")
   const [copied, setCopied] = useState(false)
   const [copiedUrl, setCopiedUrl] = useState(false)
   const [referredBy, setReferredBy] = useState<{
@@ -51,7 +50,6 @@ export default function ReferralsPage() {
       // Use mock data for test user
       if (isTestUser(userId)) {
         setReferralCode("DEMO1234")
-        setUrlSlug("demo-trader")
         setReferrals(mockReferrals)
         setLoading(false)
         return
@@ -59,10 +57,10 @@ export default function ReferralsPage() {
 
       const supabase = createClient()
 
-      // Get user's referral code, URL slug, and referred_by ID
+      // Get user's referral code and referred_by ID
       const { data: user, error: userError } = await supabase
         .from("users")
-        .select("referral_code, url_slug, referred_by")
+        .select("referral_code, referred_by")
         .eq("id", userId)
         .single()
 
@@ -74,7 +72,6 @@ export default function ReferralsPage() {
 
       if (user) {
         setReferralCode(user.referral_code || "")
-        setUrlSlug(user.url_slug || "")
 
         // Fetch referrer info if user has a referrer
         if (user.referred_by) {
@@ -117,11 +114,11 @@ export default function ReferralsPage() {
     fetchReferralData()
   }, [userId])
 
-  const referralLink = typeof window !== 'undefined' 
+  const referralLink = typeof window !== 'undefined'
     ? `${window.location.origin}/register?ref=${referralCode}`
     : ''
-  const memberPageUrl = typeof window !== 'undefined' && urlSlug
-    ? `${window.location.origin}/ref/${urlSlug}`
+  const memberPageUrl = typeof window !== 'undefined' && referralCode
+    ? `${window.location.origin}/ref/${referralCode}`
     : ''
 
   async function copyToClipboard(text: string, type: 'link' | 'url' = 'link') {
@@ -305,7 +302,7 @@ export default function ReferralsPage() {
 
               <div className="p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm">
-                  <strong>Your custom URL:</strong> <span className="font-mono">/ref/{urlSlug}</span>
+                  <strong>Your custom URL:</strong> <span className="font-mono">/ref/{referralCode}</span>
                 </p>
               </div>
             </TabsContent>
