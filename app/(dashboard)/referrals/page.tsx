@@ -16,6 +16,11 @@ export default function ReferralsPage() {
   const [urlSlug, setUrlSlug] = useState("")
   const [copied, setCopied] = useState(false)
   const [copiedUrl, setCopiedUrl] = useState(false)
+  const [referredBy, setReferredBy] = useState<{
+    name: string
+    email: string
+    referral_code: string
+  } | null>(null)
   const [referrals, setReferrals] = useState<Array<{
     id: string
     status: string
@@ -54,10 +59,19 @@ export default function ReferralsPage() {
 
       const supabase = createClient()
 
-      // Get user's referral code and URL slug
+      // Get user's referral code, URL slug, and who referred them
       const { data: user, error: userError } = await supabase
         .from("users")
-        .select("referral_code, url_slug")
+        .select(`
+          referral_code,
+          url_slug,
+          referred_by,
+          referrer:referred_by (
+            name,
+            email,
+            referral_code
+          )
+        `)
         .eq("id", userId)
         .single()
 
@@ -70,6 +84,9 @@ export default function ReferralsPage() {
       if (user) {
         setReferralCode(user.referral_code || "")
         setUrlSlug(user.url_slug || "")
+        if (user.referrer && Array.isArray(user.referrer) && user.referrer.length > 0) {
+          setReferredBy(user.referrer[0])
+        }
       }
       
       // Get referrals
@@ -148,6 +165,30 @@ export default function ReferralsPage() {
         <p className="text-muted-foreground mt-2">Share your referral link and earn 10% commission</p>
       </div>
 
+      {/* Who Referred Me Card */}
+      {referredBy && (
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Your Referrer</CardTitle>
+            <CardDescription>
+              The person who invited you to Snipers Trading Academy
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+              <div>
+                <p className="font-medium text-lg">{referredBy.name}</p>
+                <p className="text-sm text-muted-foreground">{referredBy.email}</p>
+                <p className="text-xs text-muted-foreground/70 mt-1">
+                  Referral Code: <span className="font-mono">{referredBy.referral_code}</span>
+                </p>
+              </div>
+              <Badge variant="secondary">Your Sponsor</Badge>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Referral Links Card */}
       <Card className="mb-8">
         <CardHeader>
@@ -197,8 +238,13 @@ export default function ReferralsPage() {
 
               <div className="p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm">
-                  <strong>Your referral code:</strong> <span className="font-mono">{referralCode}</span>
+                  <strong>Your referral code:</strong> <span className="font-mono">{referralCode || "Loading..."}</span>
                 </p>
+                {!referralCode && (
+                  <p className="text-xs text-red-500 mt-1">
+                    Unable to load referral code. Please refresh the page.
+                  </p>
+                )}
               </div>
             </TabsContent>
             
