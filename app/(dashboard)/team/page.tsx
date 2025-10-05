@@ -41,10 +41,21 @@ interface TeamMember {
   structure?: number // Which structure this member belongs to (1-6)
 }
 
+interface TreeChild {
+  child_id: string | null
+  child_name: string
+  child_email: string | null
+  child_position_id: string
+  child_slot_number: number
+  is_filled: boolean
+  is_direct_referral: boolean
+}
+
 export default function TeamPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [directReferrals, setDirectReferrals] = useState<TeamMember[]>([])
+  const [treeChildren, setTreeChildren] = useState<TreeChild[]>([])
   const [teamStats, setTeamStats] = useState({
     totalMembers: 0,
     activeMembers: 0,
@@ -97,6 +108,11 @@ export default function TeamPage() {
       // Get all downline members using the database function
       const { data: downlineMembers } = await supabase
         .rpc("get_downline_contributors", { p_user_id: userId })
+
+      // Get tree children (3 direct positions below user)
+      const treeChildrenResponse = await fetch(`/api/network/tree-children?userId=${userId}`)
+      const treeChildrenData = await treeChildrenResponse.json()
+      setTreeChildren(treeChildrenData.treeChildren || [])
 
       // Get all direct referrals
       const { data: directRefs } = await supabase
@@ -226,6 +242,78 @@ export default function TeamPage() {
           <AddTestMembersButton />
         </div>
       </div>
+
+      {/* Tree Children - Your 3 Direct Positions */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Share2 className="h-5 w-5" />
+            Your Tree Positions
+          </CardTitle>
+          <CardDescription>
+            These are your 3 direct positions in the network tree (different from direct referrals)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {treeChildren.map((child) => (
+              <div
+                key={child.child_slot_number}
+                className={`p-4 rounded-lg border-2 ${
+                  child.is_filled
+                    ? child.is_direct_referral
+                      ? 'bg-primary/5 border-primary'
+                      : 'bg-muted/50 border-muted'
+                    : 'bg-background border-dashed border-muted-foreground/30'
+                }`}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                        child.is_filled ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {child.child_slot_number}
+                    </div>
+                    <span className="text-xs text-muted-foreground">Slot {child.child_slot_number}</span>
+                  </div>
+                  {child.is_filled && child.is_direct_referral && (
+                    <Badge variant="default" className="text-xs">
+                      Your Referral
+                    </Badge>
+                  )}
+                  {child.is_filled && !child.is_direct_referral && (
+                    <Badge variant="secondary" className="text-xs">
+                      Spillover
+                    </Badge>
+                  )}
+                </div>
+
+                {child.is_filled ? (
+                  <>
+                    <p className="font-semibold truncate">{child.child_name}</p>
+                    {child.child_email && (
+                      <p className="text-xs text-muted-foreground truncate">{child.child_email}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1 font-mono">
+                      {child.child_position_id}
+                    </p>
+                  </>
+                ) : (
+                  <div className="text-center py-4">
+                    <UserPlus className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                    <p className="text-sm text-muted-foreground">Empty Slot</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Will auto-fill with your next referral
+                    </p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Current Structure - PRIMARY FOCUS */}
       <Card className="mb-6 border-primary">

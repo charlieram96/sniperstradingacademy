@@ -85,99 +85,63 @@ export default function FinancePage() {
     async function fetchFinancialData() {
       if (!userId) return
 
-      // const supabase = createClient()
+      try {
+        const supabase = createClient()
 
-      // Mock data for demonstration - replace with actual API calls
-      const mockDirectBonuses: DirectBonus[] = [
-        {
-          id: "1",
-          referredUser: {
-            name: "John Smith",
-            email: "john@example.com",
-            joinedAt: "2024-01-15"
-          },
-          bonusAmount: 250,
-          status: "paid",
-          paidAt: "2024-01-20"
-        },
-        {
-          id: "2",
-          referredUser: {
-            name: "Sarah Johnson",
-            email: "sarah@example.com",
-            joinedAt: "2024-01-20"
-          },
-          bonusAmount: 250,
-          status: "paid",
-          paidAt: "2024-01-25"
-        },
-        {
-          id: "3",
-          referredUser: {
-            name: "Mike Davis",
-            email: "mike@example.com",
-            joinedAt: "2024-01-28"
-          },
-          bonusAmount: 250,
-          status: "pending"
-        }
-      ]
+        // Fetch real network stats
+        const statsResponse = await fetch(`/api/network/stats?userId=${userId}`)
+        const stats = await statsResponse.json()
 
-      const mockMonthlyEarnings: MonthlyEarning[] = [
-        {
-          month: "January 2024",
-          sniperVolume: 15000,
-          residualIncome: 1500,
-          directBonuses: 750,
-          totalEarning: 2250
-        },
-        {
-          month: "December 2023",
-          sniperVolume: 12000,
-          residualIncome: 1200,
-          directBonuses: 500,
-          totalEarning: 1700
-        },
-        {
-          month: "November 2023",
-          sniperVolume: 10000,
-          residualIncome: 1000,
-          directBonuses: 250,
-          totalEarning: 1250
-        }
-      ]
+        // Fetch commission history
+        const { data: commissions } = await supabase
+          .from('commissions')
+          .select('*')
+          .eq('referrer_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(12)
 
-      setDirectBonuses(mockDirectBonuses)
-      setMonthlyEarnings(mockMonthlyEarnings)
+        // Note: Direct referrals not used in current earnings calculation
+        // They're tracked via referred_by column and withdrawal eligibility
 
-      // Calculate stats
-      const totalDirectBonuses = mockDirectBonuses.reduce((sum, b) => sum + b.bonusAmount, 0)
-      const pendingBonuses = mockDirectBonuses
-        .filter(b => b.status === "pending")
-        .reduce((sum, b) => sum + b.bonusAmount, 0)
-      const paidBonuses = mockDirectBonuses
-        .filter(b => b.status === "paid")
-        .reduce((sum, b) => sum + b.bonusAmount, 0)
+        // Format commission data as monthly earnings
+        const monthlyEarnings: MonthlyEarning[] = commissions?.map(c => ({
+          month: new Date(c.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+          sniperVolume: stats?.earnings?.monthlyVolume || 0,
+          residualIncome: c.amount,
+          directBonuses: 0,
+          totalEarning: c.amount
+        })) || []
 
-      const totalSniperVolume = mockMonthlyEarnings.reduce((sum, m) => sum + m.sniperVolume, 0)
-      const totalResidual = mockMonthlyEarnings.reduce((sum, m) => sum + m.residualIncome, 0)
-      const lifetimeEarnings = mockMonthlyEarnings.reduce((sum, m) => sum + m.totalEarning, 0)
+        setMonthlyEarnings(monthlyEarnings)
+        setDirectBonuses([]) // No direct bonuses in current system
 
-      setFinancialStats({
-        totalSniperVolume,
-        currentMonthVolume: mockMonthlyEarnings[0]?.sniperVolume || 0,
-        totalResidualEarned: totalResidual,
-        currentMonthResidual: mockMonthlyEarnings[0]?.residualIncome || 0,
-        totalDirectBonuses,
-        pendingBonuses,
-        paidBonuses,
-        lifetimeEarnings,
-        nextPayoutDate: "February 1, 2024",
-        nextPayoutAmount: pendingBonuses + (mockMonthlyEarnings[0]?.residualIncome || 0),
-        isQualified: mockDirectBonuses.length >= 3
-      })
+        // Calculate next payout date (1st of next month)
+        const now = new Date()
+        const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+        const nextPayoutDate = nextMonth.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 
-      setLoading(false)
+        const totalResidual = monthlyEarnings.reduce((sum, m) => sum + m.residualIncome, 0)
+        const lifetimeEarnings = totalResidual
+
+        setFinancialStats({
+          totalSniperVolume: stats?.earnings?.monthlyVolume || 0,
+          currentMonthVolume: stats?.earnings?.monthlyVolume || 0,
+          totalResidualEarned: totalResidual,
+          currentMonthResidual: stats?.earnings?.potentialMonthlyEarnings || 0,
+          totalDirectBonuses: 0,
+          pendingBonuses: 0,
+          paidBonuses: 0,
+          lifetimeEarnings,
+          nextPayoutDate,
+          nextPayoutAmount: stats?.earnings?.canWithdraw ? stats?.earnings?.potentialMonthlyEarnings : 0,
+          isQualified: stats?.earnings?.canWithdraw || false
+        })
+
+        setLoading(false)
+      } catch (error) {
+        console.error('Error fetching financial data:', error)
+        setLoading(false)
+      }
     }
 
     fetchFinancialData()

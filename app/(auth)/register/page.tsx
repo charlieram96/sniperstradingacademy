@@ -226,58 +226,14 @@ function RegisterForm() {
             })
         }
 
-        // Assign network position (works for both bypass and normal referrals)
-        try {
-          console.log('Attempting to assign network position...', {
-            userId: authData.user.id,
-            referrerId: isBypassCode ? null : confirmedReferrer.id,
-            isBypassCode
-          })
-
-          const positionResponse = await fetch("/api/network/assign-position", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId: authData.user.id,
-              referrerId: isBypassCode ? null : confirmedReferrer.id,
-            }),
-          })
-
-          const positionData = await positionResponse.json()
-
-          if (!positionResponse.ok) {
-            console.error("Failed to assign network position:", positionData)
-          } else {
-            console.log("Network position assigned successfully:", positionData)
-          }
-        } catch (err) {
-          console.error("Error assigning network position:", err)
-          // Don't block signup if position assignment fails
-        }
+        // Assign network position with retry mechanism
+        await assignPositionWithRetry(
+          authData.user.id,
+          isBypassCode ? null : confirmedReferrer.id
+        )
       } else if (authData.user && !confirmedReferrer) {
         // No referrer - this might be the principal user
-        try {
-          console.log('Attempting to assign network position without referrer...')
-
-          const positionResponse = await fetch("/api/network/assign-position", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId: authData.user.id,
-              referrerId: null,
-            }),
-          })
-
-          const positionData = await positionResponse.json()
-
-          if (!positionResponse.ok) {
-            console.error("Failed to assign network position:", positionData)
-          } else {
-            console.log("Network position assigned successfully:", positionData)
-          }
-        } catch (err) {
-          console.error("Error assigning network position:", err)
-        }
+        await assignPositionWithRetry(authData.user.id, null)
       }
 
       // Instead of redirecting to login, show verification waiting screen
@@ -288,6 +244,63 @@ function RegisterForm() {
       setError("An error occurred. Please try again.")
       setIsLoading(false)
     }
+  }
+
+  // Retry mechanism for position assignment with exponential backoff
+  async function assignPositionWithRetry(
+    userId: string,
+    referrerId: string | null,
+    maxRetries = 3
+  ) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`Attempt ${attempt}: Assigning network position...`, {
+          userId,
+          referrerId
+        })
+
+        const response = await fetch("/api/network/assign-position", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, referrerId }),
+        })
+
+        const data = await response.json()
+
+        if (response.ok) {
+          console.log(`✓ Position assigned successfully on attempt ${attempt}:`, data)
+          return data
+        }
+
+        // Log the error
+        console.error(`✗ Attempt ${attempt} failed:`, data)
+
+        // If it's the last attempt or a fatal error, stop
+        if (attempt === maxRetries || response.status === 400) {
+          console.error('All retries exhausted or fatal error. User will be orphaned:', userId)
+          // Could send alert to admin here
+          return null
+        }
+
+        // Wait before retry with exponential backoff
+        const waitTime = Math.pow(2, attempt) * 1000 // 2s, 4s, 8s
+        console.log(`Waiting ${waitTime}ms before retry...`)
+        await new Promise(resolve => setTimeout(resolve, waitTime))
+
+      } catch (err) {
+        console.error(`✗ Attempt ${attempt} exception:`, err)
+
+        if (attempt === maxRetries) {
+          console.error('All retries failed. User orphaned:', userId)
+          return null
+        }
+
+        // Wait before retry
+        const waitTime = Math.pow(2, attempt) * 1000
+        await new Promise(resolve => setTimeout(resolve, waitTime))
+      }
+    }
+    return null
   }
 
   async function handleResendEmail() {

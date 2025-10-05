@@ -184,8 +184,26 @@ export async function POST(req: NextRequest) {
               payment_type: "monthly",
               status: "succeeded",
             })
-          
+
           console.log(`Monthly payment recorded for user ${user.id}`)
+
+          // Distribute contribution to upline chain
+          try {
+            const { data: contributions, error: distError } = await supabase
+              .rpc('distribute_to_upline', {
+                p_user_id: user.id,
+                p_amount: (invoice.amount_paid / 100)
+              })
+
+            if (distError) {
+              console.error('Error distributing to upline:', distError)
+            } else {
+              console.log(`Distributed $${invoice.amount_paid / 100} contribution to ${contributions?.length || 0} upline members`)
+            }
+          } catch (err) {
+            console.error('Exception distributing to upline:', err)
+            // Don't block payment processing if distribution fails
+          }
         }
         break
       }
