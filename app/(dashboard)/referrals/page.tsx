@@ -59,19 +59,10 @@ export default function ReferralsPage() {
 
       const supabase = createClient()
 
-      // Get user's referral code, URL slug, and who referred them
+      // Get user's referral code, URL slug, and referred_by ID
       const { data: user, error: userError } = await supabase
         .from("users")
-        .select(`
-          referral_code,
-          url_slug,
-          referred_by,
-          referrer:referred_by (
-            name,
-            email,
-            referral_code
-          )
-        `)
+        .select("referral_code, url_slug, referred_by")
         .eq("id", userId)
         .single()
 
@@ -84,8 +75,18 @@ export default function ReferralsPage() {
       if (user) {
         setReferralCode(user.referral_code || "")
         setUrlSlug(user.url_slug || "")
-        if (user.referrer && Array.isArray(user.referrer) && user.referrer.length > 0) {
-          setReferredBy(user.referrer[0])
+
+        // Fetch referrer info if user has a referrer
+        if (user.referred_by) {
+          const { data: referrer } = await supabase
+            .from("users")
+            .select("name, email, referral_code")
+            .eq("id", user.referred_by)
+            .single()
+
+          if (referrer) {
+            setReferredBy(referrer)
+          }
         }
       }
       
