@@ -166,15 +166,15 @@ export default function ReferralsPage() {
       </div>
 
       {/* Who Referred Me Card */}
-      {referredBy && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Your Referrer</CardTitle>
-            <CardDescription>
-              The person who invited you to Snipers Trading Academy
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Your Referrer</CardTitle>
+          <CardDescription>
+            The person who invited you to Snipers Trading Academy
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {referredBy ? (
             <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
               <div>
                 <p className="font-medium text-lg">{referredBy.name}</p>
@@ -185,9 +185,13 @@ export default function ReferralsPage() {
               </div>
               <Badge variant="secondary">Your Sponsor</Badge>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">Loading referrer information...</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Referral Links Card */}
       <Card className="mb-8">
