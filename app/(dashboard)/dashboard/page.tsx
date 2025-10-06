@@ -46,51 +46,48 @@ async function getDashboardData(userId: string) {
     .eq("status", "active")
     .single()
 
-  // Get team hierarchy
-  const { data: teamMembers } = await supabase
-    .from("team_hierarchy")
-    .select("*")
-    .eq("team_owner_id", userId)
+  // Get network stats from new API
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  const statsResponse = await fetch(`${baseUrl}/api/network/stats?userId=${userId}`, {
+    cache: 'no-store'
+  })
 
-  // Calculate team levels
-  const teamLevels = {
-    level1: teamMembers?.filter(m => m.level === 1).length || 0,
-    level2: teamMembers?.filter(m => m.level === 2).length || 0,
-    level3: teamMembers?.filter(m => m.level === 3).length || 0,
-    level4: teamMembers?.filter(m => m.level === 4).length || 0,
-    level5: teamMembers?.filter(m => m.level === 5).length || 0,
-    level6: teamMembers?.filter(m => m.level === 6).length || 0,
-  } 
+  let networkStats = null
+  let totalTeamSize = 0
+  let directReferrals = 0
+  let completedStructures = 0
+  let unlockedStructures = 1
+  let commissionRate = 0.10
+  let teamPool = 0
+  let monthlyCommission = 0
 
-  // Get referral stats
+  if (statsResponse.ok) {
+    networkStats = await statsResponse.json()
+    totalTeamSize = networkStats.network?.totalMembers || 0
+    directReferrals = networkStats.network?.directReferrals || 0
+    completedStructures = networkStats.structures?.completed || 0
+    unlockedStructures = networkStats.structures?.current || 1
+    commissionRate = networkStats.earnings?.commissionRate || 0.10
+    teamPool = networkStats.earnings?.monthlyVolume || 0
+    monthlyCommission = networkStats.earnings?.actualMonthlyEarnings || 0
+  }
+
+  // Get referral stats for backward compatibility
   const { data: referrals } = await supabase
     .from("referrals")
     .select("*")
     .eq("referrer_id", userId)
 
-  // Calculate structures and commission rate
-  const totalTeamSize = Object.values(teamLevels).reduce((a, b) => a + b, 0)
-  const maxMembersPerStructure = 1092 // 3 + 9 + 27 + 81 + 243 + 729
-  const completedStructures = Math.floor(totalTeamSize / maxMembersPerStructure)
-  const directReferrals = referrals?.filter(r => r.status === "active").length || 0
-  
-  // Calculate unlocked structures (max 6)
-  // First structure is always available
-  // Each additional structure requires 3 more direct referrals
-  let unlockedStructures = 1
-  if (completedStructures >= 1 && directReferrals >= 6) unlockedStructures = 2
-  if (completedStructures >= 2 && directReferrals >= 9) unlockedStructures = 3
-  if (completedStructures >= 3 && directReferrals >= 12) unlockedStructures = 4
-  if (completedStructures >= 4 && directReferrals >= 15) unlockedStructures = 5
-  if (completedStructures >= 5 && directReferrals >= 18) unlockedStructures = 6
-  
-  // Commission rate: 10% + 1% per additional structure, 16% for Master Sniper (6 completed)
-  const commissionRate = completedStructures >= 6 ? 0.16 : 0.10 + (Math.min(unlockedStructures - 1, 5) * 0.01)
-  
-  // Calculate team pool (only active subscriptions count)
-  const activeMembers = teamMembers?.filter(m => m.subscription_status === 'active').length || 0
-  const teamPool = activeMembers * 200
-  const monthlyCommission = teamPool * commissionRate
+  // Create team levels breakdown (estimated distribution)
+  // Since new system doesn't track per-level, we approximate based on tree structure
+  const teamLevels = {
+    level1: Math.min(totalTeamSize, 3),
+    level2: Math.min(Math.max(0, totalTeamSize - 3), 9),
+    level3: Math.min(Math.max(0, totalTeamSize - 12), 27),
+    level4: Math.min(Math.max(0, totalTeamSize - 39), 81),
+    level5: Math.min(Math.max(0, totalTeamSize - 120), 243),
+    level6: Math.max(0, totalTeamSize - 363),
+  }
 
   // Get commission stats
   const { data: commissions } = await supabase
@@ -101,6 +98,8 @@ async function getDashboardData(userId: string) {
   const totalEarnings = commissions?.reduce((sum, c) => sum + Number(c.amount), 0) || 0
   const pendingEarnings = commissions?.filter(c => c.status === "pending")
     .reduce((sum, c) => sum + Number(c.amount), 0) || 0
+
+  const maxMembersPerStructure = 1092 // 3 + 9 + 27 + 81 + 243 + 729
 
   return {
     user,
