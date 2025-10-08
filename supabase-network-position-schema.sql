@@ -176,6 +176,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Function to get all positions in upline chain (for commission distribution)
+-- Limited to 6 levels up maximum
 CREATE OR REPLACE FUNCTION public.get_upline_chain(start_position_id TEXT)
 RETURNS TABLE(
     network_position_id TEXT,
@@ -187,10 +188,11 @@ DECLARE
     current_pos_id TEXT;
     current_level INTEGER;
     current_position BIGINT;
+    levels_traversed INTEGER := 0;
 BEGIN
     current_pos_id := start_position_id;
 
-    -- Walk up the tree until we reach the root
+    -- Walk up the tree for up to 6 levels or until we reach the root
     LOOP
         -- Get current position details
         SELECT p.level, p.pos INTO current_level, current_position
@@ -206,8 +208,8 @@ BEGIN
         FROM public.users u
         WHERE u.network_position_id = current_pos_id;
 
-        -- Stop at root (level 0)
-        IF current_level = 0 THEN
+        -- Stop at root (level 0) or after 6 levels
+        IF current_level = 0 OR levels_traversed >= 6 THEN
             EXIT;
         END IF;
 
@@ -215,6 +217,7 @@ BEGIN
         current_position := public.get_parent_position(current_position);
         current_level := current_level - 1;
         current_pos_id := public.format_network_position_id(current_level, current_position);
+        levels_traversed := levels_traversed + 1;
     END LOOP;
 END;
 $$ LANGUAGE plpgsql;
