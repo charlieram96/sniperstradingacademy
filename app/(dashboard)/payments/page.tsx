@@ -7,12 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/utils"
 import { CreditCard, CheckCircle, XCircle, Clock, Lock, Unlock, ArrowDownToLine, ArrowUpFromLine, Wallet } from "lucide-react"
+import { PaymentScheduleSelector } from "@/components/payment-schedule-selector"
 
 function PaymentsContent() {
   const [userId, setUserId] = useState<string | null>(null)
   const searchParams = useSearchParams()
   const [initialPaymentCompleted, setInitialPaymentCompleted] = useState(false)
   const [processingInitial, setProcessingInitial] = useState(false)
+  const [paymentSchedule, setPaymentSchedule] = useState<"weekly" | "monthly">("monthly")
   const [subscription, setSubscription] = useState<{
     id: string
     status: string
@@ -172,25 +174,28 @@ function PaymentsContent() {
 
   async function handleSubscribe() {
     setSubscribing(true)
-    
+
     try {
       const response = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ paymentType: "subscription" }),
+        body: JSON.stringify({
+          paymentType: "subscription",
+          paymentSchedule: paymentSchedule
+        }),
       })
-      
+
       if (!response.ok) {
         const error = await response.json()
         console.error("Checkout error:", error)
         alert(error.error || "Failed to create checkout session")
         return
       }
-      
+
       const data = await response.json()
-      
+
       if (data.url) {
         window.location.href = data.url
       }
@@ -332,13 +337,22 @@ function PaymentsContent() {
                   </Button>
                 </div>
               ) : (
-                <div>
-                  <p className="text-muted-foreground mb-4">
-                    Subscribe to start earning 10% commission from your referrals
-                  </p>
-                  <Button onClick={handleSubscribe} disabled={subscribing}>
+                <div className="space-y-6">
+                  <PaymentScheduleSelector
+                    value={paymentSchedule}
+                    onChange={setPaymentSchedule}
+                  />
+                  <Button
+                    onClick={handleSubscribe}
+                    disabled={subscribing}
+                    size="lg"
+                    className="w-full"
+                  >
                     <CreditCard className="h-4 w-4 mr-2" />
-                    {subscribing ? "Processing..." : "Subscribe for $200/month"}
+                    {subscribing
+                      ? "Processing..."
+                      : `Subscribe ${paymentSchedule === 'weekly' ? '$49.75/week' : '$199/month'}`
+                    }
                   </Button>
                 </div>
               )}

@@ -19,14 +19,14 @@ CREATE INDEX IF NOT EXISTS idx_users_account_active ON public.users(account_acti
 CREATE INDEX IF NOT EXISTS idx_users_qualification_deadline ON public.users(qualification_deadline);
 
 -- Function to handle initial activation ($500 payment)
+-- UPDATED: Removed 365-day qualification period requirement
 CREATE OR REPLACE FUNCTION handle_account_activation(
     p_user_id UUID
 ) RETURNS VOID AS $$
 BEGIN
     UPDATE public.users
-    SET 
+    SET
         activated_at = TIMEZONE('utc', NOW()),
-        qualification_deadline = TIMEZONE('utc', NOW()) + INTERVAL '365 days',
         monthly_payment_due_date = TIMEZONE('utc', NOW()) + INTERVAL '30 days',
         account_active = TRUE,
         membership_status = 'unlocked',
@@ -37,31 +37,29 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Function to check and update qualification status
+-- UPDATED: Removed 365-day deadline logic - no more forfeiture
 CREATE OR REPLACE FUNCTION check_qualification_status(
     p_user_id UUID
 ) RETURNS BOOLEAN AS $$
 DECLARE
     v_direct_referrals INTEGER;
     v_qualified BOOLEAN;
-    v_deadline TIMESTAMP WITH TIME ZONE;
 BEGIN
     -- Get current qualification status
-    SELECT 
+    SELECT
         direct_referrals_count,
-        qualification_deadline,
         qualified_at IS NOT NULL
-    INTO 
+    INTO
         v_direct_referrals,
-        v_deadline,
         v_qualified
     FROM public.users
     WHERE id = p_user_id;
-    
+
     -- If already qualified, return true
     IF v_qualified THEN
         RETURN TRUE;
     END IF;
-    
+
     -- Check if user has 3 or more direct referrals
     IF v_direct_referrals >= 3 THEN
         UPDATE public.users
@@ -69,16 +67,7 @@ BEGIN
         WHERE id = p_user_id;
         RETURN TRUE;
     END IF;
-    
-    -- Check if deadline has passed
-    IF v_deadline IS NOT NULL AND v_deadline < TIMEZONE('utc', NOW()) THEN
-        -- Reset accumulated residual
-        UPDATE public.users
-        SET accumulated_residual = 0
-        WHERE id = p_user_id;
-        RETURN FALSE;
-    END IF;
-    
+
     RETURN FALSE;
 END;
 $$ LANGUAGE plpgsql;
@@ -156,31 +145,25 @@ FOR EACH ROW
 EXECUTE FUNCTION update_direct_referrals_count();
 
 -- View to get user qualification status
+-- UPDATED: Removed deadline tracking - no more 365-day expiration
 CREATE OR REPLACE VIEW public.user_qualification_status AS
-SELECT 
+SELECT
     u.id,
     u.name,
     u.email,
     u.activated_at,
-    u.qualification_deadline,
     u.qualified_at,
     u.direct_referrals_count,
     u.accumulated_residual,
     u.account_active,
     u.monthly_payment_due_date,
-    CASE 
+    CASE
         WHEN u.qualified_at IS NOT NULL THEN 'qualified'
-        WHEN u.qualification_deadline < TIMEZONE('utc', NOW()) THEN 'expired'
         WHEN u.activated_at IS NOT NULL THEN 'pending'
         ELSE 'not_activated'
     END as qualification_status,
-    CASE 
-        WHEN u.qualification_deadline IS NOT NULL THEN 
-            GREATEST(0, EXTRACT(EPOCH FROM (u.qualification_deadline - TIMEZONE('utc', NOW())))::INTEGER)
-        ELSE NULL
-    END as seconds_until_deadline,
-    CASE 
-        WHEN u.monthly_payment_due_date IS NOT NULL THEN 
+    CASE
+        WHEN u.monthly_payment_due_date IS NOT NULL THEN
             EXTRACT(EPOCH FROM (u.monthly_payment_due_date - TIMEZONE('utc', NOW())))::INTEGER
         ELSE NULL
     END as seconds_until_payment_due

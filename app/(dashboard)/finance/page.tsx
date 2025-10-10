@@ -19,7 +19,6 @@ import {
   Wallet
 } from "lucide-react"
 import { AccountStatusCard } from "@/components/account-status-card"
-import { QualificationCountdown } from "@/components/qualification-countdown"
 
 interface DirectBonus {
   id: string
@@ -181,18 +180,6 @@ export default function FinancePage() {
           monthlyPaymentDueDate={accountStatus.monthlyPaymentDueDate}
           lastPaymentDate={accountStatus.lastPaymentDate}
           onPayNow={handlePayNow}
-        />
-      </div>
-
-      {/* Qualification Countdown */}
-      <div className="mb-6">
-        <QualificationCountdown
-          activatedAt={accountStatus.activatedAt}
-          qualificationDeadline={accountStatus.qualificationDeadline}
-          qualifiedAt={accountStatus.qualifiedAt}
-          directReferralsCount={accountStatus.directReferralsCount}
-          accumulatedResidual={accountStatus.accumulatedResidual}
-          onShareReferralLink={handleShareReferralLink}
         />
       </div>
 

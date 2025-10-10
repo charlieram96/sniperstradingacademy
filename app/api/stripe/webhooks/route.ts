@@ -80,13 +80,16 @@ export async function POST(req: NextRequest) {
           // Handle initial $500 payment
           console.log("Processing initial payment for user:", userId)
 
-          // Update user status
-          const { data: userData, error: userError } = await supabase
+          // Update user status with 30-day grace period
+          const { data: userData, error: userError} = await supabase
             .from("users")
             .update({
               membership_status: "unlocked",
               initial_payment_completed: true,
               initial_payment_date: new Date().toISOString(),
+              account_active: true,
+              activated_at: new Date().toISOString(),
+              monthly_payment_due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30-day grace period
             })
             .eq("id", userId)
             .select()
@@ -94,7 +97,7 @@ export async function POST(req: NextRequest) {
           if (userError) {
             console.error("❌ Error updating user:", userError)
           } else {
-            console.log("✅ User updated successfully:", userData)
+            console.log("✅ User updated successfully with 30-day grace period:", userData)
           }
 
           // Update referral status if user was referred
@@ -186,69 +189,123 @@ export async function POST(req: NextRequest) {
         const invoice = event.data.object as Stripe.Invoice
         const customerId = invoice.customer as string
 
-        // Get user from customer ID
+        // Get user from customer ID - include is_active to check if status changed
         const { data: user } = await supabase
           .from("users")
-          .select("id")
+          .select("id, payment_schedule, is_active, network_position_id")
           .eq("stripe_customer_id", customerId)
           .single()
 
-        if (user && invoice.amount_paid === 19900) { // $199.00 in cents
-          // 1. Record monthly payment
+        // Handle weekly ($49.75), monthly ($199), or legacy monthly ($200)
+        const validAmounts = [4975, 19900, 20000] // $49.75, $199, $200 in cents
+
+        if (user && validAmounts.includes(invoice.amount_paid)) {
+          const actualAmount = invoice.amount_paid / 100 // Convert to dollars
+          const isWeekly = invoice.amount_paid === 4975
+          const paymentType = isWeekly ? "weekly" : "monthly"
+          const wasActiveBefore = user.is_active
+
+          // Determine distribution amount and next payment date
+          const distributionAmount = isWeekly ? 49.75 : 199.00
+          const daysUntilNext = isWeekly ? 7 : 30
+
+          console.log(`💰 Processing ${paymentType} payment of $${actualAmount} for user ${user.id} (was_active: ${wasActiveBefore})`)
+
+          // 1. Record payment
           await supabase
             .from("payments")
             .insert({
               user_id: user.id,
-              stripe_payment_intent_id: invoice.id, // Use invoice ID as reference
-              amount: 199.00,
-              payment_type: "monthly",
+              stripe_payment_intent_id: invoice.id,
+              amount: actualAmount,
+              payment_type: paymentType,
               status: "succeeded",
             })
 
-          console.log(`✅ Monthly payment ($199) recorded for user ${user.id}`)
+          console.log(`✅ ${paymentType.charAt(0).toUpperCase() + paymentType.slice(1)} payment ($${actualAmount}) recorded for user ${user.id}`)
 
-          // 2. Update last_payment_date
+          // 2. Update last_payment_date, monthly_payment_due_date, and is_active
           await supabase
             .from("users")
-            .update({ last_payment_date: new Date().toISOString() })
+            .update({
+              last_payment_date: new Date().toISOString(),
+              monthly_payment_due_date: new Date(Date.now() + daysUntilNext * 24 * 60 * 60 * 1000).toISOString(),
+              is_active: true,
+              inactive_since: null // Clear inactive timestamp if it was set
+            })
             .eq("id", user.id)
 
-          // 3. Distribute $199 to ENTIRE upline chain (unlimited depth, all the way to root)
+          // 3. If user became active (was inactive, now active), increment active count for upchain
+          if (!wasActiveBefore && user.network_position_id) {
+            try {
+              const { data: ancestorsIncremented, error: incrementError } = await supabase
+                .rpc('increment_upchain_active_count', {
+                  p_user_id: user.id
+                })
+
+              if (incrementError) {
+                console.error('❌ Error incrementing active count:', incrementError)
+              } else {
+                console.log(`✅ User became active! Incremented active_network_count for ${ancestorsIncremented || 0} ancestors`)
+              }
+            } catch (err) {
+              console.error('❌ Exception incrementing active count:', err)
+            }
+          }
+
+          // 4. Distribute to ENTIRE upline chain (unlimited depth, all the way to root)
           try {
             const { data: ancestorCount, error: distError } = await supabase
               .rpc('distribute_to_upline', {
                 p_user_id: user.id,
-                p_amount: 199.00
+                p_amount: distributionAmount
               })
 
             if (distError) {
               console.error('❌ Error distributing to upline:', distError)
             } else {
-              console.log(`✅ Distributed $199 to ${ancestorCount || 0} ancestors (all the way to root)`)
+              console.log(`✅ Distributed $${distributionAmount} to ${ancestorCount || 0} ancestors (all the way to root)`)
             }
           } catch (err) {
             console.error('❌ Exception distributing to upline:', err)
             // Don't block payment processing if distribution fails
           }
 
-          // 4. Update network counts for the user (updates structure completion)
+          // 5. Update commission rate and structure number based on current counts
+          // Note: We no longer call update_network_counts() which scans the subtree
+          // Instead, we just update the commission rate based on current active_network_count
           try {
-            await supabase.rpc('update_network_counts', {
-              p_user_id: user.id
-            })
-            console.log(`✅ Updated network counts for user ${user.id}`)
-          } catch (err) {
-            console.error('❌ Error updating network counts:', err)
-          }
+            const { data: updatedUser } = await supabase
+              .from("users")
+              .select("active_network_count")
+              .eq("id", user.id)
+              .single()
 
-          // 5. Update active status
-          try {
-            await supabase.rpc('update_active_status', {
-              p_user_id: user.id
-            })
-            console.log(`✅ Updated active status for user ${user.id}`)
+            if (updatedUser) {
+              // Calculate commission rate and structure number
+              const { data: commissionRate } = await supabase
+                .rpc('calculate_commission_rate', {
+                  active_count: updatedUser.active_network_count
+                })
+
+              const { data: structureNumber } = await supabase
+                .rpc('calculate_structure_number', {
+                  active_count: updatedUser.active_network_count
+                })
+
+              // Update the rates
+              await supabase
+                .from("users")
+                .update({
+                  current_commission_rate: commissionRate,
+                  current_structure_number: structureNumber
+                })
+                .eq("id", user.id)
+
+              console.log(`✅ Updated commission rate (${commissionRate}) and structure (${structureNumber}) for user ${user.id}`)
+            }
           } catch (err) {
-            console.error('❌ Error updating active status:', err)
+            console.error('❌ Error updating commission rate:', err)
           }
         }
         break

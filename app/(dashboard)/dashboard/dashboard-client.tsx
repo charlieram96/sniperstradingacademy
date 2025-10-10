@@ -12,7 +12,6 @@ import { formatCurrency } from "@/lib/utils"
 import { Users, DollarSign, TrendingUp, UserPlus, Lock, Unlock, CreditCard, AlertTriangle, Share2, Medal, Trophy, Star, Award, Target, Crown, GraduationCap, BookOpen, PlayCircle, CheckCircle2, Wallet, ExternalLink, XCircle, Clock } from "lucide-react"
 import { NavigationLink } from "@/components/navigation-link"
 import { isTestUser } from "@/lib/mock-data"
-import { QualificationCountdownWidget } from "@/components/qualification-countdown-widget"
 
 interface DashboardData {
   user?: {
@@ -336,17 +335,6 @@ export function DashboardClient({ data, session }: {
           </CardContent>
         </Card>
       )}
-
-      {/* Qualification Countdown Widget */}
-      <div className="mb-6">
-        <QualificationCountdownWidget
-          activatedAt={accountStatus.activatedAt}
-          qualificationDeadline={accountStatus.qualificationDeadline}
-          qualifiedAt={accountStatus.qualifiedAt}
-          directReferralsCount={accountStatus.directReferralsCount}
-          accumulatedResidual={accountStatus.accumulatedResidual}
-        />
-      </div>
 
       {/* Membership Status Alert */}
       {!data.initialPaymentCompleted && !isTestUser(session.user.id) && (
