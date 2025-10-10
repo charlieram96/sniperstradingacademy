@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
         } else if (paymentType === "subscription" && session.subscription) {
           // Handle subscription creation
           const subscriptionId = session.subscription as string
-          
+
           // Create subscription record without fetching details (they'll be updated via subscription events)
           await supabase
             .from("subscriptions")
@@ -121,9 +121,9 @@ export async function POST(req: NextRequest) {
               user_id: userId,
               stripe_subscription_id: subscriptionId,
               status: "active",
-              monthly_amount: 200,
+              monthly_amount: 199,
             })
-          
+
           console.log("Subscription created for user:", userId)
         }
         break
@@ -165,44 +165,70 @@ export async function POST(req: NextRequest) {
       case "invoice.payment_succeeded": {
         const invoice = event.data.object as Stripe.Invoice
         const customerId = invoice.customer as string
-        
+
         // Get user from customer ID
         const { data: user } = await supabase
           .from("users")
           .select("id")
           .eq("stripe_customer_id", customerId)
           .single()
-        
-        if (user && invoice.amount_paid > 0) {
-          // Record monthly payment
+
+        if (user && invoice.amount_paid === 19900) { // $199.00 in cents
+          // 1. Record monthly payment
           await supabase
             .from("payments")
             .insert({
               user_id: user.id,
               stripe_payment_intent_id: invoice.id, // Use invoice ID as reference
-              amount: (invoice.amount_paid / 100), // Convert from cents
+              amount: 199.00,
               payment_type: "monthly",
               status: "succeeded",
             })
 
-          console.log(`Monthly payment recorded for user ${user.id}`)
+          console.log(`✅ Monthly payment ($199) recorded for user ${user.id}`)
 
-          // Distribute contribution to upline chain
+          // 2. Update last_payment_date
+          await supabase
+            .from("users")
+            .update({ last_payment_date: new Date().toISOString() })
+            .eq("id", user.id)
+
+          // 3. Distribute $199 to ENTIRE upline chain (unlimited depth, all the way to root)
           try {
-            const { data: contributions, error: distError } = await supabase
+            const { data: ancestorCount, error: distError } = await supabase
               .rpc('distribute_to_upline', {
                 p_user_id: user.id,
-                p_amount: (invoice.amount_paid / 100)
+                p_amount: 199.00
               })
 
             if (distError) {
-              console.error('Error distributing to upline:', distError)
+              console.error('❌ Error distributing to upline:', distError)
             } else {
-              console.log(`Distributed $${invoice.amount_paid / 100} contribution to ${contributions?.length || 0} upline members`)
+              console.log(`✅ Distributed $199 to ${ancestorCount || 0} ancestors (all the way to root)`)
             }
           } catch (err) {
-            console.error('Exception distributing to upline:', err)
+            console.error('❌ Exception distributing to upline:', err)
             // Don't block payment processing if distribution fails
+          }
+
+          // 4. Update network counts for the user (updates structure completion)
+          try {
+            await supabase.rpc('update_network_counts', {
+              p_user_id: user.id
+            })
+            console.log(`✅ Updated network counts for user ${user.id}`)
+          } catch (err) {
+            console.error('❌ Error updating network counts:', err)
+          }
+
+          // 5. Update active status
+          try {
+            await supabase.rpc('update_active_status', {
+              p_user_id: user.id
+            })
+            console.log(`✅ Updated active status for user ${user.id}`)
+          } catch (err) {
+            console.error('❌ Error updating active status:', err)
           }
         }
         break

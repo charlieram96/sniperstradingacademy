@@ -156,10 +156,10 @@ export function getChildSlotNumber(position: number): 1 | 2 | 3 {
 
 /**
  * Calculate structure completion (how many 1092-person structures are filled)
- * @param totalNetworkSize - Total number of people in network
+ * @param activeNetworkSize - Number of ACTIVE people in network (paid within 33 days)
  * @returns Object with structure stats
  */
-export function calculateStructureStats(totalNetworkSize: number): {
+export function calculateStructureStats(activeNetworkSize: number): {
   completedStructures: number
   currentStructureProgress: number
   currentStructurePercentage: number
@@ -167,8 +167,8 @@ export function calculateStructureStats(totalNetworkSize: number): {
   structureNumber: number
 } {
   const MEMBERS_PER_STRUCTURE = 1092
-  const completedStructures = Math.floor(totalNetworkSize / MEMBERS_PER_STRUCTURE)
-  const currentStructureProgress = totalNetworkSize % MEMBERS_PER_STRUCTURE
+  const completedStructures = Math.floor(activeNetworkSize / MEMBERS_PER_STRUCTURE)
+  const currentStructureProgress = activeNetworkSize % MEMBERS_PER_STRUCTURE
   const currentStructurePercentage = (currentStructureProgress / MEMBERS_PER_STRUCTURE) * 100
   const structureNumber = completedStructures + 1
 
@@ -176,8 +176,8 @@ export function calculateStructureStats(totalNetworkSize: number): {
     completedStructures,
     currentStructureProgress,
     currentStructurePercentage,
-    totalPossibleEarnings: totalNetworkSize * 199, // $199 per member
-    structureNumber: Math.min(structureNumber, 6) // Max 6 structures
+    totalPossibleEarnings: activeNetworkSize * 199, // $199 per member
+    structureNumber: Math.min(structureNumber, 7) // Max 7 structures (7+ = 16%)
   }
 }
 
@@ -306,18 +306,20 @@ export function formatPositionForDisplay(
 }
 
 /**
- * Constants
+ * Constants for the unlimited-depth sniper volume system
  */
 export const NETWORK_CONSTANTS = {
   ROOT_POSITION_ID: 'L000P0000000001',
-  MAX_DEPTH: 6, // Max levels below a user
+  MAX_DEPTH: 100, // Safety limit for position search (not a business rule)
   MEMBERS_PER_STRUCTURE: 1092,
-  MAX_STRUCTURES: 6,
-  MAX_NETWORK_SIZE: 1092 * 6, // 6,552
+  MAX_STRUCTURES: 7, // Structure 7+ = 16% commission
+  MAX_EARNINGS_NETWORK_SIZE: 6552, // Max network size for earnings calculation (6,552 × $199)
   CHILDREN_PER_NODE: 3,
-  MONTHLY_CONTRIBUTION: 199,
+  MONTHLY_CONTRIBUTION: 199, // ✅ FIXED: $199, not $200
   BASE_COMMISSION_RATE: 0.10,
   MAX_COMMISSION_RATE: 0.16,
   DIRECT_REFERRALS_PER_STRUCTURE: 3,
-  INACTIVE_GRACE_PERIOD_DAYS: 90
+  ACTIVE_THRESHOLD_DAYS: 33, // Paid within 33 days = active (30 + 3 grace)
+  INACTIVE_GRACE_PERIOD_DAYS: 90, // Haven't paid in 90 days = disabled
+  DISABLED_THRESHOLD_DAYS: 90
 } as const

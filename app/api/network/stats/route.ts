@@ -1,16 +1,18 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import {
-  calculateStructureStats,
-  getCommissionRate,
-  getRequiredDirectReferrals,
-  canWithdrawEarnings,
   NETWORK_CONSTANTS
 } from '@/lib/network-positions'
 
 /**
  * GET /api/network/stats?userId=xxx
  * Get network statistics for a user
+ *
+ * UPDATED: Now uses denormalized data from users table for better performance
+ * - sniper_volume_current_month (real-time incremented on payments)
+ * - active_network_count (updated after each payment in network)
+ * - current_commission_rate (auto-calculated based on structure)
+ * - current_structure_number (auto-updated)
  */
 export async function GET(request: Request) {
   try {
@@ -22,10 +24,20 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 })
     }
 
-    // Get user's network position
+    // Get user's denormalized network data (fast single query)
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('network_position_id, is_active')
+      .select(`
+        network_position_id,
+        sniper_volume_current_month,
+        sniper_volume_previous_month,
+        active_network_count,
+        total_network_count,
+        current_commission_rate,
+        current_structure_number,
+        last_payment_date,
+        is_active
+      `)
       .eq('id', userId)
       .single()
 
@@ -33,73 +45,82 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User not found or has no network position' }, { status: 404 })
     }
 
-    // Get network size using database function
-    const { data: networkSize, error: sizeError } = await supabase
-      .rpc('count_network_size', {
-        p_network_position_id: user.network_position_id
-      })
-
-    if (sizeError) {
-      console.error('Error counting network size:', sizeError)
-      return NextResponse.json({ error: 'Failed to calculate network size' }, { status: 500 })
-    }
-
-    const totalCount = networkSize?.[0]?.total_count || 0
-    const activeCount = networkSize?.[0]?.active_count || 0
-
     // Count direct referrals
-    const { data: directReferrals, error: referralsError } = await supabase
-      .rpc('count_direct_referrals', {
-        p_user_id: userId
-      })
-
-    if (referralsError) {
-      console.error('Error counting direct referrals:', referralsError)
-    }
-
-    const directReferralCount = directReferrals || 0
+    const { count: directReferralCount } = await supabase
+      .from('users')
+      .select('id', { count: 'exact', head: true })
+      .eq('referred_by', userId)
 
     // Calculate structure stats
-    const structureStats = calculateStructureStats(totalCount)
-    const commissionRate = getCommissionRate(structureStats.structureNumber)
-    const requiredReferrals = getRequiredDirectReferrals(structureStats.completedStructures + 1)
-    const withdrawalEligibility = canWithdrawEarnings(directReferralCount, structureStats.completedStructures)
+    const completedStructures = Math.floor(user.active_network_count / 1092)
+    const currentStructureProgress = user.active_network_count % 1092
+    const currentStructurePercentage = (currentStructureProgress / 1092) * 100
 
-    // Calculate earnings
-    const monthlyVolume = activeCount * NETWORK_CONSTANTS.MONTHLY_CONTRIBUTION
-    const potentialMonthlyEarnings = monthlyVolume * commissionRate
-    const actualMonthlyEarnings = withdrawalEligibility.canWithdraw ? potentialMonthlyEarnings : 0
+    // Calculate required referrals for withdrawal
+    const requiredReferrals = user.current_structure_number * 3
+
+    // Check if user is active (paid within 33 days)
+    const isActive = user.last_payment_date &&
+      new Date(user.last_payment_date) >= new Date(Date.now() - 33 * 24 * 60 * 60 * 1000)
+
+    // Check withdrawal eligibility
+    const referralCount = directReferralCount || 0
+    const canWithdraw = isActive && referralCount >= requiredReferrals
+    const referralDeficit = Math.max(0, requiredReferrals - referralCount)
+
+    // Calculate earnings (capped at 6,552 × $199)
+    const maxVolume = 6552 * 199
+    const cappedVolume = Math.min(user.sniper_volume_current_month, maxVolume)
+    const potentialMonthlyEarnings = cappedVolume * user.current_commission_rate
+    const actualMonthlyEarnings = canWithdraw ? potentialMonthlyEarnings : 0
+
+    // Withdrawal eligibility message
+    let withdrawalMessage = ''
+    if (!isActive) {
+      withdrawalMessage = 'Account not active (must pay within 33 days)'
+    } else if (referralDeficit > 0) {
+      withdrawalMessage = `Need ${referralDeficit} more direct referral${referralDeficit !== 1 ? 's' : ''} to withdraw`
+    } else {
+      withdrawalMessage = `Eligible to withdraw from structure ${user.current_structure_number}`
+    }
 
     return NextResponse.json({
       network: {
-        totalMembers: totalCount,
-        activeMembers: activeCount,
-        inactiveMembers: totalCount - activeCount,
-        directReferrals: directReferralCount
+        totalMembers: user.total_network_count,
+        activeMembers: user.active_network_count,
+        inactiveMembers: user.total_network_count - user.active_network_count,
+        directReferrals: referralCount
       },
       structures: {
-        completed: structureStats.completedStructures,
-        current: structureStats.structureNumber,
-        progress: structureStats.currentStructureProgress,
-        progressPercentage: structureStats.currentStructurePercentage,
+        completed: completedStructures,
+        current: user.current_structure_number,
+        progress: currentStructureProgress,
+        progressPercentage: currentStructurePercentage,
         maxStructures: NETWORK_CONSTANTS.MAX_STRUCTURES
       },
+      sniperVolume: {
+        currentMonth: user.sniper_volume_current_month,
+        previousMonth: user.sniper_volume_previous_month,
+        capped: cappedVolume,
+        maxPossible: maxVolume
+      },
       earnings: {
-        monthlyVolume,
-        commissionRate,
+        commissionRate: user.current_commission_rate,
+        monthlyVolume: user.sniper_volume_current_month,
         potentialMonthlyEarnings,
         actualMonthlyEarnings,
-        canWithdraw: withdrawalEligibility.canWithdraw,
+        canWithdraw,
         withdrawalRequirement: {
-          currentReferrals: directReferralCount,
+          currentReferrals: referralCount,
           requiredReferrals,
-          deficit: withdrawalEligibility.deficit,
-          message: withdrawalEligibility.message
+          deficit: referralDeficit,
+          message: withdrawalMessage
         }
       },
       status: {
-        isActive: user.is_active,
-        hasNetworkPosition: true
+        isActive,
+        hasNetworkPosition: true,
+        lastPaymentDate: user.last_payment_date
       }
     })
   } catch (error) {
