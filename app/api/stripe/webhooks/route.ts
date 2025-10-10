@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { headers } from "next/headers"
 import { getStripe } from "@/lib/stripe/server"
-import { createClient } from "@/lib/supabase/server"
+import { createServiceRoleClient } from "@/lib/supabase/server"
 import Stripe from "stripe"
 
 const stripe = getStripe()
@@ -32,7 +32,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
+    // Use service role client to bypass RLS (webhooks have no user session)
+    const supabase = createServiceRoleClient()
 
     // Handle different event types
     switch (event.type) {
@@ -78,9 +79,9 @@ export async function POST(req: NextRequest) {
         if (paymentType === "initial") {
           // Handle initial $500 payment
           console.log("Processing initial payment for user:", userId)
-          
+
           // Update user status
-          await supabase
+          const { data: userData, error: userError } = await supabase
             .from("users")
             .update({
               membership_status: "unlocked",
@@ -88,18 +89,31 @@ export async function POST(req: NextRequest) {
               initial_payment_date: new Date().toISOString(),
             })
             .eq("id", userId)
+            .select()
+
+          if (userError) {
+            console.error("❌ Error updating user:", userError)
+          } else {
+            console.log("✅ User updated successfully:", userData)
+          }
 
           // Update referral status if user was referred
-          await supabase
+          const { error: referralError } = await supabase
             .from("referrals")
-            .update({ 
+            .update({
               initial_payment_status: "completed",
-              status: "active" 
+              status: "active"
             })
             .eq("referred_id", userId)
-          
+
+          if (referralError) {
+            console.error("❌ Error updating referral:", referralError)
+          } else {
+            console.log("✅ Referral updated successfully")
+          }
+
           // Record payment
-          await supabase
+          const { error: paymentError } = await supabase
             .from("payments")
             .insert({
               user_id: userId,
@@ -108,7 +122,13 @@ export async function POST(req: NextRequest) {
               payment_type: "initial",
               status: "succeeded",
             })
-          
+
+          if (paymentError) {
+            console.error("❌ Error recording payment:", paymentError)
+          } else {
+            console.log("✅ Payment recorded successfully")
+          }
+
           console.log("Initial payment processed successfully for user:", userId)
         } else if (paymentType === "subscription" && session.subscription) {
           // Handle subscription creation
