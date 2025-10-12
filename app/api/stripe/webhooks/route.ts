@@ -155,7 +155,27 @@ export async function POST(req: NextRequest) {
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription
-        
+
+        // Get user's current active status BEFORE updating
+        const { data: subData } = await supabase
+          .from("subscriptions")
+          .select("user_id")
+          .eq("stripe_subscription_id", subscription.id)
+          .single()
+
+        if (!subData) {
+          console.error(`No subscription found for ${subscription.id}`)
+          break
+        }
+
+        const { data: userData } = await supabase
+          .from("users")
+          .select("is_active, network_position_id")
+          .eq("id", subData.user_id)
+          .single()
+
+        const wasActiveBefore = userData?.is_active || false
+
         const updateData: {
           status: string
           cancel_at_period_end: boolean | null
@@ -167,7 +187,7 @@ export async function POST(req: NextRequest) {
           cancel_at_period_end: subscription.cancel_at_period_end,
           updated_at: new Date().toISOString(),
         }
-        
+
         // Add period dates if available
         if ('current_period_start' in subscription && subscription.current_period_start) {
           updateData.current_period_start = new Date((subscription.current_period_start as number) * 1000).toISOString()
@@ -175,13 +195,63 @@ export async function POST(req: NextRequest) {
         if ('current_period_end' in subscription && subscription.current_period_end) {
           updateData.current_period_end = new Date((subscription.current_period_end as number) * 1000).toISOString()
         }
-        
+
+        // Update subscription record
         await supabase
           .from("subscriptions")
           .update(updateData)
           .eq("stripe_subscription_id", subscription.id)
-        
-        console.log(`Subscription ${subscription.id} updated to status: ${subscription.status}`)
+
+        // Determine if user should be active based on Stripe subscription status
+        const shouldBeActive = subscription.status === 'active'
+
+        // Update user's is_active flag to match Stripe subscription status
+        await supabase
+          .from("users")
+          .update({ is_active: shouldBeActive })
+          .eq("id", subData.user_id)
+
+        console.log(`Subscription ${subscription.id} updated to status: ${subscription.status} (was_active: ${wasActiveBefore}, now_active: ${shouldBeActive})`)
+
+        // Handle active count changes based on subscription status change
+        if (userData?.network_position_id) {
+          // Case 1: Became INACTIVE (subscription no longer active)
+          if (wasActiveBefore && !shouldBeActive) {
+            try {
+              const { data: ancestorsDecremented, error: decrementError } = await supabase
+                .rpc('decrement_upchain_active_count', {
+                  p_user_id: subData.user_id
+                })
+
+              if (decrementError) {
+                console.error('❌ Error decrementing active count:', decrementError)
+              } else {
+                console.log(`✅ Subscription became inactive! Decremented active_network_count for ${ancestorsDecremented || 0} ancestors`)
+              }
+            } catch (err) {
+              console.error('❌ Exception decrementing active count:', err)
+            }
+          }
+
+          // Case 2: Became ACTIVE (subscription reactivated)
+          else if (!wasActiveBefore && shouldBeActive) {
+            try {
+              const { data: ancestorsIncremented, error: incrementError } = await supabase
+                .rpc('increment_upchain_active_count', {
+                  p_user_id: subData.user_id
+                })
+
+              if (incrementError) {
+                console.error('❌ Error incrementing active count:', incrementError)
+              } else {
+                console.log(`✅ Subscription became active! Incremented active_network_count for ${ancestorsIncremented || 0} ancestors`)
+              }
+            } catch (err) {
+              console.error('❌ Exception incrementing active count:', err)
+            }
+          }
+        }
+
         break
       }
 
@@ -189,10 +259,10 @@ export async function POST(req: NextRequest) {
         const invoice = event.data.object as Stripe.Invoice
         const customerId = invoice.customer as string
 
-        // Get user from customer ID - include is_active to check if status changed
+        // Get user from customer ID
         const { data: user } = await supabase
           .from("users")
-          .select("id, payment_schedule, is_active, network_position_id")
+          .select("id, payment_schedule, network_position_id")
           .eq("stripe_customer_id", customerId)
           .single()
 
@@ -203,13 +273,11 @@ export async function POST(req: NextRequest) {
           const actualAmount = invoice.amount_paid / 100 // Convert to dollars
           const isWeekly = invoice.amount_paid === 4975
           const paymentType = isWeekly ? "weekly" : "monthly"
-          const wasActiveBefore = user.is_active
 
-          // Determine distribution amount and next payment date
+          // Determine distribution amount
           const distributionAmount = isWeekly ? 49.75 : 199.00
-          const daysUntilNext = isWeekly ? 7 : 30
 
-          console.log(`💰 Processing ${paymentType} payment of $${actualAmount} for user ${user.id} (was_active: ${wasActiveBefore})`)
+          console.log(`💰 Processing ${paymentType} payment of $${actualAmount} for user ${user.id}`)
 
           // 1. Record payment
           await supabase
@@ -224,36 +292,16 @@ export async function POST(req: NextRequest) {
 
           console.log(`✅ ${paymentType.charAt(0).toUpperCase() + paymentType.slice(1)} payment ($${actualAmount}) recorded for user ${user.id}`)
 
-          // 2. Update last_payment_date, monthly_payment_due_date, and is_active
+          // 2. Update last_payment_date
+          // NOTE: is_active is managed by subscription status, not payment dates
           await supabase
             .from("users")
             .update({
-              last_payment_date: new Date().toISOString(),
-              monthly_payment_due_date: new Date(Date.now() + daysUntilNext * 24 * 60 * 60 * 1000).toISOString(),
-              is_active: true,
-              inactive_since: null // Clear inactive timestamp if it was set
+              last_payment_date: new Date().toISOString()
             })
             .eq("id", user.id)
 
-          // 3. If user became active (was inactive, now active), increment active count for upchain
-          if (!wasActiveBefore && user.network_position_id) {
-            try {
-              const { data: ancestorsIncremented, error: incrementError } = await supabase
-                .rpc('increment_upchain_active_count', {
-                  p_user_id: user.id
-                })
-
-              if (incrementError) {
-                console.error('❌ Error incrementing active count:', incrementError)
-              } else {
-                console.log(`✅ User became active! Incremented active_network_count for ${ancestorsIncremented || 0} ancestors`)
-              }
-            } catch (err) {
-              console.error('❌ Exception incrementing active count:', err)
-            }
-          }
-
-          // 4. Distribute to ENTIRE upline chain (unlimited depth, all the way to root)
+          // 3. Distribute to ENTIRE upline chain (unlimited depth, all the way to root)
           try {
             const { data: ancestorCount, error: distError } = await supabase
               .rpc('distribute_to_upline', {
@@ -271,9 +319,8 @@ export async function POST(req: NextRequest) {
             // Don't block payment processing if distribution fails
           }
 
-          // 5. Update commission rate and structure number based on current counts
-          // Note: We no longer call update_network_counts() which scans the subtree
-          // Instead, we just update the commission rate based on current active_network_count
+          // 4. Update commission rate and structure number based on current counts
+          // Note: active_network_count is maintained by subscription status changes
           try {
             const { data: updatedUser } = await supabase
               .from("users")
