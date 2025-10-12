@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StructureDropdown } from "@/components/team/structure-dropdown"
-import { AddTestMembersButton } from "@/components/team/add-test-members-button"
 import { 
   Users, 
   UserPlus, 
@@ -239,7 +238,6 @@ export default function TeamPage() {
               Build and manage your 3-wide, 6-deep trading network
             </p>
           </div>
-          <AddTestMembersButton />
         </div>
       </div>
 
