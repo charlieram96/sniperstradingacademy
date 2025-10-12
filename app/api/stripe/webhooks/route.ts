@@ -80,6 +80,15 @@ export async function POST(req: NextRequest) {
           // Handle initial $500 payment
           console.log("Processing initial payment for user:", userId)
 
+          // Get user's network position to check if we need to increment active count
+          const { data: userBeforeUpdate } = await supabase
+            .from("users")
+            .select("network_position_id, is_active")
+            .eq("id", userId)
+            .single()
+
+          const wasActiveBefore = userBeforeUpdate?.is_active || false
+
           // Update user status with 30-day grace period
           const { data: userData, error: userError} = await supabase
             .from("users")
@@ -87,8 +96,9 @@ export async function POST(req: NextRequest) {
               membership_status: "unlocked",
               initial_payment_completed: true,
               initial_payment_date: new Date().toISOString(),
-              account_active: true,
+              is_active: true, // User becomes active immediately after $500 payment
               activated_at: new Date().toISOString(),
+              last_payment_date: new Date().toISOString(),
               monthly_payment_due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30-day grace period
             })
             .eq("id", userId)
@@ -98,6 +108,24 @@ export async function POST(req: NextRequest) {
             console.error("❌ Error updating user:", userError)
           } else {
             console.log("✅ User updated successfully with 30-day grace period:", userData)
+          }
+
+          // Increment active network count for all ancestors (user just became active)
+          if (userBeforeUpdate?.network_position_id && !wasActiveBefore) {
+            try {
+              const { data: ancestorsIncremented, error: incrementError } = await supabase
+                .rpc('increment_upchain_active_count', {
+                  p_user_id: userId
+                })
+
+              if (incrementError) {
+                console.error('❌ Error incrementing active count:', incrementError)
+              } else {
+                console.log(`✅ User became active! Incremented active_network_count for ${ancestorsIncremented || 0} ancestors`)
+              }
+            } catch (err) {
+              console.error('❌ Exception incrementing active count:', err)
+            }
           }
 
           // Update referral status if user was referred
