@@ -97,7 +97,6 @@ export async function POST(req: NextRequest) {
               initial_payment_completed: true,
               initial_payment_date: new Date().toISOString(),
               is_active: true, // User becomes active immediately after $500 payment
-              activated_at: new Date().toISOString(),
               last_payment_date: new Date().toISOString(),
               monthly_payment_due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30-day grace period
             })
