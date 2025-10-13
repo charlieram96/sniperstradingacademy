@@ -95,10 +95,9 @@ export async function POST(req: NextRequest) {
             .update({
               membership_status: "unlocked",
               initial_payment_completed: true,
-              initial_payment_date: new Date().toISOString(),
+              initial_payment_date: new Date().toISOString(), // 30-day grace period calculated from this date
               is_active: true, // User becomes active immediately after $500 payment
-              last_payment_date: new Date().toISOString(),
-              monthly_payment_due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30-day grace period
+              last_payment_date: new Date().toISOString()
             })
             .eq("id", userId)
             .select()
