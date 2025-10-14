@@ -40,6 +40,18 @@ function RegisterForm() {
   const [waitingForVerification, setWaitingForVerification] = useState(false)
   const [userEmail, setUserEmail] = useState("")
 
+  // Check for error messages in URL (from OAuth redirect)
+  useEffect(() => {
+    const errorParam = searchParams.get("error")
+    const messageParam = searchParams.get("message")
+
+    if (errorParam === "account_not_found") {
+      setError(messageParam || "No account found. Please sign up with a referral code below.")
+    } else if (errorParam === "incomplete_signup") {
+      setError(messageParam || "Please complete your signup with a referral code below.")
+    }
+  }, [searchParams])
+
   // Load referral code on mount
   useEffect(() => {
     async function loadReferral() {

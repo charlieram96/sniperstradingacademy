@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { NavigationLink } from "@/components/navigation-link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,9 +14,24 @@ import Image from "next/image"
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+
+  // Check for error messages in URL
+  useEffect(() => {
+    const errorParam = searchParams.get("error")
+    const messageParam = searchParams.get("message")
+
+    if (errorParam === "account_not_found") {
+      setError(messageParam || "No account found. Please sign up first.")
+    } else if (errorParam === "incomplete_signup") {
+      setError(messageParam || "Please complete your signup with a referral code.")
+    } else if (errorParam === "auth_failed") {
+      setError("Authentication failed. Please try again.")
+    }
+  }, [searchParams])
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -79,7 +94,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${redirectUrl}/auth/callback`,
+          redirectTo: `${redirectUrl}/auth/callback?mode=login`,
         },
       })
 

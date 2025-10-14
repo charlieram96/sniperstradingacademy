@@ -5,6 +5,7 @@ import { NextRequest } from "next/server"
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get("code")
+  const mode = requestUrl.searchParams.get("mode") // 'login' or null (signup)
   const next = requestUrl.searchParams.get("next") || "/dashboard"
 
   if (code) {
@@ -18,15 +19,45 @@ export async function GET(request: NextRequest) {
 
     // Check if this is a new user without a referral or network position
     if (session?.user) {
-      const { data: userData } = await supabase
+      const { data: userData, error: userError } = await supabase
         .from("users")
         .select("referred_by, network_position_id")
         .eq("id", session.user.id)
         .single()
 
-      // If user doesn't have a referral or network position, redirect to complete-signup
-      // This means they're signing up via OAuth for the first time
-      if (userData && !userData.referred_by && !userData.network_position_id) {
+      // If userData query failed or user not found in database yet
+      if (userError || !userData) {
+        console.error("Error fetching user data:", userError)
+
+        // If this was a login attempt, block it - new users must sign up first
+        if (mode === "login") {
+          console.log("Blocking new user from login flow - must sign up first")
+          // Sign out the newly created user
+          await supabase.auth.signOut()
+          return NextResponse.redirect(
+            `${requestUrl.origin}/register?error=account_not_found&message=No account found. Please sign up first.`
+          )
+        }
+
+        // If signup flow but userData not ready, redirect to complete-signup
+        console.log("New OAuth user detected (no user data yet), redirecting to complete-signup")
+        return NextResponse.redirect(`${requestUrl.origin}/complete-signup`)
+      }
+
+      // User data exists - check if they have referral and network position
+      const isNewUser = !userData.referred_by && !userData.network_position_id
+
+      if (isNewUser) {
+        // If this was a login attempt with a new/incomplete user, block it
+        if (mode === "login") {
+          console.log("Blocking incomplete user from login flow")
+          await supabase.auth.signOut()
+          return NextResponse.redirect(
+            `${requestUrl.origin}/register?error=incomplete_signup&message=Please complete your signup with a referral code.`
+          )
+        }
+
+        // If signup flow, redirect to complete-signup to get referral
         console.log("New OAuth user detected, redirecting to complete-signup")
         return NextResponse.redirect(`${requestUrl.origin}/complete-signup`)
       }
