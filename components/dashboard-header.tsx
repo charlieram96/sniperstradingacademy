@@ -38,7 +38,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
   }
 
   return (
-    <header className="h-[50px] bg-background border-b border-border fixed top-0 right-0 left-0 z-30 flex items-center justify-between px-6">
+    <header className="h-[50px] bg-background border-b border-border fixed top-0 right-0 left-0 z-50 flex items-center justify-between px-6">
       {/* Left side - Logo */}
       <div className="flex items-center gap-2">
         <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">

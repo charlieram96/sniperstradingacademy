@@ -29,44 +29,44 @@ export default async function DashboardLayout({
       {/* Sidebar */}
       <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col fixed h-full z-40 pt-[50px]">
         <nav className="flex-1 py-4 overflow-y-auto">
-          <NavigationLink 
+          <NavigationLink
             href="/dashboard"
-            className="flex items-center gap-3 px-4 py-2.5 mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+            className="flex items-center gap-3 px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
             <LayoutDashboard className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
             <span className="text-sm font-medium">Dashboard</span>
           </NavigationLink>
-          <NavigationLink 
+          <NavigationLink
             href="/academy"
-            className="flex items-center gap-3 px-4 py-2.5 mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+            className="flex items-center gap-3 px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
             <GraduationCap className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
             <span className="text-sm font-medium">Academy</span>
           </NavigationLink>
-          <NavigationLink 
+          <NavigationLink
             href="/team"
-            className="flex items-center gap-3 px-4 py-2.5 mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+            className="flex items-center gap-3 px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
             <Users className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
             <span className="text-sm font-medium">My Team</span>
           </NavigationLink>
-          <NavigationLink 
+          <NavigationLink
             href="/finance"
-            className="flex items-center gap-3 px-4 py-2.5 mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+            className="flex items-center gap-3 px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
             <DollarSign className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
             <span className="text-sm font-medium">Finance</span>
           </NavigationLink>
-          <NavigationLink 
+          <NavigationLink
             href="/payments"
-            className="flex items-center gap-3 px-4 py-2.5 mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+            className="flex items-center gap-3 px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
             <CreditCard className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
             <span className="text-sm font-medium">Payments</span>
           </NavigationLink>
-          <NavigationLink 
+          <NavigationLink
             href="/referrals"
-            className="flex items-center gap-3 px-4 py-2.5 mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+            className="flex items-center gap-3 px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
             <Share2 className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
             <span className="text-sm font-medium">Referrals</span>
