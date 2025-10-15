@@ -313,6 +313,64 @@ export default function TeamPage() {
         </CardContent>
       </Card>
 
+      {/* Direct Members Section - NEW */}
+      <Card className="mb-6 border-primary/50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <UserCheck className="h-5 w-5 text-primary" />
+            Your Direct Members
+          </CardTitle>
+          <CardDescription>
+            People you personally referred - need 3 active to unlock earnings
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {directReferrals.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <UserPlus className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+              <p>No direct referrals yet</p>
+              <p className="text-sm mt-2">Share your referral link to start building your team</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {directReferrals.map((referral) => (
+                <div key={referral.id} className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                      referral.subscription_status === 'active'
+                        ? 'bg-primary/10 text-primary'
+                        : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {referral.subscription_status === 'active' ? (
+                        <CheckCircle className="h-5 w-5" />
+                      ) : (
+                        <UserCheck className="h-5 w-5" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="font-medium">{referral.name}</div>
+                      <div className="text-sm text-muted-foreground">{referral.email}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Joined {new Date(referral.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <Badge className={`${
+                      referral.subscription_status === 'active'
+                        ? 'bg-primary/10 text-primary border-primary/20'
+                        : 'bg-muted text-muted-foreground border-muted'
+                    }`}>
+                      {referral.subscription_status === 'active' ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Current Structure - PRIMARY FOCUS */}
       <Card className="mb-6 border-primary">
         <CardHeader>
@@ -321,49 +379,27 @@ export default function TeamPage() {
             Current Structure Progress
           </CardTitle>
           <CardDescription className="text-base">
-            Build your 3-wide, 6-deep structure to maximize earnings
+            Build your 3-wide unlimited depth structure to maximize earnings
           </CardDescription>
         </CardHeader>
         <CardContent>
           {/* Current Structure Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-              <p className="text-sm text-muted-foreground">Total Members</p>
-              <p className="text-3xl font-bold text-primary">{teamStats.totalMembers}/1092</p>
-              <Progress value={(teamStats.totalMembers / 1092) * 100} className="h-2 mt-2" />
+              <p className="text-sm text-muted-foreground">Active Members</p>
+              <p className="text-3xl font-bold text-primary">{teamStats.activeMembers}/{1092 * teamStats.structures}</p>
+              <Progress value={(teamStats.activeMembers / (1092 * teamStats.structures)) * 100} className="h-2 mt-2" />
             </div>
             <div className="p-4 rounded-lg bg-muted/50">
-              <p className="text-sm text-muted-foreground">Active Members</p>
-              <p className="text-3xl font-bold">{teamStats.activeMembers}</p>
-              <p className="text-xs text-muted-foreground mt-1">With subscription</p>
+              <p className="text-sm text-muted-foreground">Total Members</p>
+              <p className="text-3xl font-bold">{teamStats.totalMembers}</p>
+              <p className="text-xs text-muted-foreground mt-1">Informational only</p>
             </div>
             <div className="p-4 rounded-lg bg-muted/50">
               <p className="text-sm text-muted-foreground">Monthly Earnings</p>
-              <p className="text-3xl font-bold text-primary">${teamStats.totalMonthlyVolume.toFixed(0)}</p>
-              <p className="text-xs text-muted-foreground mt-1">At current rate</p>
+              <p className="text-3xl font-bold text-primary">${(teamStats.activeMembers * 19.9).toFixed(0)}</p>
+              <p className="text-xs text-muted-foreground mt-1">19.9 × active count</p>
             </div>
-          </div>
-
-          {/* Level by Level Breakdown */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Level Breakdown</h4>
-            {[1, 2, 3, 4, 5, 6].map(level => {
-              const members = groupedMembers[level] || []
-              const maxAtLevel = maxPerLevel[level - 1]
-              const percentage = (members.length / maxAtLevel) * 100
-              
-              return (
-                <div key={level} className="flex items-center gap-4">
-                  <div className="w-20 text-sm font-medium">Level {level}</div>
-                  <div className="flex-1">
-                    <Progress value={percentage} className="h-3" />
-                  </div>
-                  <div className="w-24 text-right text-sm text-muted-foreground">
-                    {members.length}/{maxAtLevel}
-                  </div>
-                </div>
-              )
-            })}
           </div>
         </CardContent>
       </Card>
@@ -436,28 +472,46 @@ export default function TeamPage() {
       </Card>
 
       {/* Qualification Status Alert */}
-      {!teamStats.qualificationStatus && (
-        <Card className="mb-6 border-amber-500/20 bg-amber-500/5">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-amber-400" />
-              <CardTitle className="text-foreground">Unlock Your Earnings</CardTitle>
-            </div>
-            <CardDescription className="text-muted-foreground">
-              Refer {3 - teamStats.directReferralsCount} more {3 - teamStats.directReferralsCount === 1 ? 'person' : 'people'} to unlock residual income
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Progress 
-              value={(teamStats.directReferralsCount / 3) * 100} 
-              className="h-2 bg-muted"
-            />
-            <p className="text-sm text-muted-foreground mt-2">
-              {teamStats.directReferralsCount}/3 direct referrals completed
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      {(() => {
+        const activeDirectCount = directReferrals.filter(r => r.subscription_status === 'active').length
+        const isQualified = activeDirectCount >= 3
+
+        return (
+          <Card className={`mb-6 ${
+            isQualified
+              ? 'border-green-500/30 bg-green-500/5'
+              : 'border-amber-500/20 bg-amber-500/5'
+          }`}>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                {isQualified ? (
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                ) : (
+                  <AlertCircle className="h-5 w-5 text-amber-400" />
+                )}
+                <CardTitle className="text-foreground">
+                  {isQualified ? 'Earnings Unlocked!' : 'Unlock Your Earnings'}
+                </CardTitle>
+              </div>
+              <CardDescription className={isQualified ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}>
+                {isQualified
+                  ? 'You have 3+ active direct referrals - you\'re qualified for residual income!'
+                  : `Get ${3 - activeDirectCount} more active ${3 - activeDirectCount === 1 ? 'referral' : 'referrals'} to unlock residual income`
+                }
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Progress
+                value={(activeDirectCount / 3) * 100}
+                className={`h-2 ${isQualified ? 'bg-green-100 dark:bg-green-950' : 'bg-muted'}`}
+              />
+              <p className={`text-sm mt-2 ${isQualified ? 'text-green-600 dark:text-green-400 font-medium' : 'text-muted-foreground'}`}>
+                {activeDirectCount}/3 active direct referrals {isQualified && '✓'}
+              </p>
+            </CardContent>
+          </Card>
+        )
+      })()}
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
