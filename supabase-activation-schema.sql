@@ -8,15 +8,14 @@ ALTER TABLE public.users
 ADD COLUMN IF NOT EXISTS activated_at TIMESTAMP WITH TIME ZONE,
 ADD COLUMN IF NOT EXISTS qualification_deadline TIMESTAMP WITH TIME ZONE,
 ADD COLUMN IF NOT EXISTS monthly_payment_due_date TIMESTAMP WITH TIME ZONE,
-ADD COLUMN IF NOT EXISTS accumulated_residual DECIMAL(10,2) DEFAULT 0,
 ADD COLUMN IF NOT EXISTS qualified_at TIMESTAMP WITH TIME ZONE,
-ADD COLUMN IF NOT EXISTS account_active BOOLEAN DEFAULT FALSE,
 ADD COLUMN IF NOT EXISTS last_payment_date TIMESTAMP WITH TIME ZONE,
-ADD COLUMN IF NOT EXISTS direct_referrals_count INTEGER DEFAULT 0;
+ADD COLUMN IF NOT EXISTS direct_referrals_count INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS active_direct_referrals_count INTEGER DEFAULT 0;
 
 -- Create index for faster queries
-CREATE INDEX IF NOT EXISTS idx_users_account_active ON public.users(account_active);
 CREATE INDEX IF NOT EXISTS idx_users_qualification_deadline ON public.users(qualification_deadline);
+CREATE INDEX IF NOT EXISTS idx_users_active_direct_referrals ON public.users(active_direct_referrals_count) WHERE active_direct_referrals_count > 0;
 
 -- Function to handle initial activation ($500 payment)
 -- UPDATED: Removed 365-day qualification period requirement
@@ -28,7 +27,7 @@ BEGIN
     SET
         activated_at = TIMEZONE('utc', NOW()),
         monthly_payment_due_date = TIMEZONE('utc', NOW()) + INTERVAL '30 days',
-        account_active = TRUE,
+        is_active = TRUE,
         membership_status = 'unlocked',
         initial_payment_completed = TRUE,
         initial_payment_date = TIMEZONE('utc', NOW())
@@ -37,20 +36,20 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Function to check and update qualification status
--- UPDATED: Removed 365-day deadline logic - no more forfeiture
+-- UPDATED: Uses active_direct_referrals_count (need 3 ACTIVE referrals to qualify)
 CREATE OR REPLACE FUNCTION check_qualification_status(
     p_user_id UUID
 ) RETURNS BOOLEAN AS $$
 DECLARE
-    v_direct_referrals INTEGER;
+    v_active_direct_referrals INTEGER;
     v_qualified BOOLEAN;
 BEGIN
     -- Get current qualification status
     SELECT
-        direct_referrals_count,
+        active_direct_referrals_count,
         qualified_at IS NOT NULL
     INTO
-        v_direct_referrals,
+        v_active_direct_referrals,
         v_qualified
     FROM public.users
     WHERE id = p_user_id;
@@ -60,8 +59,8 @@ BEGIN
         RETURN TRUE;
     END IF;
 
-    -- Check if user has 3 or more direct referrals
-    IF v_direct_referrals >= 3 THEN
+    -- Check if user has 3 or more ACTIVE direct referrals
+    IF v_active_direct_referrals >= 3 THEN
         UPDATE public.users
         SET qualified_at = TIMEZONE('utc', NOW())
         WHERE id = p_user_id;
@@ -69,29 +68,6 @@ BEGIN
     END IF;
 
     RETURN FALSE;
-END;
-$$ LANGUAGE plpgsql;
-
--- Function to accumulate residual income (called when not yet qualified)
-CREATE OR REPLACE FUNCTION accumulate_residual(
-    p_user_id UUID,
-    p_amount DECIMAL(10,2)
-) RETURNS VOID AS $$
-DECLARE
-    v_qualified BOOLEAN;
-BEGIN
-    -- Check if user is qualified
-    SELECT qualified_at IS NOT NULL
-    INTO v_qualified
-    FROM public.users
-    WHERE id = p_user_id;
-    
-    -- If not qualified, accumulate the residual
-    IF NOT v_qualified THEN
-        UPDATE public.users
-        SET accumulated_residual = accumulated_residual + p_amount
-        WHERE id = p_user_id;
-    END IF;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -103,14 +79,14 @@ CREATE OR REPLACE FUNCTION handle_monthly_payment(
 BEGIN
     IF p_payment_successful THEN
         UPDATE public.users
-        SET 
-            account_active = TRUE,
+        SET
+            is_active = TRUE,
             last_payment_date = TIMEZONE('utc', NOW()),
             monthly_payment_due_date = TIMEZONE('utc', NOW()) + INTERVAL '30 days'
         WHERE id = p_user_id;
     ELSE
         UPDATE public.users
-        SET account_active = FALSE
+        SET is_active = FALSE
         WHERE id = p_user_id;
     END IF;
 END;
@@ -145,7 +121,7 @@ FOR EACH ROW
 EXECUTE FUNCTION update_direct_referrals_count();
 
 -- View to get user qualification status
--- UPDATED: Removed deadline tracking - no more 365-day expiration
+-- UPDATED: Uses active_direct_referrals_count for qualification
 CREATE OR REPLACE VIEW public.user_qualification_status AS
 SELECT
     u.id,
@@ -154,11 +130,12 @@ SELECT
     u.activated_at,
     u.qualified_at,
     u.direct_referrals_count,
-    u.accumulated_residual,
-    u.account_active,
+    u.active_direct_referrals_count,
+    u.is_active,
     u.monthly_payment_due_date,
     CASE
         WHEN u.qualified_at IS NOT NULL THEN 'qualified'
+        WHEN u.active_direct_referrals_count >= 3 THEN 'should_be_qualified'
         WHEN u.activated_at IS NOT NULL THEN 'pending'
         ELSE 'not_activated'
     END as qualification_status,
@@ -173,5 +150,4 @@ FROM public.users u;
 GRANT ALL ON public.user_qualification_status TO authenticated;
 GRANT EXECUTE ON FUNCTION handle_account_activation TO authenticated;
 GRANT EXECUTE ON FUNCTION check_qualification_status TO authenticated;
-GRANT EXECUTE ON FUNCTION accumulate_residual TO authenticated;
 GRANT EXECUTE ON FUNCTION handle_monthly_payment TO authenticated;

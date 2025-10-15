@@ -79,13 +79,21 @@ export default function CompleteSignupPage() {
               .eq("id", existingUser.id)
 
             // Create referral record
-            await supabase
+            const { error: referralError } = await supabase
               .from("referrals")
               .insert({
                 referrer_id: referrerInfo.id,
                 referred_id: existingUser.id,
                 status: "pending",
               })
+
+            if (referralError) {
+              console.error("❌ Error creating referral record:", referralError)
+              console.error(`   Failed to create referral: referrer=${referrerInfo.id}, referred=${existingUser.id}`)
+            } else {
+              console.log("✅ Referral record created successfully")
+              console.log(`   Referrer: ${referrerInfo.id} → Referred: ${existingUser.id}`)
+            }
           }
 
           // Assign network position (works for both bypass and normal referrals)

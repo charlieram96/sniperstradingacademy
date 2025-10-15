@@ -229,13 +229,21 @@ function RegisterForm() {
             .eq("id", authData.user.id)
 
           // Create referral record
-          await supabase
+          const { error: referralError } = await supabase
             .from("referrals")
             .insert({
               referrer_id: confirmedReferrer.id,
               referred_id: authData.user.id,
               status: "pending",
             })
+
+          if (referralError) {
+            console.error("❌ Error creating referral record:", referralError)
+            console.error(`   Failed to create referral: referrer=${confirmedReferrer.id}, referred=${authData.user.id}`)
+          } else {
+            console.log("✅ Referral record created successfully")
+            console.log(`   Referrer: ${confirmedReferrer.id} → Referred: ${authData.user.id}`)
+          }
         }
 
         // Assign network position with retry mechanism

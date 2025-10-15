@@ -1,18 +1,19 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/server'
 
 /**
  * API endpoint to assign network position to a user
  * This should be called after user signup and referral creation
  *
- * Security: Allows unauthenticated calls for new user signups
+ * Security: Uses service role to bypass RLS
  * - Position can only be assigned once per user
  * - Validates user exists before assignment
  * - Server-side only with service role credentials
+ * - Bypasses RLS to work for both authenticated and unauthenticated users
  */
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
+    const supabase = createServiceRoleClient()
 
     const body = await request.json()
     const { userId, referrerId } = body
@@ -122,6 +123,31 @@ export async function POST(request: Request) {
     }
 
     console.log('Updated user data:', updatedUser)
+
+    // Log upchain total_network_count increment
+    if (updatedUser?.network_position_id) {
+      try {
+        const { data: upchain, error: upchainError } = await supabase
+          .rpc('get_upline_chain', { start_position_id: updatedUser.network_position_id })
+
+        if (!upchainError && upchain && upchain.length > 0) {
+          const ancestorIds = upchain.filter((a: any) => a.user_id !== userId).map((a: any) => a.user_id)
+          console.log(`✅ Upchain found: ${upchain.length - 1} ancestors (excluding self)`)
+          console.log(`✅ Incremented total_network_count for ${ancestorIds.length} ancestors`)
+
+          if (ancestorIds.length > 0) {
+            const preview = ancestorIds.slice(0, 3)
+            console.log(`   Affected ancestor IDs: [${preview.join(', ')}${ancestorIds.length > 3 ? `, ... +${ancestorIds.length - 3} more` : ''}]`)
+          }
+        } else if (upchainError) {
+          console.error('Error fetching upchain for logging:', upchainError)
+        } else {
+          console.log('No upchain found (user might be root)')
+        }
+      } catch (err) {
+        console.error('Exception while logging upchain:', err)
+      }
+    }
 
     return NextResponse.json({
       success: true,

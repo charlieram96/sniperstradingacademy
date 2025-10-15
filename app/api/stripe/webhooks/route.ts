@@ -119,7 +119,24 @@ export async function POST(req: NextRequest) {
               if (incrementError) {
                 console.error('❌ Error incrementing active count:', incrementError)
               } else {
-                console.log(`✅ User became active! Incremented active_network_count for ${ancestorsIncremented || 0} ancestors`)
+                console.log(`✅ User ${userId} became ACTIVE after $500 payment!`)
+                console.log(`✅ Incremented active_network_count for ${ancestorsIncremented || 0} ancestors in upchain`)
+
+                // Log which ancestors were affected
+                try {
+                  const { data: upchain, error: upchainError } = await supabase
+                    .rpc('get_upline_chain', { start_position_id: userBeforeUpdate.network_position_id })
+
+                  if (!upchainError && upchain && upchain.length > 0) {
+                    const ancestorIds = upchain.filter((a: any) => a.user_id !== userId).map((a: any) => a.user_id)
+                    if (ancestorIds.length > 0) {
+                      const preview = ancestorIds.slice(0, 3)
+                      console.log(`   Affected ancestor IDs: [${preview.join(', ')}${ancestorIds.length > 3 ? `, ... +${ancestorIds.length - 3} more` : ''}]`)
+                    }
+                  }
+                } catch (upchainErr) {
+                  console.error('Error fetching upchain for logging:', upchainErr)
+                }
               }
             } catch (err) {
               console.error('❌ Exception incrementing active count:', err)
@@ -127,6 +144,13 @@ export async function POST(req: NextRequest) {
           }
 
           // Update referral status if user was referred
+          // First get the referral to know who the referrer is
+          const { data: referralData } = await supabase
+            .from("referrals")
+            .select("referrer_id")
+            .eq("referred_id", userId)
+            .single()
+
           const { error: referralError } = await supabase
             .from("referrals")
             .update({
@@ -138,7 +162,32 @@ export async function POST(req: NextRequest) {
           if (referralError) {
             console.error("❌ Error updating referral:", referralError)
           } else {
-            console.log("✅ Referral updated successfully")
+            console.log("✅ Referral updated to 'active' status")
+
+            // Log the direct referrals count update (triggered by database trigger)
+            if (referralData?.referrer_id) {
+              try {
+                // Query referrer's updated count
+                const { data: referrerData, error: countError } = await supabase
+                  .from("users")
+                  .select("name, direct_referrals_count")
+                  .eq("id", referralData.referrer_id)
+                  .single()
+
+                if (countError) {
+                  // Column might not exist if schema not deployed
+                  console.warn("⚠️  Could not fetch direct_referrals_count - column may not exist")
+                  console.warn("   Deploy supabase-activation-schema.sql to enable referral counting")
+                } else if (referrerData) {
+                  console.log(`✅ Referrer's direct_referrals_count updated via trigger`)
+                  console.log(`   Referrer: ${referrerData.name} (${referralData.referrer_id})`)
+                  console.log(`   New direct_referrals_count: ${referrerData.direct_referrals_count}`)
+                }
+              } catch (err) {
+                console.warn("⚠️  Error fetching direct_referrals_count:", err)
+                console.warn("   This is non-critical - referral status was updated successfully")
+              }
+            }
           }
 
           // Record payment

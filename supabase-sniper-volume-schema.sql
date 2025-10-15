@@ -19,8 +19,9 @@ ADD COLUMN IF NOT EXISTS current_commission_rate DECIMAL(5,4) DEFAULT 0.10;
 
 -- Update is_active to be calculated based on last_payment_date
 -- Active = paid within last 33 days (30 + 3 day grace period)
+-- IMPORTANT: Users start INACTIVE (FALSE) and become active only after $500 payment
 ALTER TABLE public.users
-ALTER COLUMN is_active SET DEFAULT TRUE;
+ALTER COLUMN is_active SET DEFAULT FALSE;
 
 -- Create monthly sniper volume history table for archiving
 CREATE TABLE IF NOT EXISTS public.sniper_volume_history (
