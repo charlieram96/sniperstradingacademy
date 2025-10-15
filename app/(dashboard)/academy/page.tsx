@@ -21,6 +21,7 @@ interface Lesson {
   type: "video" | "pdf"
   duration?: string
   size?: string
+  url?: string
   completed: boolean
 }
 
@@ -43,30 +44,18 @@ export default function AcademyPage() {
       lessons: [
         {
           id: "1-1",
-          title: "Welcome to the Academy",
+          title: "Welcome",
           type: "video",
-          duration: "8 min",
-          completed: true
-        },
-        {
-          id: "1-2",
-          title: "What is Options Trading?",
-          type: "video",
-          duration: "15 min",
-          completed: true
-        },
-        {
-          id: "1-3",
-          title: "Platform Overview",
-          type: "video",
-          duration: "12 min",
+          duration: "2:13",
+          url: "/academy/module-1-introduction/videos/intro-1.mp4",
           completed: false
         },
         {
-          id: "1-4",
-          title: "Setting Your Goals",
+          id: "1-2",
+          title: "Snipers Trading Academy Philosophy",
           type: "video",
-          duration: "10 min",
+          duration: "2:41",
+          url: "/academy/module-1-introduction/videos/intro-2.mp4",
           completed: false
         }
       ]
@@ -458,7 +447,13 @@ export default function AcademyPage() {
                               )}
                             </div>
                           </div>
-                          <Button size="sm" variant="outline" className="ml-4">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="ml-4"
+                            onClick={() => lesson.url && window.open(lesson.url, '_blank')}
+                            disabled={!lesson.url}
+                          >
                             {lesson.type === "video" ? (
                               <>
                                 <PlayCircle className="h-4 w-4 mr-1" />
