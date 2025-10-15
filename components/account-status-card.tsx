@@ -102,7 +102,7 @@ export function AccountStatusCard({
       return "Your account is inactive. Activate it to start earning and receiving payouts."
     }
     if (isOverdue) {
-      return "Your $200 monthly payment is overdue. Your account will be deactivated if not paid."
+      return "Your $199 monthly payment is overdue. Your account will be deactivated if not paid."
     }
     if (daysUntilDue <= 3) {
       return "Your monthly payment is due very soon. Ensure your payment method is up to date."
@@ -136,7 +136,7 @@ export function AccountStatusCard({
               <CreditCard className="h-4 w-4" />
               <span>Monthly Subscription</span>
             </div>
-            <p className="text-2xl font-bold">$200</p>
+            <p className="text-2xl font-bold">$199</p>
             <p className="text-xs text-muted-foreground">Due monthly</p>
           </div>
           

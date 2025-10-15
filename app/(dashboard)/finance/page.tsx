@@ -44,15 +44,15 @@ export default function FinancePage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [directBonuses, setDirectBonuses] = useState<DirectBonus[]>([])
   const [monthlyEarnings, setMonthlyEarnings] = useState<MonthlyEarning[]>([])
-  const [accountStatus] = useState({
-    accountActive: true,
-    activatedAt: new Date("2024-01-01"),
-    monthlyPaymentDueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 days from now
-    lastPaymentDate: new Date("2024-01-01"),
-    qualificationDeadline: new Date("2024-12-31"),
+  const [accountStatus, setAccountStatus] = useState({
+    accountActive: false,
+    activatedAt: null as Date | null,
+    monthlyPaymentDueDate: null as Date | null,
+    lastPaymentDate: null as Date | null,
+    qualificationDeadline: null as Date | null,
     qualifiedAt: null as Date | null,
-    directReferralsCount: 2,
-    accumulatedResidual: 3500
+    directReferralsCount: 0,
+    accumulatedResidual: 0
   })
   const [financialStats, setFinancialStats] = useState({
     totalSniperVolume: 0,
@@ -65,7 +65,9 @@ export default function FinancePage() {
     lifetimeEarnings: 0,
     nextPayoutDate: "",
     nextPayoutAmount: 0,
-    isQualified: false
+    isQualified: false,
+    activeMembers: 0,
+    commissionRate: 0.10
   })
   const [loading, setLoading] = useState(true)
 
@@ -87,6 +89,31 @@ export default function FinancePage() {
       try {
         const supabase = createClient()
 
+        // Fetch user account data
+        const { data: userData } = await supabase
+          .from('users')
+          .select('is_active, last_payment_date, initial_payment_date, qualified_at, direct_referrals_count, active_network_count, current_commission_rate')
+          .eq('id', userId)
+          .single()
+
+        // Calculate monthly payment due date (30 days after initial payment or last payment)
+        let monthlyPaymentDueDate = null
+        if (userData?.initial_payment_date) {
+          const initialDate = new Date(userData.initial_payment_date)
+          monthlyPaymentDueDate = new Date(initialDate.getTime() + 30 * 24 * 60 * 60 * 1000)
+        }
+
+        setAccountStatus({
+          accountActive: userData?.is_active || false,
+          activatedAt: userData?.initial_payment_date ? new Date(userData.initial_payment_date) : null,
+          monthlyPaymentDueDate,
+          lastPaymentDate: userData?.last_payment_date ? new Date(userData.last_payment_date) : null,
+          qualificationDeadline: null,
+          qualifiedAt: userData?.qualified_at ? new Date(userData.qualified_at) : null,
+          directReferralsCount: userData?.direct_referrals_count || 0,
+          accumulatedResidual: 0
+        })
+
         // Fetch real network stats
         const statsResponse = await fetch(`/api/network/stats?userId=${userId}`)
         const stats = await statsResponse.json()
@@ -99,13 +126,16 @@ export default function FinancePage() {
           .order('created_at', { ascending: false })
           .limit(12)
 
-        // Note: Direct referrals not used in current earnings calculation
-        // They're tracked via referred_by column and withdrawal eligibility
+        // Calculate monthly volume (active_network_count × $19.9)
+        const activeCount = userData?.active_network_count || 0
+        const monthlyVolume = activeCount * 19.9
+        const commissionRate = userData?.current_commission_rate || 0.10
+        const monthlyResidual = monthlyVolume * commissionRate
 
         // Format commission data as monthly earnings
         const monthlyEarnings: MonthlyEarning[] = commissions?.map(c => ({
           month: new Date(c.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-          sniperVolume: stats?.earnings?.monthlyVolume || 0,
+          sniperVolume: monthlyVolume,
           residualIncome: c.amount,
           directBonuses: 0,
           totalEarning: c.amount
@@ -123,17 +153,19 @@ export default function FinancePage() {
         const lifetimeEarnings = totalResidual
 
         setFinancialStats({
-          totalSniperVolume: stats?.earnings?.monthlyVolume || 0,
-          currentMonthVolume: stats?.earnings?.monthlyVolume || 0,
+          totalSniperVolume: monthlyVolume,
+          currentMonthVolume: monthlyVolume,
           totalResidualEarned: totalResidual,
-          currentMonthResidual: stats?.earnings?.potentialMonthlyEarnings || 0,
+          currentMonthResidual: monthlyResidual,
           totalDirectBonuses: 0,
           pendingBonuses: 0,
           paidBonuses: 0,
           lifetimeEarnings,
           nextPayoutDate,
-          nextPayoutAmount: stats?.earnings?.canWithdraw ? stats?.earnings?.potentialMonthlyEarnings : 0,
-          isQualified: stats?.earnings?.canWithdraw || false
+          nextPayoutAmount: userData?.is_active ? monthlyResidual : 0,
+          isQualified: (userData?.qualified_at !== null && userData?.qualified_at !== undefined) || false,
+          activeMembers: activeCount,
+          commissionRate: commissionRate
         })
 
         setLoading(false)
@@ -226,7 +258,7 @@ export default function FinancePage() {
             <div className="text-2xl font-bold text-primary">
               ${financialStats.currentMonthResidual.toLocaleString()}
             </div>
-            <p className="text-xs text-muted-foreground">10% of team volume</p>
+            <p className="text-xs text-muted-foreground">{(financialStats.commissionRate * 100).toFixed(0)}% of team volume</p>
           </CardContent>
         </Card>
 
@@ -276,9 +308,9 @@ export default function FinancePage() {
         <TabsContent value="residual" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Sniper Volume & Residual Income</CardTitle>
+              <CardTitle>Team Volume & Residual Income</CardTitle>
               <CardDescription>
-                Your 10% commission from total team monthly subscriptions
+                Your {(financialStats.commissionRate * 100).toFixed(0)}% commission from total active team monthly subscriptions
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -297,10 +329,10 @@ export default function FinancePage() {
                       <span className="text-sm text-primary">+25% from last month</span>
                     </div>
                   </div>
-                  
+
                   <div className="p-4 border rounded-lg bg-primary/5 border-primary/20">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-muted-foreground">Your Residual (10%)</span>
+                      <span className="text-sm text-muted-foreground">Your Residual ({(financialStats.commissionRate * 100).toFixed(0)}%)</span>
                       {financialStats.isQualified ? (
                         <Badge className="bg-primary/10 text-primary">Qualified</Badge>
                       ) : (
@@ -308,10 +340,10 @@ export default function FinancePage() {
                       )}
                     </div>
                     <div className="text-3xl font-bold text-primary">
-                      ${financialStats.isQualified ? financialStats.currentMonthResidual.toLocaleString() : "0"}
+                      ${financialStats.isQualified ? financialStats.currentMonthResidual.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : "0"}
                     </div>
                     <div className="text-sm text-primary/80 mt-2">
-                      {financialStats.isQualified ? "Earning 10% commission" : "Refer 3 to unlock"}
+                      {financialStats.isQualified ? `Earning ${(financialStats.commissionRate * 100).toFixed(0)}% commission` : "Get 3 active referrals to unlock"}
                     </div>
                   </div>
                 </div>
@@ -321,17 +353,17 @@ export default function FinancePage() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Active Members</span>
-                      <span className="font-medium">75 × $200 = $15,000</span>
+                      <span className="font-medium">{financialStats.activeMembers} × $19.9 = ${financialStats.currentMonthVolume.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Your Commission Rate</span>
-                      <span className="font-medium">10%</span>
+                      <span className="font-medium">{(financialStats.commissionRate * 100).toFixed(0)}%</span>
                     </div>
                     <div className="border-t pt-2 mt-2">
                       <div className="flex items-center justify-between">
                         <span className="font-medium">Monthly Residual Income</span>
                         <span className="font-bold text-primary">
-                          ${financialStats.currentMonthResidual.toLocaleString()}
+                          ${financialStats.currentMonthResidual.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                         </span>
                       </div>
                     </div>
