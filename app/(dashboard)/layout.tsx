@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import Image from "next/image"
 import { SignOutButton } from "@/components/sign-out-button"
 import { NavigationLink } from "@/components/navigation-link"
 import { DashboardHeader } from "@/components/dashboard-header"
@@ -28,23 +27,7 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen flex bg-background">
       {/* Sidebar */}
-      <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col fixed h-full z-40">
-        <div className="p-6 border-b border-sidebar-border">
-          <div className="flex items-center gap-3">
-            <Image 
-              src="/gold-logo.svg" 
-              alt="Trading Hub Logo" 
-              width={40} 
-              height={40}
-              className="w-10 h-10"
-            />
-            <div>
-              <h1 className="text-xl font-semibold text-sidebar-foreground">Trading Hub</h1>
-              <p className="text-xs text-muted-foreground">Options Network</p>
-            </div>
-          </div>
-        </div>
-        
+      <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col fixed h-full z-40 pt-[50px]">
         <nav className="flex-1 py-4 overflow-y-auto">
           <NavigationLink 
             href="/dashboard"
