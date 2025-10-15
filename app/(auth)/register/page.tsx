@@ -25,6 +25,7 @@ function RegisterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const urlReferralCode = searchParams.get("ref")
+  const isLockedReferral = !!urlReferralCode // Locked if coming from referral link
 
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
@@ -522,6 +523,18 @@ function RegisterForm() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Locked Referral Indicator */}
+                {isLockedReferral && (
+                  <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-primary" />
+                      <p className="text-sm font-medium text-primary">
+                        Referred by link - Referral code locked
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Referral Code Input */}
                 <div className="space-y-3">
                   <Label htmlFor="referralCode">Referral Code</Label>
@@ -532,23 +545,29 @@ function RegisterForm() {
                       onChange={(e) => setReferralCodeInput(e.target.value.toUpperCase())}
                       placeholder="Enter referral code"
                       className="flex-1 uppercase"
-                      disabled={searchingCode}
+                      disabled={searchingCode || isLockedReferral}
+                      readOnly={isLockedReferral}
                     />
-                    <Button
-                      type="button"
-                      onClick={handleSearchCode}
-                      disabled={searchingCode || !referralCodeInput.trim()}
-                      size="icon"
-                    >
-                      {searchingCode ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Search className="h-4 w-4" />
-                      )}
-                    </Button>
+                    {!isLockedReferral && (
+                      <Button
+                        type="button"
+                        onClick={handleSearchCode}
+                        disabled={searchingCode || !referralCodeInput.trim()}
+                        size="icon"
+                      >
+                        {searchingCode ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Search className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Enter the referral code from the person who invited you
+                    {isLockedReferral
+                      ? "This referral code is from your invitation link and cannot be changed"
+                      : "Enter the referral code from the person who invited you"
+                    }
                   </p>
                 </div>
 
@@ -748,17 +767,22 @@ function RegisterForm() {
                 </Avatar>
                 <div className="flex-1">
                   <p className="text-sm font-medium">Referred by {confirmedReferrer.name}</p>
-                  <p className="text-xs text-muted-foreground">Code: {confirmedReferrer.referralCode}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Code: {confirmedReferrer.referralCode}
+                    {isLockedReferral && <span className="ml-2 text-primary">• Locked by invitation link</span>}
+                  </p>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleChangeReferrer}
-                  className="text-xs"
-                >
-                  Change
-                </Button>
+                {!isLockedReferral && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleChangeReferrer}
+                    className="text-xs"
+                  >
+                    Change
+                  </Button>
+                )}
               </div>
             </div>
           )}
