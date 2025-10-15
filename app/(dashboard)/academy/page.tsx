@@ -407,65 +407,70 @@ export default function AcademyPage() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="space-y-2 pt-4 pl-14">
+                    <div className="space-y-4 pt-4 pl-14">
                       {module.lessons.map((lesson) => (
-                        <div
-                          key={lesson.id}
-                          className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-accent transition-colors duration-200"
-                        >
-                          <div className="flex items-center gap-3 flex-1">
-                            <button
-                              onClick={() => toggleLessonComplete(module.id, lesson.id)}
-                              className="flex-shrink-0"
-                            >
-                              {lesson.completed ? (
-                                <CheckCircle className="h-5 w-5 text-green-500" />
-                              ) : (
-                                <Circle className="h-5 w-5 text-muted-foreground" />
-                              )}
-                            </button>
-                            <div className="flex items-center gap-2 flex-1">
-                              {lesson.type === "video" ? (
-                                <PlayCircle className="h-4 w-4 text-primary" />
-                              ) : (
-                                <FileText className="h-4 w-4 text-red-500" />
-                              )}
-                              <span className={`font-medium ${
-                                lesson.completed ? "text-muted-foreground line-through" : "text-foreground"
-                              }`}>
-                                {lesson.title}
-                              </span>
+                        <div key={lesson.id} className="space-y-3">
+                          <div className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-accent transition-colors duration-200">
+                            <div className="flex items-center gap-3 flex-1">
+                              <button
+                                onClick={() => toggleLessonComplete(module.id, lesson.id)}
+                                className="flex-shrink-0"
+                              >
+                                {lesson.completed ? (
+                                  <CheckCircle className="h-5 w-5 text-green-500" />
+                                ) : (
+                                  <Circle className="h-5 w-5 text-muted-foreground" />
+                                )}
+                              </button>
+                              <div className="flex items-center gap-2 flex-1">
+                                {lesson.type === "video" ? (
+                                  <PlayCircle className="h-4 w-4 text-primary" />
+                                ) : (
+                                  <FileText className="h-4 w-4 text-red-500" />
+                                )}
+                                <span className={`font-medium ${
+                                  lesson.completed ? "text-muted-foreground line-through" : "text-foreground"
+                                }`}>
+                                  {lesson.title}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                {lesson.type === "video" ? (
+                                  <>
+                                    <Clock className="h-3 w-3" />
+                                    <span>{lesson.duration}</span>
+                                  </>
+                                ) : (
+                                  <span>{lesson.size}</span>
+                                )}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              {lesson.type === "video" ? (
-                                <>
-                                  <Clock className="h-3 w-3" />
-                                  <span>{lesson.duration}</span>
-                                </>
-                              ) : (
-                                <span>{lesson.size}</span>
-                              )}
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="ml-4"
-                            onClick={() => lesson.url && window.open(lesson.url, '_blank')}
-                            disabled={!lesson.url}
-                          >
-                            {lesson.type === "video" ? (
-                              <>
-                                <PlayCircle className="h-4 w-4 mr-1" />
-                                Watch
-                              </>
-                            ) : (
-                              <>
+                            {lesson.type === "pdf" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="ml-4"
+                                onClick={() => lesson.url && window.open(lesson.url, '_blank')}
+                                disabled={!lesson.url}
+                              >
                                 <Download className="h-4 w-4 mr-1" />
                                 Download
-                              </>
+                              </Button>
                             )}
-                          </Button>
+                          </div>
+                          {lesson.type === "video" && lesson.url && (
+                            <div className="rounded-lg overflow-hidden border border-border bg-black">
+                              <video
+                                controls
+                                className="w-full"
+                                style={{ maxHeight: '500px' }}
+                                preload="metadata"
+                              >
+                                <source src={lesson.url} type="video/mp4" />
+                                Your browser does not support the video tag.
+                              </video>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
