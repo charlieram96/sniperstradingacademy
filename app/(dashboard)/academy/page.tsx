@@ -47,7 +47,7 @@ export default function AcademyPage() {
           title: "Welcome",
           type: "video",
           duration: "2:13",
-          url: "/academy/module-1-introduction/videos/intro-1.mp4",
+          url: "https://faduoctunhntejvbhwqm.supabase.co/storage/v1/object/public/academy-videos/module-1/module-1-1.mp4",
           completed: false
         },
         {
@@ -55,7 +55,7 @@ export default function AcademyPage() {
           title: "Snipers Trading Academy Philosophy",
           type: "video",
           duration: "2:41",
-          url: "/academy/module-1-introduction/videos/intro-2.mp4",
+          url: "https://faduoctunhntejvbhwqm.supabase.co/storage/v1/object/public/academy-videos/module-1/module-1-2.mp4",
           completed: false
         }
       ]
