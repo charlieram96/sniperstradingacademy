@@ -30,6 +30,7 @@ interface TeamMember {
   created_at: string
   subscription_status?: string
   referrals_count?: number
+  active_network_count?: number
   is_direct_referral?: boolean
   tree_parent_id?: string | null
   spillover_from?: string | null // For backwards compatibility
@@ -112,8 +113,18 @@ export default function TeamPage() {
       // Get all direct referrals
       const { data: directRefs } = await supabase
         .from("users")
-        .select("id, name, email, network_position_id, network_level, is_active, created_at")
+        .select("id, name, email, network_position_id, network_level, is_active, created_at, direct_referrals_count, active_network_count")
         .eq("referred_by", userId)
+
+      // Get full user details for all downline members
+      const downlineIds = downlineMembers?.map((m: { contributor_id: string }) => m.contributor_id) || []
+      const { data: fullUserData } = await supabase
+        .from("users")
+        .select("id, name, email, created_at, is_active, direct_referrals_count, active_network_count, network_level")
+        .in("id", downlineIds)
+
+      // Create a map for quick lookup
+      const userDataMap = new Map(fullUserData?.map(u => [u.id, u]) || [])
 
       // Format member data
       const formattedMembers: TeamMember[] = downlineMembers?.map((m: {
@@ -122,18 +133,20 @@ export default function TeamPage() {
         contributor_position_id: string
         is_active: boolean
       }) => {
+        const userData = userDataMap.get(m.contributor_id)
         const isDirectReferral = directRefs?.some(d => d.id === m.contributor_id) || false
 
         return {
           id: m.contributor_id,
           name: m.contributor_name || "Unknown",
-          email: "",
+          email: userData?.email || "",
           network_position_id: m.contributor_position_id,
-          level: 1, // Will be calculated from network position
-          created_at: new Date().toISOString(),
+          level: userData?.network_level || 1,
+          created_at: userData?.created_at || new Date().toISOString(),
           subscription_status: m.is_active ? "active" : "inactive",
           is_direct_referral: isDirectReferral,
-          referrals_count: 0
+          referrals_count: userData?.direct_referrals_count || 0,
+          active_network_count: userData?.active_network_count || 0
         }
       }) || []
 
@@ -148,7 +161,8 @@ export default function TeamPage() {
         created_at: d.created_at,
         subscription_status: d.is_active ? "active" : "inactive",
         is_direct_referral: true,
-        referrals_count: 0
+        referrals_count: d.direct_referrals_count || 0,
+        active_network_count: d.active_network_count || 0
       })) || []
 
       setDirectReferrals(directs)

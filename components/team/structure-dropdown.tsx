@@ -24,6 +24,7 @@ interface TeamMember {
   created_at: string
   subscription_status?: string
   referrals_count?: number
+  active_network_count?: number
   is_direct_referral?: boolean
   spillover_from?: string | null
   position?: number
@@ -237,18 +238,17 @@ export function StructureDropdown({
                 <Card className="p-4">
                   <CardHeader className="p-0 pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Network Size
+                      Active Network Size
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
                     <p className="text-2xl font-bold">
-                      {/* Calculate estimated network size based on level */}
-                      {selectedMember.level <= 6 ? Math.pow(3, 6 - selectedMember.level + 1) - 1 : 0}
+                      {selectedMember.active_network_count || 0}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">Potential members below</p>
+                    <p className="text-xs text-muted-foreground mt-1">Active members in network</p>
                   </CardContent>
                 </Card>
-                
+
                 <Card className="p-4">
                   <CardHeader className="p-0 pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -257,7 +257,7 @@ export function StructureDropdown({
                   </CardHeader>
                   <CardContent className="p-0">
                     <p className="text-2xl font-bold text-primary">
-                      ${selectedMember.subscription_status === 'active' ? '20' : '0'}
+                      ${selectedMember.subscription_status === 'active' ? '19.90' : '0'}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">To your residual</p>
                   </CardContent>
@@ -287,12 +287,6 @@ export function StructureDropdown({
                     </span>
                   </div>
                   <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                    <span className="text-sm">Position in Structure</span>
-                    <span className="text-sm font-medium">
-                      {selectedMember.position ? `Position ${selectedMember.position}` : 'Dynamic'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                     <span className="text-sm">Qualification Status</span>
                     <span className="text-sm font-medium">
                       {(selectedMember.referrals_count || 0) >= 3 ? (
@@ -315,7 +309,7 @@ export function StructureDropdown({
                     <div className="flex-1">
                       <p className="font-medium text-primary">Active Network Contributor</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        This member&apos;s subscription generates $20/month in residual income and helps grow your network through their referrals.
+                        This member&apos;s subscription generates $19.90/month in residual income and helps grow your network through their referrals.
                       </p>
                     </div>
                   </div>

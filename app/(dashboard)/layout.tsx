@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import Image from "next/image"
 import { SignOutButton } from "@/components/sign-out-button"
 import { NavigationLink } from "@/components/navigation-link"
+import { DashboardHeader } from "@/components/dashboard-header"
 import {
   LayoutDashboard,
   Users,
@@ -109,8 +110,11 @@ export default async function DashboardLayout({
         </div>
       </aside>
 
+      {/* Header */}
+      <DashboardHeader user={user} />
+
       {/* Main content */}
-      <main className="flex-1 overflow-auto ml-64">
+      <main className="flex-1 overflow-auto ml-64 pt-[50px]">
         <div className="p-8">
           {children}
         </div>
