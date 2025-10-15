@@ -119,17 +119,6 @@ export default function TeamPage() {
         .select("id, name, email, network_position_id, network_level, is_active, created_at")
         .eq("referred_by", userId)
 
-      // Get subscription status for all members
-      const allMemberIds = downlineMembers?.map((m: { contributor_id: string }) => m.contributor_id) || []
-
-      const { data: subscriptions } = await supabase
-        .from("subscriptions")
-        .select("user_id, status")
-        .in("user_id", allMemberIds)
-        .eq("status", "active")
-
-      const activeSubscribers = new Set(subscriptions?.map((s: { user_id: string }) => s.user_id) || [])
-
       // Format member data
       const formattedMembers: TeamMember[] = downlineMembers?.map((m: {
         contributor_id: string
@@ -146,7 +135,7 @@ export default function TeamPage() {
           network_position_id: m.contributor_position_id,
           level: 1, // Will be calculated from network position
           created_at: new Date().toISOString(),
-          subscription_status: activeSubscribers.has(m.contributor_id) ? "active" : "inactive",
+          subscription_status: m.is_active ? "active" : "inactive",
           is_direct_referral: isDirectReferral,
           referrals_count: 0
         }
@@ -161,7 +150,7 @@ export default function TeamPage() {
         network_level: d.network_level || 0,
         level: 1,
         created_at: d.created_at,
-        subscription_status: activeSubscribers.has(d.id) ? "active" : "inactive",
+        subscription_status: d.is_active ? "active" : "inactive",
         is_direct_referral: true,
         referrals_count: 0
       })) || []
