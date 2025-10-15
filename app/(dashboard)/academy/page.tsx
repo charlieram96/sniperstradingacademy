@@ -3,144 +3,315 @@
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Input } from "@/components/ui/input"
-import { 
-  PlayCircle, 
-  FileText, 
-  Calendar, 
-  Clock, 
-  Video,
-  BookOpen,
-  Search,
+import { Progress } from "@/components/ui/progress"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import {
+  PlayCircle,
+  FileText,
+  CheckCircle,
+  Circle,
   Download,
-  Users,
-  ExternalLink
+  Clock,
+  BookOpen
 } from "lucide-react"
 
-interface ClassSchedule {
+interface Lesson {
   id: string
   title: string
-  instructor: string
-  date: string
-  time: string
-  topic: string
-  level: "Beginner" | "Intermediate" | "Advanced"
-  zoomLink?: string
-}
-
-interface Resource {
-  id: string
-  title: string
-  type: "video" | "pdf" | "article"
-  category: string
+  type: "video" | "pdf"
   duration?: string
   size?: string
-  url: string
+  completed: boolean
+}
+
+interface Module {
+  id: string
+  number: number
+  title: string
+  description: string
+  lessons: Lesson[]
 }
 
 export default function AcademyPage() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("all")
-
   // Mock data - replace with actual API calls
-  const upcomingClasses: ClassSchedule[] = [
+  const [modules, setModules] = useState<Module[]>([
     {
-      id: "1",
-      title: "Options Trading Fundamentals",
-      instructor: "John Smith",
-      date: "2024-02-01",
-      time: "6:00 PM EST",
-      topic: "Understanding calls and puts",
-      level: "Beginner",
-      zoomLink: "https://zoom.us/j/123456789"
+      id: "module-1",
+      number: 1,
+      title: "Introduction",
+      description: "Get started with options trading fundamentals",
+      lessons: [
+        {
+          id: "1-1",
+          title: "Welcome to the Academy",
+          type: "video",
+          duration: "8 min",
+          completed: true
+        },
+        {
+          id: "1-2",
+          title: "What is Options Trading?",
+          type: "video",
+          duration: "15 min",
+          completed: true
+        },
+        {
+          id: "1-3",
+          title: "Platform Overview",
+          type: "video",
+          duration: "12 min",
+          completed: false
+        },
+        {
+          id: "1-4",
+          title: "Setting Your Goals",
+          type: "video",
+          duration: "10 min",
+          completed: false
+        }
+      ]
     },
     {
-      id: "2",
-      title: "Advanced Chart Analysis",
-      instructor: "Sarah Johnson",
-      date: "2024-02-03",
-      time: "7:00 PM EST",
-      topic: "Technical indicators and patterns",
-      level: "Advanced",
-      zoomLink: "https://zoom.us/j/987654321"
+      id: "module-2",
+      number: 2,
+      title: "Fundamentals",
+      description: "Master the core concepts of options trading",
+      lessons: [
+        {
+          id: "2-1",
+          title: "Understanding Calls and Puts",
+          type: "video",
+          duration: "20 min",
+          completed: false
+        },
+        {
+          id: "2-2",
+          title: "Options Pricing Basics",
+          type: "video",
+          duration: "18 min",
+          completed: false
+        },
+        {
+          id: "2-3",
+          title: "The Greeks Explained",
+          type: "video",
+          duration: "25 min",
+          completed: false
+        },
+        {
+          id: "2-4",
+          title: "Options Trading Glossary",
+          type: "pdf",
+          size: "1.2 MB",
+          completed: false
+        },
+        {
+          id: "2-5",
+          title: "Market Basics Workbook",
+          type: "pdf",
+          size: "2.5 MB",
+          completed: false
+        }
+      ]
     },
     {
-      id: "3",
-      title: "Risk Management Strategies",
-      instructor: "Mike Davis",
-      date: "2024-02-05",
-      time: "6:30 PM EST",
-      topic: "Position sizing and stop losses",
-      level: "Intermediate",
-      zoomLink: "https://zoom.us/j/456789123"
+      id: "module-3",
+      number: 3,
+      title: "Strategy",
+      description: "Learn proven trading strategies and techniques",
+      lessons: [
+        {
+          id: "3-1",
+          title: "Covered Calls Strategy",
+          type: "video",
+          duration: "22 min",
+          completed: false
+        },
+        {
+          id: "3-2",
+          title: "Protective Puts",
+          type: "video",
+          duration: "18 min",
+          completed: false
+        },
+        {
+          id: "3-3",
+          title: "Spreads and Combinations",
+          type: "video",
+          duration: "30 min",
+          completed: false
+        },
+        {
+          id: "3-4",
+          title: "Strategy Selection Framework",
+          type: "pdf",
+          size: "3.1 MB",
+          completed: false
+        },
+        {
+          id: "3-5",
+          title: "Advanced Strategies Guide",
+          type: "pdf",
+          size: "4.2 MB",
+          completed: false
+        }
+      ]
+    },
+    {
+      id: "module-4",
+      number: 4,
+      title: "Tools",
+      description: "Master the tools and platforms for successful trading",
+      lessons: [
+        {
+          id: "4-1",
+          title: "Trading Platform Setup",
+          type: "video",
+          duration: "16 min",
+          completed: false
+        },
+        {
+          id: "4-2",
+          title: "Chart Analysis Tools",
+          type: "video",
+          duration: "24 min",
+          completed: false
+        },
+        {
+          id: "4-3",
+          title: "Options Calculator Usage",
+          type: "video",
+          duration: "14 min",
+          completed: false
+        },
+        {
+          id: "4-4",
+          title: "Trading Plan Template",
+          type: "pdf",
+          size: "850 KB",
+          completed: false
+        },
+        {
+          id: "4-5",
+          title: "Risk Management Spreadsheet",
+          type: "pdf",
+          size: "1.8 MB",
+          completed: false
+        }
+      ]
+    },
+    {
+      id: "module-5",
+      number: 5,
+      title: "Tutorials",
+      description: "Step-by-step guides for real trading scenarios",
+      lessons: [
+        {
+          id: "5-1",
+          title: "Placing Your First Trade",
+          type: "video",
+          duration: "20 min",
+          completed: false
+        },
+        {
+          id: "5-2",
+          title: "Reading Market Data",
+          type: "video",
+          duration: "18 min",
+          completed: false
+        },
+        {
+          id: "5-3",
+          title: "Managing Open Positions",
+          type: "video",
+          duration: "22 min",
+          completed: false
+        },
+        {
+          id: "5-4",
+          title: "Closing and Rolling Trades",
+          type: "video",
+          duration: "16 min",
+          completed: false
+        }
+      ]
+    },
+    {
+      id: "module-6",
+      number: 6,
+      title: "Resources",
+      description: "Additional materials and reference guides",
+      lessons: [
+        {
+          id: "6-1",
+          title: "Market Analysis Techniques",
+          type: "video",
+          duration: "28 min",
+          completed: false
+        },
+        {
+          id: "6-2",
+          title: "Advanced Chart Patterns",
+          type: "video",
+          duration: "26 min",
+          completed: false
+        },
+        {
+          id: "6-3",
+          title: "Risk Management Handbook",
+          type: "pdf",
+          size: "5.1 MB",
+          completed: false
+        },
+        {
+          id: "6-4",
+          title: "Technical Indicators Guide",
+          type: "pdf",
+          size: "3.8 MB",
+          completed: false
+        },
+        {
+          id: "6-5",
+          title: "Options Trading Cheat Sheet",
+          type: "pdf",
+          size: "1.5 MB",
+          completed: false
+        }
+      ]
     }
-  ]
+  ])
 
-  const resources: Resource[] = [
-    {
-      id: "1",
-      title: "Introduction to Options Trading",
-      type: "video",
-      category: "Beginner",
-      duration: "45 min",
-      url: "#"
-    },
-    {
-      id: "2",
-      title: "Trading Plan Template",
-      type: "pdf",
-      category: "Tools",
-      size: "2.3 MB",
-      url: "#"
-    },
-    {
-      id: "3",
-      title: "Market Analysis Techniques",
-      type: "video",
-      category: "Intermediate",
-      duration: "1h 20min",
-      url: "#"
-    },
-    {
-      id: "4",
-      title: "Options Greeks Explained",
-      type: "article",
-      category: "Advanced",
-      url: "#"
-    },
-    {
-      id: "5",
-      title: "Risk Management Handbook",
-      type: "pdf",
-      category: "Essential",
-      size: "5.1 MB",
-      url: "#"
-    }
-  ]
+  // Calculate overall progress
+  const totalLessons = modules.reduce((acc, module) => acc + module.lessons.length, 0)
+  const completedLessons = modules.reduce(
+    (acc, module) => acc + module.lessons.filter(lesson => lesson.completed).length,
+    0
+  )
+  const completedModules = modules.filter(module =>
+    module.lessons.every(lesson => lesson.completed)
+  ).length
+  const overallProgress = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0
 
-  const categories = ["all", "Beginner", "Intermediate", "Advanced", "Tools", "Essential"]
+  const toggleLessonComplete = (moduleId: string, lessonId: string) => {
+    setModules(prevModules =>
+      prevModules.map(module => {
+        if (module.id === moduleId) {
+          return {
+            ...module,
+            lessons: module.lessons.map(lesson =>
+              lesson.id === lessonId ? { ...lesson, completed: !lesson.completed } : lesson
+            )
+          }
+        }
+        return module
+      })
+    )
+  }
 
-  const nextClass = upcomingClasses[0] // Get the next upcoming class
-
-  const filteredResources = resources.filter(resource => {
-    const matchesSearch = resource.title.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = selectedCategory === "all" || resource.category === selectedCategory
-    return matchesSearch && matchesCategory
-  })
-
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case "Beginner":
-        return "bg-primary/10 text-primary"
-      case "Intermediate":
-        return "bg-amber-500/10 text-amber-400"
-      case "Advanced":
-        return "bg-destructive/10 text-destructive"
-      default:
-        return "bg-muted text-muted-foreground"
-    }
+  const getModuleProgress = (module: Module) => {
+    const completed = module.lessons.filter(lesson => lesson.completed).length
+    const total = module.lessons.length
+    return { completed, total, percentage: total > 0 ? (completed / total) * 100 : 0 }
   }
 
   return (
@@ -148,226 +319,168 @@ export default function AcademyPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground">Trading Academy</h1>
         <p className="text-muted-foreground mt-2">
-          Master options trading with our comprehensive education resources
+          Master options trading with our comprehensive 6-module course
         </p>
       </div>
 
-      {/* Next Class Highlight */}
-      {nextClass && (
-        <Card className="mb-8 border-primary/20 bg-primary/5">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" />
-                <CardTitle className="text-foreground">Next Class</CardTitle>
-              </div>
-              <Badge className={getLevelColor(nextClass.level)}>
-                {nextClass.level}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-xl font-semibold text-foreground mb-2">
-                  {nextClass.title}
-                </h3>
-                <p className="text-muted-foreground mb-1">Topic: {nextClass.topic}</p>
-                <p className="text-muted-foreground mb-1">Instructor: {nextClass.instructor}</p>
-                <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    {new Date(nextClass.date).toLocaleDateString()}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    {nextClass.time}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center justify-end">
-                {nextClass.zoomLink && (
-                  <Button>
-                    <Video className="h-4 w-4 mr-2" />
-                    Join Class
-                    <ExternalLink className="h-3 w-3 ml-2" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Main Content Tabs */}
-      <Tabs defaultValue="resources" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="resources">Resources</TabsTrigger>
-          <TabsTrigger value="schedule">Class Schedule</TabsTrigger>
-          <TabsTrigger value="progress">My Progress</TabsTrigger>
-        </TabsList>
-
-        {/* Resources Tab */}
-        <TabsContent value="resources" className="space-y-4">
-          {/* Search and Filter */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search resources..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex gap-2">
-              {categories.map(category => (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedCategory(category)}
-                >
-                  {category}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Resources Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredResources.map(resource => (
-              <Card key={resource.id} className="hover:shadow-md transition-all duration-200 hover:border-primary/20">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
-                      {resource.type === "video" && <PlayCircle className="h-5 w-5 text-primary" />}
-                      {resource.type === "pdf" && <FileText className="h-5 w-5 text-destructive" />}
-                      {resource.type === "article" && <BookOpen className="h-5 w-5 text-primary" />}
-                      <Badge variant="outline">{resource.category}</Badge>
-                    </div>
-                  </div>
-                  <CardTitle className="text-lg mt-2">{resource.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      {resource.duration || resource.size || "Article"}
-                    </span>
-                    <Button size="sm" variant="outline">
-                      {resource.type === "pdf" ? (
-                        <>
-                          <Download className="h-4 w-4 mr-1" />
-                          Download
-                        </>
-                      ) : (
-                        <>
-                          <PlayCircle className="h-4 w-4 mr-1" />
-                          {resource.type === "video" ? "Watch" : "Read"}
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* Class Schedule Tab */}
-        <TabsContent value="schedule" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Weekly Class Schedule</CardTitle>
+      {/* Overall Progress Card */}
+      <Card className="mb-8 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-foreground">Your Course Progress</CardTitle>
               <CardDescription>
-                Live trading classes with expert instructors
+                Keep learning to unlock your full trading potential
               </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {upcomingClasses.map(classItem => (
-                  <div key={classItem.id} className="border border-border rounded-lg p-4 hover:bg-accent transition-colors duration-200">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-semibold text-lg">{classItem.title}</h3>
-                          <Badge className={getLevelColor(classItem.level)}>
-                            {classItem.level}
-                          </Badge>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold text-primary">
+                {Math.round(overallProgress)}%
+              </div>
+              <p className="text-sm text-muted-foreground">Complete</p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Progress value={overallProgress} className="h-3 mb-4" />
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <div className="text-2xl font-bold text-foreground">{completedModules}/6</div>
+              <p className="text-sm text-muted-foreground">Modules Completed</p>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-foreground">{completedLessons}/{totalLessons}</div>
+              <p className="text-sm text-muted-foreground">Lessons Completed</p>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-foreground">
+                {modules.reduce((acc, m) => acc + m.lessons.filter(l => l.type === "video").length, 0)}
+              </div>
+              <p className="text-sm text-muted-foreground">Video Lessons</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Course Modules */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BookOpen className="h-5 w-5 text-primary" />
+            Course Curriculum
+          </CardTitle>
+          <CardDescription>
+            Click on any module to view lessons and track your progress
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Accordion type="multiple" className="w-full">
+            {modules.map((module) => {
+              const progress = getModuleProgress(module)
+              const isModuleComplete = progress.completed === progress.total
+
+              return (
+                <AccordionItem key={module.id} value={module.id} className="border-b">
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center justify-between w-full pr-4">
+                      <div className="flex items-center gap-4">
+                        <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                          isModuleComplete
+                            ? "bg-green-500/10 text-green-500"
+                            : "bg-primary/10 text-primary"
+                        }`}>
+                          {isModuleComplete ? (
+                            <CheckCircle className="h-5 w-5" />
+                          ) : (
+                            <span className="font-bold">{module.number}</span>
+                          )}
                         </div>
-                        <p className="text-muted-foreground mb-2">{classItem.topic}</p>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Users className="h-4 w-4" />
-                            {classItem.instructor}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            {new Date(classItem.date).toLocaleDateString()}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-4 w-4" />
-                            {classItem.time}
-                          </span>
+                        <div className="text-left">
+                          <div className="font-semibold text-base">
+                            Module {module.number}: {module.title}
+                          </div>
+                          <div className="text-sm text-muted-foreground font-normal">
+                            {module.description}
+                          </div>
                         </div>
                       </div>
-                      {classItem.zoomLink && (
-                        <Button variant="outline" size="sm">
-                          <Video className="h-4 w-4 mr-2" />
-                          Join
-                        </Button>
-                      )}
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <div className="text-sm font-medium">
+                            {progress.completed}/{progress.total} lessons
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {Math.round(progress.percentage)}% complete
+                          </div>
+                        </div>
+                        <Progress value={progress.percentage} className="w-20 h-2" />
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Progress Tab */}
-        <TabsContent value="progress" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Learning Progress</CardTitle>
-              <CardDescription>
-                Track your course completion and achievements
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">Beginner Course</span>
-                    <span className="text-sm text-muted-foreground">75% Complete</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div className="bg-primary h-2 rounded-full transition-all duration-300" style={{ width: "75%" }}></div>
-                  </div>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">Intermediate Course</span>
-                    <span className="text-sm text-muted-foreground">30% Complete</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div className="bg-primary h-2 rounded-full transition-all duration-300" style={{ width: "30%" }}></div>
-                  </div>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">Advanced Course</span>
-                    <span className="text-sm text-muted-foreground">Not Started</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div className="bg-primary h-2 rounded-full transition-all duration-300" style={{ width: "0%" }}></div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-2 pt-4 pl-14">
+                      {module.lessons.map((lesson) => (
+                        <div
+                          key={lesson.id}
+                          className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-accent transition-colors duration-200"
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            <button
+                              onClick={() => toggleLessonComplete(module.id, lesson.id)}
+                              className="flex-shrink-0"
+                            >
+                              {lesson.completed ? (
+                                <CheckCircle className="h-5 w-5 text-green-500" />
+                              ) : (
+                                <Circle className="h-5 w-5 text-muted-foreground" />
+                              )}
+                            </button>
+                            <div className="flex items-center gap-2 flex-1">
+                              {lesson.type === "video" ? (
+                                <PlayCircle className="h-4 w-4 text-primary" />
+                              ) : (
+                                <FileText className="h-4 w-4 text-red-500" />
+                              )}
+                              <span className={`font-medium ${
+                                lesson.completed ? "text-muted-foreground line-through" : "text-foreground"
+                              }`}>
+                                {lesson.title}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              {lesson.type === "video" ? (
+                                <>
+                                  <Clock className="h-3 w-3" />
+                                  <span>{lesson.duration}</span>
+                                </>
+                              ) : (
+                                <span>{lesson.size}</span>
+                              )}
+                            </div>
+                          </div>
+                          <Button size="sm" variant="outline" className="ml-4">
+                            {lesson.type === "video" ? (
+                              <>
+                                <PlayCircle className="h-4 w-4 mr-1" />
+                                Watch
+                              </>
+                            ) : (
+                              <>
+                                <Download className="h-4 w-4 mr-1" />
+                                Download
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )
+            })}
+          </Accordion>
+        </CardContent>
+      </Card>
     </div>
   )
 }
