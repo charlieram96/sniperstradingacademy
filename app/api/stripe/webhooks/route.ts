@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
                     .rpc('get_upline_chain', { start_position_id: userBeforeUpdate.network_position_id })
 
                   if (!upchainError && upchain && upchain.length > 0) {
-                    const ancestorIds = upchain.filter((a: any) => a.user_id !== userId).map((a: any) => a.user_id)
+                    const ancestorIds = (upchain as Array<{ user_id: string }>).filter((a) => a.user_id !== userId).map((a) => a.user_id)
                     if (ancestorIds.length > 0) {
                       const preview = ancestorIds.slice(0, 3)
                       console.log(`   Affected ancestor IDs: [${preview.join(', ')}${ancestorIds.length > 3 ? `, ... +${ancestorIds.length - 3} more` : ''}]`)

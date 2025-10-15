@@ -131,7 +131,7 @@ export async function POST(request: Request) {
           .rpc('get_upline_chain', { start_position_id: updatedUser.network_position_id })
 
         if (!upchainError && upchain && upchain.length > 0) {
-          const ancestorIds = upchain.filter((a: any) => a.user_id !== userId).map((a: any) => a.user_id)
+          const ancestorIds = (upchain as Array<{ user_id: string }>).filter((a) => a.user_id !== userId).map((a) => a.user_id)
           console.log(`✅ Upchain found: ${upchain.length - 1} ancestors (excluding self)`)
           console.log(`✅ Incremented total_network_count for ${ancestorIds.length} ancestors`)
 
