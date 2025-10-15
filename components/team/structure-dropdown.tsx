@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronDown, Users, Network, Search, Eye, EyeOff, Crown, Sparkles, TrendingUp, Share2 } from "lucide-react"
+import { ChevronDown, Search, Crown, Sparkles, TrendingUp, Share2, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -15,9 +15,6 @@ import {
 } from "@/components/ui/select"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
-import TeamTreeVisualization from "./team-tree-visualization-wrapper"
 
 interface TeamMember {
   id: string
@@ -54,32 +51,19 @@ export function StructureDropdown({
 }: StructureDropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterLevel, setFilterLevel] = useState<string>("all")
   const [filterStatus, setFilterStatus] = useState<string>("all")
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
   const [showMemberModal, setShowMemberModal] = useState(false)
-  const [viewMode, setViewMode] = useState<"list" | "tree">("list")
-  const [showOnlyMembers, setShowOnlyMembers] = useState(false)
 
   // Filter members based on search and filters
   const filteredMembers = members.filter(member => {
     const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          member.email.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesLevel = filterLevel === "all" || member.level === parseInt(filterLevel)
-    const matchesStatus = filterStatus === "all" || 
+    const matchesStatus = filterStatus === "all" ||
                          (filterStatus === "active" && member.subscription_status === "active") ||
                          (filterStatus === "inactive" && member.subscription_status !== "active")
-    return matchesSearch && matchesLevel && matchesStatus
+    return matchesSearch && matchesStatus
   })
-
-  // Group members by level for list view
-  const groupedMembers = filteredMembers.reduce((acc, member) => {
-    if (!acc[member.level]) {
-      acc[member.level] = []
-    }
-    acc[member.level].push(member)
-    return acc
-  }, {} as Record<number, TeamMember[]>)
 
   const handleMemberClick = (member: TeamMember) => {
     setSelectedMember(member)
@@ -120,167 +104,75 @@ export function StructureDropdown({
                     {commissionRate}% commission rate • {totalMembers} total members
                   </p>
                 </div>
-                <div className="flex gap-2 mr-8">
-                  <Button
-                    variant={viewMode === "list" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setViewMode("list")}
-                  >
-                    <Users className="h-4 w-4 mr-2" />
-                    List
-                  </Button>
-                  <Button
-                    variant={viewMode === "tree" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setViewMode("tree")}
-                  >
-                    <Network className="h-4 w-4 mr-2" />
-                    Tree
-                  </Button>
-                </div>
               </div>
             </DialogHeader>
 
-            <div className="flex-1 p-6 overflow-hidden">{/* <-- Updated closing tag */}
+            <div className="flex-1 p-6 overflow-hidden">
+              {/* Search and Filters */}
+              <div className="flex gap-2 mb-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search members..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-              {viewMode === "list" ? (
-                <>
-                  {/* Search and Filters */}
-                  <div className="flex gap-2 mb-4">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search members..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-8"
-                      />
-                    </div>
-                    <Select value={filterLevel} onValueChange={setFilterLevel}>
-                      <SelectTrigger className="w-[120px]">
-                        <SelectValue placeholder="Level" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Levels</SelectItem>
-                        {[1, 2, 3, 4, 5, 6].map(level => (
-                          <SelectItem key={level} value={level.toString()}>
-                            Level {level}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select value={filterStatus} onValueChange={setFilterStatus}>
-                      <SelectTrigger className="w-[120px]">
-                        <SelectValue placeholder="Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
+              {/* Members List */}
+              <ScrollArea className="h-[calc(100%-60px)]">
+                {filteredMembers.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No members found matching your filters
                   </div>
-
-                  {/* Members List */}
-                  <ScrollArea className="h-[calc(100%-60px)]">
-                  {Object.keys(groupedMembers).length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No members found matching your filters
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {[1, 2, 3, 4, 5, 6].map(level => {
-                        const levelMembers = groupedMembers[level]
-                        if (!levelMembers || levelMembers.length === 0) return null
-
-                        return (
-                          <div key={level}>
-                            <div className="sticky top-0 bg-background pb-2 mb-2 border-b">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-sm font-semibold">Level {level}</h4>
-                                <Badge variant="outline">{levelMembers.length} members</Badge>
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              {levelMembers.map(member => (
-                                <div
-                                  key={member.id}
-                                  className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent cursor-pointer transition-colors"
-                                  onClick={() => handleMemberClick(member)}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
-                                      {member.name.charAt(0).toUpperCase()}
-                                    </div>
-                                    <div>
-                                      <p className="text-sm font-medium">{member.name}</p>
-                                      <p className="text-xs text-muted-foreground">{member.email}</p>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    {member.is_direct_referral && (
-                                      <Badge variant="secondary" className="text-xs">Direct</Badge>
-                                    )}
-                                    {member.spillover_from && (
-                                      <Badge variant="outline" className="text-xs">Spillover</Badge>
-                                    )}
-                                    <Badge 
-                                      variant={member.subscription_status === 'active' ? 'default' : 'outline'}
-                                      className="text-xs"
-                                    >
-                                      {member.subscription_status === 'active' ? 'Active' : 'Inactive'}
-                                    </Badge>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
+                ) : (
+                  <div className="space-y-2">
+                    {filteredMembers.map(member => (
+                      <div
+                        key={member.id}
+                        className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent cursor-pointer transition-colors"
+                        onClick={() => handleMemberClick(member)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
+                            {member.name.charAt(0).toUpperCase()}
                           </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                  </ScrollArea>
-                </>
-              ) : (
-                <div className="flex flex-col h-full">
-                  {/* Tree View Controls */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <Switch 
-                        id="show-members"
-                        checked={showOnlyMembers}
-                        onCheckedChange={setShowOnlyMembers}
-                      />
-                      <Label htmlFor="show-members" className="text-sm font-medium cursor-pointer">
-                        {showOnlyMembers ? (
-                          <span className="flex items-center gap-2">
-                            <Eye className="h-4 w-4" />
-                            Showing only existing members
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-2">
-                            <EyeOff className="h-4 w-4" />
-                            Showing full structure (including empty positions)
-                          </span>
-                        )}
-                      </Label>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {members.length} members in structure
-                    </div>
+                          <div>
+                            <p className="text-sm font-medium">{member.name}</p>
+                            <p className="text-xs text-muted-foreground">{member.email}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {member.is_direct_referral && (
+                            <Badge variant="secondary" className="text-xs">Direct</Badge>
+                          )}
+                          {member.spillover_from && (
+                            <Badge variant="outline" className="text-xs">Spillover</Badge>
+                          )}
+                          <Badge
+                            variant={member.subscription_status === 'active' ? 'default' : 'outline'}
+                            className="text-xs"
+                          >
+                            {member.subscription_status === 'active' ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  
-                  {/* Tree Visualization */}
-                  <div className="flex-1 border rounded-lg bg-muted/5 overflow-hidden">
-                    <TeamTreeVisualization
-                      members={members}
-                      onMemberClick={handleMemberClick}
-                      showOnlyMembers={showOnlyMembers}
-                      structureNum={structureNum}
-                    />
-                  </div>
-                </div> 
-              )}
+                )}
+              </ScrollArea>
             </div>
           </div>
         </DialogContent>
