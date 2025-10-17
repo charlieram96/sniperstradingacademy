@@ -379,7 +379,7 @@ export async function POST(req: NextRequest) {
           // 3. Distribute to ENTIRE upline chain (unlimited depth, all the way to root)
           try {
             const { data: ancestorCount, error: distError } = await supabase
-              .rpc('distribute_to_upline', {
+              .rpc('distribute_to_upline_batch', {
                 p_user_id: user.id,
                 p_amount: distributionAmount
               })
