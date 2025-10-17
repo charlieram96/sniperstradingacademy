@@ -22,8 +22,18 @@ export async function GET(request: Request) {
       .eq('id', userId)
       .single()
 
-    if (userError || !user || !user.network_position_id) {
-      return NextResponse.json({ error: 'User not found or has no network position' }, { status: 404 })
+    if (userError || !user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Handle users without network positions (haven't paid $500 yet)
+    if (!user.network_position_id) {
+      return NextResponse.json({
+        upline: [],
+        count: 0,
+        depth: 0,
+        message: 'Network position will be assigned after $500 initial payment'
+      })
     }
 
     // Get upline chain using database function

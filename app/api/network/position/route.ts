@@ -87,11 +87,13 @@ export async function GET(request: Request) {
         name: user.name,
         email: user.email,
         isActive: user.is_active,
-        createdAt: user.created_at
+        createdAt: user.created_at,
+        hasPosition: !!user.network_position_id
       },
       position: positionDetails,
       referrer,
-      treeParent
+      treeParent,
+      message: !user.network_position_id ? 'Network position will be assigned after $500 initial payment' : null
     })
   } catch (error) {
     console.error('Error fetching network position:', error)

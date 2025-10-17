@@ -96,24 +96,8 @@ export default function CompleteSignupPage() {
             }
           }
 
-          // Assign network position (works for both bypass and normal referrals)
-          try {
-            const positionResponse = await fetch("/api/network/assign-position", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                userId: existingUser.id,
-                referrerId: isBypassCode ? null : referrerInfo.id,
-              }),
-            })
-
-            if (!positionResponse.ok) {
-              console.error("Failed to assign network position")
-            }
-          } catch (err) {
-            console.error("Error assigning network position:", err)
-            // Don't block signup if position assignment fails
-          }
+          // Note: Network position will be assigned when user pays $500 initial payment
+          // This happens automatically via the Stripe webhook handler
         } else {
           // This shouldn't happen, but handle it anyway
           // The user should have been created by the database trigger

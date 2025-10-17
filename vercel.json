@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/monthly-commissions",
-      "schedule": "0 0 1 * *"
-    }
-  ]
-}

@@ -41,8 +41,57 @@ export async function GET(request: Request) {
       .eq('id', userId)
       .single()
 
-    if (userError || !user || !user.network_position_id) {
-      return NextResponse.json({ error: 'User not found or has no network position' }, { status: 404 })
+    if (userError || !user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Handle users without network positions (haven't paid $500 yet)
+    if (!user.network_position_id) {
+      // Count direct referrals (works without position)
+      const { count: directReferralCount } = await supabase
+        .from('users')
+        .select('id', { count: 'exact', head: true })
+        .eq('referred_by', userId)
+
+      return NextResponse.json({
+        network: {
+          totalMembers: 0,
+          activeMembers: 0,
+          inactiveMembers: 0,
+          directReferrals: directReferralCount || 0
+        },
+        structures: {
+          completed: 0,
+          current: 0,
+          progress: 0,
+          progressPercentage: 0,
+          maxStructures: NETWORK_CONSTANTS.MAX_STRUCTURES
+        },
+        sniperVolume: {
+          currentMonth: 0,
+          previousMonth: 0,
+          capped: 0,
+          maxPossible: 0
+        },
+        earnings: {
+          commissionRate: 0,
+          monthlyVolume: 0,
+          potentialMonthlyEarnings: 0,
+          actualMonthlyEarnings: 0,
+          canWithdraw: false,
+          withdrawalRequirement: {
+            currentReferrals: directReferralCount || 0,
+            requiredReferrals: 0,
+            deficit: 0,
+            message: 'Complete $500 initial payment to unlock network position and start earning'
+          }
+        },
+        status: {
+          isActive: false,
+          hasNetworkPosition: false,
+          lastPaymentDate: user.last_payment_date
+        }
+      })
     }
 
     // Count direct referrals
