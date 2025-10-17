@@ -39,6 +39,9 @@ export default function CompleteSignupPage() {
           throw new Error("No user email found")
         }
 
+        // Root user ID (default from trigger when metadata doesn't have referred_by)
+        const ROOT_USER_ID = 'b10f0367-0471-4eab-9d15-db68b1ac4556'
+
         // Check if user already exists in database and has a referral
         const { data: existingUser } = await supabase
           .from("users")
@@ -46,8 +49,9 @@ export default function CompleteSignupPage() {
           .eq("email", userEmail)
           .single()
 
-        // If user already has a referral, redirect to dashboard
-        if (existingUser?.referred_by) {
+        // If user already has a non-root referral, redirect to dashboard
+        // (Root means trigger defaulted it, so we should update it with actual referrer)
+        if (existingUser?.referred_by && existingUser.referred_by !== ROOT_USER_ID) {
           localStorage.removeItem('pending_referral')
           router.push("/dashboard")
           return
