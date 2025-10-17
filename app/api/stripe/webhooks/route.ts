@@ -80,14 +80,53 @@ export async function POST(req: NextRequest) {
           // Handle initial $500 payment
           console.log("Processing initial payment for user:", userId)
 
-          // Get user's network position to check if we need to increment active count
+          // Get user data to check position assignment and active status
           const { data: userBeforeUpdate } = await supabase
             .from("users")
-            .select("network_position_id, is_active")
+            .select("network_position_id, is_active, referred_by")
             .eq("id", userId)
             .single()
 
           const wasActiveBefore = userBeforeUpdate?.is_active || false
+
+          // STEP 1: Assign network position if user doesn't have one yet
+          if (!userBeforeUpdate?.network_position_id) {
+            console.log("🎯 User has no network position yet, assigning now...")
+
+            const { data: positionId, error: positionError } = await supabase
+              .rpc('assign_network_position', {
+                p_user_id: userId,
+                p_referrer_id: userBeforeUpdate?.referred_by || null
+              })
+
+            if (positionError) {
+              console.error('❌ Error assigning network position:', positionError)
+              // Continue with payment processing even if position assignment fails
+            } else {
+              console.log(`✅ Network position assigned: ${positionId}`)
+
+              // The assign_network_position function already increments total_network_count
+              // Log upchain for visibility
+              try {
+                const { data: upchain, error: upchainError } = await supabase
+                  .rpc('get_upline_chain', { start_position_id: positionId })
+
+                if (!upchainError && upchain && upchain.length > 0) {
+                  const ancestorIds = (upchain as Array<{ user_id: string }>).filter((a) => a.user_id !== userId).map((a) => a.user_id)
+                  console.log(`✅ Incremented total_network_count for ${ancestorIds.length} ancestors`)
+
+                  if (ancestorIds.length > 0) {
+                    const preview = ancestorIds.slice(0, 3)
+                    console.log(`   Affected ancestor IDs: [${preview.join(', ')}${ancestorIds.length > 3 ? `, ... +${ancestorIds.length - 3} more` : ''}]`)
+                  }
+                }
+              } catch (upchainErr) {
+                console.error('Error fetching upchain for logging:', upchainErr)
+              }
+            }
+          } else {
+            console.log(`ℹ️  User already has network position: ${userBeforeUpdate.network_position_id}`)
+          }
 
           // Update user status with 30-day grace period
           const { data: userData, error: userError} = await supabase
@@ -108,8 +147,15 @@ export async function POST(req: NextRequest) {
             console.log("✅ User updated successfully with 30-day grace period:", userData)
           }
 
-          // Increment active network count for all ancestors (user just became active)
-          if (userBeforeUpdate?.network_position_id && !wasActiveBefore) {
+          // STEP 2: Increment active network count for all ancestors (user just became active)
+          // Re-fetch user to get the potentially newly assigned network_position_id
+          const { data: userAfterPositionAssignment } = await supabase
+            .from("users")
+            .select("network_position_id")
+            .eq("id", userId)
+            .single()
+
+          if (userAfterPositionAssignment?.network_position_id && !wasActiveBefore) {
             try {
               const { data: ancestorsIncremented, error: incrementError } = await supabase
                 .rpc('increment_upchain_active_count', {
@@ -125,7 +171,7 @@ export async function POST(req: NextRequest) {
                 // Log which ancestors were affected
                 try {
                   const { data: upchain, error: upchainError } = await supabase
-                    .rpc('get_upline_chain', { start_position_id: userBeforeUpdate.network_position_id })
+                    .rpc('get_upline_chain', { start_position_id: userAfterPositionAssignment.network_position_id })
 
                   if (!upchainError && upchain && upchain.length > 0) {
                     const ancestorIds = (upchain as Array<{ user_id: string }>).filter((a) => a.user_id !== userId).map((a) => a.user_id)
@@ -141,6 +187,8 @@ export async function POST(req: NextRequest) {
             } catch (err) {
               console.error('❌ Exception incrementing active count:', err)
             }
+          } else if (!userAfterPositionAssignment?.network_position_id) {
+            console.warn('⚠️  Cannot increment active count: User has no network position')
           }
 
           // Update referral status if user was referred

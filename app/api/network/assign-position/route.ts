@@ -45,21 +45,6 @@ export async function POST(request: Request) {
       })
     }
 
-    // Optional: Verify user was created recently
-    // This prevents old users from being assigned positions maliciously
-    // More lenient in development (60 min), strict in production (10 min)
-    const windowMinutes = process.env.NODE_ENV === 'development' ? 60 : 10
-    const userCreatedAt = new Date(existingUser.created_at)
-    const windowAgo = new Date(Date.now() - windowMinutes * 60 * 1000)
-
-    if (userCreatedAt < windowAgo) {
-      console.error(`Position assignment window expired. User created at ${userCreatedAt}, window is ${windowMinutes} minutes`)
-      return NextResponse.json(
-        { error: `Position assignment window expired. User must have been created within last ${windowMinutes} minutes.` },
-        { status: 400 }
-      )
-    }
-
     // If referrer provided, verify they exist
     if (referrerId) {
       const { data: referrer, error: referrerError } = await supabase
