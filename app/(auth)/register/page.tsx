@@ -207,7 +207,7 @@ function RegisterForm() {
         options: {
           data: {
             name,
-            referral_code: confirmedReferrer?.referralCode,
+            referred_by: confirmedReferrer?.id,  // Pass ID for trigger to set referred_by
           },
         },
       })
@@ -222,14 +222,7 @@ function RegisterForm() {
         const isBypassCode = !confirmedReferrer.id || confirmedReferrer.id === ""
 
         if (!isBypassCode) {
-          // Normal referral flow
-          // Update user with referrer
-          await supabase
-            .from("users")
-            .update({ referred_by: confirmedReferrer.id })
-            .eq("id", authData.user.id)
-
-          // Create referral record
+          // Create referral record (referred_by is set by trigger from metadata)
           const { error: referralError } = await supabase
             .from("referrals")
             .insert({
@@ -247,14 +240,8 @@ function RegisterForm() {
           }
         }
 
-        // Assign network position with retry mechanism
-        await assignPositionWithRetry(
-          authData.user.id,
-          isBypassCode ? null : confirmedReferrer.id
-        )
-      } else if (authData.user && !confirmedReferrer) {
-        // No referrer - this might be the principal user
-        await assignPositionWithRetry(authData.user.id, null)
+        // Note: Network position will be assigned when user pays $500 initial payment
+        // This happens automatically via the Stripe webhook handler
       }
 
       // Instead of redirecting to login, show verification waiting screen
@@ -265,63 +252,6 @@ function RegisterForm() {
       setError("An error occurred. Please try again.")
       setIsLoading(false)
     }
-  }
-
-  // Retry mechanism for position assignment with exponential backoff
-  async function assignPositionWithRetry(
-    userId: string,
-    referrerId: string | null,
-    maxRetries = 3
-  ) {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        console.log(`Attempt ${attempt}: Assigning network position...`, {
-          userId,
-          referrerId
-        })
-
-        const response = await fetch("/api/network/assign-position", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, referrerId }),
-        })
-
-        const data = await response.json()
-
-        if (response.ok) {
-          console.log(`✓ Position assigned successfully on attempt ${attempt}:`, data)
-          return data
-        }
-
-        // Log the error
-        console.error(`✗ Attempt ${attempt} failed:`, data)
-
-        // If it's the last attempt or a fatal error, stop
-        if (attempt === maxRetries || response.status === 400) {
-          console.error('All retries exhausted or fatal error. User will be orphaned:', userId)
-          // Could send alert to admin here
-          return null
-        }
-
-        // Wait before retry with exponential backoff
-        const waitTime = Math.pow(2, attempt) * 1000 // 2s, 4s, 8s
-        console.log(`Waiting ${waitTime}ms before retry...`)
-        await new Promise(resolve => setTimeout(resolve, waitTime))
-
-      } catch (err) {
-        console.error(`✗ Attempt ${attempt} exception:`, err)
-
-        if (attempt === maxRetries) {
-          console.error('All retries failed. User orphaned:', userId)
-          return null
-        }
-
-        // Wait before retry
-        const waitTime = Math.pow(2, attempt) * 1000
-        await new Promise(resolve => setTimeout(resolve, waitTime))
-      }
-    }
-    return null
   }
 
   async function handleResendEmail() {
