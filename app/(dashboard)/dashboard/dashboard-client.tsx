@@ -647,7 +647,7 @@ export function DashboardClient({ data, session }: {
           <CardContent>
             <div className="text-2xl font-bold">{data.totalTeamSize}</div>
             <p className="text-xs text-muted-foreground">
-              Up to 6 levels deep
+              Your entire network
             </p>
           </CardContent>
         </Card>
