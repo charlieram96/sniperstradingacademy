@@ -16,8 +16,18 @@ import {
   UserCheck,
   Crown,
   Sparkles,
-  Share2
+  Share2,
+  Info,
+  ChevronRight,
+  XCircle
 } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 interface TeamMember {
   id: string
@@ -31,11 +41,14 @@ interface TeamMember {
   subscription_status?: string
   referrals_count?: number
   active_network_count?: number
+  total_network_count?: number
+  active_direct_referrals_count?: number
   is_direct_referral?: boolean
   tree_parent_id?: string | null
   spillover_from?: string | null // For backwards compatibility
   position?: number // Position in the 3-wide structure (1, 2, or 3)
   structure?: number // Which structure this member belongs to (1-6)
+  is_active?: boolean
 }
 
 interface TreeChild {
@@ -53,10 +66,14 @@ export default function TeamPage() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [directReferrals, setDirectReferrals] = useState<TeamMember[]>([])
   const [treeChildren, setTreeChildren] = useState<TreeChild[]>([])
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
+  const [showMemberDialog, setShowMemberDialog] = useState(false)
+  const [isUserActive, setIsUserActive] = useState(false)
   const [teamStats, setTeamStats] = useState({
     totalMembers: 0,
     activeMembers: 0,
     directReferralsCount: 0,
+    activeDirectReferralsCount: 0,
     totalMonthlyVolume: 0,
     qualificationStatus: false,
     levels: {} as Record<number, number>,
@@ -88,12 +105,14 @@ export default function TeamPage() {
 
       const supabase = createClient()
 
-      // Get current user's network position
+      // Get current user's network position and active status
       const { data: currentUser } = await supabase
         .from("users")
-        .select("network_position_id")
+        .select("network_position_id, is_active")
         .eq("id", userId)
         .single()
+
+      setIsUserActive(currentUser?.is_active || false)
 
       if (!currentUser?.network_position_id) {
         // User doesn't have a network position yet
@@ -110,10 +129,10 @@ export default function TeamPage() {
       const treeChildrenData = await treeChildrenResponse.json()
       setTreeChildren(treeChildrenData.treeChildren || [])
 
-      // Get all direct referrals
+      // Get all direct referrals with detailed stats
       const { data: directRefs } = await supabase
         .from("users")
-        .select("id, name, email, network_position_id, network_level, is_active, created_at, direct_referrals_count, active_network_count")
+        .select("id, name, email, network_position_id, network_level, is_active, created_at, direct_referrals_count, active_direct_referrals_count, active_network_count, total_network_count")
         .eq("referred_by", userId)
 
       // Get full user details for all downline members
@@ -150,7 +169,7 @@ export default function TeamPage() {
         }
       }) || []
 
-      // Separate direct referrals
+      // Separate direct referrals with full stats
       const directs = directRefs?.map(d => ({
         id: d.id,
         name: d.name || "Unknown",
@@ -161,8 +180,11 @@ export default function TeamPage() {
         created_at: d.created_at,
         subscription_status: d.is_active ? "active" : "inactive",
         is_direct_referral: true,
+        is_active: d.is_active,
         referrals_count: d.direct_referrals_count || 0,
-        active_network_count: d.active_network_count || 0
+        active_direct_referrals_count: d.active_direct_referrals_count || 0,
+        active_network_count: d.active_network_count || 0,
+        total_network_count: d.total_network_count || 0
       })) || []
 
       setDirectReferrals(directs)
@@ -173,10 +195,14 @@ export default function TeamPage() {
         const levels = {} as Record<number, number>
         // Group by level (would need to parse from network_position_id)
 
+        // Count active direct referrals
+        const activeDirectCount = directs.filter(d => d.is_active).length
+
         setTeamStats({
           totalMembers: stats.network.totalMembers,
           activeMembers: stats.network.activeMembers,
           directReferralsCount: stats.network.directReferrals,
+          activeDirectReferralsCount: activeDirectCount,
           totalMonthlyVolume: stats.earnings.actualMonthlyEarnings,
           qualificationStatus: stats.earnings.canWithdraw,
           levels,
@@ -207,6 +233,15 @@ export default function TeamPage() {
     )
   }
 
+  // Calculate qualification requirements based on current structure
+  const getRequiredActiveReferrals = (structureNum: number) => {
+    return structureNum * 3 // Structure 1 = 3, Structure 2 = 6, etc.
+  }
+
+  const requiredActiveReferrals = getRequiredActiveReferrals(teamStats.structures)
+  const activeDirectCount = teamStats.activeDirectReferralsCount
+  const isQualifiedForCurrentStructure = isUserActive && activeDirectCount >= requiredActiveReferrals
+
   return (
     <div>
       <div className="mb-8">
@@ -219,6 +254,97 @@ export default function TeamPage() {
           </div>
         </div>
       </div>
+
+      {/* Qualification Status Alert - TOP OF PAGE */}
+      <Card className={`mb-6 ${
+        isQualifiedForCurrentStructure
+          ? 'border-green-500 bg-green-500/5'
+          : 'border-amber-500 bg-amber-500/5'
+      }`}>
+        <CardHeader>
+          <div className="flex items-start gap-3">
+            {isQualifiedForCurrentStructure ? (
+              <CheckCircle className="h-6 w-6 text-green-500 flex-shrink-0 mt-0.5" />
+            ) : (
+              <AlertCircle className="h-6 w-6 text-amber-500 flex-shrink-0 mt-0.5" />
+            )}
+            <div className="flex-1">
+              <CardTitle className={isQualifiedForCurrentStructure ? 'text-green-700 dark:text-green-400' : 'text-foreground'}>
+                {isQualifiedForCurrentStructure
+                  ? `✓ Qualified for Structure ${teamStats.structures} Payouts!`
+                  : 'Qualification Status'}
+              </CardTitle>
+              <CardDescription className="mt-2">
+                {!isUserActive ? (
+                  <span className="text-destructive font-medium">
+                    ⚠️ You must be active (paid subscription) to qualify for payouts
+                  </span>
+                ) : isQualifiedForCurrentStructure ? (
+                  <span className="text-green-600 dark:text-green-400">
+                    You meet all requirements for Structure {teamStats.structures} earnings. Keep building to unlock higher structures!
+                  </span>
+                ) : (
+                  <span>
+                    You need {requiredActiveReferrals - activeDirectCount} more active direct {requiredActiveReferrals - activeDirectCount === 1 ? 'referral' : 'referrals'} to qualify for Structure {teamStats.structures} payouts
+                  </span>
+                )}
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Active Status */}
+            <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+              <div className="flex items-center gap-2">
+                {isUserActive ? (
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                ) : (
+                  <XCircle className="h-4 w-4 text-destructive" />
+                )}
+                <span className="text-sm font-medium">Your Active Status</span>
+              </div>
+              <Badge className={isUserActive ? 'bg-green-500 text-white' : 'bg-destructive text-white'}>
+                {isUserActive ? 'Active' : 'Inactive'}
+              </Badge>
+            </div>
+
+            {/* Active Direct Referrals Progress */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">
+                  Active Direct Referrals (Structure {teamStats.structures})
+                </span>
+                <span className={`text-sm font-bold ${
+                  activeDirectCount >= requiredActiveReferrals ? 'text-green-600' : 'text-muted-foreground'
+                }`}>
+                  {activeDirectCount}/{requiredActiveReferrals}
+                </span>
+              </div>
+              <Progress
+                value={(activeDirectCount / requiredActiveReferrals) * 100}
+                className={`h-2 ${
+                  activeDirectCount >= requiredActiveReferrals
+                    ? 'bg-green-100 dark:bg-green-950'
+                    : 'bg-muted'
+                }`}
+              />
+            </div>
+
+            {/* Higher Structure Info */}
+            {teamStats.structures < 6 && isQualifiedForCurrentStructure && (
+              <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                <div className="flex items-start gap-2">
+                  <Info className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">Next level:</span> To qualify for Structure {teamStats.structures + 1} payouts, you&apos;ll need {getRequiredActiveReferrals(teamStats.structures + 1)} active direct referrals and 1,092+ active members.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Tree Children - Your 3 Direct Positions */}
       <Card className="mb-6">
@@ -292,15 +418,15 @@ export default function TeamPage() {
         </CardContent>
       </Card>
 
-      {/* Direct Members Section - NEW */}
+      {/* Direct Referrals Section - Clickable */}
       <Card className="mb-6 border-primary/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UserCheck className="h-5 w-5 text-primary" />
-            Your Direct Members
+            Your Direct Referrals
           </CardTitle>
           <CardDescription>
-            People you personally referred - need 3 active to unlock earnings
+            People you personally referred - click to view their team details
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -313,8 +439,15 @@ export default function TeamPage() {
           ) : (
             <div className="space-y-3">
               {directReferrals.map((referral) => (
-                <div key={referral.id} className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                  <div className="flex items-center gap-4">
+                <div
+                  key={referral.id}
+                  className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer group"
+                  onClick={() => {
+                    setSelectedMember(referral)
+                    setShowMemberDialog(true)
+                  }}
+                >
+                  <div className="flex items-center gap-4 flex-1">
                     <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
                       referral.subscription_status === 'active'
                         ? 'bg-primary/10 text-primary'
@@ -326,22 +459,28 @@ export default function TeamPage() {
                         <UserCheck className="h-5 w-5" />
                       )}
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <div className="font-medium">{referral.name}</div>
                       <div className="text-sm text-muted-foreground">{referral.email}</div>
                       <div className="text-xs text-muted-foreground mt-1">
-                        Joined {new Date(referral.created_at).toLocaleDateString()}
+                        Joined {new Date(referral.created_at).toLocaleDateString()} • {referral.total_network_count} members in structure
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <Badge className={`${
-                      referral.subscription_status === 'active'
-                        ? 'bg-primary/10 text-primary border-primary/20'
-                        : 'bg-muted text-muted-foreground border-muted'
-                    }`}>
-                      {referral.subscription_status === 'active' ? 'Active' : 'Inactive'}
-                    </Badge>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <Badge className={`${
+                        referral.subscription_status === 'active'
+                          ? 'bg-primary/10 text-primary border-primary/20'
+                          : 'bg-muted text-muted-foreground border-muted'
+                      }`}>
+                        {referral.subscription_status === 'active' ? 'Active' : 'Inactive'}
+                      </Badge>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {referral.active_direct_referrals_count}/{referral.referrals_count || 0} active refs
+                      </div>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                   </div>
                 </div>
               ))}
@@ -349,6 +488,97 @@ export default function TeamPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Member Details Dialog */}
+      <Dialog open={showMemberDialog} onOpenChange={setShowMemberDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserCheck className="h-5 w-5" />
+              {selectedMember?.name}&apos;s Team Details
+            </DialogTitle>
+            <DialogDescription>
+              View statistics and network information for this direct referral
+            </DialogDescription>
+          </DialogHeader>
+          {selectedMember && (
+            <div className="space-y-4">
+              {/* Member Info */}
+              <div className="p-4 rounded-lg bg-muted/50">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Status</span>
+                  <Badge className={selectedMember.is_active ? 'bg-green-500 text-white' : 'bg-muted'}>
+                    {selectedMember.is_active ? 'Active' : 'Inactive'}
+                  </Badge>
+                </div>
+                <div className="text-sm text-muted-foreground">{selectedMember.email}</div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  Joined {new Date(selectedMember.created_at).toLocaleDateString()}
+                </div>
+              </div>
+
+              {/* Referral Stats */}
+              <div>
+                <h4 className="text-sm font-semibold mb-3">Referral Statistics</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <div className="text-xs text-muted-foreground">Total Direct Referrals</div>
+                    <div className="text-2xl font-bold mt-1">{selectedMember.referrals_count || 0}</div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                    <div className="text-xs text-muted-foreground">Active Direct Referrals</div>
+                    <div className="text-2xl font-bold text-primary mt-1">{selectedMember.active_direct_referrals_count || 0}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Network Stats */}
+              <div>
+                <h4 className="text-sm font-semibold mb-3">Network Structure</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <div className="text-xs text-muted-foreground">Total Members</div>
+                    <div className="text-2xl font-bold mt-1">{selectedMember.total_network_count || 0}</div>
+                    <div className="text-xs text-muted-foreground mt-1">All members in structure</div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-green-500/5 border border-green-500/20">
+                    <div className="text-xs text-muted-foreground">Active Members</div>
+                    <div className="text-2xl font-bold text-green-600 mt-1">{selectedMember.active_network_count || 0}</div>
+                    <div className="text-xs text-muted-foreground mt-1">With subscription</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Qualification Status */}
+              <div className="p-3 rounded-lg bg-background border">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Qualified for Payouts</span>
+                  {selectedMember.is_active && (selectedMember.active_direct_referrals_count || 0) >= 3 ? (
+                    <div className="flex items-center gap-1 text-green-600">
+                      <CheckCircle className="h-4 w-4" />
+                      <span className="text-sm font-medium">Yes</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                      <AlertCircle className="h-4 w-4" />
+                      <span className="text-sm font-medium">No</span>
+                    </div>
+                  )}
+                </div>
+                {!selectedMember.is_active ? (
+                  <p className="text-xs text-muted-foreground mt-2">Member is not active</p>
+                ) : (selectedMember.active_direct_referrals_count || 0) < 3 ? (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Needs {3 - (selectedMember.active_direct_referrals_count || 0)} more active direct referrals
+                  </p>
+                ) : (
+                  <p className="text-xs text-green-600 mt-2">Meets all requirements ✓</p>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Current Structure - PRIMARY FOCUS */}
       <Card className="mb-6 border-primary">
@@ -449,48 +679,6 @@ export default function TeamPage() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Qualification Status Alert */}
-      {(() => {
-        const activeDirectCount = directReferrals.filter(r => r.subscription_status === 'active').length
-        const isQualified = activeDirectCount >= 3
-
-        return (
-          <Card className={`mb-6 ${
-            isQualified
-              ? 'border-green-500/30 bg-green-500/5'
-              : 'border-amber-500/20 bg-amber-500/5'
-          }`}>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                {isQualified ? (
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-amber-400" />
-                )}
-                <CardTitle className="text-foreground">
-                  {isQualified ? 'Earnings Unlocked!' : 'Unlock Your Earnings'}
-                </CardTitle>
-              </div>
-              <CardDescription className={isQualified ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}>
-                {isQualified
-                  ? 'You have 3+ active direct referrals - you\'re qualified for residual income!'
-                  : `Get ${3 - activeDirectCount} more active ${3 - activeDirectCount === 1 ? 'referral' : 'referrals'} to unlock residual income`
-                }
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Progress
-                value={(activeDirectCount / 3) * 100}
-                className={`h-2 ${isQualified ? 'bg-green-100 dark:bg-green-950' : 'bg-muted'}`}
-              />
-              <p className={`text-sm mt-2 ${isQualified ? 'text-green-600 dark:text-green-400 font-medium' : 'text-muted-foreground'}`}>
-                {activeDirectCount}/3 active direct referrals {isQualified && '✓'}
-              </p>
-            </CardContent>
-          </Card>
-        )
-      })()}
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">

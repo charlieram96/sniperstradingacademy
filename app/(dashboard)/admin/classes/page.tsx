@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Pencil, Save, X, PlayCircle, Shield, CheckCircle, Bell } from "lucide-react"
+import { Pencil, Save, X, PlayCircle, Shield, CheckCircle, Bell, Calendar, Clock } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 interface AcademyClass {
@@ -20,12 +20,20 @@ interface AcademyClass {
   updated_at: string
 }
 
+interface EditData {
+  title: string
+  description: string
+  meeting_link: string
+  date: string
+  time: string
+}
+
 export default function AdminClassesPage() {
   const [classes, setClasses] = useState<AcademyClass[]>([])
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
-  const [editData, setEditData] = useState<{ title: string; description: string; meeting_link: string; scheduled_at: string } | null>(null)
+  const [editData, setEditData] = useState<EditData | null>(null)
   const [banner, setBanner] = useState("")
   const [editingBanner, setEditingBanner] = useState(false)
   const [bannerText, setBannerText] = useState("")
@@ -80,16 +88,23 @@ export default function AdminClassesPage() {
 
   function startEdit(index: number, classItem: AcademyClass) {
     setEditingIndex(index)
+    const scheduledDate = new Date(classItem.scheduled_at)
+    const date = scheduledDate.toISOString().slice(0, 10) // YYYY-MM-DD
+    const time = scheduledDate.toTimeString().slice(0, 5) // HH:MM
     setEditData({
       title: classItem.title,
       description: classItem.description || "",
       meeting_link: classItem.meeting_link,
-      scheduled_at: new Date(classItem.scheduled_at).toISOString().slice(0, 16)
+      date: date,
+      time: time
     })
   }
 
   async function saveEdit(classItem: AcademyClass) {
     if (!editData) return
+
+    // Combine date and time into ISO string
+    const scheduledDateTime = new Date(`${editData.date}T${editData.time}:00`)
 
     const supabase = createClient()
     const { error } = await supabase
@@ -98,7 +113,7 @@ export default function AdminClassesPage() {
         title: editData.title,
         description: editData.description,
         meeting_link: editData.meeting_link,
-        scheduled_at: new Date(editData.scheduled_at).toISOString(),
+        scheduled_at: scheduledDateTime.toISOString(),
         updated_at: new Date().toISOString()
       })
       .eq("id", classItem.id)
@@ -297,108 +312,137 @@ export default function AdminClassesPage() {
               return (
                 <div
                   key={classItem.id}
-                  className={`p-4 rounded-lg border-2 ${
+                  className={`p-5 rounded-lg border-2 min-h-[320px] flex flex-col ${
                     isFirst
-                      ? "bg-green-500/20 border-green-500"
-                      : "border-border"
+                      ? "bg-green-500/10 border-green-500 shadow-sm shadow-green-500/20"
+                      : "border-border bg-card"
                   }`}
                 >
                   {isEditing && editData ? (
-                    <div className="space-y-3">
+                    <div className="space-y-4 flex-1 flex flex-col">
                       <div>
-                        <Label className="text-xs">Title</Label>
+                        <Label className="text-xs font-semibold text-foreground">Title</Label>
                         <Input
                           value={editData.title}
                           onChange={(e) => setEditData({ ...editData, title: e.target.value })}
-                          className="mt-1"
+                          className="mt-1.5"
+                          placeholder="Class title"
                         />
                       </div>
                       <div>
-                        <Label className="text-xs">Description</Label>
+                        <Label className="text-xs font-semibold text-foreground">Description</Label>
                         <Textarea
                           value={editData.description}
                           onChange={(e) => setEditData({ ...editData, description: e.target.value })}
                           rows={2}
-                          className="mt-1"
+                          className="mt-1.5"
+                          placeholder="Brief description"
                         />
                       </div>
                       <div>
-                        <Label className="text-xs">Meeting Link</Label>
+                        <Label className="text-xs font-semibold text-foreground">Meeting Link</Label>
                         <Input
                           value={editData.meeting_link}
                           onChange={(e) => setEditData({ ...editData, meeting_link: e.target.value })}
-                          className="mt-1"
+                          className="mt-1.5"
+                          placeholder="https://zoom.us/j/..."
                         />
                       </div>
-                      <div>
-                        <Label className="text-xs">Date & Time</Label>
-                        <Input
-                          type="datetime-local"
-                          value={editData.scheduled_at}
-                          onChange={(e) => setEditData({ ...editData, scheduled_at: e.target.value })}
-                          className="mt-1"
-                        />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs font-semibold text-foreground flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            Date
+                          </Label>
+                          <Input
+                            type="date"
+                            value={editData.date}
+                            onChange={(e) => setEditData({ ...editData, date: e.target.value })}
+                            className="mt-1.5"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs font-semibold text-foreground flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            Time (EST)
+                          </Label>
+                          <Input
+                            type="time"
+                            value={editData.time}
+                            onChange={(e) => setEditData({ ...editData, time: e.target.value })}
+                            className="mt-1.5"
+                          />
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => saveEdit(classItem)}>
-                          <Save className="h-3 w-3 mr-1" />
-                          Save
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={cancelEdit}>
-                          <X className="h-3 w-3 mr-1" />
-                          Cancel
-                        </Button>
+                      <div className="mt-auto pt-2">
+                        <div className="flex flex-col gap-2">
+                          <Button size="sm" onClick={() => saveEdit(classItem)} className="w-full">
+                            <Save className="h-3.5 w-3.5 mr-1.5" />
+                            Save Changes
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={cancelEdit} className="w-full">
+                            <X className="h-3.5 w-3.5 mr-1.5" />
+                            Cancel
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ) : isEmpty ? (
-                    <div className="text-center py-8">
-                      <PlayCircle className="h-8 w-8 text-muted-foreground/30 mx-auto mb-3" />
-                      <p className="text-sm text-muted-foreground mb-3">No class scheduled</p>
-                      <Button size="sm" onClick={createEmptyClass}>
+                    <div className="flex flex-col items-center justify-center h-full text-center">
+                      <PlayCircle className="h-10 w-10 text-muted-foreground/30 mb-4" />
+                      <p className="text-sm text-muted-foreground mb-4">No class scheduled</p>
+                      <Button size="sm" onClick={createEmptyClass} variant="outline">
+                        <PlayCircle className="h-3.5 w-3.5 mr-1.5" />
                         Add Class
                       </Button>
                     </div>
                   ) : (
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge className={isFirst ? "bg-green-500 text-white" : ""}>
+                    <div className="flex flex-col h-full">
+                      <div className="flex items-center justify-between mb-3">
+                        <Badge className={isFirst ? "bg-green-500 text-white" : "bg-muted"}>
                           {isFirst ? "Next Class" : "Upcoming"}
                         </Badge>
                         <PlayCircle className={`h-5 w-5 ${isFirst ? "text-green-600" : "text-muted-foreground"}`} />
                       </div>
-                      <h3 className="font-semibold text-lg mb-1">{classItem.title}</h3>
+                      <h3 className="font-semibold text-lg mb-2 text-foreground">{classItem.title}</h3>
                       {classItem.description && (
-                        <p className="text-sm text-muted-foreground mb-3">{classItem.description}</p>
+                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{classItem.description}</p>
                       )}
-                      <p className="text-xs text-muted-foreground mb-3">
-                        {new Date(classItem.scheduled_at).toLocaleString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          hour: "numeric",
-                          minute: "2-digit",
-                          timeZone: "America/New_York"
-                        })} EST
-                      </p>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => startEdit(index, classItem)}
-                        >
-                          <Pencil className="h-3 w-3 mr-1" />
-                          Edit
-                        </Button>
-                        {isFirst && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+                        <Calendar className="h-3.5 w-3.5" />
+                        <span>
+                          {new Date(classItem.scheduled_at).toLocaleString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                            timeZone: "America/New_York"
+                          })} EST
+                        </span>
+                      </div>
+                      <div className="mt-auto">
+                        <div className="flex flex-col gap-2">
                           <Button
                             size="sm"
-                            className="w-full bg-green-600 hover:bg-green-700"
-                            onClick={() => markComplete(classItem)}
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => startEdit(index, classItem)}
                           >
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Complete
+                            <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                            Edit Class
                           </Button>
-                        )}
+                          {isFirst && (
+                            <Button
+                              size="sm"
+                              className="w-full bg-green-600 hover:bg-green-700 text-white"
+                              onClick={() => markComplete(classItem)}
+                            >
+                              <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
+                              Mark Complete
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
