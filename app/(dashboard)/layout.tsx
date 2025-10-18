@@ -9,7 +9,9 @@ import {
   CreditCard,
   Share2,
   GraduationCap,
-  DollarSign
+  DollarSign,
+  Shield,
+  Network
 } from "lucide-react"
 
 export default async function DashboardLayout({
@@ -23,6 +25,15 @@ export default async function DashboardLayout({
   if (error || !user) {
     redirect("/login")
   }
+
+  // Get user role from database
+  const { data: userData } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .single()
+
+  const isAdmin = userData?.role === "admin"
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -71,6 +82,30 @@ export default async function DashboardLayout({
             <Share2 className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
             <span className="text-sm font-medium">Referrals</span>
           </NavigationLink>
+
+          {/* Admin Section */}
+          {isAdmin && (
+            <>
+              <div className="mx-4 my-3 border-t border-sidebar-border"></div>
+              <div className="px-4 py-2 mx-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Admin</p>
+              </div>
+              <NavigationLink
+                href="/admin/classes"
+                className="flex items-center gap-3 px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+              >
+                <Shield className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+                <span className="text-sm font-medium">Admin Panel</span>
+              </NavigationLink>
+              <NavigationLink
+                href="/admin/network"
+                className="flex items-center gap-3 px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+              >
+                <Network className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+                <span className="text-sm font-medium">Network View</span>
+              </NavigationLink>
+            </>
+          )}
         </nav>
 
         <div className="p-4 border-t border-sidebar-border">
