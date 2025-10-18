@@ -293,14 +293,23 @@ export async function POST(req: NextRequest) {
           // Handle subscription creation
           const subscriptionId = session.subscription as string
 
-          // Create subscription record without fetching details (they'll be updated via subscription events)
+          // Fetch subscription details from Stripe to get period dates
+          const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId)
+
+          // Extract period end date
+          const periodEnd = 'current_period_end' in stripeSubscription && stripeSubscription.current_period_end
+            ? new Date((stripeSubscription.current_period_end as number) * 1000).toISOString()
+            : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+
+          // Create subscription record with period end date
           await supabase
             .from("subscriptions")
             .insert({
               user_id: userId,
               stripe_subscription_id: subscriptionId,
-              status: "active",
+              status: stripeSubscription.status,
               monthly_amount: 199,
+              current_period_end: periodEnd,
             })
 
           console.log("Subscription created for user:", userId)
@@ -334,20 +343,14 @@ export async function POST(req: NextRequest) {
 
         const updateData: {
           status: string
-          cancel_at_period_end: boolean | null
           updated_at: string
-          current_period_start?: string
           current_period_end?: string
         } = {
           status: subscription.status,
-          cancel_at_period_end: subscription.cancel_at_period_end,
           updated_at: new Date().toISOString(),
         }
 
-        // Add period dates if available
-        if ('current_period_start' in subscription && subscription.current_period_start) {
-          updateData.current_period_start = new Date((subscription.current_period_start as number) * 1000).toISOString()
-        }
+        // Add period end date if available
         if ('current_period_end' in subscription && subscription.current_period_end) {
           updateData.current_period_end = new Date((subscription.current_period_end as number) * 1000).toISOString()
         }

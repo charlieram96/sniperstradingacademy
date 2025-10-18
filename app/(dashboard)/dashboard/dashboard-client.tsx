@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { formatCurrency } from "@/lib/utils"
-import { Users, DollarSign, TrendingUp, UserPlus, Lock, Unlock, CreditCard, AlertTriangle, Share2, Medal, Trophy, Star, Award, Target, Crown, GraduationCap, BookOpen, PlayCircle, CheckCircle2, Wallet, ExternalLink, XCircle, Clock } from "lucide-react"
+import { Users, DollarSign, TrendingUp, UserPlus, Lock, Unlock, CreditCard, AlertTriangle, Medal, Trophy, Star, Award, Target, Crown, GraduationCap, BookOpen, PlayCircle, CheckCircle2, Wallet, ExternalLink, XCircle, Clock } from "lucide-react"
 import { NavigationLink } from "@/components/navigation-link"
 import { isTestUser } from "@/lib/mock-data"
 
@@ -40,27 +40,27 @@ interface DashboardData {
   maxMembersPerStructure: number
 }
 
-// Military-style ranks based on structures unlocked
+// Structure ranks
 const getRankInfo = (unlockedStructures: number, completedStructures: number) => {
   if (completedStructures >= 6) {
     return {
-      name: "Sniper Elite",
+      name: "Lion Master Sniper",
       icon: Crown,
       color: "text-yellow-500",
       bgColor: "bg-gradient-to-br from-yellow-400 to-yellow-600",
       description: "Elite 16% Commission Rate"
     }
   }
-  
+
   const ranks = [
-    { name: "Recruit", icon: Target, color: "text-gray-500", bgColor: "bg-gradient-to-br from-gray-400 to-gray-600", description: "10% Commission Rate" },
-    { name: "Private", icon: Medal, color: "text-amber-600", bgColor: "bg-gradient-to-br from-amber-400 to-amber-600", description: "11% Commission Rate" },
-    { name: "Specialist", icon: Star, color: "text-blue-500", bgColor: "bg-gradient-to-br from-blue-400 to-blue-600", description: "12% Commission Rate" },
-    { name: "Sergeant", icon: Award, color: "text-purple-500", bgColor: "bg-gradient-to-br from-purple-400 to-purple-600", description: "13% Commission Rate" },
-    { name: "Lieutenant", icon: Trophy, color: "text-red-500", bgColor: "bg-gradient-to-br from-red-400 to-red-600", description: "14% Commission Rate" },
-    { name: "Captain", icon: Crown, color: "text-yellow-500", bgColor: "bg-gradient-to-br from-yellow-400 to-yellow-600", description: "15% Commission Rate" }
+    { name: "Delta Master", icon: Target, color: "text-gray-500", bgColor: "bg-gradient-to-br from-gray-400 to-gray-600", description: "10% Commission Rate" },
+    { name: "Delta Master Sniper", icon: Medal, color: "text-amber-600", bgColor: "bg-gradient-to-br from-amber-400 to-amber-600", description: "11% Commission Rate" },
+    { name: "Trend Master", icon: Star, color: "text-blue-500", bgColor: "bg-gradient-to-br from-blue-400 to-blue-600", description: "12% Commission Rate" },
+    { name: "Trend Master Sniper", icon: Award, color: "text-purple-500", bgColor: "bg-gradient-to-br from-purple-400 to-purple-600", description: "13% Commission Rate" },
+    { name: "Lion Master", icon: Trophy, color: "text-red-500", bgColor: "bg-gradient-to-br from-red-400 to-red-600", description: "14% Commission Rate" },
+    { name: "Lion Master Sniper", icon: Crown, color: "text-yellow-500", bgColor: "bg-gradient-to-br from-yellow-400 to-yellow-600", description: "15% Commission Rate" }
   ]
-  
+
   return ranks[Math.min(unlockedStructures - 1, 5)]
 }
 
@@ -139,15 +139,6 @@ export function DashboardClient({ data, session }: {
     }
   }
   
-  // Mock account status for demo
-  const accountStatus = {
-    activatedAt: data.initialPaymentCompleted ? new Date("2024-01-01") : null,
-    qualificationDeadline: data.initialPaymentCompleted ? new Date("2024-12-31") : null,
-    qualifiedAt: data.directReferrals >= 3 ? new Date("2024-06-01") : null,
-    directReferralsCount: data.directReferrals || 0,
-    accumulatedResidual: 3500
-  }
-  
   return (
     <div>
       {/* Demo Mode Banner */}
@@ -176,17 +167,17 @@ export function DashboardClient({ data, session }: {
         <p className="text-muted-foreground mt-2">Welcome back, {data.user?.name || session.user.email}</p>
       </div>
 
-      {/* Academy Section */}
+      {/* Academy Section - Will be populated with upcoming classes */}
       <Card className="mb-6 border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <GraduationCap className="h-5 w-5 text-primary" />
-                Trading Academy
+                Trading Academy Schedule
               </CardTitle>
               <CardDescription className="mt-1">
-                Master options trading with our comprehensive courses and live sessions
+                Upcoming live trading sessions and classes
               </CardDescription>
             </div>
             <NavigationLink href="/academy">
@@ -198,33 +189,62 @@ export function DashboardClient({ data, session }: {
           </div>
         </CardHeader>
         <CardContent>
+          {/* TODO: Fetch from academy_classes table - showing placeholder for now */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-card">
-              <PlayCircle className="h-8 w-8 text-primary" />
-              <div>
-                <p className="text-sm font-medium">Live Trading Sessions</p>
-                <p className="text-xs text-muted-foreground">Daily at 9:30 AM EST</p>
+            {/* Next Class - Green highlight */}
+            <div className="p-4 rounded-lg bg-green-50 border-2 border-green-500">
+              <div className="flex items-center justify-between mb-2">
+                <Badge className="bg-green-500 text-white">Next Class</Badge>
+                <PlayCircle className="h-5 w-5 text-green-600" />
               </div>
+              <h3 className="font-semibold text-lg mb-1">Options Fundamentals</h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Learn the basics of options trading and strategies
+              </p>
+              <p className="text-xs text-muted-foreground mb-3">
+                Today at 2:00 PM EST
+              </p>
+              <Button size="sm" className="w-full bg-green-600 hover:bg-green-700">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Join Class
+              </Button>
             </div>
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-card">
-              <BookOpen className="h-8 w-8 text-primary" />
-              <div>
-                <p className="text-sm font-medium">15+ Courses</p>
-                <p className="text-xs text-muted-foreground">From basics to advanced</p>
+
+            {/* Upcoming Class 2 */}
+            <div className="p-4 rounded-lg border-2">
+              <div className="flex items-center justify-between mb-2">
+                <Badge variant="outline">Upcoming</Badge>
+                <PlayCircle className="h-5 w-5 text-muted-foreground" />
               </div>
+              <h3 className="font-semibold text-lg mb-1">Technical Analysis</h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Master chart patterns and indicators
+              </p>
+              <p className="text-xs text-muted-foreground mb-3">
+                Tomorrow at 10:00 AM EST
+              </p>
+              <Button size="sm" variant="outline" className="w-full" disabled>
+                Not Yet Available
+              </Button>
             </div>
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-card">
-              <CheckCircle2 className="h-8 w-8 text-primary" />
-              <div>
-                <p className="text-sm font-medium">Certification</p>
-                <p className="text-xs text-muted-foreground">Earn your trading certificate</p>
+
+            {/* Upcoming Class 3 */}
+            <div className="p-4 rounded-lg border-2">
+              <div className="flex items-center justify-between mb-2">
+                <Badge variant="outline">Upcoming</Badge>
+                <PlayCircle className="h-5 w-5 text-muted-foreground" />
               </div>
+              <h3 className="font-semibold text-lg mb-1">Advanced Strategies</h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Iron condors, butterflies, and spreads
+              </p>
+              <p className="text-xs text-muted-foreground mb-3">
+                Dec 25 at 3:00 PM EST
+              </p>
+              <Button size="sm" variant="outline" className="w-full" disabled>
+                Not Yet Available
+              </Button>
             </div>
-          </div>
-          <div className="mt-4 p-3 bg-primary/10 rounded-lg">
-            <p className="text-sm text-center">
-              <span className="font-semibold">Next Live Session:</span> Options Trading Fundamentals - Today at 2:00 PM EST
-            </p>
           </div>
         </CardContent>
       </Card>
@@ -408,13 +428,13 @@ export function DashboardClient({ data, session }: {
                   </div>
                   <div className="p-3 rounded-lg bg-muted/50">
                     <p className="text-sm text-muted-foreground">Commission Rate</p>
-                    <p className="text-2xl font-bold text-primary">
+                    <p className="text-2xl font-bold">
                       {data.completedStructures >= 6 ? '16' : (data.commissionRate * 100).toFixed(0)}%
                     </p>
                   </div>
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-sm text-muted-foreground">Direct Referrals</p>
-                    <p className="text-2xl font-bold">{data.directReferrals}</p>
+                  <div className={`p-3 rounded-lg ${data.directReferrals >= 3 ? 'bg-green-50 border-2 border-green-500' : 'bg-red-50 border-2 border-red-500'}`}>
+                    <p className="text-sm text-muted-foreground">Active Direct Referrals</p>
+                    <p className={`text-2xl font-bold ${data.directReferrals >= 3 ? 'text-green-600' : 'text-red-600'}`}>{data.directReferrals}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-muted/50">
                     <p className="text-sm text-muted-foreground">Total Team</p>
@@ -548,7 +568,7 @@ export function DashboardClient({ data, session }: {
                             </p>
                           </div>
                           {isUnlocked ? (
-                            <Badge className="bg-primary text-primary-foreground">Active</Badge>
+                            <Badge className="bg-green-500 text-white">Active</Badge>
                           ) : data.directReferrals >= requiredDirectReferrals && structureNum === data.unlockedStructures + 1 ? (
                             <Badge variant="outline" className="border-yellow-500 text-yellow-500">Ready to Unlock</Badge>
                           ) : (
@@ -606,11 +626,13 @@ export function DashboardClient({ data, session }: {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Direct Referrals</CardTitle>
+            <CardTitle className="text-sm font-medium">Active Direct Referrals</CardTitle>
             <UserPlus className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.directReferrals}/{data.unlockedStructures * 3}</div>
+            <div className={`text-2xl font-bold ${data.directReferrals >= 3 ? 'text-green-600' : 'text-red-600'}`}>
+              {data.directReferrals}/{data.unlockedStructures * 3}
+            </div>
             <p className="text-xs text-muted-foreground">
               Across {data.unlockedStructures} structures
             </p>
@@ -631,64 +653,6 @@ export function DashboardClient({ data, session }: {
         </Card>
       </div>
 
-      {/* Team Structure Breakdown */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Team Structure</CardTitle>
-          <CardDescription>
-            Your network can grow up to 6 levels deep with 3 members per level
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {Object.entries(data.teamLevels).map(([level, count], index) => {
-              const maxAtLevel = Math.pow(3, index + 1)
-              const percentage = (count / maxAtLevel) * 100
-              return (
-                <div key={level} className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium">Level {index + 1}</span>
-                    <span className="text-muted-foreground">
-                      {count} / {maxAtLevel} members
-                    </span>
-                  </div>
-                  <Progress value={percentage} className="h-2 bg-muted" />
-                </div>
-              )
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>
-            Grow your network and manage your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex gap-4">
-          <NavigationLink href="/referrals">
-            <Button>
-              <Share2 className="h-4 w-4 mr-2" />
-              Get Referral Link
-            </Button>
-          </NavigationLink>
-          <NavigationLink href="/team">
-            <Button variant="outline">
-              <Users className="h-4 w-4 mr-2" />
-              View Team Tree
-            </Button>
-          </NavigationLink>
-          <NavigationLink href="/payments">
-            <Button variant="outline">
-              <CreditCard className="h-4 w-4 mr-2" />
-              Payment History
-            </Button>
-          </NavigationLink>
-        </CardContent>
-      </Card>
     </div>
   )
 }

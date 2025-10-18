@@ -19,7 +19,6 @@ function PaymentsContent() {
     id: string
     status: string
     current_period_end: string
-    cancel_at_period_end: boolean
     created_at: string
   } | null>(null)
   const [payments, setPayments] = useState<Array<{
