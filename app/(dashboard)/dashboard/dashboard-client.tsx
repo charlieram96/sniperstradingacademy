@@ -192,7 +192,7 @@ export function DashboardClient({ data, session }: {
           {/* TODO: Fetch from academy_classes table - showing placeholder for now */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Next Class - Green highlight */}
-            <div className="p-4 rounded-lg bg-green-50 border-2 border-green-500">
+            <div className="p-4 rounded-lg bg-green-500/20 border-2 border-green-500">
               <div className="flex items-center justify-between mb-2">
                 <Badge className="bg-green-500 text-white">Next Class</Badge>
                 <PlayCircle className="h-5 w-5 text-green-600" />
@@ -432,7 +432,7 @@ export function DashboardClient({ data, session }: {
                       {data.completedStructures >= 6 ? '16' : (data.commissionRate * 100).toFixed(0)}%
                     </p>
                   </div>
-                  <div className={`p-3 rounded-lg ${data.directReferrals >= 3 ? 'bg-green-50 border-2 border-green-500' : 'bg-red-50 border-2 border-red-500'}`}>
+                  <div className={`p-3 rounded-lg ${data.directReferrals >= 3 ? 'bg-green-500/20 border-2 border-green-500' : 'bg-red-500/20 border-2 border-red-500'}`}>
                     <p className="text-sm text-muted-foreground">Active Direct Referrals</p>
                     <p className={`text-2xl font-bold ${data.directReferrals >= 3 ? 'text-green-600' : 'text-red-600'}`}>{data.directReferrals}</p>
                   </div>
