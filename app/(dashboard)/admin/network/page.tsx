@@ -28,7 +28,7 @@ interface NetworkUser {
   id: string
   name: string | null
   email: string
-  role: "member" | "admin"
+  role: "member" | "admin" | "superadmin"
   is_active: boolean
   initial_payment_completed: boolean
   active_direct_referrals_count: number
@@ -50,14 +50,15 @@ export default function AdminNetworkPage() {
   const [filteredUsers, setFilteredUsers] = useState<NetworkUser[]>([])
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const [roleFilter, setRoleFilter] = useState<"all" | "member" | "admin">("all")
+  const [roleFilter, setRoleFilter] = useState<"all" | "member" | "admin" | "superadmin">("all")
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all")
   const [sortField, setSortField] = useState<SortField>("created_at")
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
   const [selectedUser, setSelectedUser] = useState<NetworkUser | null>(null)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
-  const [userToToggle, setUserToToggle] = useState<{ id: string; name: string; currentRole: "member" | "admin" } | null>(null)
+  const [userToToggle, setUserToToggle] = useState<{ id: string; name: string; currentRole: "member" | "admin" | "superadmin" } | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
 
   useEffect(() => {
@@ -80,7 +81,8 @@ export default function AdminNetworkPage() {
         .eq("id", user.id)
         .single()
 
-      setIsAdmin(userData?.role === "admin")
+      setIsAdmin(userData?.role === "admin" || userData?.role === "superadmin")
+      setIsSuperAdmin(userData?.role === "superadmin")
     }
   }
 
@@ -162,7 +164,7 @@ export default function AdminNetworkPage() {
     setFilteredUsers(result)
   }
 
-  function openConfirmDialog(userId: string, userName: string, currentRole: "member" | "admin") {
+  function openConfirmDialog(userId: string, userName: string, currentRole: "member" | "admin" | "superadmin") {
     setUserToToggle({ id: userId, name: userName, currentRole })
     setShowConfirmDialog(true)
   }
@@ -225,7 +227,7 @@ export default function AdminNetworkPage() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
@@ -264,6 +266,16 @@ export default function AdminNetworkPage() {
             </p>
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Superadmins</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-purple-600">
+              {users.filter((u) => u.role === "superadmin").length}
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
@@ -281,7 +293,7 @@ export default function AdminNetworkPage() {
                 />
               </div>
             </div>
-            <Select value={roleFilter} onValueChange={(value: "all" | "member" | "admin") => setRoleFilter(value)}>
+            <Select value={roleFilter} onValueChange={(value: "all" | "member" | "admin" | "superadmin") => setRoleFilter(value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Filter by role" />
               </SelectTrigger>
@@ -289,6 +301,7 @@ export default function AdminNetworkPage() {
                 <SelectItem value="all">All Roles</SelectItem>
                 <SelectItem value="member">Members Only</SelectItem>
                 <SelectItem value="admin">Admins Only</SelectItem>
+                <SelectItem value="superadmin">Superadmins Only</SelectItem>
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={(value: "all" | "active" | "inactive") => setStatusFilter(value)}>
@@ -353,6 +366,12 @@ export default function AdminNetworkPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-semibold">{user.name || "No name"}</h3>
+                        {user.role === "superadmin" && (
+                          <Badge className="bg-purple-600 text-white">
+                            <ShieldCheck className="h-3 w-3 mr-1" />
+                            Superadmin
+                          </Badge>
+                        )}
                         {user.role === "admin" && (
                           <Badge className="bg-primary text-white">
                             <ShieldCheck className="h-3 w-3 mr-1" />
@@ -434,19 +453,21 @@ export default function AdminNetworkPage() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex gap-2 mt-4">
-                        <Button
-                          size="sm"
-                          variant={user.role === "admin" ? "destructive" : "default"}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            openConfirmDialog(user.id, user.name || user.email, user.role)
-                          }}
-                        >
-                          <Shield className="h-3 w-3 mr-2" />
-                          {user.role === "admin" ? "Revoke Admin" : "Grant Admin"}
-                        </Button>
-                      </div>
+                      {isSuperAdmin && user.role !== "superadmin" && (
+                        <div className="flex gap-2 mt-4">
+                          <Button
+                            size="sm"
+                            variant={user.role === "admin" ? "destructive" : "default"}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openConfirmDialog(user.id, user.name || user.email, user.role)
+                            }}
+                          >
+                            <Shield className="h-3 w-3 mr-2" />
+                            {user.role === "admin" ? "Revoke Admin" : "Grant Admin"}
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

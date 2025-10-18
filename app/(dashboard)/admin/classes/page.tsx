@@ -47,7 +47,7 @@ export default function AdminClassesPage() {
         .eq("id", user.id)
         .single()
 
-      setIsAdmin(userData?.role === "admin")
+      setIsAdmin(userData?.role === "admin" || userData?.role === "superadmin")
     }
     setLoading(false)
   }
