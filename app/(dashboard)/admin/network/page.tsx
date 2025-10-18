@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Network, Search, Shield, ShieldCheck, Users, CheckCircle2, XCircle } from "lucide-react"
+import { Network, Search, Shield, ShieldCheck, Users, CheckCircle2, XCircle, AlertTriangle } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import {
   Select,
@@ -15,6 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 interface NetworkUser {
   id: string
@@ -48,6 +56,9 @@ export default function AdminNetworkPage() {
   const [sortField, setSortField] = useState<SortField>("created_at")
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
   const [selectedUser, setSelectedUser] = useState<NetworkUser | null>(null)
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+  const [userToToggle, setUserToToggle] = useState<{ id: string; name: string; currentRole: "member" | "admin" } | null>(null)
+  const [isUpdating, setIsUpdating] = useState(false)
 
   useEffect(() => {
     checkAdminStatus()
@@ -151,28 +162,40 @@ export default function AdminNetworkPage() {
     setFilteredUsers(result)
   }
 
-  async function toggleAdminRole(userId: string, currentRole: "member" | "admin") {
-    const newRole = currentRole === "admin" ? "member" : "admin"
+  function openConfirmDialog(userId: string, userName: string, currentRole: "member" | "admin") {
+    setUserToToggle({ id: userId, name: userName, currentRole })
+    setShowConfirmDialog(true)
+  }
 
-    if (!confirm(`Are you sure you want to ${newRole === "admin" ? "grant" : "revoke"} admin privileges for this user?`)) {
-      return
-    }
+  async function confirmToggleAdminRole() {
+    if (!userToToggle) return
+
+    setIsUpdating(true)
+    const newRole = userToToggle.currentRole === "admin" ? "member" : "admin"
 
     const supabase = createClient()
     const { error } = await supabase
       .from("users")
       .update({ role: newRole })
-      .eq("id", userId)
+      .eq("id", userToToggle.id)
 
     if (error) {
-      alert("Error updating user role: " + error.message)
+      console.error("Error updating user role:", error)
+      setIsUpdating(false)
       return
     }
 
-    fetchAllUsers()
-    if (selectedUser?.id === userId) {
+    // Refresh user list
+    await fetchAllUsers()
+
+    // Update selected user if it's the one we just modified
+    if (selectedUser?.id === userToToggle.id) {
       setSelectedUser({ ...selectedUser, role: newRole })
     }
+
+    setIsUpdating(false)
+    setShowConfirmDialog(false)
+    setUserToToggle(null)
   }
 
   if (loading) {
@@ -417,7 +440,7 @@ export default function AdminNetworkPage() {
                           variant={user.role === "admin" ? "destructive" : "default"}
                           onClick={(e) => {
                             e.stopPropagation()
-                            toggleAdminRole(user.id, user.role)
+                            openConfirmDialog(user.id, user.name || user.email, user.role)
                           }}
                         >
                           <Shield className="h-3 w-3 mr-2" />
@@ -432,6 +455,64 @@ export default function AdminNetworkPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {userToToggle?.currentRole === "admin" ? (
+                <>
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                  Revoke Admin Privileges
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="h-5 w-5 text-primary" />
+                  Grant Admin Privileges
+                </>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {userToToggle?.currentRole === "admin" ? (
+                <>
+                  Are you sure you want to revoke admin privileges from{" "}
+                  <span className="font-semibold text-foreground">{userToToggle?.name}</span>?
+                  They will lose access to the admin panel and network view.
+                </>
+              ) : (
+                <>
+                  Are you sure you want to grant admin privileges to{" "}
+                  <span className="font-semibold text-foreground">{userToToggle?.name}</span>?
+                  They will have full access to the admin panel and network view.
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmDialog(false)}
+              disabled={isUpdating}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant={userToToggle?.currentRole === "admin" ? "destructive" : "default"}
+              onClick={confirmToggleAdminRole}
+              disabled={isUpdating}
+            >
+              {isUpdating ? (
+                "Updating..."
+              ) : userToToggle?.currentRole === "admin" ? (
+                "Revoke Admin"
+              ) : (
+                "Grant Admin"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
