@@ -200,7 +200,7 @@ export async function POST(req: NextRequest) {
             .single()
 
           let referralData: { referrer_id: string } | null = null
-          let referralError: any = null
+          let referralError: unknown = null
 
           if (!existingReferral && userBeforeUpdate?.referred_by) {
             // Create missing referral record (defensive - should have been created at signup)
