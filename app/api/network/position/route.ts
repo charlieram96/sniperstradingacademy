@@ -93,7 +93,7 @@ export async function GET(request: Request) {
       position: positionDetails,
       referrer,
       treeParent,
-      message: !user.network_position_id ? 'Network position will be assigned after $500 initial payment' : null
+      message: !user.network_position_id ? 'Network position will be assigned after $499 initial payment' : null
     })
   } catch (error) {
     console.error('Error fetching network position:', error)

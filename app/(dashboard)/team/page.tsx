@@ -69,6 +69,7 @@ export default function TeamPage() {
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
   const [showMemberDialog, setShowMemberDialog] = useState(false)
   const [isUserActive, setIsUserActive] = useState(false)
+  const [hasPremiumBypass, setHasPremiumBypass] = useState(false)
   const [teamStats, setTeamStats] = useState({
     totalMembers: 0,
     activeMembers: 0,
@@ -105,14 +106,15 @@ export default function TeamPage() {
 
       const supabase = createClient()
 
-      // Get current user's network position and active status
+      // Get current user's network position, active status, and premium bypass
       const { data: currentUser } = await supabase
         .from("users")
-        .select("network_position_id, is_active")
+        .select("network_position_id, is_active, premium_bypass")
         .eq("id", userId)
         .single()
 
       setIsUserActive(currentUser?.is_active || false)
+      setHasPremiumBypass(currentUser?.premium_bypass || false)
 
       if (!currentUser?.network_position_id) {
         // User doesn't have a network position yet
@@ -240,7 +242,7 @@ export default function TeamPage() {
 
   const requiredActiveReferrals = getRequiredActiveReferrals(teamStats.structures)
   const activeDirectCount = teamStats.activeDirectReferralsCount
-  const isQualifiedForCurrentStructure = isUserActive && activeDirectCount >= requiredActiveReferrals
+  const isQualifiedForCurrentStructure = hasPremiumBypass || (isUserActive && activeDirectCount >= requiredActiveReferrals)
 
   return (
     <div>
@@ -275,7 +277,11 @@ export default function TeamPage() {
                   : 'Qualification Status'}
               </CardTitle>
               <CardDescription className="mt-2">
-                {!isUserActive ? (
+                {hasPremiumBypass ? (
+                  <span className="text-purple-600 dark:text-purple-400 font-medium">
+                    ✨ You have Premium Bypass - qualified for all earnings without payment or referral requirements
+                  </span>
+                ) : !isUserActive ? (
                   <span className="text-destructive font-medium">
                     ⚠️ You must be active (paid subscription) to qualify for payouts
                   </span>

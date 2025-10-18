@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { formatCurrency } from "@/lib/utils"
-import { Users, DollarSign, TrendingUp, UserPlus, Lock, Unlock, CreditCard, AlertTriangle, Medal, Trophy, Star, Award, Target, Crown, GraduationCap, BookOpen, PlayCircle, CheckCircle2, Wallet, ExternalLink, XCircle, Clock } from "lucide-react"
+import { Users, DollarSign, TrendingUp, UserPlus, Lock, Unlock, CreditCard, AlertTriangle, Medal, Trophy, Star, Award, Target, Crown, GraduationCap, BookOpen, PlayCircle, CheckCircle2, Wallet, ExternalLink, XCircle, Clock, Sparkles } from "lucide-react"
 import { NavigationLink } from "@/components/navigation-link"
 import { isTestUser } from "@/lib/mock-data"
 
@@ -64,7 +64,7 @@ const getRankInfo = (unlockedStructures: number, completedStructures: number) =>
   return ranks[Math.min(unlockedStructures - 1, 5)]
 }
 
-export function DashboardClient({ data, session }: {
+export function DashboardClient({ data, session, hasPremiumBypass = false }: {
   data: DashboardData
   session: {
     user: {
@@ -73,6 +73,7 @@ export function DashboardClient({ data, session }: {
       name?: string
     }
   }
+  hasPremiumBypass?: boolean
 }) {
   const [selectedStructure, setSelectedStructure] = useState("1")
   const [connectStatus, setConnectStatus] = useState<{
@@ -158,6 +159,26 @@ export function DashboardClient({ data, session }: {
                 Create Real Account
               </Button>
             </NavigationLink>
+          </div>
+        </div>
+      )}
+
+      {/* Premium Bypass Banner */}
+      {hasPremiumBypass && !isTestUser(session.user.id) && (
+        <div className="mb-6 p-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg shadow-lg shadow-purple-500/20">
+          <div className="flex items-center gap-3">
+            <Crown className="h-6 w-6" />
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+                  PREMIUM BYPASS
+                </Badge>
+                <Sparkles className="h-4 w-4" />
+              </div>
+              <span className="font-medium">
+                You have complimentary premium access to all features without payment requirements
+              </span>
+            </div>
           </div>
         </div>
       )}
@@ -357,7 +378,7 @@ export function DashboardClient({ data, session }: {
       )}
 
       {/* Membership Status Alert */}
-      {!data.initialPaymentCompleted && !isTestUser(session.user.id) && (
+      {!data.initialPaymentCompleted && !isTestUser(session.user.id) && !hasPremiumBypass && (
         <Card className="mb-6 border-destructive/20 bg-destructive/5">
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -365,14 +386,14 @@ export function DashboardClient({ data, session }: {
               <CardTitle className="text-foreground">Unlock Your Membership</CardTitle>
             </div>
             <CardDescription className="text-muted-foreground">
-              Pay the one-time $500 membership fee to unlock your 3 referral slots and start building your team
+              Pay the one-time $499 membership fee to unlock your 3 referral slots and start building your team
             </CardDescription>
           </CardHeader>
           <CardContent>
             <NavigationLink href="/payments">
               <Button variant="destructive">
                 <Unlock className="h-4 w-4 mr-2" />
-                Unlock Membership ($500)
+                Unlock Membership ($499)
               </Button>
             </NavigationLink>
           </CardContent>
@@ -380,7 +401,7 @@ export function DashboardClient({ data, session }: {
       )}
 
       {/* Subscription Alert */}
-      {data.initialPaymentCompleted && !data.subscription && !isTestUser(session.user.id) && (
+      {data.initialPaymentCompleted && !data.subscription && !isTestUser(session.user.id) && !hasPremiumBypass && (
         <Card className="mb-6 border-yellow-500/20 bg-yellow-500/5">
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -388,14 +409,14 @@ export function DashboardClient({ data, session }: {
               <CardTitle className="text-foreground">Activate Monthly Subscription</CardTitle>
             </div>
             <CardDescription className="text-muted-foreground">
-              Subscribe for $200/month to earn commissions from your team pool
+              Subscribe for $199/month to earn commissions from your team pool
             </CardDescription>
           </CardHeader>
           <CardContent>
             <NavigationLink href="/payments">
               <Button className="bg-amber-600 hover:bg-amber-700 text-white">
                 <CreditCard className="h-4 w-4 mr-2" />
-                Start Monthly Subscription ($200/mo)
+                Start Monthly Subscription ($199/mo)
               </Button>
             </NavigationLink>
           </CardContent>

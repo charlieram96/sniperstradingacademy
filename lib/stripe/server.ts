@@ -15,7 +15,7 @@ export function getStripe(): Stripe {
   return stripeInstance
 }
 
-export const INITIAL_PAYMENT = 50000 // $500 in cents (one-time membership unlock)
+export const INITIAL_PAYMENT = 49900 // $499 in cents (one-time membership unlock)
 export const MONTHLY_PRICE = 19900 // $199 in cents (monthly subscription)
 export const WEEKLY_PRICE = 4975 // $49.75 in cents (weekly subscription)
 export const COMMISSION_RATE = 0.10 // 10% commission from team pool

@@ -19,9 +19,17 @@ export async function POST(req: NextRequest) {
     // Get or create Stripe customer
     const { data: userData } = await supabase
       .from("users")
-      .select("stripe_customer_id, email, membership_status, initial_payment_completed")
+      .select("stripe_customer_id, email, membership_status, initial_payment_completed, premium_bypass")
       .eq("id", user.id)
       .single()
+
+    // Check if user has premium bypass
+    if (userData?.premium_bypass) {
+      return NextResponse.json(
+        { error: "Premium bypass users don't need to make payments" },
+        { status: 400 }
+      )
+    }
 
     const stripe = getStripe()
     let customerId = userData?.stripe_customer_id
@@ -54,7 +62,7 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      // Create one-time payment session for $500 initial payment
+      // Create one-time payment session for $499 initial payment
       checkoutSession = await stripe.checkout.sessions.create({
         customer: customerId,
         payment_method_types: ["card"],

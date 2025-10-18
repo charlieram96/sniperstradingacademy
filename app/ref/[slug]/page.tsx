@@ -247,12 +247,12 @@ function renderPage(member: MemberProfile) {
             <CardContent className="space-y-6">
               <div className="text-center space-y-2">
                 <div>
-                  <span className="text-4xl font-bold">$500</span>
+                  <span className="text-4xl font-bold">$499</span>
                   <span className="text-muted-foreground"> one-time activation</span>
                 </div>
                 <div className="text-xl">+</div>
                 <div>
-                  <span className="text-4xl font-bold">$200</span>
+                  <span className="text-4xl font-bold">$199</span>
                   <span className="text-muted-foreground">/month</span>
                 </div>
               </div>

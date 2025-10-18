@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
         }
 
         if (paymentType === "initial") {
-          // Handle initial $500 payment
+          // Handle initial $499 payment
           console.log("Processing initial payment for user:", userId)
 
           // Get user data to check position assignment and active status
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
               membership_status: "unlocked",
               initial_payment_completed: true,
               initial_payment_date: new Date().toISOString(), // 30-day grace period calculated from this date
-              is_active: true, // User becomes active immediately after $500 payment
+              is_active: true, // User becomes active immediately after $499 payment
               last_payment_date: new Date().toISOString()
             })
             .eq("id", userId)
@@ -165,7 +165,7 @@ export async function POST(req: NextRequest) {
               if (incrementError) {
                 console.error('❌ Error incrementing active count:', incrementError)
               } else {
-                console.log(`✅ User ${userId} became ACTIVE after $500 payment!`)
+                console.log(`✅ User ${userId} became ACTIVE after $499 payment!`)
                 console.log(`✅ Incremented active_network_count for ${ancestorsIncremented || 0} ancestors in upchain`)
 
                 // Log which ancestors were affected
@@ -277,7 +277,7 @@ export async function POST(req: NextRequest) {
             .insert({
               user_id: userId,
               stripe_payment_intent_id: session.payment_intent as string,
-              amount: 500,
+              amount: 499,
               payment_type: "initial",
               status: "succeeded",
             })

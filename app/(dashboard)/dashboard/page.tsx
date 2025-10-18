@@ -132,6 +132,15 @@ export default async function DashboardPage() {
 
   const data = await getDashboardData(user.id)
 
+  // Get premium bypass status
+  const { data: userPremiumData } = await supabase
+    .from("users")
+    .select("premium_bypass")
+    .eq("id", user.id)
+    .single()
+
+  const hasPremiumBypass = userPremiumData?.premium_bypass || false
+
   return (
     <DashboardClient
       data={data}
@@ -142,6 +151,7 @@ export default async function DashboardPage() {
           name: user.user_metadata?.name || undefined
         }
       }}
+      hasPremiumBypass={hasPremiumBypass}
     />
   )
 }

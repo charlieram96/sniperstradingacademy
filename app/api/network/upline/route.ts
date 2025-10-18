@@ -26,13 +26,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Handle users without network positions (haven't paid $500 yet)
+    // Handle users without network positions (haven't paid $499 yet)
     if (!user.network_position_id) {
       return NextResponse.json({
         upline: [],
         count: 0,
         depth: 0,
-        message: 'Network position will be assigned after $500 initial payment'
+        message: 'Network position will be assigned after $499 initial payment'
       })
     }
 

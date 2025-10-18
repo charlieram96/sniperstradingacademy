@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Network, Search, Shield, ShieldCheck, Users, CheckCircle2, XCircle, AlertTriangle } from "lucide-react"
+import { Network, Search, Shield, ShieldCheck, Users, CheckCircle2, XCircle, AlertTriangle, Crown, Sparkles } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import {
   Select,
@@ -40,6 +40,7 @@ interface NetworkUser {
   last_payment_date: string | null
   payment_schedule: "weekly" | "monthly"
   referral_code: string | null
+  premium_bypass: boolean
 }
 
 type SortField = "name" | "email" | "created_at" | "total_network_count" | "monthly_commission" | "active_direct_referrals_count"
@@ -60,6 +61,8 @@ export default function AdminNetworkPage() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [userToToggle, setUserToToggle] = useState<{ id: string; name: string; currentRole: "member" | "admin" | "superadmin" } | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [showPremiumBypassDialog, setShowPremiumBypassDialog] = useState(false)
+  const [userForPremiumBypass, setUserForPremiumBypass] = useState<{ id: string; name: string; currentBypass: boolean } | null>(null)
 
   useEffect(() => {
     checkAdminStatus()
@@ -105,7 +108,8 @@ export default function AdminNetworkPage() {
         created_at,
         last_payment_date,
         payment_schedule,
-        referral_code
+        referral_code,
+        premium_bypass
       `)
       .order("created_at", { ascending: false })
 
@@ -169,6 +173,11 @@ export default function AdminNetworkPage() {
     setShowConfirmDialog(true)
   }
 
+  function openPremiumBypassDialog(userId: string, userName: string, currentBypass: boolean) {
+    setUserForPremiumBypass({ id: userId, name: userName, currentBypass })
+    setShowPremiumBypassDialog(true)
+  }
+
   async function confirmToggleAdminRole() {
     if (!userToToggle) return
 
@@ -198,6 +207,37 @@ export default function AdminNetworkPage() {
     setIsUpdating(false)
     setShowConfirmDialog(false)
     setUserToToggle(null)
+  }
+
+  async function confirmTogglePremiumBypass() {
+    if (!userForPremiumBypass) return
+
+    setIsUpdating(true)
+    const newBypassStatus = !userForPremiumBypass.currentBypass
+
+    const supabase = createClient()
+    const { error } = await supabase
+      .from("users")
+      .update({ premium_bypass: newBypassStatus })
+      .eq("id", userForPremiumBypass.id)
+
+    if (error) {
+      console.error("Error updating premium bypass:", error)
+      setIsUpdating(false)
+      return
+    }
+
+    // Refresh user list
+    await fetchAllUsers()
+
+    // Update selected user if it's the one we just modified
+    if (selectedUser?.id === userForPremiumBypass.id) {
+      setSelectedUser({ ...selectedUser, premium_bypass: newBypassStatus })
+    }
+
+    setIsUpdating(false)
+    setShowPremiumBypassDialog(false)
+    setUserForPremiumBypass(null)
   }
 
   if (loading) {
@@ -364,7 +404,7 @@ export default function AdminNetworkPage() {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <h3 className="font-semibold">{user.name || "No name"}</h3>
                         {user.role === "superadmin" && (
                           <Badge className="bg-purple-600 text-white">
@@ -376,6 +416,12 @@ export default function AdminNetworkPage() {
                           <Badge className="bg-primary text-white">
                             <ShieldCheck className="h-3 w-3 mr-1" />
                             Admin
+                          </Badge>
+                        )}
+                        {user.premium_bypass && (
+                          <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+                            <Crown className="h-3 w-3 mr-1" />
+                            Premium Bypass
                           </Badge>
                         )}
                         {user.is_active ? (
@@ -466,6 +512,18 @@ export default function AdminNetworkPage() {
                             <Shield className="h-3 w-3 mr-2" />
                             {user.role === "admin" ? "Revoke Admin" : "Grant Admin"}
                           </Button>
+                          <Button
+                            size="sm"
+                            variant={user.premium_bypass ? "outline" : "default"}
+                            className={user.premium_bypass ? "border-purple-600 text-purple-600" : "bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openPremiumBypassDialog(user.id, user.name || user.email, user.premium_bypass)
+                            }}
+                          >
+                            <Crown className="h-3 w-3 mr-2" />
+                            {user.premium_bypass ? "Remove Premium Bypass" : "Grant Premium Bypass"}
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -529,6 +587,65 @@ export default function AdminNetworkPage() {
                 "Revoke Admin"
               ) : (
                 "Grant Admin"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Premium Bypass Confirmation Dialog */}
+      <Dialog open={showPremiumBypassDialog} onOpenChange={setShowPremiumBypassDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {userForPremiumBypass?.currentBypass ? (
+                <>
+                  <AlertTriangle className="h-5 w-5 text-amber-600" />
+                  Remove Premium Bypass
+                </>
+              ) : (
+                <>
+                  <Crown className="h-5 w-5 text-purple-600" />
+                  Grant Premium Bypass
+                </>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {userForPremiumBypass?.currentBypass ? (
+                <>
+                  Are you sure you want to remove premium bypass from{" "}
+                  <span className="font-semibold text-foreground">{userForPremiumBypass?.name}</span>?
+                  They will need to pay the $499 initial payment and $199 monthly subscription to access the platform.
+                </>
+              ) : (
+                <>
+                  Are you sure you want to grant premium bypass to{" "}
+                  <span className="font-semibold text-foreground">{userForPremiumBypass?.name}</span>?
+                  They will have full platform access without paying the $499 initial payment or $199 monthly subscription, and will always qualify for earnings regardless of referral requirements.
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowPremiumBypassDialog(false)}
+              disabled={isUpdating}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant={userForPremiumBypass?.currentBypass ? "destructive" : "default"}
+              className={!userForPremiumBypass?.currentBypass ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700" : ""}
+              onClick={confirmTogglePremiumBypass}
+              disabled={isUpdating}
+            >
+              {isUpdating ? (
+                "Updating..."
+              ) : userForPremiumBypass?.currentBypass ? (
+                "Remove Premium Bypass"
+              ) : (
+                "Grant Premium Bypass"
               )}
             </Button>
           </DialogFooter>

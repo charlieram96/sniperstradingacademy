@@ -6,16 +6,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { 
-  DollarSign, 
-  TrendingUp, 
-  Users, 
+import {
+  DollarSign,
+  TrendingUp,
+  Users,
   Calendar,
   CheckCircle,
   Clock,
   CreditCard,
   Download,
-  ArrowUpRight,
   Wallet
 } from "lucide-react"
 import { AccountStatusCard } from "@/components/account-status-card"
@@ -92,9 +91,11 @@ export default function FinancePage() {
         // Fetch user account data
         const { data: userData } = await supabase
           .from('users')
-          .select('is_active, last_payment_date, initial_payment_date, qualified_at, direct_referrals_count, active_network_count, current_commission_rate')
+          .select('is_active, last_payment_date, initial_payment_date, qualified_at, direct_referrals_count, active_network_count, current_commission_rate, premium_bypass')
           .eq('id', userId)
           .single()
+
+        const hasPremiumBypass = userData?.premium_bypass || false
 
         // Calculate monthly payment due date (30 days after initial payment or last payment)
         let monthlyPaymentDueDate = null
@@ -118,43 +119,72 @@ export default function FinancePage() {
         const statsResponse = await fetch(`/api/network/stats?userId=${userId}`)
         const stats = await statsResponse.json()
 
-        // Fetch commission history
-        const { data: commissions } = await supabase
-          .from('commissions')
+        // Fetch real payment history
+        const { data: payments } = await supabase
+          .from('payments')
           .select('*')
-          .eq('referrer_id', userId)
+          .eq('user_id', userId)
           .order('created_at', { ascending: false })
           .limit(12)
 
-        // Calculate monthly volume (active_network_count × $19.9)
-        const activeCount = userData?.active_network_count || 0
-        const monthlyVolume = activeCount * 19.9
-        const commissionRate = userData?.current_commission_rate || 0.10
-        const monthlyResidual = monthlyVolume * commissionRate
+        // Use REAL sniper volume from API (stored in database)
+        const sniperVolume = stats.sniperVolume?.currentMonth || 0
+        const commissionRate = stats.earnings?.commissionRate || 0.10
+        const monthlyResidual = sniperVolume * commissionRate
+        const activeCount = stats.network?.activeMembers || 0
 
-        // Format commission data as monthly earnings
-        const monthlyEarnings: MonthlyEarning[] = commissions?.map(c => ({
-          month: new Date(c.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-          sniperVolume: monthlyVolume,
-          residualIncome: c.amount,
+        // Format real payment data as monthly earnings
+        // Group payments by month
+        const paymentsByMonth = new Map<string, { total: number, count: number }>()
+        payments?.forEach(p => {
+          if (p.status === 'succeeded') {
+            const month = new Date(p.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+            const existing = paymentsByMonth.get(month) || { total: 0, count: 0 }
+            paymentsByMonth.set(month, {
+              total: existing.total + parseFloat(p.amount),
+              count: existing.count + 1
+            })
+          }
+        })
+
+        const monthlyEarnings: MonthlyEarning[] = Array.from(paymentsByMonth.entries()).map(([month, data]) => ({
+          month,
+          sniperVolume: sniperVolume,
+          residualIncome: monthlyResidual,
           directBonuses: 0,
-          totalEarning: c.amount
-        })) || []
+          totalEarning: data.total
+        }))
 
         setMonthlyEarnings(monthlyEarnings)
         setDirectBonuses([]) // No direct bonuses in current system
 
-        // Calculate next payout date (1st of next month)
-        const now = new Date()
-        const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
-        const nextPayoutDate = nextMonth.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+        // Get real next payment date from subscription
+        const { data: subscription } = await supabase
+          .from('subscriptions')
+          .select('current_period_end')
+          .eq('user_id', userId)
+          .eq('status', 'active')
+          .single()
+
+        let nextPayoutDate = ''
+        if (subscription?.current_period_end) {
+          nextPayoutDate = new Date(subscription.current_period_end).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+        } else if (monthlyPaymentDueDate) {
+          nextPayoutDate = monthlyPaymentDueDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+        } else {
+          // Fallback to 1st of next month
+          const now = new Date()
+          const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+          nextPayoutDate = nextMonth.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+        }
 
         const totalResidual = monthlyEarnings.reduce((sum, m) => sum + m.residualIncome, 0)
-        const lifetimeEarnings = totalResidual
+        const totalPayments = payments?.reduce((sum, p) => sum + (p.status === 'succeeded' ? parseFloat(p.amount) : 0), 0) || 0
+        const lifetimeEarnings = totalPayments
 
         setFinancialStats({
-          totalSniperVolume: monthlyVolume,
-          currentMonthVolume: monthlyVolume,
+          totalSniperVolume: sniperVolume,
+          currentMonthVolume: sniperVolume,
           totalResidualEarned: totalResidual,
           currentMonthResidual: monthlyResidual,
           totalDirectBonuses: 0,
@@ -162,8 +192,8 @@ export default function FinancePage() {
           paidBonuses: 0,
           lifetimeEarnings,
           nextPayoutDate,
-          nextPayoutAmount: userData?.is_active ? monthlyResidual : 0,
-          isQualified: (userData?.qualified_at !== null && userData?.qualified_at !== undefined) || false,
+          nextPayoutAmount: (stats.earnings?.canWithdraw || hasPremiumBypass) ? monthlyResidual : 0,
+          isQualified: stats.earnings?.canWithdraw || hasPremiumBypass,
           activeMembers: activeCount,
           commissionRate: commissionRate
         })
@@ -319,14 +349,14 @@ export default function FinancePage() {
                   <div className="p-4 border rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm text-muted-foreground">Current Month Volume</span>
-                      <Badge variant="outline">January 2024</Badge>
+                      <Badge variant="outline">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</Badge>
                     </div>
                     <div className="text-3xl font-bold">
-                      ${financialStats.currentMonthVolume.toLocaleString()}
+                      ${financialStats.currentMonthVolume.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                     </div>
                     <div className="flex items-center gap-2 mt-2">
-                      <ArrowUpRight className="h-4 w-4 text-primary" />
-                      <span className="text-sm text-primary">+25% from last month</span>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">{financialStats.activeMembers} active members</span>
                     </div>
                   </div>
 
@@ -482,8 +512,8 @@ export default function FinancePage() {
                         <div className="font-medium">${earning.sniperVolume.toLocaleString()}</div>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Residual (10%)</span>
-                        <div className="font-medium">${earning.residualIncome.toLocaleString()}</div>
+                        <span className="text-muted-foreground">Residual ({(financialStats.commissionRate * 100).toFixed(0)}%)</span>
+                        <div className="font-medium">${earning.residualIncome.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Direct Bonuses</span>
@@ -516,19 +546,21 @@ export default function FinancePage() {
                 <div className="border rounded-lg p-4">
                   <h4 className="font-medium mb-3">Payment Method</h4>
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
+                    <div className="p-3 border rounded-lg bg-muted/30">
+                      <div className="flex items-center gap-3 mb-2">
                         <CreditCard className="h-5 w-5 text-muted-foreground" />
                         <div>
-                          <div className="font-medium">Bank Account</div>
-                          <div className="text-sm text-muted-foreground">****1234</div>
+                          <div className="font-medium">Stripe Connect</div>
+                          <div className="text-sm text-muted-foreground">Connect your bank account to receive payouts</div>
                         </div>
                       </div>
-                      <Badge className="bg-primary/10 text-primary">Active</Badge>
                     </div>
-                    <Button variant="outline" className="w-full">
-                      Update Payment Method
+                    <Button variant="outline" className="w-full" disabled>
+                      Configure Payout Method
                     </Button>
+                    <p className="text-xs text-muted-foreground text-center">
+                      Payment integration coming soon
+                    </p>
                   </div>
                 </div>
 

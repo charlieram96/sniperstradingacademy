@@ -36,7 +36,8 @@ export async function GET(request: Request) {
         current_commission_rate,
         current_structure_number,
         last_payment_date,
-        is_active
+        is_active,
+        premium_bypass
       `)
       .eq('id', userId)
       .single()
@@ -45,7 +46,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Handle users without network positions (haven't paid $500 yet)
+    // Handle users without network positions (haven't paid $499 yet)
     if (!user.network_position_id) {
       // Count direct referrals (works without position)
       const { count: directReferralCount } = await supabase
@@ -83,7 +84,7 @@ export async function GET(request: Request) {
             currentReferrals: directReferralCount || 0,
             requiredReferrals: 0,
             deficit: 0,
-            message: 'Complete $500 initial payment to unlock network position and start earning'
+            message: 'Complete $499 initial payment to unlock network position and start earning'
           }
         },
         status: {
@@ -107,31 +108,57 @@ export async function GET(request: Request) {
 
     // Calculate required referrals for withdrawal
     const requiredReferrals = user.current_structure_number * 3
-
-    // Check if user is active (paid within 33 days)
-    const isActive = user.last_payment_date &&
-      new Date(user.last_payment_date) >= new Date(Date.now() - 33 * 24 * 60 * 60 * 1000)
-
-    // Check withdrawal eligibility
     const referralCount = directReferralCount || 0
-    const canWithdraw = isActive && referralCount >= requiredReferrals
-    const referralDeficit = Math.max(0, requiredReferrals - referralCount)
 
-    // Calculate earnings (capped at 6,552 × $199)
+    // Check if user has premium bypass
+    let canWithdraw: boolean
+    let referralDeficit: number
+    let withdrawalMessage: string
+    let actualMonthlyEarnings: number
+    let isActive: boolean
+
+    if (user.premium_bypass) {
+      // Premium bypass users always qualify
+      canWithdraw = true
+      referralDeficit = 0
+      withdrawalMessage = 'Qualified via Premium Bypass'
+      isActive = true // Treat premium bypass users as active
+
+      // Calculate earnings (capped at 6,552 × $199)
+      const maxVolume = 6552 * 199
+      const cappedVolume = Math.min(user.sniper_volume_current_month, maxVolume)
+      const potentialMonthlyEarnings = cappedVolume * user.current_commission_rate
+      actualMonthlyEarnings = potentialMonthlyEarnings
+    } else {
+      // Regular users need to be active and have referrals
+      // Check if user is active (paid within 33 days)
+      isActive = !!(user.last_payment_date &&
+        new Date(user.last_payment_date) >= new Date(Date.now() - 33 * 24 * 60 * 60 * 1000))
+
+      // Check withdrawal eligibility
+      canWithdraw = isActive && referralCount >= requiredReferrals
+      referralDeficit = Math.max(0, requiredReferrals - referralCount)
+
+      // Calculate earnings (capped at 6,552 × $199)
+      const maxVolume = 6552 * 199
+      const cappedVolume = Math.min(user.sniper_volume_current_month, maxVolume)
+      const potentialMonthlyEarnings = cappedVolume * user.current_commission_rate
+      actualMonthlyEarnings = canWithdraw ? potentialMonthlyEarnings : 0
+
+      // Withdrawal eligibility message
+      if (!isActive) {
+        withdrawalMessage = 'Account not active (must pay within 33 days)'
+      } else if (referralDeficit > 0) {
+        withdrawalMessage = `Need ${referralDeficit} more direct referral${referralDeficit !== 1 ? 's' : ''} to withdraw`
+      } else {
+        withdrawalMessage = `Eligible to withdraw from structure ${user.current_structure_number}`
+      }
+    }
+
+    // Calculate capped volume (needed for response)
     const maxVolume = 6552 * 199
     const cappedVolume = Math.min(user.sniper_volume_current_month, maxVolume)
     const potentialMonthlyEarnings = cappedVolume * user.current_commission_rate
-    const actualMonthlyEarnings = canWithdraw ? potentialMonthlyEarnings : 0
-
-    // Withdrawal eligibility message
-    let withdrawalMessage = ''
-    if (!isActive) {
-      withdrawalMessage = 'Account not active (must pay within 33 days)'
-    } else if (referralDeficit > 0) {
-      withdrawalMessage = `Need ${referralDeficit} more direct referral${referralDeficit !== 1 ? 's' : ''} to withdraw`
-    } else {
-      withdrawalMessage = `Eligible to withdraw from structure ${user.current_structure_number}`
-    }
 
     return NextResponse.json({
       network: {
