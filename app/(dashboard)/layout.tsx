@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { SignOutButton } from "@/components/sign-out-button"
 import { NavigationLink } from "@/components/navigation-link"
 import { DashboardHeader } from "@/components/dashboard-header"
+import { GlobalBanner } from "@/components/global-banner"
 import {
   LayoutDashboard,
   Users,
@@ -36,9 +37,13 @@ export default async function DashboardLayout({
   const isAdmin = userData?.role === "admin"
 
   return (
-    <div className="min-h-screen flex bg-background">
-      {/* Sidebar */}
-      <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col fixed h-full z-40 pt-[50px]">
+    <div className="min-h-screen bg-background">
+      {/* Global Banner */}
+      <GlobalBanner />
+
+      <div className="flex">
+        {/* Sidebar */}
+        <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col fixed h-full z-40 pt-[50px]">
         <nav className="flex-1 py-4 overflow-y-auto">
           <NavigationLink
             href="/dashboard"
@@ -137,6 +142,7 @@ export default async function DashboardLayout({
           {children}
         </div>
       </main>
+      </div>
     </div>
   )
 }

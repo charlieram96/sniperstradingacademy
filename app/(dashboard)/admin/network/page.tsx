@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Network, Search, Shield, ShieldCheck, Users, AlertTriangle, CheckCircle2, XCircle } from "lucide-react"
+import { Network, Search, Shield, ShieldCheck, Users, CheckCircle2, XCircle } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import {
   Select,
@@ -31,6 +31,7 @@ interface NetworkUser {
   created_at: string
   last_payment_date: string | null
   payment_schedule: "weekly" | "monthly"
+  referral_code: string | null
 }
 
 type SortField = "name" | "email" | "created_at" | "total_network_count" | "monthly_commission" | "active_direct_referrals_count"
@@ -90,7 +91,8 @@ export default function AdminNetworkPage() {
         monthly_commission,
         created_at,
         last_payment_date,
-        payment_schedule
+        payment_schedule,
+        referral_code
       `)
       .order("created_at", { ascending: false })
 
@@ -173,20 +175,18 @@ export default function AdminNetworkPage() {
     }
   }
 
-  if (!isAdmin) {
+  if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
-        <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
-        <p className="text-muted-foreground">You do not have permission to access this page.</p>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-muted-foreground">Loading...</div>
       </div>
     )
   }
 
-  if (loading) {
+  if (!isAdmin) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">Loading network data...</div>
+        <div className="text-muted-foreground">Loading...</div>
       </div>
     )
   }
@@ -381,6 +381,10 @@ export default function AdminNetworkPage() {
                         <div>
                           <p className="text-muted-foreground">User ID</p>
                           <p className="font-mono text-xs">{user.id}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Referral Code</p>
+                          <p className="font-mono text-sm font-medium">{user.referral_code || "N/A"}</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground">Joined</p>
