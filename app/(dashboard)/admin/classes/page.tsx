@@ -7,8 +7,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Pencil, Save, X, PlayCircle, Shield, CheckCircle, Bell, Calendar, Clock } from "lucide-react"
+import { Pencil, Save, X, PlayCircle, Shield, CheckCircle, Bell, Calendar, Clock, AlertTriangle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 interface AcademyClass {
   id: string
@@ -37,6 +45,8 @@ export default function AdminClassesPage() {
   const [banner, setBanner] = useState("")
   const [editingBanner, setEditingBanner] = useState(false)
   const [bannerText, setBannerText] = useState("")
+  const [classToComplete, setClassToComplete] = useState<AcademyClass | null>(null)
+  const [showCompleteDialog, setShowCompleteDialog] = useState(false)
 
   useEffect(() => {
     checkAdminStatus()
@@ -133,23 +143,33 @@ export default function AdminClassesPage() {
     setEditData(null)
   }
 
-  async function markComplete(classItem: AcademyClass) {
-    if (!confirm("Mark this class as complete? It will be removed from the schedule.")) {
-      return
-    }
+  function openCompleteDialog(classItem: AcademyClass) {
+    setClassToComplete(classItem)
+    setShowCompleteDialog(true)
+  }
+
+  async function confirmMarkComplete() {
+    if (!classToComplete) return
 
     const supabase = createClient()
     const { error } = await supabase
       .from("academy_classes")
       .delete()
-      .eq("id", classItem.id)
+      .eq("id", classToComplete.id)
 
     if (error) {
       alert("Error marking class complete: " + error.message)
       return
     }
 
+    setShowCompleteDialog(false)
+    setClassToComplete(null)
     fetchClasses()
+  }
+
+  function cancelComplete() {
+    setShowCompleteDialog(false)
+    setClassToComplete(null)
   }
 
   async function createEmptyClass() {
@@ -436,7 +456,7 @@ export default function AdminClassesPage() {
                             <Button
                               size="sm"
                               className="w-full bg-green-600 hover:bg-green-700 text-white"
-                              onClick={() => markComplete(classItem)}
+                              onClick={() => openCompleteDialog(classItem)}
                             >
                               <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
                               Mark Complete
@@ -452,6 +472,54 @@ export default function AdminClassesPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Confirm Complete Dialog */}
+      <Dialog open={showCompleteDialog} onOpenChange={setShowCompleteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Confirm Mark Complete
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to mark this class as complete? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          {classToComplete && (
+            <div className="p-4 rounded-lg bg-muted/50 border">
+              <div className="font-semibold mb-1">{classToComplete.title}</div>
+              {classToComplete.description && (
+                <div className="text-sm text-muted-foreground mb-2">{classToComplete.description}</div>
+              )}
+              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                {new Date(classToComplete.scheduled_at).toLocaleString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                  timeZone: "America/New_York"
+                })} EST
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={cancelComplete}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700 text-white"
+              onClick={confirmMarkComplete}
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Mark Complete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
