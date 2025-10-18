@@ -192,49 +192,82 @@ export async function POST(req: NextRequest) {
           }
 
           // Update referral status if user was referred
-          // First get the referral to know who the referrer is
-          const { data: referralData } = await supabase
+          // Check if referral record exists, create if missing (defensive)
+          const { data: existingReferral } = await supabase
             .from("referrals")
-            .select("referrer_id")
+            .select("id, referrer_id")
             .eq("referred_id", userId)
             .single()
 
-          const { error: referralError } = await supabase
-            .from("referrals")
-            .update({
-              initial_payment_status: "completed",
-              status: "active"
-            })
-            .eq("referred_id", userId)
+          let referralData: { referrer_id: string } | null = null
+          let referralError: any = null
 
-          if (referralError) {
-            console.error("❌ Error updating referral:", referralError)
+          if (!existingReferral && userBeforeUpdate?.referred_by) {
+            // Create missing referral record (defensive - should have been created at signup)
+            console.log("⚠️  Creating missing referral record for user:", userId)
+            const { data: createdReferral, error: createError } = await supabase
+              .from("referrals")
+              .insert({
+                referrer_id: userBeforeUpdate.referred_by,
+                referred_id: userId,
+                status: "active",
+                initial_payment_status: "completed"
+              })
+              .select("referrer_id")
+              .single()
+
+            referralData = createdReferral
+            referralError = createError
+
+            if (createError) {
+              console.error("❌ Error creating referral:", createError)
+            } else {
+              console.log("✅ Referral created with 'active' status")
+            }
+          } else if (existingReferral) {
+            // Update existing referral (normal path)
+            const { error: updateError } = await supabase
+              .from("referrals")
+              .update({
+                initial_payment_status: "completed",
+                status: "active"
+              })
+              .eq("referred_id", userId)
+
+            referralData = { referrer_id: existingReferral.referrer_id }
+            referralError = updateError
+
+            if (updateError) {
+              console.error("❌ Error updating referral:", updateError)
+            } else {
+              console.log("✅ Referral updated to 'active' status")
+            }
           } else {
-            console.log("✅ Referral updated to 'active' status")
+            console.log("ℹ️  No referral to update (user not referred)")
+          }
 
-            // Log the direct referrals count update (triggered by database trigger)
-            if (referralData?.referrer_id) {
-              try {
-                // Query referrer's updated count
-                const { data: referrerData, error: countError } = await supabase
-                  .from("users")
-                  .select("name, direct_referrals_count")
-                  .eq("id", referralData.referrer_id)
-                  .single()
+          // Log the direct referrals count update (triggered by database trigger)
+          if (!referralError && referralData?.referrer_id) {
+            try {
+              // Query referrer's updated count
+              const { data: referrerData, error: countError } = await supabase
+                .from("users")
+                .select("name, direct_referrals_count")
+                .eq("id", referralData.referrer_id)
+                .single()
 
-                if (countError) {
-                  // Column might not exist if schema not deployed
-                  console.warn("⚠️  Could not fetch direct_referrals_count - column may not exist")
-                  console.warn("   Deploy supabase-activation-schema.sql to enable referral counting")
-                } else if (referrerData) {
-                  console.log(`✅ Referrer's direct_referrals_count updated via trigger`)
-                  console.log(`   Referrer: ${referrerData.name} (${referralData.referrer_id})`)
-                  console.log(`   New direct_referrals_count: ${referrerData.direct_referrals_count}`)
-                }
-              } catch (err) {
-                console.warn("⚠️  Error fetching direct_referrals_count:", err)
-                console.warn("   This is non-critical - referral status was updated successfully")
+              if (countError) {
+                // Column might not exist if schema not deployed
+                console.warn("⚠️  Could not fetch direct_referrals_count - column may not exist")
+                console.warn("   Deploy supabase-activation-schema.sql to enable referral counting")
+              } else if (referrerData) {
+                console.log(`✅ Referrer's direct_referrals_count updated via trigger`)
+                console.log(`   Referrer: ${referrerData.name} (${referralData.referrer_id})`)
+                console.log(`   New direct_referrals_count: ${referrerData.direct_referrals_count}`)
               }
+            } catch (err) {
+              console.warn("⚠️  Error fetching direct_referrals_count:", err)
+              console.warn("   This is non-critical - referral status was updated successfully")
             }
           }
 
