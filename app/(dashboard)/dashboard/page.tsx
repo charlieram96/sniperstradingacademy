@@ -132,14 +132,14 @@ export default async function DashboardPage() {
 
   const data = await getDashboardData(user.id)
 
-  // Get premium bypass status
-  const { data: userPremiumData } = await supabase
+  // Get bypass status - user has bypass if they have initial payment OR subscription bypass
+  const { data: userBypassData } = await supabase
     .from("users")
-    .select("premium_bypass")
+    .select("bypass_initial_payment, bypass_subscription")
     .eq("id", user.id)
     .single()
 
-  const hasPremiumBypass = userPremiumData?.premium_bypass || false
+  const hasPremiumBypass = userBypassData?.bypass_initial_payment || userBypassData?.bypass_subscription || false
 
   return (
     <DashboardClient

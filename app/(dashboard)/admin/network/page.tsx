@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Network, Search, Shield, ShieldCheck, Users, CheckCircle2, XCircle, AlertTriangle, Crown, Sparkles } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import {
@@ -41,6 +42,9 @@ interface NetworkUser {
   payment_schedule: "weekly" | "monthly"
   referral_code: string | null
   premium_bypass: boolean
+  bypass_direct_referrals: boolean
+  bypass_subscription: boolean
+  bypass_initial_payment: boolean
 }
 
 type SortField = "name" | "email" | "created_at" | "total_network_count" | "monthly_commission" | "active_direct_referrals_count"
@@ -61,8 +65,21 @@ export default function AdminNetworkPage() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [userToToggle, setUserToToggle] = useState<{ id: string; name: string; currentRole: "member" | "admin" | "superadmin" } | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
-  const [showPremiumBypassDialog, setShowPremiumBypassDialog] = useState(false)
-  const [userForPremiumBypass, setUserForPremiumBypass] = useState<{ id: string; name: string; currentBypass: boolean } | null>(null)
+  const [showBypassDialog, setShowBypassDialog] = useState(false)
+  const [userForBypass, setUserForBypass] = useState<{
+    id: string;
+    name: string;
+    currentBypasses: {
+      directReferrals: boolean;
+      subscription: boolean;
+      initialPayment: boolean;
+    }
+  } | null>(null)
+  const [bypassSelections, setBypassSelections] = useState({
+    directReferrals: false,
+    subscription: false,
+    initialPayment: false
+  })
 
   useEffect(() => {
     checkAdminStatus()
@@ -109,7 +126,10 @@ export default function AdminNetworkPage() {
         last_payment_date,
         payment_schedule,
         referral_code,
-        premium_bypass
+        premium_bypass,
+        bypass_direct_referrals,
+        bypass_subscription,
+        bypass_initial_payment
       `)
       .order("created_at", { ascending: false })
 
@@ -173,9 +193,23 @@ export default function AdminNetworkPage() {
     setShowConfirmDialog(true)
   }
 
-  function openPremiumBypassDialog(userId: string, userName: string, currentBypass: boolean) {
-    setUserForPremiumBypass({ id: userId, name: userName, currentBypass })
-    setShowPremiumBypassDialog(true)
+  function openBypassDialog(user: NetworkUser) {
+    setUserForBypass({
+      id: user.id,
+      name: user.name || user.email,
+      currentBypasses: {
+        directReferrals: user.bypass_direct_referrals,
+        subscription: user.bypass_subscription,
+        initialPayment: user.bypass_initial_payment
+      }
+    })
+    // Initialize checkbox states with current values
+    setBypassSelections({
+      directReferrals: user.bypass_direct_referrals,
+      subscription: user.bypass_subscription,
+      initialPayment: user.bypass_initial_payment
+    })
+    setShowBypassDialog(true)
   }
 
   async function confirmToggleAdminRole() {
@@ -209,20 +243,23 @@ export default function AdminNetworkPage() {
     setUserToToggle(null)
   }
 
-  async function confirmTogglePremiumBypass() {
-    if (!userForPremiumBypass) return
+  async function confirmUpdateBypass() {
+    if (!userForBypass) return
 
     setIsUpdating(true)
-    const newBypassStatus = !userForPremiumBypass.currentBypass
 
     const supabase = createClient()
     const { error } = await supabase
       .from("users")
-      .update({ premium_bypass: newBypassStatus })
-      .eq("id", userForPremiumBypass.id)
+      .update({
+        bypass_direct_referrals: bypassSelections.directReferrals,
+        bypass_subscription: bypassSelections.subscription,
+        bypass_initial_payment: bypassSelections.initialPayment
+      })
+      .eq("id", userForBypass.id)
 
     if (error) {
-      console.error("Error updating premium bypass:", error)
+      console.error("Error updating bypass settings:", error)
       setIsUpdating(false)
       return
     }
@@ -231,13 +268,18 @@ export default function AdminNetworkPage() {
     await fetchAllUsers()
 
     // Update selected user if it's the one we just modified
-    if (selectedUser?.id === userForPremiumBypass.id) {
-      setSelectedUser({ ...selectedUser, premium_bypass: newBypassStatus })
+    if (selectedUser?.id === userForBypass.id) {
+      setSelectedUser({
+        ...selectedUser,
+        bypass_direct_referrals: bypassSelections.directReferrals,
+        bypass_subscription: bypassSelections.subscription,
+        bypass_initial_payment: bypassSelections.initialPayment
+      })
     }
 
     setIsUpdating(false)
-    setShowPremiumBypassDialog(false)
-    setUserForPremiumBypass(null)
+    setShowBypassDialog(false)
+    setUserForBypass(null)
   }
 
   if (loading) {
@@ -418,11 +460,27 @@ export default function AdminNetworkPage() {
                             Admin
                           </Badge>
                         )}
-                        {user.premium_bypass && (
-                          <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 text-white">
-                            <Crown className="h-3 w-3 mr-1" />
-                            Premium Bypass
-                          </Badge>
+                        {(user.bypass_direct_referrals || user.bypass_subscription || user.bypass_initial_payment) && (
+                          <>
+                            {user.bypass_direct_referrals && (
+                              <Badge className="bg-blue-600 text-white">
+                                <Users className="h-3 w-3 mr-1" />
+                                Bypass Referrals
+                              </Badge>
+                            )}
+                            {user.bypass_subscription && (
+                              <Badge className="bg-green-600 text-white">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Bypass Subscription
+                              </Badge>
+                            )}
+                            {user.bypass_initial_payment && (
+                              <Badge className="bg-purple-600 text-white">
+                                <Crown className="h-3 w-3 mr-1" />
+                                Bypass Initial Payment
+                              </Badge>
+                            )}
+                          </>
                         )}
                         {user.is_active ? (
                           <Badge className="bg-green-500 text-white">
@@ -514,15 +572,15 @@ export default function AdminNetworkPage() {
                           </Button>
                           <Button
                             size="sm"
-                            variant={user.premium_bypass ? "outline" : "default"}
-                            className={user.premium_bypass ? "border-purple-600 text-purple-600" : "bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"}
+                            variant="default"
+                            className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
                             onClick={(e) => {
                               e.stopPropagation()
-                              openPremiumBypassDialog(user.id, user.name || user.email, user.premium_bypass)
+                              openBypassDialog(user)
                             }}
                           >
-                            <Crown className="h-3 w-3 mr-2" />
-                            {user.premium_bypass ? "Remove Premium Bypass" : "Grant Premium Bypass"}
+                            <Sparkles className="h-3 w-3 mr-2" />
+                            Grant Bypass Access
                           </Button>
                         </div>
                       )}
@@ -593,60 +651,99 @@ export default function AdminNetworkPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Premium Bypass Confirmation Dialog */}
-      <Dialog open={showPremiumBypassDialog} onOpenChange={setShowPremiumBypassDialog}>
+      {/* Bypass Access Dialog */}
+      <Dialog open={showBypassDialog} onOpenChange={setShowBypassDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {userForPremiumBypass?.currentBypass ? (
-                <>
-                  <AlertTriangle className="h-5 w-5 text-amber-600" />
-                  Remove Premium Bypass
-                </>
-              ) : (
-                <>
-                  <Crown className="h-5 w-5 text-purple-600" />
-                  Grant Premium Bypass
-                </>
-              )}
+              <Sparkles className="h-5 w-5 text-purple-600" />
+              Grant Bypass Access
             </DialogTitle>
             <DialogDescription>
-              {userForPremiumBypass?.currentBypass ? (
-                <>
-                  Are you sure you want to remove premium bypass from{" "}
-                  <span className="font-semibold text-foreground">{userForPremiumBypass?.name}</span>?
-                  They will need to pay the $499 initial payment and $199 monthly subscription to access the platform.
-                </>
-              ) : (
-                <>
-                  Are you sure you want to grant premium bypass to{" "}
-                  <span className="font-semibold text-foreground">{userForPremiumBypass?.name}</span>?
-                  They will have full platform access without paying the $499 initial payment or $199 monthly subscription, and will always qualify for earnings regardless of referral requirements.
-                </>
-              )}
+              Configure bypass settings for{" "}
+              <span className="font-semibold text-foreground">{userForBypass?.name}</span>.
+              Select which requirements to bypass.
             </DialogDescription>
           </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex items-start space-x-3">
+              <Checkbox
+                id="bypass-referrals"
+                checked={bypassSelections.directReferrals}
+                onCheckedChange={(checked) =>
+                  setBypassSelections(prev => ({ ...prev, directReferrals: checked === true }))
+                }
+              />
+              <div className="grid gap-1.5 leading-none">
+                <label
+                  htmlFor="bypass-referrals"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                >
+                  Bypass Direct Referrals Requirement
+                </label>
+                <p className="text-sm text-muted-foreground">
+                  User can receive payouts without needing 3 active direct referrals
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-3">
+              <Checkbox
+                id="bypass-subscription"
+                checked={bypassSelections.subscription}
+                onCheckedChange={(checked) =>
+                  setBypassSelections(prev => ({ ...prev, subscription: checked === true }))
+                }
+              />
+              <div className="grid gap-1.5 leading-none">
+                <label
+                  htmlFor="bypass-subscription"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                >
+                  Bypass Subscription Requirement
+                </label>
+                <p className="text-sm text-muted-foreground">
+                  User maintains active status without monthly subscription payments
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-3">
+              <Checkbox
+                id="bypass-initial"
+                checked={bypassSelections.initialPayment}
+                onCheckedChange={(checked) =>
+                  setBypassSelections(prev => ({ ...prev, initialPayment: checked === true }))
+                }
+              />
+              <div className="grid gap-1.5 leading-none">
+                <label
+                  htmlFor="bypass-initial"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                >
+                  Bypass Initial Payment Requirement
+                </label>
+                <p className="text-sm text-muted-foreground">
+                  User gets platform access without the $499 initial payment
+                </p>
+              </div>
+            </div>
+          </div>
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setShowPremiumBypassDialog(false)}
+              onClick={() => setShowBypassDialog(false)}
               disabled={isUpdating}
             >
               Cancel
             </Button>
             <Button
-              variant={userForPremiumBypass?.currentBypass ? "destructive" : "default"}
-              className={!userForPremiumBypass?.currentBypass ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700" : ""}
-              onClick={confirmTogglePremiumBypass}
+              variant="default"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              onClick={confirmUpdateBypass}
               disabled={isUpdating}
             >
-              {isUpdating ? (
-                "Updating..."
-              ) : userForPremiumBypass?.currentBypass ? (
-                "Remove Premium Bypass"
-              ) : (
-                "Grant Premium Bypass"
-              )}
+              {isUpdating ? "Updating..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -37,7 +37,10 @@ export async function GET(request: Request) {
         current_structure_number,
         last_payment_date,
         is_active,
-        premium_bypass
+        premium_bypass,
+        bypass_direct_referrals,
+        bypass_subscription,
+        bypass_initial_payment
       `)
       .eq('id', userId)
       .single()
@@ -110,42 +113,45 @@ export async function GET(request: Request) {
     const requiredReferrals = user.current_structure_number * 3
     const referralCount = directReferralCount || 0
 
-    // Check if user has premium bypass
-    let canWithdraw: boolean
-    let referralDeficit: number
+    // Check granular bypass settings
     let withdrawalMessage: string
-    let actualMonthlyEarnings: number
-    let isActive: boolean
 
-    if (user.premium_bypass) {
-      // Premium bypass users always qualify
-      canWithdraw = true
-      referralDeficit = 0
-      withdrawalMessage = 'Qualified via Premium Bypass'
-      isActive = true // Treat premium bypass users as active
-
-      // Calculate earnings (capped at 6,552 × $199)
-      const maxVolume = 6552 * 199
-      const cappedVolume = Math.min(user.sniper_volume_current_month, maxVolume)
-      const potentialMonthlyEarnings = cappedVolume * user.current_commission_rate
-      actualMonthlyEarnings = potentialMonthlyEarnings
-    } else {
-      // Regular users need to be active and have referrals
-      // Check if user is active (paid within 33 days)
-      isActive = !!(user.last_payment_date &&
+    // Check if user is active (paid within 33 days OR has subscription bypass)
+    const isActive = user.bypass_subscription
+      ? true
+      : !!(user.last_payment_date &&
         new Date(user.last_payment_date) >= new Date(Date.now() - 33 * 24 * 60 * 60 * 1000))
 
-      // Check withdrawal eligibility
-      canWithdraw = isActive && referralCount >= requiredReferrals
-      referralDeficit = Math.max(0, requiredReferrals - referralCount)
+    // Check referral requirement (can be bypassed)
+    const hasEnoughReferrals = user.bypass_direct_referrals || referralCount >= requiredReferrals
+    const referralDeficit = user.bypass_direct_referrals ? 0 : Math.max(0, requiredReferrals - referralCount)
 
-      // Calculate earnings (capped at 6,552 × $199)
-      const maxVolume = 6552 * 199
-      const cappedVolume = Math.min(user.sniper_volume_current_month, maxVolume)
-      const potentialMonthlyEarnings = cappedVolume * user.current_commission_rate
-      actualMonthlyEarnings = canWithdraw ? potentialMonthlyEarnings : 0
+    // Determine withdrawal eligibility
+    const canWithdraw = isActive && hasEnoughReferrals
 
-      // Withdrawal eligibility message
+    // Calculate earnings (capped at 6,552 × $199)
+    const maxVolume = 6552 * 199
+    const cappedVolume = Math.min(user.sniper_volume_current_month, maxVolume)
+    const potentialMonthlyEarnings = cappedVolume * user.current_commission_rate
+    const actualMonthlyEarnings = canWithdraw ? potentialMonthlyEarnings : 0
+
+    // Withdrawal eligibility message
+    if (user.bypass_direct_referrals && user.bypass_subscription) {
+      withdrawalMessage = 'Qualified via Bypass Access (Referrals & Subscription)'
+    } else if (user.bypass_direct_referrals) {
+      if (!isActive) {
+        withdrawalMessage = 'Account not active (must pay within 33 days)'
+      } else {
+        withdrawalMessage = 'Qualified via Bypass Access (Referrals)'
+      }
+    } else if (user.bypass_subscription) {
+      if (referralDeficit > 0) {
+        withdrawalMessage = `Need ${referralDeficit} more direct referral${referralDeficit !== 1 ? 's' : ''} to withdraw`
+      } else {
+        withdrawalMessage = 'Qualified via Bypass Access (Subscription)'
+      }
+    } else {
+      // No bypasses - regular user
       if (!isActive) {
         withdrawalMessage = 'Account not active (must pay within 33 days)'
       } else if (referralDeficit > 0) {
@@ -154,11 +160,6 @@ export async function GET(request: Request) {
         withdrawalMessage = `Eligible to withdraw from structure ${user.current_structure_number}`
       }
     }
-
-    // Calculate capped volume (needed for response)
-    const maxVolume = 6552 * 199
-    const cappedVolume = Math.min(user.sniper_volume_current_month, maxVolume)
-    const potentialMonthlyEarnings = cappedVolume * user.current_commission_rate
 
     return NextResponse.json({
       network: {

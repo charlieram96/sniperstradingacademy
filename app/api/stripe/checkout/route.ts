@@ -19,17 +19,9 @@ export async function POST(req: NextRequest) {
     // Get or create Stripe customer
     const { data: userData } = await supabase
       .from("users")
-      .select("stripe_customer_id, email, membership_status, initial_payment_completed, premium_bypass")
+      .select("stripe_customer_id, email, membership_status, initial_payment_completed, bypass_initial_payment, bypass_subscription")
       .eq("id", user.id)
       .single()
-
-    // Check if user has premium bypass
-    if (userData?.premium_bypass) {
-      return NextResponse.json(
-        { error: "Premium bypass users don't need to make payments" },
-        { status: 400 }
-      )
-    }
 
     const stripe = getStripe()
     let customerId = userData?.stripe_customer_id
@@ -54,6 +46,14 @@ export async function POST(req: NextRequest) {
     let checkoutSession
 
     if (paymentType === "initial") {
+      // Check if user has bypass for initial payment
+      if (userData?.bypass_initial_payment) {
+        return NextResponse.json(
+          { error: "You have bypass access for initial payment" },
+          { status: 400 }
+        )
+      }
+
       // Check if user already paid initial payment
       if (userData?.initial_payment_completed) {
         return NextResponse.json(
@@ -88,6 +88,14 @@ export async function POST(req: NextRequest) {
         },
       })
     } else {
+      // Check if user has bypass for subscription
+      if (userData?.bypass_subscription) {
+        return NextResponse.json(
+          { error: "You have bypass access for subscription" },
+          { status: 400 }
+        )
+      }
+
       // Check if user has completed initial payment
       if (!userData?.initial_payment_completed) {
         return NextResponse.json(

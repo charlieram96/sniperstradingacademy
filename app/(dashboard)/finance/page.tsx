@@ -15,7 +15,9 @@ import {
   Clock,
   CreditCard,
   Download,
-  Wallet
+  Wallet,
+  XCircle,
+  ExternalLink
 } from "lucide-react"
 import { AccountStatusCard } from "@/components/account-status-card"
 
@@ -29,6 +31,8 @@ interface DirectBonus {
   bonusAmount: number
   status: "pending" | "paid"
   paidAt?: string
+  availableAt?: string
+  isAvailable: boolean
 }
 
 interface MonthlyEarning {
@@ -69,6 +73,11 @@ export default function FinancePage() {
     commissionRate: 0.10
   })
   const [loading, setLoading] = useState(true)
+  const [withdrawingBonusId, setWithdrawingBonusId] = useState<string | null>(null)
+  const [withdrawError, setWithdrawError] = useState<string | null>(null)
+  const [withdrawSuccess, setWithdrawSuccess] = useState<string | null>(null)
+  const [stripeConnected, setStripeConnected] = useState(false)
+  const [loadingDashboard, setLoadingDashboard] = useState(false)
 
   useEffect(() => {
     async function getUser() {
@@ -91,11 +100,12 @@ export default function FinancePage() {
         // Fetch user account data
         const { data: userData } = await supabase
           .from('users')
-          .select('is_active, last_payment_date, initial_payment_date, qualified_at, direct_referrals_count, active_network_count, current_commission_rate, premium_bypass')
+          .select('is_active, last_payment_date, initial_payment_date, qualified_at, direct_referrals_count, active_network_count, current_commission_rate, bypass_direct_referrals, bypass_subscription, bypass_initial_payment, stripe_connect_account_id')
           .eq('id', userId)
           .single()
 
-        const hasPremiumBypass = userData?.premium_bypass || false
+        // Check if user has completed Stripe Connect onboarding
+        setStripeConnected(!!userData?.stripe_connect_account_id)
 
         // Calculate monthly payment due date (30 days after initial payment or last payment)
         let monthlyPaymentDueDate = null
@@ -156,7 +166,53 @@ export default function FinancePage() {
         }))
 
         setMonthlyEarnings(monthlyEarnings)
-        setDirectBonuses([]) // No direct bonuses in current system
+
+        // Fetch direct bonuses from commissions table
+        const { data: bonusData } = await supabase
+          .from('commissions')
+          .select(`
+            id,
+            amount,
+            status,
+            paid_at,
+            available_at,
+            created_at,
+            referred_id,
+            users!commissions_referred_id_fkey (
+              name,
+              email,
+              created_at
+            )
+          `)
+          .eq('referrer_id', userId)
+          .eq('commission_type', 'direct_bonus')
+          .order('created_at', { ascending: false })
+
+        const now = new Date()
+        const formattedBonuses: DirectBonus[] = bonusData?.map(bonus => {
+          const referredUser = Array.isArray(bonus.users) ? bonus.users[0] : bonus.users
+          const availableAt = bonus.available_at ? new Date(bonus.available_at) : null
+          const isAvailable = bonus.status === 'pending' &&
+                              availableAt &&
+                              now >= availableAt &&
+                              userData?.is_active === true
+
+          return {
+            id: bonus.id,
+            referredUser: {
+              name: referredUser?.name || 'Unknown',
+              email: referredUser?.email || 'unknown@email.com',
+              joinedAt: referredUser?.created_at || bonus.created_at
+            },
+            bonusAmount: parseFloat(bonus.amount),
+            status: bonus.status as "pending" | "paid",
+            paidAt: bonus.paid_at || undefined,
+            availableAt: bonus.available_at || undefined,
+            isAvailable: isAvailable || false
+          }
+        }) || []
+
+        setDirectBonuses(formattedBonuses)
 
         // Get real next payment date from subscription
         const { data: subscription } = await supabase
@@ -180,6 +236,16 @@ export default function FinancePage() {
 
         const totalResidual = monthlyEarnings.reduce((sum, m) => sum + m.residualIncome, 0)
         const totalPayments = payments?.reduce((sum, p) => sum + (p.status === 'succeeded' ? parseFloat(p.amount) : 0), 0) || 0
+
+        // Calculate bonus statistics
+        const totalDirectBonuses = formattedBonuses.reduce((sum, b) => sum + b.bonusAmount, 0)
+        const paidBonuses = formattedBonuses
+          .filter(b => b.status === 'paid')
+          .reduce((sum, b) => sum + b.bonusAmount, 0)
+        const pendingBonuses = formattedBonuses
+          .filter(b => b.status === 'pending')
+          .reduce((sum, b) => sum + b.bonusAmount, 0)
+
         const lifetimeEarnings = totalPayments
 
         setFinancialStats({
@@ -187,13 +253,13 @@ export default function FinancePage() {
           currentMonthVolume: sniperVolume,
           totalResidualEarned: totalResidual,
           currentMonthResidual: monthlyResidual,
-          totalDirectBonuses: 0,
-          pendingBonuses: 0,
-          paidBonuses: 0,
+          totalDirectBonuses,
+          pendingBonuses,
+          paidBonuses,
           lifetimeEarnings,
           nextPayoutDate,
-          nextPayoutAmount: (stats.earnings?.canWithdraw || hasPremiumBypass) ? monthlyResidual : 0,
-          isQualified: stats.earnings?.canWithdraw || hasPremiumBypass,
+          nextPayoutAmount: (stats.earnings?.canWithdraw) ? monthlyResidual : 0,
+          isQualified: stats.earnings?.canWithdraw,
           activeMembers: activeCount,
           commissionRate: commissionRate
         })
@@ -221,9 +287,132 @@ export default function FinancePage() {
     console.log("Processing payment...")
   }
 
-  const handleShareReferralLink = () => {
-    // Handle sharing referral link
-    console.log("Sharing referral link...")
+  const handleWithdrawBonus = async (bonusId: string) => {
+    setWithdrawError(null)
+    setWithdrawSuccess(null)
+    setWithdrawingBonusId(bonusId)
+
+    try {
+      const response = await fetch('/api/bonuses/withdraw', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ bonusId }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setWithdrawError(data.error || 'Failed to withdraw bonus')
+        return
+      }
+
+      setWithdrawSuccess(data.message || 'Bonus withdrawn successfully!')
+
+      // Refresh financial data to show updated status
+      if (userId) {
+        const supabase = createClient()
+
+        // Refresh bonuses
+        const { data: bonusData } = await supabase
+          .from('commissions')
+          .select(`
+            id,
+            amount,
+            status,
+            paid_at,
+            available_at,
+            created_at,
+            referred_id,
+            users!commissions_referred_id_fkey (
+              name,
+              email,
+              created_at
+            )
+          `)
+          .eq('referrer_id', userId)
+          .eq('commission_type', 'direct_bonus')
+          .order('created_at', { ascending: false })
+
+        const { data: userData } = await supabase
+          .from('users')
+          .select('is_active')
+          .eq('id', userId)
+          .single()
+
+        const now = new Date()
+        const formattedBonuses: DirectBonus[] = bonusData?.map(bonus => {
+          const referredUser = Array.isArray(bonus.users) ? bonus.users[0] : bonus.users
+          const availableAt = bonus.available_at ? new Date(bonus.available_at) : null
+          const isAvailable = bonus.status === 'pending' &&
+                              availableAt &&
+                              now >= availableAt &&
+                              userData?.is_active === true
+
+          return {
+            id: bonus.id,
+            referredUser: {
+              name: referredUser?.name || 'Unknown',
+              email: referredUser?.email || 'unknown@email.com',
+              joinedAt: referredUser?.created_at || bonus.created_at
+            },
+            bonusAmount: parseFloat(bonus.amount),
+            status: bonus.status as "pending" | "paid",
+            paidAt: bonus.paid_at || undefined,
+            availableAt: bonus.available_at || undefined,
+            isAvailable: isAvailable || false
+          }
+        }) || []
+
+        setDirectBonuses(formattedBonuses)
+
+        // Update statistics
+        const totalDirectBonuses = formattedBonuses.reduce((sum, b) => sum + b.bonusAmount, 0)
+        const paidBonuses = formattedBonuses
+          .filter(b => b.status === 'paid')
+          .reduce((sum, b) => sum + b.bonusAmount, 0)
+        const pendingBonuses = formattedBonuses
+          .filter(b => b.status === 'pending')
+          .reduce((sum, b) => sum + b.bonusAmount, 0)
+
+        setFinancialStats(prev => ({
+          ...prev,
+          totalDirectBonuses,
+          paidBonuses,
+          pendingBonuses,
+        }))
+      }
+    } catch (error) {
+      console.error('Error withdrawing bonus:', error)
+      setWithdrawError('An unexpected error occurred. Please try again.')
+    } finally {
+      setWithdrawingBonusId(null)
+    }
+  }
+
+  const handleOpenStripeDashboard = async () => {
+    setLoadingDashboard(true)
+    try {
+      const response = await fetch('/api/stripe/connect/dashboard', {
+        method: 'POST',
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to access dashboard')
+        return
+      }
+
+      // Open Stripe dashboard in new tab
+      window.open(data.url, '_blank')
+    } catch (error) {
+      console.error('Error opening Stripe dashboard:', error)
+      alert('Failed to open dashboard. Please try again.')
+    } finally {
+      setLoadingDashboard(false)
+    }
   }
 
   return (
@@ -410,16 +599,34 @@ export default function FinancePage() {
             <CardHeader>
               <CardTitle>Direct Referral Bonuses</CardTitle>
               <CardDescription>
-                Earn $250 for each person you directly refer
+                Earn $249.50 (50% of $499) for each person you directly refer
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
+                {/* Success/Error Messages */}
+                {withdrawSuccess && (
+                  <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+                    <div className="flex items-center gap-2 text-green-600">
+                      <CheckCircle className="h-5 w-5" />
+                      <span className="font-medium">{withdrawSuccess}</span>
+                    </div>
+                  </div>
+                )}
+                {withdrawError && (
+                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                    <div className="flex items-center gap-2 text-red-600">
+                      <XCircle className="h-5 w-5" />
+                      <span className="font-medium">{withdrawError}</span>
+                    </div>
+                  </div>
+                )}
+
                 {directBonuses.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Users className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-                    <p>No direct referrals yet</p>
-                    <p className="text-sm mt-2">Share your referral link to earn $250 per person</p>
+                    <p>No direct referral bonuses yet</p>
+                    <p className="text-sm mt-2">Share your referral link to earn $249.50 per person who pays $499</p>
                   </div>
                 ) : (
                   <>
@@ -439,40 +646,88 @@ export default function FinancePage() {
                     </div>
 
                     <div className="space-y-3">
-                      {directBonuses.map(bonus => (
-                        <div key={bonus.id} className="border rounded-lg p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="font-medium">{bonus.referredUser.name}</div>
-                              <div className="text-sm text-muted-foreground">{bonus.referredUser.email}</div>
-                              <div className="text-xs text-muted-foreground/70 mt-1">
-                                Joined {new Date(bonus.referredUser.joinedAt).toLocaleDateString()}
+                      {directBonuses.map(bonus => {
+                        const now = new Date()
+                        const availableAt = bonus.availableAt ? new Date(bonus.availableAt) : null
+                        const timeUntilAvailable = availableAt ? availableAt.getTime() - now.getTime() : 0
+                        const hoursRemaining = Math.max(0, Math.ceil(timeUntilAvailable / (1000 * 60 * 60)))
+
+                        return (
+                          <div key={bonus.id} className="border rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex-1">
+                                <div className="font-medium">{bonus.referredUser.name}</div>
+                                <div className="text-sm text-muted-foreground">{bonus.referredUser.email}</div>
+                                <div className="text-xs text-muted-foreground/70 mt-1">
+                                  Joined {new Date(bonus.referredUser.joinedAt).toLocaleDateString()}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-xl font-bold">${bonus.bonusAmount.toFixed(2)}</div>
                               </div>
                             </div>
-                            <div className="text-right">
-                              <div className="text-xl font-bold">${bonus.bonusAmount}</div>
-                              {bonus.status === "paid" ? (
-                                <>
-                                  <Badge className="bg-primary/10 text-primary">
+
+                            <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                              <div>
+                                {bonus.status === "paid" ? (
+                                  <>
+                                    <Badge className="bg-green-500 text-white">
+                                      <CheckCircle className="h-3 w-3 mr-1" />
+                                      Paid
+                                    </Badge>
+                                    {bonus.paidAt && (
+                                      <div className="text-xs text-muted-foreground mt-1">
+                                        {new Date(bonus.paidAt).toLocaleDateString()}
+                                      </div>
+                                    )}
+                                  </>
+                                ) : bonus.isAvailable ? (
+                                  <Badge className="bg-green-500 text-white">
                                     <CheckCircle className="h-3 w-3 mr-1" />
-                                    Paid
+                                    Available to Withdraw
                                   </Badge>
-                                  {bonus.paidAt && (
-                                    <div className="text-xs text-muted-foreground mt-1">
-                                      {new Date(bonus.paidAt).toLocaleDateString()}
+                                ) : !accountStatus.accountActive ? (
+                                  <div>
+                                    <Badge variant="outline" className="border-red-500 text-red-500">
+                                      <XCircle className="h-3 w-3 mr-1" />
+                                      Inactive Account
+                                    </Badge>
+                                    <div className="text-xs text-red-500 mt-1">
+                                      You must be active to withdraw
                                     </div>
-                                  )}
-                                </>
-                              ) : (
-                                <Badge className="bg-amber-500/10 text-amber-400">
-                                  <Clock className="h-3 w-3 mr-1" />
-                                  Pending
-                                </Badge>
+                                  </div>
+                                ) : hoursRemaining > 0 ? (
+                                  <div>
+                                    <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20">
+                                      <Clock className="h-3 w-3 mr-1" />
+                                      Holding Period
+                                    </Badge>
+                                    <div className="text-xs text-muted-foreground mt-1">
+                                      Available in {hoursRemaining}h
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <Badge className="bg-amber-500/10 text-amber-400">
+                                    <Clock className="h-3 w-3 mr-1" />
+                                    Pending
+                                  </Badge>
+                                )}
+                              </div>
+
+                              {bonus.isAvailable && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleWithdrawBonus(bonus.id)}
+                                  disabled={withdrawingBonusId === bonus.id}
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  {withdrawingBonusId === bonus.id ? 'Processing...' : 'Withdraw Now'}
+                                </Button>
                               )}
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   </>
                 )}
@@ -549,18 +804,42 @@ export default function FinancePage() {
                     <div className="p-3 border rounded-lg bg-muted/30">
                       <div className="flex items-center gap-3 mb-2">
                         <CreditCard className="h-5 w-5 text-muted-foreground" />
-                        <div>
+                        <div className="flex-1">
                           <div className="font-medium">Stripe Connect</div>
-                          <div className="text-sm text-muted-foreground">Connect your bank account to receive payouts</div>
+                          <div className="text-sm text-muted-foreground">
+                            {stripeConnected
+                              ? 'Your bank account is connected'
+                              : 'Connect your bank account to receive payouts'}
+                          </div>
                         </div>
+                        {stripeConnected && (
+                          <Badge className="bg-green-500 text-white">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Connected
+                          </Badge>
+                        )}
                       </div>
                     </div>
-                    <Button variant="outline" className="w-full" disabled>
-                      Configure Payout Method
-                    </Button>
-                    <p className="text-xs text-muted-foreground text-center">
-                      Payment integration coming soon
-                    </p>
+                    {stripeConnected ? (
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={handleOpenStripeDashboard}
+                        disabled={loadingDashboard}
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        {loadingDashboard ? 'Opening...' : 'View Stripe Dashboard'}
+                      </Button>
+                    ) : (
+                      <>
+                        <Button variant="outline" className="w-full" disabled>
+                          Configure Payout Method
+                        </Button>
+                        <p className="text-xs text-muted-foreground text-center">
+                          Complete initial payment and onboarding to connect your bank account
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
 

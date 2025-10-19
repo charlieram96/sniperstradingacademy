@@ -288,6 +288,30 @@ export async function POST(req: NextRequest) {
             console.log("✅ Payment recorded successfully")
           }
 
+          // Create $249.50 direct bonus for referrer (50% of $499)
+          if (referralData?.referrer_id) {
+            const bonusAmount = 249.50
+            const availableAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) // 3 days from now
+
+            const { error: bonusError } = await supabase
+              .from("commissions")
+              .insert({
+                referrer_id: referralData.referrer_id,
+                referred_id: userId,
+                amount: bonusAmount,
+                commission_type: 'direct_bonus',
+                status: 'pending',
+                available_at: availableAt.toISOString(),
+              })
+
+            if (bonusError) {
+              console.error("❌ Error creating direct bonus:", bonusError)
+            } else {
+              console.log(`✅ Created $${bonusAmount} direct bonus for referrer ${referralData.referrer_id}`)
+              console.log(`   Available for withdrawal after: ${availableAt.toISOString()}`)
+            }
+          }
+
           console.log("Initial payment processed successfully for user:", userId)
         } else if (paymentType === "subscription" && session.subscription) {
           // Handle subscription creation

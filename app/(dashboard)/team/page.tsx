@@ -106,15 +106,15 @@ export default function TeamPage() {
 
       const supabase = createClient()
 
-      // Get current user's network position, active status, and premium bypass
+      // Get current user's network position, active status, and granular bypass settings
       const { data: currentUser } = await supabase
         .from("users")
-        .select("network_position_id, is_active, premium_bypass")
+        .select("network_position_id, is_active, bypass_direct_referrals, bypass_subscription")
         .eq("id", userId)
         .single()
 
-      setIsUserActive(currentUser?.is_active || false)
-      setHasPremiumBypass(currentUser?.premium_bypass || false)
+      setIsUserActive(currentUser?.is_active || currentUser?.bypass_subscription || false)
+      setHasPremiumBypass(currentUser?.bypass_direct_referrals || false)
 
       if (!currentUser?.network_position_id) {
         // User doesn't have a network position yet
@@ -279,7 +279,7 @@ export default function TeamPage() {
               <CardDescription className="mt-2">
                 {hasPremiumBypass ? (
                   <span className="text-purple-600 dark:text-purple-400 font-medium">
-                    ✨ You have Premium Bypass - qualified for all earnings without payment or referral requirements
+                    ✨ You have Referral Bypass - qualified for earnings without referral requirements
                   </span>
                 ) : !isUserActive ? (
                   <span className="text-destructive font-medium">
