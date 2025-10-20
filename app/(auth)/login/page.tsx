@@ -17,9 +17,10 @@ function LoginForm() {
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
   const [showPassword, setShowPassword] = useState(false)
 
-  // Check for error messages in URL
+  // Check for error and success messages in URL
   useEffect(() => {
     const errorParam = searchParams.get("error")
     const messageParam = searchParams.get("message")
@@ -30,6 +31,9 @@ function LoginForm() {
       setError(messageParam || "Please complete your signup with a referral code.")
     } else if (errorParam === "auth_failed") {
       setError("Authentication failed. Please try again.")
+    } else if (messageParam && !errorParam) {
+      // Success message (like password reset)
+      setSuccess(messageParam)
     }
   }, [searchParams])
 
@@ -180,6 +184,11 @@ function LoginForm() {
                     </Button>
                   </div>
                 </div>
+                {success && (
+                  <div className="p-3 text-sm text-green-600 bg-green-50 rounded-md">
+                    {success}
+                  </div>
+                )}
                 {error && (
                   <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
                     {error}

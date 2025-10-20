@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
   const code = requestUrl.searchParams.get("code")
   const mode = requestUrl.searchParams.get("mode") // 'login' or null (signup)
   const next = requestUrl.searchParams.get("next") || "/dashboard"
+  const type = requestUrl.searchParams.get("type") // 'recovery' for password reset
 
   if (code) {
     const supabase = await createClient()
@@ -14,7 +15,19 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error("Error exchanging code for session:", error)
+
+      // If this is a password reset and exchange failed, still redirect to reset page
+      if (type === "recovery") {
+        return NextResponse.redirect(`${requestUrl.origin}/reset-password`)
+      }
+
       return NextResponse.redirect(`${requestUrl.origin}/login?error=auth_failed`)
+    }
+
+    // Handle password reset flow
+    if (type === "recovery" || next === "/reset-password") {
+      console.log("Password reset requested, redirecting to reset-password page")
+      return NextResponse.redirect(`${requestUrl.origin}/reset-password`)
     }
 
     // Check if this is a new user without a referral or network position
