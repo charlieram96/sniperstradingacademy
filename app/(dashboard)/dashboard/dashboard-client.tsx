@@ -9,9 +9,18 @@ import { Progress } from "@/components/ui/progress"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { formatCurrency } from "@/lib/utils"
-import { Users, DollarSign, TrendingUp, UserPlus, Lock, Unlock, CreditCard, AlertTriangle, Medal, Trophy, Star, Award, Target, Crown, GraduationCap, BookOpen, PlayCircle, CheckCircle2, Wallet, ExternalLink, XCircle, Clock, Sparkles } from "lucide-react"
+import { Users, DollarSign, TrendingUp, UserPlus, Lock, Unlock, CreditCard, AlertTriangle, Medal, Trophy, Star, Award, Target, Crown, GraduationCap, BookOpen, PlayCircle, CheckCircle2, Wallet, ExternalLink, XCircle, Clock, Sparkles, Calendar } from "lucide-react"
 import { NavigationLink } from "@/components/navigation-link"
 import { isTestUser } from "@/lib/mock-data"
+import { createClient } from "@/lib/supabase/client"
+
+interface AcademyClass {
+  id: string
+  title: string
+  description: string | null
+  meeting_link: string
+  scheduled_at: string
+}
 
 interface DashboardData {
   user?: {
@@ -88,6 +97,8 @@ export function DashboardClient({ data, session, hasPremiumBypass = false }: {
     }
   }>({ connected: false, onboarded: false })
   const [connectLoading, setConnectLoading] = useState(true)
+  const [academyClasses, setAcademyClasses] = useState<AcademyClass[]>([])
+  const [classesLoading, setClassesLoading] = useState(true)
   const rankInfo = getRankInfo(data.unlockedStructures, data.completedStructures)
   
   // Check Stripe Connect status
@@ -119,7 +130,31 @@ export function DashboardClient({ data, session, hasPremiumBypass = false }: {
     
     checkConnectStatus()
   }, [session.user.id])
-  
+
+  // Fetch academy classes
+  useEffect(() => {
+    async function fetchClasses() {
+      try {
+        const supabase = createClient()
+        const { data: classes, error } = await supabase
+          .from("academy_classes")
+          .select("*")
+          .order("scheduled_at", { ascending: true })
+          .limit(3)
+
+        if (!error && classes) {
+          setAcademyClasses(classes)
+        }
+      } catch (error) {
+        console.error('Error fetching academy classes:', error)
+      } finally {
+        setClassesLoading(false)
+      }
+    }
+
+    fetchClasses()
+  }, [])
+
   async function handleConnectOnboarding() {
     try {
       const response = await fetch('/api/stripe/connect/onboarding', {
@@ -210,63 +245,74 @@ export function DashboardClient({ data, session, hasPremiumBypass = false }: {
           </div>
         </CardHeader>
         <CardContent>
-          {/* TODO: Fetch from academy_classes table - showing placeholder for now */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Next Class - Green highlight */}
-            <div className="p-4 rounded-lg bg-green-500/20 border-2 border-green-500">
-              <div className="flex items-center justify-between mb-2">
-                <Badge className="bg-green-500 text-white">Next Class</Badge>
-                <PlayCircle className="h-5 w-5 text-green-600" />
-              </div>
-              <h3 className="font-semibold text-lg mb-1">Options Fundamentals</h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                Learn the basics of options trading and strategies
-              </p>
-              <p className="text-xs text-muted-foreground mb-3">
-                Today at 2:00 PM EST
-              </p>
-              <Button size="sm" className="w-full bg-green-600 hover:bg-green-700">
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Join Class
-              </Button>
+          {classesLoading ? (
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              <Clock className="h-4 w-4 animate-pulse mr-2" />
+              Loading classes...
             </div>
+          ) : academyClasses.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <PlayCircle className="h-12 w-12 text-muted-foreground/30 mb-4" />
+              <p className="text-sm text-muted-foreground">No classes scheduled yet</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {academyClasses.map((classItem, index) => {
+                const isFirst = index === 0
+                const scheduledDate = new Date(classItem.scheduled_at)
+                const formattedDate = scheduledDate.toLocaleString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                  timeZone: "America/New_York"
+                })
 
-            {/* Upcoming Class 2 */}
-            <div className="p-4 rounded-lg border-2">
-              <div className="flex items-center justify-between mb-2">
-                <Badge variant="outline">Upcoming</Badge>
-                <PlayCircle className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <h3 className="font-semibold text-lg mb-1">Technical Analysis</h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                Master chart patterns and indicators
-              </p>
-              <p className="text-xs text-muted-foreground mb-3">
-                Tomorrow at 10:00 AM EST
-              </p>
-              <Button size="sm" variant="outline" className="w-full" disabled>
-                Not Yet Available
-              </Button>
+                return (
+                  <div
+                    key={classItem.id}
+                    className={`p-4 rounded-lg border-2 ${
+                      isFirst
+                        ? "bg-green-500/20 border-green-500"
+                        : "border-border"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <Badge className={isFirst ? "bg-green-500 text-white" : "bg-muted"}>
+                        {isFirst ? "Next Class" : "Upcoming"}
+                      </Badge>
+                      <PlayCircle className={`h-5 w-5 ${isFirst ? "text-green-600" : "text-muted-foreground"}`} />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-1">{classItem.title}</h3>
+                    {classItem.description && (
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                        {classItem.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+                      <Calendar className="h-3.5 w-3.5" />
+                      <span>{formattedDate} EST</span>
+                    </div>
+                    <a href={classItem.meeting_link} target="_blank" rel="noopener noreferrer" className="block">
+                      <Button
+                        size="sm"
+                        className={`w-full ${
+                          isFirst
+                            ? "bg-green-600 hover:bg-green-700"
+                            : ""
+                        }`}
+                        variant={isFirst ? "default" : "outline"}
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        {isFirst ? "Join Class" : "View Details"}
+                      </Button>
+                    </a>
+                  </div>
+                )
+              })}
             </div>
-
-            {/* Upcoming Class 3 */}
-            <div className="p-4 rounded-lg border-2">
-              <div className="flex items-center justify-between mb-2">
-                <Badge variant="outline">Upcoming</Badge>
-                <PlayCircle className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <h3 className="font-semibold text-lg mb-1">Advanced Strategies</h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                Iron condors, butterflies, and spreads
-              </p>
-              <p className="text-xs text-muted-foreground mb-3">
-                Dec 25 at 3:00 PM EST
-              </p>
-              <Button size="sm" variant="outline" className="w-full" disabled>
-                Not Yet Available
-              </Button>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 

@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Badge } from "@/components/ui/badge"
 import {
   PlayCircle,
   FileText,
@@ -12,8 +13,19 @@ import {
   Circle,
   Download,
   Clock,
-  BookOpen
+  BookOpen,
+  Calendar,
+  ExternalLink
 } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
+
+interface AcademyClass {
+  id: string
+  title: string
+  description: string | null
+  meeting_link: string
+  scheduled_at: string
+}
 
 interface Lesson {
   id: string
@@ -34,6 +46,32 @@ interface Module {
 }
 
 export default function AcademyPage() {
+  const [academyClasses, setAcademyClasses] = useState<AcademyClass[]>([])
+  const [classesLoading, setClassesLoading] = useState(true)
+
+  // Fetch academy classes
+  useEffect(() => {
+    async function fetchClasses() {
+      try {
+        const supabase = createClient()
+        const { data: classes, error } = await supabase
+          .from("academy_classes")
+          .select("*")
+          .order("scheduled_at", { ascending: true })
+
+        if (!error && classes) {
+          setAcademyClasses(classes)
+        }
+      } catch (error) {
+        console.error('Error fetching academy classes:', error)
+      } finally {
+        setClassesLoading(false)
+      }
+    }
+
+    fetchClasses()
+  }, [])
+
   // Mock data - replace with actual API calls
   const [modules, setModules] = useState<Module[]>([
     {
@@ -311,6 +349,79 @@ export default function AcademyPage() {
           Master options trading with our comprehensive 6-module course
         </p>
       </div>
+
+      {/* Live Classes Schedule */}
+      {!classesLoading && academyClasses.length > 0 && (
+        <Card className="mb-8 border-green-500/20 bg-gradient-to-r from-green-500/5 to-green-600/10">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-green-600" />
+              Live Trading Classes Schedule
+            </CardTitle>
+            <CardDescription>
+              Join our upcoming live sessions to learn directly from expert traders
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {academyClasses.map((classItem, index) => {
+                const isFirst = index === 0
+                const scheduledDate = new Date(classItem.scheduled_at)
+                const formattedDate = scheduledDate.toLocaleString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                  timeZone: "America/New_York"
+                })
+
+                return (
+                  <div
+                    key={classItem.id}
+                    className={`p-4 rounded-lg border-2 ${
+                      isFirst
+                        ? "bg-green-500/20 border-green-500"
+                        : "border-border"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <Badge className={isFirst ? "bg-green-500 text-white" : "bg-muted"}>
+                        {isFirst ? "Next Class" : "Upcoming"}
+                      </Badge>
+                      <PlayCircle className={`h-5 w-5 ${isFirst ? "text-green-600" : "text-muted-foreground"}`} />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-1">{classItem.title}</h3>
+                    {classItem.description && (
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                        {classItem.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+                      <Calendar className="h-3.5 w-3.5" />
+                      <span>{formattedDate} EST</span>
+                    </div>
+                    <a href={classItem.meeting_link} target="_blank" rel="noopener noreferrer" className="block">
+                      <Button
+                        size="sm"
+                        className={`w-full ${
+                          isFirst
+                            ? "bg-green-600 hover:bg-green-700"
+                            : ""
+                        }`}
+                        variant={isFirst ? "default" : "outline"}
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        {isFirst ? "Join Class" : "View Details"}
+                      </Button>
+                    </a>
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Overall Progress Card */}
       <Card className="mb-8 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
