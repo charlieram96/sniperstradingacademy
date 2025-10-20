@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -81,6 +81,55 @@ export default function AdminNetworkPage() {
     initialPayment: false
   })
 
+  const filterAndSortUsers = useCallback(() => {
+    let result = [...users]
+
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      result = result.filter(
+        (user) =>
+          user.name?.toLowerCase().includes(query) ||
+          user.email.toLowerCase().includes(query)
+      )
+    }
+
+    // Role filter
+    if (roleFilter !== "all") {
+      result = result.filter((user) => user.role === roleFilter)
+    }
+
+    // Status filter
+    if (statusFilter !== "all") {
+      result = result.filter((user) =>
+        statusFilter === "active" ? user.is_active : !user.is_active
+      )
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      let aVal: string | number = a[sortField] || ""
+      let bVal: string | number = b[sortField] || ""
+
+      if (sortField === "name") {
+        aVal = a.name || a.email
+        bVal = b.name || b.email
+      }
+
+      if (typeof aVal === "string" && typeof bVal === "string") {
+        return sortDirection === "asc"
+          ? aVal.localeCompare(bVal)
+          : bVal.localeCompare(aVal)
+      }
+
+      return sortDirection === "asc"
+        ? (aVal as number) - (bVal as number)
+        : (bVal as number) - (aVal as number)
+    })
+
+    setFilteredUsers(result)
+  }, [users, searchQuery, roleFilter, statusFilter, sortField, sortDirection])
+
   useEffect(() => {
     checkAdminStatus()
     fetchAllUsers()
@@ -88,7 +137,7 @@ export default function AdminNetworkPage() {
 
   useEffect(() => {
     filterAndSortUsers()
-  }, [users, searchQuery, roleFilter, statusFilter, sortField, sortDirection])
+  }, [filterAndSortUsers])
 
   async function checkAdminStatus() {
     const supabase = createClient()
@@ -137,55 +186,6 @@ export default function AdminNetworkPage() {
       setUsers(data)
     }
     setLoading(false)
-  }
-
-  function filterAndSortUsers() {
-    let result = [...users]
-
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      result = result.filter(
-        (user) =>
-          user.name?.toLowerCase().includes(query) ||
-          user.email.toLowerCase().includes(query)
-      )
-    }
-
-    // Role filter
-    if (roleFilter !== "all") {
-      result = result.filter((user) => user.role === roleFilter)
-    }
-
-    // Status filter
-    if (statusFilter !== "all") {
-      result = result.filter((user) =>
-        statusFilter === "active" ? user.is_active : !user.is_active
-      )
-    }
-
-    // Sort
-    result.sort((a, b) => {
-      let aVal: string | number = a[sortField] || ""
-      let bVal: string | number = b[sortField] || ""
-
-      if (sortField === "name") {
-        aVal = a.name || a.email
-        bVal = b.name || b.email
-      }
-
-      if (typeof aVal === "string" && typeof bVal === "string") {
-        return sortDirection === "asc"
-          ? aVal.localeCompare(bVal)
-          : bVal.localeCompare(aVal)
-      }
-
-      return sortDirection === "asc"
-        ? (aVal as number) - (bVal as number)
-        : (bVal as number) - (aVal as number)
-    })
-
-    setFilteredUsers(result)
   }
 
   function openConfirmDialog(userId: string, userName: string, currentRole: "member" | "admin" | "superadmin") {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -41,11 +41,7 @@ export default function SettingsPage() {
   const [passwordSuccess, setPasswordSuccess] = useState("")
   const [passwordError, setPasswordError] = useState("")
 
-  useEffect(() => {
-    fetchUserData()
-  }, [])
-
-  async function fetchUserData() {
+  const fetchUserData = useCallback(async () => {
     const supabase = createClient()
 
     // Get auth user
@@ -67,7 +63,11 @@ export default function SettingsPage() {
     setUserData(userData)
     setName(user.user_metadata?.name || "")
     setLoading(false)
-  }
+  }, [router])
+
+  useEffect(() => {
+    fetchUserData()
+  }, [fetchUserData])
 
   async function updateName(e: React.FormEvent) {
     e.preventDefault()

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -75,11 +75,38 @@ export default function AdminPayoutsPage() {
   const [processResults, setProcessResults] = useState<ProcessResult[]>([])
   const [showResultsModal, setShowResultsModal] = useState(false)
 
-  useEffect(() => {
-    checkSuperAdminStatus()
+  const fetchCommissions = useCallback(async () => {
+    try {
+      const response = await fetch("/api/admin/payouts/pending")
+      const data = await response.json()
+
+      if (response.ok) {
+        setCommissions(data.commissions)
+        setSummary(data.summary)
+      }
+    } catch (error) {
+      console.error("Error fetching commissions:", error)
+    }
   }, [])
 
-  const checkSuperAdminStatus = async () => {
+  const fetchStripeBalance = useCallback(async () => {
+    try {
+      const response = await fetch("/api/admin/payouts/balance")
+      const data = await response.json()
+
+      if (response.ok) {
+        setStripeBalance(data.available)
+      }
+    } catch (error) {
+      console.error("Error fetching balance:", error)
+    }
+  }, [])
+
+  const fetchData = useCallback(async () => {
+    await Promise.all([fetchCommissions(), fetchStripeBalance()])
+  }, [fetchCommissions, fetchStripeBalance])
+
+  const checkSuperAdminStatus = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -96,38 +123,11 @@ export default function AdminPayoutsPage() {
       }
     }
     setLoading(false)
-  }
+  }, [fetchData])
 
-  const fetchData = async () => {
-    await Promise.all([fetchCommissions(), fetchStripeBalance()])
-  }
-
-  const fetchCommissions = async () => {
-    try {
-      const response = await fetch("/api/admin/payouts/pending")
-      const data = await response.json()
-
-      if (response.ok) {
-        setCommissions(data.commissions)
-        setSummary(data.summary)
-      }
-    } catch (error) {
-      console.error("Error fetching commissions:", error)
-    }
-  }
-
-  const fetchStripeBalance = async () => {
-    try {
-      const response = await fetch("/api/admin/payouts/balance")
-      const data = await response.json()
-
-      if (response.ok) {
-        setStripeBalance(data.available)
-      }
-    } catch (error) {
-      console.error("Error fetching balance:", error)
-    }
-  }
+  useEffect(() => {
+    checkSuperAdminStatus()
+  }, [checkSuperAdminStatus])
 
   const handleProcessSingle = async (commissionId: string) => {
     setProcessingId(commissionId)
