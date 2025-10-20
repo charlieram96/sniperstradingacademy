@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Pencil, Save, X, PlayCircle, Shield, CheckCircle, Bell, Calendar, Clock, AlertTriangle } from "lucide-react"
+import { Pencil, Save, X, PlayCircle, Shield, CheckCircle, Bell, Calendar, Clock, AlertTriangle, Trash2, Plus } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
@@ -76,7 +76,6 @@ export default function AdminClassesPage() {
       .from("academy_classes")
       .select("*")
       .order("scheduled_at", { ascending: true })
-      .limit(3)
 
     if (!error && data) {
       setClasses(data)
@@ -164,12 +163,29 @@ export default function AdminClassesPage() {
 
     setShowCompleteDialog(false)
     setClassToComplete(null)
-    fetchClasses()
+    await fetchClasses()
   }
 
   function cancelComplete() {
     setShowCompleteDialog(false)
     setClassToComplete(null)
+  }
+
+  async function deleteClass(classId: string) {
+    if (!confirm("Are you sure you want to delete this class?")) return
+
+    const supabase = createClient()
+    const { error } = await supabase
+      .from("academy_classes")
+      .delete()
+      .eq("id", classId)
+
+    if (error) {
+      alert("Error deleting class: " + error.message)
+      return
+    }
+
+    await fetchClasses()
   }
 
   async function createEmptyClass() {
@@ -234,20 +250,6 @@ export default function AdminClassesPage() {
         <div className="text-muted-foreground">Loading...</div>
       </div>
     )
-  }
-
-  // Ensure we always have exactly 3 boxes
-  const displayClasses = [...classes]
-  while (displayClasses.length < 3) {
-    displayClasses.push({
-      id: `empty-${displayClasses.length}`,
-      title: "",
-      description: "",
-      meeting_link: "",
-      scheduled_at: "",
-      created_at: "",
-      updated_at: ""
-    })
   }
 
   return (
@@ -316,28 +318,45 @@ export default function AdminClassesPage() {
         </CardContent>
       </Card>
 
-      {/* Academy Classes - 3 Boxes */}
+      {/* Academy Classes */}
       <Card>
         <CardHeader>
-          <CardTitle>Trading Academy Schedule</CardTitle>
-          <CardDescription>Next 3 upcoming classes - Edit inline or mark first class as complete</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Trading Academy Schedule</CardTitle>
+              <CardDescription>Upcoming classes - Edit inline or mark first class as complete</CardDescription>
+            </div>
+            <Button onClick={createEmptyClass} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Class
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {displayClasses.slice(0, 3).map((classItem, index) => {
-              const isEditing = editingIndex === index
-              const isEmpty = !classItem.title || classItem.id.startsWith('empty-')
-              const isFirst = index === 0 && !isEmpty
+          {classes.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <PlayCircle className="h-12 w-12 text-muted-foreground/30 mb-4" />
+              <p className="text-sm text-muted-foreground mb-4">No classes scheduled yet</p>
+              <Button onClick={createEmptyClass} variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                Add First Class
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {classes.map((classItem, index) => {
+                const isEditing = editingIndex === index
+                const isFirst = index === 0
 
-              return (
-                <div
-                  key={classItem.id}
-                  className={`p-5 rounded-lg border-2 min-h-[320px] flex flex-col ${
-                    isFirst
-                      ? "bg-green-500/10 border-green-500 shadow-sm shadow-green-500/20"
-                      : "border-border bg-card"
-                  }`}
-                >
+                return (
+                  <div
+                    key={classItem.id}
+                    className={`p-5 rounded-lg border-2 min-h-[320px] flex flex-col ${
+                      isFirst
+                        ? "bg-green-500/10 border-green-500 shadow-sm shadow-green-500/20"
+                        : "border-border bg-card"
+                    }`}
+                  >
                   {isEditing && editData ? (
                     <div className="space-y-4 flex-1 flex flex-col">
                       <div>
@@ -407,15 +426,6 @@ export default function AdminClassesPage() {
                         </div>
                       </div>
                     </div>
-                  ) : isEmpty ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center">
-                      <PlayCircle className="h-10 w-10 text-muted-foreground/30 mb-4" />
-                      <p className="text-sm text-muted-foreground mb-4">No class scheduled</p>
-                      <Button size="sm" onClick={createEmptyClass} variant="outline">
-                        <PlayCircle className="h-3.5 w-3.5 mr-1.5" />
-                        Add Class
-                      </Button>
-                    </div>
                   ) : (
                     <div className="flex flex-col h-full">
                       <div className="flex items-center justify-between mb-3">
@@ -462,6 +472,15 @@ export default function AdminClassesPage() {
                               Mark Complete
                             </Button>
                           )}
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="w-full"
+                            onClick={() => deleteClass(classItem.id)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                            Delete Class
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -470,6 +489,7 @@ export default function AdminClassesPage() {
               )
             })}
           </div>
+          )}
         </CardContent>
       </Card>
 
