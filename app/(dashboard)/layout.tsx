@@ -13,7 +13,8 @@ import {
   DollarSign,
   Shield,
   Network,
-  TrendingUp
+  TrendingUp,
+  Wallet
 } from "lucide-react"
 
 export default async function DashboardLayout({
@@ -113,13 +114,22 @@ export default async function DashboardLayout({
                 <span className="text-sm font-medium">Network View</span>
               </NavigationLink>
               {isSuperAdmin && (
-                <NavigationLink
-                  href="/admin/financials"
-                  className="flex items-center gap-3 px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-                >
-                  <TrendingUp className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                  <span className="text-sm font-medium">Financials</span>
-                </NavigationLink>
+                <>
+                  <NavigationLink
+                    href="/admin/financials"
+                    className="flex items-center gap-3 px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+                  >
+                    <TrendingUp className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+                    <span className="text-sm font-medium">Financials</span>
+                  </NavigationLink>
+                  <NavigationLink
+                    href="/admin/payouts"
+                    className="flex items-center gap-3 px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+                  >
+                    <Wallet className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+                    <span className="text-sm font-medium">Payouts</span>
+                  </NavigationLink>
+                </>
               )}
             </>
           )}
