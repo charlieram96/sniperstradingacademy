@@ -516,7 +516,7 @@ export default function AcademyPage() {
                         <Progress value={progress.percentage} className="w-20 h-2" />
                       </div>
                     </div>
-                  </AccordionTrigger>
+                  </AccordionTrigger> 
                   <AccordionContent>
                     <div className="space-y-4 pt-4 pl-14">
                       {module.lessons.map((lesson) => (
