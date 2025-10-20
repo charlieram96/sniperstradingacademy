@@ -19,6 +19,11 @@ export async function GET(request: NextRequest) {
 
     // Check if this is a new user without a referral or network position
     if (session?.user) {
+      // Log email verification for debugging
+      if (session.user.email_confirmed_at) {
+        console.log(`✅ Email verified for user: ${session.user.email}`)
+      }
+
       const { data: userData, error: userError } = await supabase
         .from("users")
         .select("referred_by, network_position_id")
@@ -60,6 +65,12 @@ export async function GET(request: NextRequest) {
         // If signup flow, redirect to complete-signup to get referral
         console.log("New OAuth user detected, redirecting to complete-signup")
         return NextResponse.redirect(`${requestUrl.origin}/complete-signup`)
+      }
+
+      // For email verification (user already has referral/position), go to dashboard
+      if (session.user.email_confirmed_at && userData.referred_by) {
+        console.log(`✅ Email verification complete. Redirecting to dashboard: ${session.user.email}`)
+        return NextResponse.redirect(`${requestUrl.origin}/dashboard`)
       }
     }
   }

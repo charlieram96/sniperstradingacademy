@@ -201,10 +201,12 @@ function RegisterForm() {
 
     try {
       // Sign up the user
+      const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: `${redirectUrl}/auth/callback?next=/dashboard`,
           data: {
             name,
             referred_by: confirmedReferrer?.id,  // Pass ID for trigger to set referred_by
@@ -260,9 +262,13 @@ function RegisterForm() {
     setIsLoading(true)
     try {
       const supabase = createClient()
+      const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
       const { error } = await supabase.auth.resend({
         type: 'signup',
-        email: userEmail
+        email: userEmail,
+        options: {
+          emailRedirectTo: `${redirectUrl}/auth/callback?next=/dashboard`,
+        }
       })
 
       if (error) {

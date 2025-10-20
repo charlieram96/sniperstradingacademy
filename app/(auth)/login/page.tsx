@@ -62,30 +62,6 @@ function LoginForm() {
     }
   }
 
-  async function useTestAccount() {
-    setIsLoading(true)
-    setError("")
-
-    try {
-      const supabase = createClient()
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: "test@example.com",
-        password: "testpass123",
-      })
-
-      if (error) {
-        setError("Test account error")
-      } else if (data.session) {
-        router.push("/dashboard")
-        router.refresh()
-      }
-    } catch {
-      setError("An error occurred with test account")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   async function handleGoogleSignIn() {
     setIsLoading(true)
     try {
@@ -265,24 +241,6 @@ function LoginForm() {
                 </svg>
                 Continue with Google
               </Button>
-
-              <div className="mt-4 pt-4 border-t">
-                <div className="text-center mb-3">
-                  <p className="text-xs text-muted-foreground">For testing purposes</p>
-                </div>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="w-full h-11"
-                  onClick={useTestAccount}
-                  disabled={isLoading}
-                >
-                  Use Test Account
-                </Button>
-                <p className="text-xs text-center text-muted-foreground mt-2">
-                  Email: test@example.com | Password: testpass123
-                </p>
-              </div>
             </CardContent>
             <CardFooter className="flex-col space-y-4">
               <p className="text-sm text-center w-full text-muted-foreground">

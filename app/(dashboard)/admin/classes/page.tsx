@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Pencil, Save, X, PlayCircle, Shield, CheckCircle, Bell, Calendar, Clock, AlertTriangle, Trash2, Plus } from "lucide-react"
+import { Pencil, Save, X, PlayCircle, Shield, CheckCircle, Bell, Calendar as CalendarIcon, AlertTriangle, Trash2, Plus } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
@@ -17,6 +17,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { format } from "date-fns"
 
 interface AcademyClass {
   id: string
@@ -32,8 +36,7 @@ interface EditData {
   title: string
   description: string
   meeting_link: string
-  date: string
-  time: string
+  scheduledDate: Date
 }
 
 export default function AdminClassesPage() {
@@ -47,6 +50,8 @@ export default function AdminClassesPage() {
   const [bannerText, setBannerText] = useState("")
   const [classToComplete, setClassToComplete] = useState<AcademyClass | null>(null)
   const [showCompleteDialog, setShowCompleteDialog] = useState(false)
+  const [classToDelete, setClassToDelete] = useState<AcademyClass | null>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   useEffect(() => {
     checkAdminStatus()
@@ -98,22 +103,16 @@ export default function AdminClassesPage() {
   function startEdit(index: number, classItem: AcademyClass) {
     setEditingIndex(index)
     const scheduledDate = new Date(classItem.scheduled_at)
-    const date = scheduledDate.toISOString().slice(0, 10) // YYYY-MM-DD
-    const time = scheduledDate.toTimeString().slice(0, 5) // HH:MM
     setEditData({
       title: classItem.title,
       description: classItem.description || "",
       meeting_link: classItem.meeting_link,
-      date: date,
-      time: time
+      scheduledDate: scheduledDate
     })
   }
 
   async function saveEdit(classItem: AcademyClass) {
     if (!editData) return
-
-    // Combine date and time into ISO string
-    const scheduledDateTime = new Date(`${editData.date}T${editData.time}:00`)
 
     const supabase = createClient()
     const { error } = await supabase
@@ -122,7 +121,7 @@ export default function AdminClassesPage() {
         title: editData.title,
         description: editData.description,
         meeting_link: editData.meeting_link,
-        scheduled_at: scheduledDateTime.toISOString(),
+        scheduled_at: editData.scheduledDate.toISOString(),
         updated_at: new Date().toISOString()
       })
       .eq("id", classItem.id)
@@ -171,21 +170,33 @@ export default function AdminClassesPage() {
     setClassToComplete(null)
   }
 
-  async function deleteClass(classId: string) {
-    if (!confirm("Are you sure you want to delete this class?")) return
+  function openDeleteDialog(classItem: AcademyClass) {
+    setClassToDelete(classItem)
+    setShowDeleteDialog(true)
+  }
+
+  async function confirmDeleteClass() {
+    if (!classToDelete) return
 
     const supabase = createClient()
     const { error } = await supabase
       .from("academy_classes")
       .delete()
-      .eq("id", classId)
+      .eq("id", classToDelete.id)
 
     if (error) {
       alert("Error deleting class: " + error.message)
       return
     }
 
+    setShowDeleteDialog(false)
+    setClassToDelete(null)
     await fetchClasses()
+  }
+
+  function cancelDelete() {
+    setShowDeleteDialog(false)
+    setClassToDelete(null)
   }
 
   async function createEmptyClass() {
@@ -387,31 +398,81 @@ export default function AdminClassesPage() {
                           placeholder="https://zoom.us/j/..."
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label className="text-xs font-semibold text-foreground flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            Date
-                          </Label>
-                          <Input
-                            type="date"
-                            value={editData.date}
-                            onChange={(e) => setEditData({ ...editData, date: e.target.value })}
-                            className="mt-1.5"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs font-semibold text-foreground flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            Time (EST)
-                          </Label>
-                          <Input
-                            type="time"
-                            value={editData.time}
-                            onChange={(e) => setEditData({ ...editData, time: e.target.value })}
-                            className="mt-1.5"
-                          />
-                        </div>
+                      <div>
+                        <Label className="text-xs font-semibold text-foreground flex items-center gap-1 mb-2">
+                          <CalendarIcon className="h-3 w-3" />
+                          Scheduled Date & Time (EST)
+                        </Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="w-full justify-start text-left font-normal"
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {format(editData.scheduledDate, "PPP 'at' p")} EST
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={editData.scheduledDate}
+                              onSelect={(date) => {
+                                if (date) {
+                                  const newDate = new Date(date)
+                                  newDate.setHours(editData.scheduledDate.getHours())
+                                  newDate.setMinutes(editData.scheduledDate.getMinutes())
+                                  setEditData({ ...editData, scheduledDate: newDate })
+                                }
+                              }}
+                              initialFocus
+                            />
+                            <div className="p-3 border-t">
+                              <Label className="text-xs font-semibold mb-2 block">Time (EST)</Label>
+                              <div className="flex gap-2">
+                                <Select
+                                  value={editData.scheduledDate.getHours().toString()}
+                                  onValueChange={(value) => {
+                                    const newDate = new Date(editData.scheduledDate)
+                                    newDate.setHours(parseInt(value))
+                                    setEditData({ ...editData, scheduledDate: newDate })
+                                  }}
+                                >
+                                  <SelectTrigger className="w-[70px]">
+                                    <SelectValue placeholder="Hour" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {Array.from({ length: 24 }, (_, i) => (
+                                      <SelectItem key={i} value={i.toString()}>
+                                        {i.toString().padStart(2, '0')}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <span className="flex items-center">:</span>
+                                <Select
+                                  value={editData.scheduledDate.getMinutes().toString()}
+                                  onValueChange={(value) => {
+                                    const newDate = new Date(editData.scheduledDate)
+                                    newDate.setMinutes(parseInt(value))
+                                    setEditData({ ...editData, scheduledDate: newDate })
+                                  }}
+                                >
+                                  <SelectTrigger className="w-[70px]">
+                                    <SelectValue placeholder="Min" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {Array.from({ length: 60 }, (_, i) => (
+                                      <SelectItem key={i} value={i.toString()}>
+                                        {i.toString().padStart(2, '0')}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                       <div className="mt-auto pt-2">
                         <div className="flex flex-col gap-2">
@@ -476,7 +537,7 @@ export default function AdminClassesPage() {
                             size="sm"
                             variant="destructive"
                             className="w-full"
-                            onClick={() => deleteClass(classItem.id)}
+                            onClick={() => openDeleteDialog(classItem)}
                           >
                             <Trash2 className="h-3.5 w-3.5 mr-1.5" />
                             Delete Class
@@ -536,6 +597,51 @@ export default function AdminClassesPage() {
             >
               <CheckCircle className="h-4 w-4 mr-2" />
               Mark Complete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Confirm Delete Class
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this class? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          {classToDelete && (
+            <div className="p-4 rounded-lg bg-muted/50 border">
+              <div className="font-semibold mb-1">{classToDelete.title}</div>
+              {classToDelete.description && (
+                <div className="text-sm text-muted-foreground mb-2">{classToDelete.description}</div>
+              )}
+              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                <CalendarIcon className="h-3 w-3" />
+                {new Date(classToDelete.scheduled_at).toLocaleString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                  timeZone: "America/New_York"
+                })} EST
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={cancelDelete}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDeleteClass}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Class
             </Button>
           </DialogFooter>
         </DialogContent>
