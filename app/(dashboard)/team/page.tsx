@@ -467,7 +467,6 @@ export default function TeamPage() {
                     </div>
                     <div className="flex-1">
                       <div className="font-medium">{referral.name}</div>
-                      <div className="text-sm text-muted-foreground">{referral.email}</div>
                       <div className="text-xs text-muted-foreground mt-1">
                         Joined {new Date(referral.created_at).toLocaleDateString()} • {referral.total_network_count} members in structure
                       </div>

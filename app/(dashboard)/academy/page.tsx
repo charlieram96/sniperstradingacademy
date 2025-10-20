@@ -410,7 +410,7 @@ export default function AcademyPage() {
                     <div className="space-y-4 pt-4 pl-14">
                       {module.lessons.map((lesson) => (
                         <div key={lesson.id} className="space-y-3">
-                          <div className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-accent transition-colors duration-200">
+                          <div className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-accent-hover transition-colors duration-200">
                             <div className="flex items-center gap-3 flex-1">
                               <button
                                 onClick={() => toggleLessonComplete(module.id, lesson.id)}

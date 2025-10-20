@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronDown, Search, Crown, Sparkles, TrendingUp, Share2, Users } from "lucide-react"
+import { ChevronDown, Search, Crown, Sparkles, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -143,7 +143,7 @@ export function StructureDropdown({
                     {filteredMembers.map(member => (
                       <div
                         key={member.id}
-                        className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent cursor-pointer transition-colors"
+                        className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent-hover cursor-pointer transition-colors"
                         onClick={() => handleMemberClick(member)}
                       >
                         <div className="flex items-center gap-3">
@@ -152,7 +152,6 @@ export function StructureDropdown({
                           </div>
                           <div>
                             <p className="text-sm font-medium">{member.name}</p>
-                            <p className="text-xs text-muted-foreground">{member.email}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -195,7 +194,6 @@ export function StructureDropdown({
                   </div>
                   <div>
                     <h3 className="text-2xl font-bold">{selectedMember.name}</h3>
-                    <p className="text-sm text-muted-foreground">{selectedMember.email}</p>
                     <div className="flex items-center gap-2 mt-2">
                       {selectedMember.is_direct_referral && (
                         <Badge className="bg-primary/10 text-primary">
@@ -315,18 +313,6 @@ export function StructureDropdown({
                   </div>
                 </div>
               )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-2 pt-4 border-t">
-                <Button variant="outline" className="flex-1">
-                  <Users className="h-4 w-4 mr-2" />
-                  View Downline
-                </Button>
-                <Button variant="outline" className="flex-1">
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Contact Member
-                </Button>
-              </div>
             </div>
           )}
         </DialogContent>

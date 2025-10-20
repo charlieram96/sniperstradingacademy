@@ -17,6 +17,7 @@
   --muted-foreground: #A3A3A3;
   --accent: #22C55E;
   --accent-foreground: #ffffff;
+  --accent-hover: #16A34A;
   --destructive: #DC2626;
   --destructive-foreground: #ffffff;
   --border: #262626;
@@ -51,6 +52,7 @@
   --color-muted-foreground: #A3A3A3;
   --color-accent: #22C55E;
   --color-accent-foreground: #ffffff;
+  --color-accent-hover: #16A34A;
   --color-destructive: #DC2626;
   --color-destructive-foreground: #ffffff;
   --color-border: #262626;

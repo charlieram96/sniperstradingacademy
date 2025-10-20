@@ -7,6 +7,13 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   DollarSign,
   TrendingUp,
   Users,
@@ -17,7 +24,8 @@ import {
   Download,
   Wallet,
   XCircle,
-  ExternalLink
+  ExternalLink,
+  AlertCircle
 } from "lucide-react"
 import { AccountStatusCard } from "@/components/account-status-card"
 
@@ -78,6 +86,8 @@ export default function FinancePage() {
   const [withdrawSuccess, setWithdrawSuccess] = useState<string | null>(null)
   const [stripeConnected, setStripeConnected] = useState(false)
   const [loadingDashboard, setLoadingDashboard] = useState(false)
+  const [dashboardError, setDashboardError] = useState<string | null>(null)
+  const [showDashboardError, setShowDashboardError] = useState(false)
 
   useEffect(() => {
     async function getUser() {
@@ -393,6 +403,7 @@ export default function FinancePage() {
 
   const handleOpenStripeDashboard = async () => {
     setLoadingDashboard(true)
+    setDashboardError(null)
     try {
       const response = await fetch('/api/stripe/connect/dashboard', {
         method: 'POST',
@@ -401,7 +412,8 @@ export default function FinancePage() {
       const data = await response.json()
 
       if (!response.ok) {
-        alert(data.error || 'Failed to access dashboard')
+        setDashboardError(data.error || 'Failed to access dashboard')
+        setShowDashboardError(true)
         return
       }
 
@@ -409,7 +421,8 @@ export default function FinancePage() {
       window.open(data.url, '_blank')
     } catch (error) {
       console.error('Error opening Stripe dashboard:', error)
-      alert('Failed to open dashboard. Please try again.')
+      setDashboardError('Failed to open dashboard. Please try again.')
+      setShowDashboardError(true)
     } finally {
       setLoadingDashboard(false)
     }
@@ -876,6 +889,26 @@ export default function FinancePage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Error Dialog for Stripe Dashboard */}
+      <Dialog open={showDashboardError} onOpenChange={setShowDashboardError}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              Dashboard Access Error
+            </DialogTitle>
+            <DialogDescription>
+              {dashboardError}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end pt-4">
+            <Button onClick={() => setShowDashboardError(false)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
