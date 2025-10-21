@@ -422,7 +422,7 @@ export default function SettingsPage() {
                 {changingPassword ? "Changing Password..." : "Change Password"}
               </Button>
             </form>
-          </CardContent> 
+          </CardContent>  
         </Card>
       </div>
     </div>
