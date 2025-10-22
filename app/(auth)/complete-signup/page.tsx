@@ -4,8 +4,10 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Loader2, CheckCircle } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Loader2, CheckCircle, Shield } from "lucide-react"
 import Image from "next/image"
+import { MFAEnrollment } from "@/components/mfa/mfa-enrollment"
 
 interface ReferrerInfo {
   id: string
@@ -19,6 +21,8 @@ export default function CompleteSignupPage() {
   const [isProcessing, setIsProcessing] = useState(true)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
+  const [showMFAPrompt, setShowMFAPrompt] = useState(false)
+  const [showMFAEnrollment, setShowMFAEnrollment] = useState(false)
 
   useEffect(() => {
     async function completeSignup() {
@@ -146,8 +150,11 @@ export default function CompleteSignupPage() {
         localStorage.removeItem('pending_referral')
 
         setSuccess(true)
+        setIsProcessing(false)
+
+        // Show MFA prompt after a brief delay
         setTimeout(() => {
-          router.push("/dashboard")
+          setShowMFAPrompt(true)
         }, 1500)
 
       } catch (err) {
@@ -195,27 +202,104 @@ export default function CompleteSignupPage() {
             </div>
           </div>
 
-          <Card className="border-0 shadow-lg">
-            <CardHeader className="space-y-1 pb-4">
-              <CardTitle className="text-3xl font-bold text-center">
-                {success ? "All Set!" : isProcessing ? "Completing Setup..." : "Error"}
-              </CardTitle>
-              <CardDescription className="text-base text-center">
-                {success
-                  ? "Your account is ready. Redirecting to dashboard..."
-                  : isProcessing
-                  ? "Please wait while we finalize your account"
-                  : error || "Something went wrong"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex justify-center py-8">
-              {success ? (
-                <CheckCircle className="h-16 w-16 text-green-600 animate-pulse" />
-              ) : (
-                <Loader2 className="h-16 w-16 animate-spin text-primary" />
-              )}
-            </CardContent>
-          </Card>
+          {showMFAPrompt ? (
+            showMFAEnrollment ? (
+              // MFA Enrollment Screen
+              <div className="space-y-4">
+                <div className="text-center mb-4">
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setShowMFAEnrollment(false)
+                      setShowMFAPrompt(true)
+                    }}
+                    className="text-sm"
+                  >
+                    ← Back
+                  </Button>
+                </div>
+                <MFAEnrollment
+                  onEnrolled={() => {
+                    router.push("/dashboard")
+                  }}
+                  onCancelled={() => {
+                    setShowMFAEnrollment(false)
+                    setShowMFAPrompt(true)
+                  }}
+                />
+              </div>
+            ) : (
+              // MFA Prompt Screen
+              <Card className="border-0 shadow-lg">
+                <CardHeader className="space-y-1 pb-4">
+                  <div className="flex justify-center mb-4">
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Shield className="h-8 w-8 text-primary" />
+                    </div>
+                  </div>
+                  <CardTitle className="text-3xl font-bold text-center">
+                    Secure Your Account
+                  </CardTitle>
+                  <CardDescription className="text-base text-center">
+                    Enable two-factor authentication to add an extra layer of security to your account
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="p-4 bg-muted/50 rounded-lg">
+                    <p className="text-sm font-medium mb-2">Why enable 2FA?</p>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>• Protect your account from unauthorized access</li>
+                      <li>• Takes only 1 minute to set up</li>
+                      <li>• Industry-standard security best practice</li>
+                    </ul>
+                  </div>
+
+                  <Button
+                    onClick={() => setShowMFAEnrollment(true)}
+                    className="w-full"
+                    size="lg"
+                  >
+                    Set Up 2FA Now
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    onClick={() => router.push("/dashboard")}
+                    className="w-full"
+                  >
+                    Skip for Now
+                  </Button>
+
+                  <p className="text-xs text-center text-muted-foreground">
+                    You can always enable 2FA later in your settings
+                  </p>
+                </CardContent>
+              </Card>
+            )
+          ) : (
+            // Processing/Success/Error Screen
+            <Card className="border-0 shadow-lg">
+              <CardHeader className="space-y-1 pb-4">
+                <CardTitle className="text-3xl font-bold text-center">
+                  {success ? "All Set!" : isProcessing ? "Completing Setup..." : "Error"}
+                </CardTitle>
+                <CardDescription className="text-base text-center">
+                  {success
+                    ? "Your account is ready!"
+                    : isProcessing
+                    ? "Please wait while we finalize your account"
+                    : error || "Something went wrong"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex justify-center py-8">
+                {success ? (
+                  <CheckCircle className="h-16 w-16 text-green-600 animate-pulse" />
+                ) : (
+                  <Loader2 className="h-16 w-16 animate-spin text-primary" />
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

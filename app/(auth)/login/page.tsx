@@ -56,7 +56,16 @@ function LoginForm() {
       if (error) {
         setError("Invalid email or password")
       } else if (data.session) {
-        router.push("/dashboard")
+        // Check if user needs to verify MFA
+        const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+
+        if (aalData && aalData.nextLevel === "aal2" && aalData.currentLevel !== "aal2") {
+          // User has MFA enabled but hasn't verified yet
+          router.push("/mfa-verify")
+        } else {
+          // No MFA or already verified, proceed to dashboard
+          router.push("/dashboard")
+        }
         router.refresh()
       }
     } catch {

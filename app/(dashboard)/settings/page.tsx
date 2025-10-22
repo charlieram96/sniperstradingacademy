@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
-import { User, Lock, CheckCircle, Mail, Calendar, Hash, Eye, EyeOff, Heart, LifeBuoy, Copy } from "lucide-react"
+import { User, Lock, CheckCircle, Mail, Calendar, Hash, Eye, EyeOff, Heart, LifeBuoy, Copy, Shield } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { MFAEnrollment } from "@/components/mfa/mfa-enrollment"
+import { MFAFactorsList } from "@/components/mfa/mfa-factors-list"
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -57,6 +59,10 @@ export default function SettingsPage() {
   // Support states
   const [supportCopied, setSupportCopied] = useState(false)
 
+  // MFA states
+  const [showMFAEnrollment, setShowMFAEnrollment] = useState(false)
+  const [mfaFactorsCount, setMfaFactorsCount] = useState(0)
+
   const fetchUserData = useCallback(async () => {
     const supabase = createClient()
 
@@ -88,6 +94,13 @@ export default function SettingsPage() {
       setBeneficiaryPhone(details.phone || "")
       setBeneficiaryAddress(details.address || "")
       setBeneficiaryRelationship(details.relationship || "")
+    }
+
+    // Load MFA factors count
+    const { data: factorsData } = await supabase.auth.mfa.listFactors()
+    if (factorsData) {
+      const totalFactors = factorsData.totp.length + factorsData.phone.length
+      setMfaFactorsCount(totalFactors)
     }
 
     setLoading(false)
@@ -223,6 +236,15 @@ export default function SettingsPage() {
     navigator.clipboard.writeText(text)
     setSupportCopied(true)
     setTimeout(() => setSupportCopied(false), 2000)
+  }
+
+  function handleMFAEnrolled() {
+    setShowMFAEnrollment(false)
+    fetchUserData() // Reload to update factors count
+  }
+
+  function handleMFAFactorsChange() {
+    fetchUserData() // Reload to update factors count
   }
 
   if (loading) {
@@ -493,6 +515,68 @@ export default function SettingsPage() {
                 {changingPassword ? "Changing Password..." : "Change Password"}
               </Button>
             </form>
+          </CardContent>
+        </Card>
+
+        {/* Two-Factor Authentication */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-primary" />
+              Two-Factor Authentication
+            </CardTitle>
+            <CardDescription>
+              Add an extra layer of security to your account with 2FA
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {mfaFactorsCount > 0 ? (
+              <>
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-600 flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4" />
+                    2FA is enabled on your account
+                  </p>
+                </div>
+
+                <MFAFactorsList onFactorsChange={handleMFAFactorsChange} />
+
+                {!showMFAEnrollment && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowMFAEnrollment(true)}
+                  >
+                    Add Another Device
+                  </Button>
+                )}
+              </>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm font-medium mb-2">Why enable 2FA?</p>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Protect your account from unauthorized access</li>
+                    <li>• Required for accessing sensitive features</li>
+                    <li>• Industry-standard security best practice</li>
+                  </ul>
+                </div>
+
+                {!showMFAEnrollment && (
+                  <Button onClick={() => setShowMFAEnrollment(true)}>
+                    Enable 2FA
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {showMFAEnrollment && (
+              <div className="mt-4">
+                <MFAEnrollment
+                  onEnrolled={handleMFAEnrolled}
+                  onCancelled={() => setShowMFAEnrollment(false)}
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
 

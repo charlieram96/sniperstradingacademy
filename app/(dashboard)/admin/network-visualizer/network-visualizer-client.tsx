@@ -4,9 +4,23 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Search, ChevronDown, ChevronRight, Users as UsersIcon, Network, GitBranch } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { Search, ChevronDown, ChevronRight, Users as UsersIcon, Network, GitBranch, Trash2, AlertTriangle } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useToast } from "@/hooks/use-toast"
 
 interface NetworkUser {
   id: string
@@ -41,6 +55,16 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
   const [selectedUser, setSelectedUser] = useState<NetworkUser | null>(null)
   const [children, setChildren] = useState<ChildPosition[] | null>(null)
   const [loadingChildren, setLoadingChildren] = useState(false)
+
+  // Delete functionality
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState("")
+  const [deletionReason, setDeletionReason] = useState("")
+  const [deleting, setDeleting] = useState(false)
+  const [blockingUsers, setBlockingUsers] = useState<NetworkUser[]>([])
+  const [showBlockingUsersDialog, setShowBlockingUsersDialog] = useState(false)
+
+  const { toast } = useToast()
 
   const levels = Object.keys(usersByLevel).map(Number).sort((a, b) => a - b)
 
@@ -86,6 +110,66 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
   const closeDialog = () => {
     setSelectedUser(null)
     setChildren(null)
+  }
+
+  const handleDeleteClick = () => {
+    setShowDeleteDialog(true)
+    setDeleteConfirmText("")
+    setDeletionReason("")
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedUser || deleteConfirmText !== "DELETE") return
+
+    setDeleting(true)
+
+    try {
+      const response = await fetch("/api/admin/users/delete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: selectedUser.id,
+          deletionReason: deletionReason || null,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!data.success) {
+        // Check if it's because of blocking users
+        if (data.blocking_users && data.blocking_users.length > 0) {
+          setBlockingUsers(data.blocking_users)
+          setShowBlockingUsersDialog(true)
+          setShowDeleteDialog(false)
+        } else {
+          toast({
+            title: "Error",
+            description: data.error || "Failed to delete user",
+            variant: "destructive",
+          })
+        }
+      } else {
+        toast({
+          title: "Success",
+          description: "User deleted successfully",
+        })
+        setShowDeleteDialog(false)
+        closeDialog()
+        // Reload the page to refresh the user list
+        window.location.reload()
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error)
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      })
+    } finally {
+      setDeleting(false)
+    }
   }
 
   // Filter users based on search
@@ -370,10 +454,137 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
                   </div>
                 )}
               </div>
+
+              {/* Delete User Button */}
+              <div className="pt-4 border-t">
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteClick}
+                  className="w-full"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete User
+                </Button>
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  This action is permanent and will archive the user data
+                </p>
+              </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User - Confirmation Required</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <div className="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg border border-red-200 dark:border-red-900">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-red-900 dark:text-red-400">Warning: This action is permanent</p>
+                    <p className="text-sm text-red-800 dark:text-red-300 mt-1">
+                      You are about to delete {selectedUser?.name || selectedUser?.email}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="font-medium">This will:</p>
+                <ul className="text-sm space-y-1 list-disc list-inside">
+                  <li>Remove user from authentication system</li>
+                  <li>Delete user from database</li>
+                  <li>Archive user data for records</li>
+                  <li>Decrement network counts for upline users</li>
+                  <li>Make their network position available again</li>
+                </ul>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="deletion-reason">Reason for Deletion (Optional)</Label>
+                <Textarea
+                  id="deletion-reason"
+                  value={deletionReason}
+                  onChange={(e) => setDeletionReason(e.target.value)}
+                  placeholder="Why is this user being deleted?"
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirm-delete">Type DELETE to confirm</Label>
+                <Input
+                  id="confirm-delete"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="DELETE"
+                  className="font-mono"
+                />
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={deleteConfirmText !== "DELETE" || deleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleting ? "Deleting..." : "Delete User"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Blocking Users Dialog */}
+      <AlertDialog open={showBlockingUsersDialog} onOpenChange={setShowBlockingUsersDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cannot Delete User</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <div className="bg-yellow-50 dark:bg-yellow-950/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-900">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-yellow-900 dark:text-yellow-400">
+                      User has downline members
+                    </p>
+                    <p className="text-sm text-yellow-800 dark:text-yellow-300 mt-1">
+                      You must delete these users first before deleting {selectedUser?.name || selectedUser?.email}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <p className="font-medium mb-2">Blocking Users:</p>
+                <div className="space-y-2">
+                  {blockingUsers.map((user) => (
+                    <div
+                      key={user.id}
+                      className="p-3 bg-muted rounded-lg border"
+                    >
+                      <div className="font-medium">{user.name || user.email}</div>
+                      <div className="text-sm text-muted-foreground">{user.email}</div>
+                      <div className="text-xs font-mono mt-1 text-primary">
+                        {user.network_position_id}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowBlockingUsersDialog(false)}>
+              Close
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }
