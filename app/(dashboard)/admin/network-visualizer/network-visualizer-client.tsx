@@ -44,6 +44,17 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
 
   const levels = Object.keys(usersByLevel).map(Number).sort((a, b) => a - b)
 
+  // Helper function to find parent user
+  const findParentUser = (parentPositionId: string | null): NetworkUser | null => {
+    if (!parentPositionId) return null
+
+    for (const level of Object.values(usersByLevel)) {
+      const parent = level.find(u => u.network_position_id === parentPositionId)
+      if (parent) return parent
+    }
+    return null
+  }
+
   const toggleLevel = (level: number) => {
     const newExpanded = new Set(expandedLevels)
     if (newExpanded.has(level)) {
@@ -236,6 +247,32 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
 
           {selectedUser && (
             <div className="space-y-6">
+              {/* Parent Info */}
+              {selectedUser.tree_parent_network_position_id && (() => {
+                const parentUser = findParentUser(selectedUser.tree_parent_network_position_id)
+                return parentUser ? (
+                  <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border-2 border-blue-200 dark:border-blue-900">
+                    <h3 className="font-semibold text-sm mb-2 text-blue-700 dark:text-blue-400">Direct Parent</h3>
+                    <div className="space-y-1 text-sm">
+                      <div>
+                        <span className="font-medium">{parentUser.name || parentUser.email}</span>
+                      </div>
+                      <div className="text-muted-foreground">{parentUser.email}</div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="font-mono text-xs bg-background px-2 py-1 rounded">
+                          {parentUser.network_position_id}
+                        </span>
+                        {parentUser.is_active ? (
+                          <Badge className="bg-green-500 text-xs">Active</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs">Inactive</Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : null
+              })()}
+
               {/* User Info */}
               <div className="p-4 bg-muted rounded-lg space-y-2">
                 <div className="flex items-center justify-between">
