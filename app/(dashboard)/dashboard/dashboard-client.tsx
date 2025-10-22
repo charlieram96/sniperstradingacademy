@@ -578,6 +578,35 @@ export function DashboardClient({ data, session, hasPremiumBypass = false }: {
                       )
                     })}
                     </RadioGroup>
+
+                    {/* Lion Master Sniper - Final Rank Box */}
+                    <div className="relative">
+                      <div className={`block p-4 rounded-lg border-2 transition-all ${
+                        data.completedStructures >= 6
+                          ? 'border-yellow-500 bg-gradient-to-br from-yellow-500/20 to-yellow-600/20 shadow-lg shadow-yellow-500/20'
+                          : 'border-border opacity-40 bg-muted/20'
+                      }`}>
+                        <div className="flex flex-col items-center space-y-2">
+                          <div className={`w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center shadow-md ${data.completedStructures < 6 ? 'opacity-50' : ''}`}>
+                            <Crown className="h-6 w-6 text-white" />
+                          </div>
+                          <div className="text-center">
+                            <div className="font-bold text-sm">Ultimate</div>
+                            <div className="text-xs text-muted-foreground">
+                              16% Commission
+                            </div>
+                            <div className="text-xs font-medium mt-1 text-yellow-500">
+                              Lion Master Sniper
+                            </div>
+                            {data.completedStructures >= 6 ? (
+                              <Badge className="mt-1 text-xs bg-yellow-500 text-white">ACHIEVED</Badge>
+                            ) : (
+                              <Badge variant="outline" className="mt-1 text-xs">Complete 6 Structures</Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 

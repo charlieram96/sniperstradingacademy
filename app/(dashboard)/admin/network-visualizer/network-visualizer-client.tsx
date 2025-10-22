@@ -166,7 +166,7 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
                       {/* Level Header */}
                       <button
                         onClick={() => toggleLevel(level)}
-                        className="w-full flex items-center justify-between p-4 hover:bg-accent transition-colors"
+                        className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors rounded-lg"
                       >
                         <div className="flex items-center gap-2">
                           {isExpanded ? (
@@ -188,7 +188,7 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
                             <button
                               key={user.id}
                               onClick={() => handleUserClick(user)}
-                              className="w-full flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors text-left"
+                              className="w-full flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left overflow-hidden"
                             >
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
