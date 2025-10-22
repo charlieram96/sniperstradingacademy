@@ -15,7 +15,8 @@ import {
   Network,
   TrendingUp,
   Wallet,
-  Settings
+  Settings,
+  GitBranch
 } from "lucide-react"
 
 export default async function DashboardLayout({
@@ -125,6 +126,13 @@ export default async function DashboardLayout({
               </NavigationLink>
               {isSuperAdmin && (
                 <>
+                  <NavigationLink
+                    href="/admin/network-visualizer"
+                    className="flex items-center gap-3 px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+                  >
+                    <GitBranch className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+                    <span className="text-sm font-medium">Network Visualizer</span>
+                  </NavigationLink>
                   <NavigationLink
                     href="/admin/financials"
                     className="flex items-center gap-3 px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"

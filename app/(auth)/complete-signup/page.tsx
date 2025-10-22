@@ -46,18 +46,28 @@ export default function CompleteSignupPage() {
           .eq("email", userEmail)
           .single()
 
+        // Root user ID - the default set by database trigger
+        const ROOT_USER_ID = 'b10f0367-0471-4eab-9d15-db68b1ac4556'
+
         // Check if referral record already exists (signup already completed)
+        // But exclude root referrals - those need to be fixed
         const { data: existingReferral } = await supabase
           .from("referrals")
-          .select("id")
+          .select("id, referrer_id")
           .eq("referred_id", existingUser?.id)
           .single()
 
-        // If referral record exists, signup is complete - redirect to dashboard
-        if (existingReferral) {
+        // If referral record exists and is NOT to root user, signup is complete
+        if (existingReferral && existingReferral.referrer_id !== ROOT_USER_ID) {
+          console.log("✅ Valid referral already exists, redirecting to dashboard")
           localStorage.removeItem('pending_referral')
           router.push("/dashboard")
           return
+        }
+
+        // If user has root referral, we need to fix it
+        if (existingReferral && existingReferral.referrer_id === ROOT_USER_ID) {
+          console.log("⚠️ Root referral detected, will update with correct referrer")
         }
 
         // Get pending referral from localStorage
@@ -80,12 +90,33 @@ export default function CompleteSignupPage() {
         if (existingUser) {
           if (!isBypassCode) {
             // Normal referral flow - update user with referrer
-            await supabase
+            const { error: updateError } = await supabase
               .from("users")
               .update({ referred_by: referrerInfo.id })
               .eq("id", existingUser.id)
 
-            // Create referral record
+            if (updateError) {
+              console.error("❌ Error updating user referred_by:", updateError)
+              throw new Error("Failed to update referrer")
+            }
+
+            console.log(`✅ Updated user referred_by to: ${referrerInfo.id}`)
+
+            // If root referral exists, delete it first
+            if (existingReferral && existingReferral.referrer_id === ROOT_USER_ID) {
+              const { error: deleteError } = await supabase
+                .from("referrals")
+                .delete()
+                .eq("id", existingReferral.id)
+
+              if (deleteError) {
+                console.error("❌ Error deleting root referral:", deleteError)
+              } else {
+                console.log("✅ Deleted incorrect root referral")
+              }
+            }
+
+            // Create new referral record (or recreate if we deleted root one)
             const { error: referralError } = await supabase
               .from("referrals")
               .insert({

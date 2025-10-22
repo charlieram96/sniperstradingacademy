@@ -413,9 +413,16 @@ export default function HomePage() {
               <h4 className="font-bold mb-4 text-white">Support</h4>
               <ul className="space-y-2 text-sm text-gray-500">
                 <li><Link href="#" className="hover:text-red-500 transition-colors">Help Center</Link></li>
-                <li><Link href="#" className="hover:text-red-500 transition-colors">Contact</Link></li>
+                <li>
+                  <a href="mailto:support@sniperstradingacademy.com" className="hover:text-red-500 transition-colors">
+                    Contact Support
+                  </a>
+                </li>
                 <li><Link href="#" className="hover:text-red-500 transition-colors">FAQ</Link></li>
               </ul>
+              <p className="text-xs text-gray-600 mt-3">
+                support@sniperstradingacademy.com
+              </p>
             </div>
 
             <div>

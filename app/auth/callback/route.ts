@@ -62,8 +62,16 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(`${requestUrl.origin}/complete-signup`)
       }
 
-      // User data exists - check if they have referral and network position
-      const isNewUser = !userData.referred_by && !userData.network_position_id
+      // Root user ID - used as default by database trigger when no referrer specified
+      const ROOT_USER_ID = 'b10f0367-0471-4eab-9d15-db68b1ac4556'
+
+      // Check if this is a new/incomplete user
+      // Consider user incomplete if:
+      // 1. No referred_by at all
+      // 2. referred_by equals root (likely defaulted by trigger for OAuth signup)
+      // 3. No network position assigned yet
+      const isRootDefaulted = userData.referred_by === ROOT_USER_ID
+      const isNewUser = !userData.referred_by || isRootDefaulted || !userData.network_position_id
 
       if (isNewUser) {
         // If this was a login attempt with a new/incomplete user, block it
@@ -76,7 +84,11 @@ export async function GET(request: NextRequest) {
         }
 
         // If signup flow, redirect to complete-signup to get referral
-        console.log("New OAuth user detected, redirecting to complete-signup")
+        if (isRootDefaulted) {
+          console.log("OAuth user with root referrer detected (trigger default), redirecting to complete-signup")
+        } else {
+          console.log("New OAuth user detected, redirecting to complete-signup")
+        }
         return NextResponse.redirect(`${requestUrl.origin}/complete-signup`)
       }
 

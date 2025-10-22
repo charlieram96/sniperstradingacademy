@@ -6,7 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { User, Lock, CheckCircle, Mail, Calendar, Hash, Eye, EyeOff } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
+import { Textarea } from "@/components/ui/textarea"
+import { User, Lock, CheckCircle, Mail, Calendar, Hash, Eye, EyeOff, Heart, LifeBuoy, Copy } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 export default function SettingsPage() {
@@ -41,6 +43,20 @@ export default function SettingsPage() {
   const [passwordSuccess, setPasswordSuccess] = useState("")
   const [passwordError, setPasswordError] = useState("")
 
+  // Beneficiary states
+  const [beneficiaryEnabled, setBeneficiaryEnabled] = useState(false)
+  const [beneficiaryFullName, setBeneficiaryFullName] = useState("")
+  const [beneficiaryEmail, setBeneficiaryEmail] = useState("")
+  const [beneficiaryPhone, setBeneficiaryPhone] = useState("")
+  const [beneficiaryAddress, setBeneficiaryAddress] = useState("")
+  const [beneficiaryRelationship, setBeneficiaryRelationship] = useState("")
+  const [beneficiarySuccess, setBeneficiarySuccess] = useState("")
+  const [beneficiaryError, setBeneficiaryError] = useState("")
+  const [beneficiaryUpdating, setBeneficiaryUpdating] = useState(false)
+
+  // Support states
+  const [supportCopied, setSupportCopied] = useState(false)
+
   const fetchUserData = useCallback(async () => {
     const supabase = createClient()
 
@@ -62,6 +78,18 @@ export default function SettingsPage() {
     setUser(user)
     setUserData(userData)
     setName(user.user_metadata?.name || "")
+
+    // Load beneficiary details if they exist
+    if (userData?.beneficiary_details) {
+      const details = userData.beneficiary_details
+      setBeneficiaryEnabled(details.enabled || false)
+      setBeneficiaryFullName(details.fullName || "")
+      setBeneficiaryEmail(details.email || "")
+      setBeneficiaryPhone(details.phone || "")
+      setBeneficiaryAddress(details.address || "")
+      setBeneficiaryRelationship(details.relationship || "")
+    }
+
     setLoading(false)
   }, [router])
 
@@ -152,6 +180,49 @@ export default function SettingsPage() {
     } finally {
       setChangingPassword(false)
     }
+  }
+
+  async function updateBeneficiary(e: React.FormEvent) {
+    e.preventDefault()
+    setBeneficiaryUpdating(true)
+    setBeneficiaryError("")
+    setBeneficiarySuccess("")
+
+    try {
+      const supabase = createClient()
+
+      const beneficiaryDetails = {
+        enabled: beneficiaryEnabled,
+        fullName: beneficiaryFullName,
+        email: beneficiaryEmail,
+        phone: beneficiaryPhone,
+        address: beneficiaryAddress,
+        relationship: beneficiaryRelationship
+      }
+
+      const { error } = await supabase
+        .from("users")
+        .update({ beneficiary_details: beneficiaryDetails })
+        .eq("id", user?.id)
+
+      if (error) {
+        setBeneficiaryError(error.message)
+      } else {
+        setBeneficiarySuccess("Beneficiary information updated successfully!")
+        setTimeout(() => setBeneficiarySuccess(""), 3000)
+        await fetchUserData()
+      }
+    } catch {
+      setBeneficiaryError("Failed to update beneficiary information. Please try again.")
+    } finally {
+      setBeneficiaryUpdating(false)
+    }
+  }
+
+  function copyToClipboard(text: string) {
+    navigator.clipboard.writeText(text)
+    setSupportCopied(true)
+    setTimeout(() => setSupportCopied(false), 2000)
   }
 
   if (loading) {
@@ -422,7 +493,180 @@ export default function SettingsPage() {
                 {changingPassword ? "Changing Password..." : "Change Password"}
               </Button>
             </form>
-          </CardContent>  
+          </CardContent>
+        </Card>
+
+        {/* Beneficiary Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Heart className="h-5 w-5 text-primary" />
+              Beneficiary Information
+            </CardTitle>
+            <CardDescription>
+              Set up beneficiary details in case of account member passing away
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={updateBeneficiary} className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="beneficiary-toggle">Add Beneficiary</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Enable to add beneficiary details to your account
+                  </p>
+                </div>
+                <Switch
+                  id="beneficiary-toggle"
+                  checked={beneficiaryEnabled}
+                  onCheckedChange={setBeneficiaryEnabled}
+                />
+              </div>
+
+              {beneficiaryEnabled && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="beneficiary-name">Full Name</Label>
+                    <Input
+                      id="beneficiary-name"
+                      type="text"
+                      value={beneficiaryFullName}
+                      onChange={(e) => setBeneficiaryFullName(e.target.value)}
+                      placeholder="Beneficiary's full name"
+                      disabled={beneficiaryUpdating}
+                      className="max-w-md"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="beneficiary-email">Email Address</Label>
+                    <Input
+                      id="beneficiary-email"
+                      type="email"
+                      value={beneficiaryEmail}
+                      onChange={(e) => setBeneficiaryEmail(e.target.value)}
+                      placeholder="beneficiary@example.com"
+                      disabled={beneficiaryUpdating}
+                      className="max-w-md"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="beneficiary-phone">Telephone Number</Label>
+                    <Input
+                      id="beneficiary-phone"
+                      type="tel"
+                      value={beneficiaryPhone}
+                      onChange={(e) => setBeneficiaryPhone(e.target.value)}
+                      placeholder="+1 (555) 123-4567"
+                      disabled={beneficiaryUpdating}
+                      className="max-w-md"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="beneficiary-address">Address</Label>
+                    <Textarea
+                      id="beneficiary-address"
+                      value={beneficiaryAddress}
+                      onChange={(e) => setBeneficiaryAddress(e.target.value)}
+                      placeholder="Street address, City, State, ZIP"
+                      disabled={beneficiaryUpdating}
+                      className="max-w-md"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="beneficiary-relationship">Relationship to You</Label>
+                    <Input
+                      id="beneficiary-relationship"
+                      type="text"
+                      value={beneficiaryRelationship}
+                      onChange={(e) => setBeneficiaryRelationship(e.target.value)}
+                      placeholder="e.g., Spouse, Child, Sibling, Parent"
+                      disabled={beneficiaryUpdating}
+                      className="max-w-md"
+                    />
+                  </div>
+                </>
+              )}
+
+              {beneficiarySuccess && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                  <p className="text-sm text-green-600 flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4" />
+                    {beneficiarySuccess}
+                  </p>
+                </div>
+              )}
+
+              {beneficiaryError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-sm text-red-600">{beneficiaryError}</p>
+                </div>
+              )}
+
+              <Button type="submit" disabled={beneficiaryUpdating}>
+                {beneficiaryUpdating ? "Saving..." : "Save Beneficiary Information"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Support & Help */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <LifeBuoy className="h-5 w-5 text-primary" />
+              Support & Help
+            </CardTitle>
+            <CardDescription>
+              Reach out to us for any questions, concerns, feature requests, or problems
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Support Email</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="email"
+                  value="support@sniperstradingacademy.com"
+                  disabled
+                  className="max-w-md bg-muted"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => copyToClipboard("support@sniperstradingacademy.com")}
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  {supportCopied ? "Copied!" : "Copy"}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Our support team typically responds within 24 hours
+              </p>
+            </div>
+
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <p className="text-sm font-medium mb-2">How can we help?</p>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Technical issues or bugs</li>
+                <li>• Account questions</li>
+                <li>• Feature requests</li>
+                <li>• Payment concerns</li>
+                <li>• General inquiries</li>
+              </ul>
+            </div>
+
+            <a href="mailto:support@sniperstradingacademy.com">
+              <Button className="w-full md:w-auto">
+                <Mail className="h-4 w-4 mr-2" />
+                Email Support
+              </Button>
+            </a>
+          </CardContent>
         </Card>
       </div>
     </div>

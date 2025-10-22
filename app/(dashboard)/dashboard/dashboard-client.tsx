@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Image from "next/image"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -49,28 +48,30 @@ interface DashboardData {
   maxMembersPerStructure: number
 }
 
-// Structure ranks
-const getRankInfo = (unlockedStructures: number, completedStructures: number) => {
-  if (completedStructures >= 6) {
+// Structure ranks based on COMPLETED structures
+const getRankInfo = (completedStructures: number) => {
+  // Unranked - 0 completed structures (working on structure 1)
+  if (completedStructures === 0) {
     return {
-      name: "Lion Master Sniper",
-      icon: Crown,
-      color: "text-yellow-500",
-      bgColor: "bg-gradient-to-br from-yellow-400 to-yellow-600",
-      description: "Elite 16% Commission Rate"
+      name: "Unranked",
+      icon: Target,
+      color: "text-gray-400",
+      bgColor: "bg-gradient-to-br from-gray-500 to-gray-600",
+      description: "10% Commission Rate"
     }
   }
 
   const ranks = [
-    { name: "Delta Master", icon: Target, color: "text-gray-500", bgColor: "bg-gradient-to-br from-gray-400 to-gray-600", description: "10% Commission Rate" },
-    { name: "Delta Master Sniper", icon: Medal, color: "text-amber-600", bgColor: "bg-gradient-to-br from-amber-400 to-amber-600", description: "11% Commission Rate" },
-    { name: "Trend Master", icon: Star, color: "text-blue-500", bgColor: "bg-gradient-to-br from-blue-400 to-blue-600", description: "12% Commission Rate" },
-    { name: "Trend Master Sniper", icon: Award, color: "text-purple-500", bgColor: "bg-gradient-to-br from-purple-400 to-purple-600", description: "13% Commission Rate" },
-    { name: "Lion Master", icon: Trophy, color: "text-red-500", bgColor: "bg-gradient-to-br from-red-400 to-red-600", description: "14% Commission Rate" },
-    { name: "Lion Master Sniper", icon: Crown, color: "text-yellow-500", bgColor: "bg-gradient-to-br from-yellow-400 to-yellow-600", description: "15% Commission Rate" }
+    { name: "Delta Master", icon: Medal, color: "text-gray-500", bgColor: "bg-gradient-to-br from-gray-400 to-gray-600", description: "11% Commission Rate" }, // 1 completed
+    { name: "Delta Master Sniper", icon: Star, color: "text-amber-600", bgColor: "bg-gradient-to-br from-amber-400 to-amber-600", description: "12% Commission Rate" }, // 2 completed
+    { name: "Trend Master", icon: Award, color: "text-blue-500", bgColor: "bg-gradient-to-br from-blue-400 to-blue-600", description: "13% Commission Rate" }, // 3 completed
+    { name: "Trend Master Sniper", icon: Trophy, color: "text-purple-500", bgColor: "bg-gradient-to-br from-purple-400 to-purple-600", description: "14% Commission Rate" }, // 4 completed
+    { name: "Lion Master", icon: Crown, color: "text-red-500", bgColor: "bg-gradient-to-br from-red-400 to-red-600", description: "15% Commission Rate" }, // 5 completed
+    { name: "Lion Master Sniper", icon: Crown, color: "text-yellow-500", bgColor: "bg-gradient-to-br from-yellow-400 to-yellow-600", description: "16% Commission Rate" } // 6 completed
   ]
 
-  return ranks[Math.min(unlockedStructures - 1, 5)]
+  // Return rank based on completedStructures (index = completedStructures - 1)
+  return ranks[Math.min(completedStructures - 1, 5)]
 }
 
 export function DashboardClient({ data, session, hasPremiumBypass = false }: {
@@ -99,7 +100,7 @@ export function DashboardClient({ data, session, hasPremiumBypass = false }: {
   const [connectLoading, setConnectLoading] = useState(true)
   const [academyClasses, setAcademyClasses] = useState<AcademyClass[]>([])
   const [classesLoading, setClassesLoading] = useState(true)
-  const rankInfo = getRankInfo(data.unlockedStructures, data.completedStructures)
+  const rankInfo = getRankInfo(data.completedStructures)
   
   // Check Stripe Connect status
   useEffect(() => {
@@ -496,7 +497,7 @@ export function DashboardClient({ data, session, hasPremiumBypass = false }: {
                   <div className="p-3 rounded-lg bg-muted/50">
                     <p className="text-sm text-muted-foreground">Commission Rate</p>
                     <p className="text-2xl font-bold">
-                      {data.completedStructures >= 6 ? '16' : (data.commissionRate * 100).toFixed(0)}%
+                      {10 + data.completedStructures}%
                     </p>
                   </div>
                   <div className={`p-3 rounded-lg ${data.directReferrals >= 3 ? 'bg-green-500/20 border-2 border-green-500' : 'bg-red-500/20 border-2 border-red-500'}`}>
@@ -523,9 +524,9 @@ export function DashboardClient({ data, session, hasPremiumBypass = false }: {
                       const structureStart = (structureNum - 1) * 1092
                       const membersInStructure = Math.max(0, Math.min(data.totalTeamSize - structureStart, 1092))
                       const isComplete = structureNum <= data.completedStructures
-                      
-                      // Get rank info for this specific structure
-                      const structureRank = getRankInfo(structureNum, isComplete ? structureNum : 0)
+
+                      // Get rank info for this specific structure based on completion
+                      const structureRank = getRankInfo(isComplete ? structureNum : Math.max(0, structureNum - 1))
                       
                       return (
                         <div key={structureNum} className="relative">
@@ -554,7 +555,7 @@ export function DashboardClient({ data, session, hasPremiumBypass = false }: {
                               <div className="text-center">
                                 <div className="font-bold text-sm">Structure {structureNum}</div>
                                 <div className="text-xs text-muted-foreground">
-                                  {10 + (structureNum - 1)}% Commission
+                                  {isComplete ? 10 + structureNum : 10 + Math.max(0, structureNum - 1)}% Commission
                                 </div>
                                 <div className="text-xs font-medium mt-1">
                                   {structureRank.name}
@@ -577,41 +578,6 @@ export function DashboardClient({ data, session, hasPremiumBypass = false }: {
                       )
                     })}
                     </RadioGroup>
-                    
-                    {/* Ultimate Sniper Rank Box */}
-                    <div className="relative">
-                      <div className={`block p-4 rounded-lg border-2 transition-all ${
-                        data.completedStructures >= 6 
-                          ? 'border-yellow-500 bg-gradient-to-br from-yellow-500/20 to-yellow-600/20 shadow-lg shadow-yellow-500/20' 
-                          : 'border-border opacity-40 bg-muted/20'
-                      }`}>
-                        <div className="flex flex-col items-center space-y-2">
-                          <div className={`w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center shadow-md ${data.completedStructures < 6 ? 'opacity-50' : ''}`}>
-                            <Image 
-                              src="/gold-logo.svg" 
-                              alt="Sniper" 
-                              width={32}
-                              height={32}
-                              className="brightness-0 invert"
-                            />
-                          </div>
-                          <div className="text-center">
-                            <div className="font-bold text-sm">Ultimate</div>
-                            <div className="text-xs text-muted-foreground">
-                              16% Commission
-                            </div>
-                            <div className="text-xs font-medium mt-1 text-yellow-500">
-                              Sniper Elite
-                            </div>
-                            {data.completedStructures >= 6 ? (
-                              <Badge className="mt-1 text-xs bg-yellow-500 text-white">ACHIEVED</Badge>
-                            ) : (
-                              <Badge variant="outline" className="mt-1 text-xs">Complete All</Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
 
@@ -631,7 +597,7 @@ export function DashboardClient({ data, session, hasPremiumBypass = false }: {
                           <div>
                             <h3 className="font-semibold">Structure {structureNum}</h3>
                             <p className="text-sm text-muted-foreground">
-                              Commission Rate: {10 + (structureNum - 1)}% • Requires {requiredDirectReferrals} direct referrals
+                              Commission Rate: {structureNum <= data.completedStructures ? 10 + structureNum : 10 + Math.max(0, structureNum - 1)}% • Requires {requiredDirectReferrals} direct referrals
                             </p>
                           </div>
                           {isUnlocked ? (
@@ -686,7 +652,7 @@ export function DashboardClient({ data, session, hasPremiumBypass = false }: {
               {formatCurrency(data.monthlyCommission)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {data.completedStructures >= 6 ? '16' : (data.commissionRate * 100).toFixed(0)}% of team pool
+              {10 + data.completedStructures}% of team pool
             </p>
           </CardContent>
         </Card>

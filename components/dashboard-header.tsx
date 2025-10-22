@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Search, Settings, User, LogOut, Bell } from "lucide-react"
+import { Search, Settings, User, LogOut, Bell, Mail } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
@@ -102,6 +102,13 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
             <DropdownMenuItem>
               <Bell className="h-4 w-4 mr-2" />
               Notifications
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <a href="mailto:support@sniperstradingacademy.com">
+                <Mail className="h-4 w-4 mr-2" />
+                Contact Support
+              </a>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
