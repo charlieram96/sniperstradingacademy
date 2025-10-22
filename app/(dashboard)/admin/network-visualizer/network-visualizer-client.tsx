@@ -4,8 +4,7 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Search, ChevronDown, ChevronRight, Users as UsersIcon, Network, GitBranch, X } from "lucide-react"
+import { Search, ChevronDown, ChevronRight, Users as UsersIcon, Network, GitBranch } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
@@ -160,6 +159,7 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
                 {filteredLevels.map(level => {
                   const users = filteredUsersByLevel[level]
                   const isExpanded = expandedLevels.has(level)
+                  const maxCapacity = level === 0 ? 1 : Math.pow(3, level)
 
                   return (
                     <div key={level} className="border rounded-lg">
@@ -177,7 +177,7 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
                           <span className="font-semibold">
                             Level {level} {level === 0 && "(Root)"}
                           </span>
-                          <Badge variant="secondary">{users.length} users</Badge>
+                          <Badge variant="secondary">{users.length} / {maxCapacity} users</Badge>
                         </div>
                       </button>
 
@@ -231,12 +231,7 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
       <Dialog open={!!selectedUser} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <div className="flex items-center justify-between">
-              <DialogTitle>User Details & Child Positions</DialogTitle>
-              <Button variant="ghost" size="sm" onClick={closeDialog}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            <DialogTitle>User Details & Child Positions</DialogTitle>
           </DialogHeader>
 
           {selectedUser && (
