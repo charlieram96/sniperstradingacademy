@@ -130,6 +130,13 @@ export default async function DashboardPage() {
     redirect("/login")
   }
 
+  // Check if user needs MFA verification (defense-in-depth)
+  const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+  if (aalData?.currentLevel === 'aal1' && aalData?.nextLevel === 'aal2') {
+    // User has MFA enabled but hasn't verified yet - redirect to MFA page
+    redirect("/mfa-verify")
+  }
+
   const data = await getDashboardData(user.id)
 
   // Get bypass status - user has bypass if they have initial payment OR subscription bypass

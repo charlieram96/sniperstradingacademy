@@ -341,6 +341,56 @@ export async function POST(req: NextRequest) {
         break
       }
 
+      case "customer.subscription.created": {
+        const subscription = event.data.object as Stripe.Subscription
+        const customerId = subscription.customer as string
+
+        console.log(`📝 Subscription created: ${subscription.id}`)
+        console.log(`   Customer: ${customerId}`)
+        console.log(`   Status: ${subscription.status}`)
+        console.log(`   Amount: $${(subscription.items.data[0]?.price?.unit_amount || 0) / 100}`)
+
+        // Get user from customer ID
+        const { data: user } = await supabase
+          .from("users")
+          .select("id, email, name")
+          .eq("stripe_customer_id", customerId)
+          .single()
+
+        if (user) {
+          console.log(`   User: ${user.name} (${user.email})`)
+
+          // Check if subscription record already exists (created via checkout.session.completed)
+          const { data: existingSub } = await supabase
+            .from("subscriptions")
+            .select("id")
+            .eq("stripe_subscription_id", subscription.id)
+            .single()
+
+          if (!existingSub) {
+            // Create subscription record if not already created
+            const periodEnd = 'current_period_end' in subscription && subscription.current_period_end
+              ? new Date((subscription.current_period_end as number) * 1000).toISOString()
+              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+
+            await supabase
+              .from("subscriptions")
+              .insert({
+                user_id: user.id,
+                stripe_subscription_id: subscription.id,
+                status: subscription.status,
+                monthly_amount: (subscription.items.data[0]?.price?.unit_amount || 19900) / 100,
+                current_period_end: periodEnd,
+              })
+
+            console.log(`✅ Subscription record created for user ${user.id}`)
+          } else {
+            console.log(`ℹ️  Subscription record already exists (created via checkout)`)
+          }
+        }
+        break
+      }
+
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription
@@ -554,8 +604,28 @@ export async function POST(req: NextRequest) {
       case "payout.failed": {
         const payout = event.data.object as Stripe.Payout
         console.error("Payout failed:", payout.id, payout.failure_message)
-        
+
         // Handle failed payouts - maybe notify the user
+        break
+      }
+
+      case "payout.canceled": {
+        const payout = event.data.object as Stripe.Payout
+        console.warn("Payout canceled:", payout.id)
+        console.warn(`   Amount: $${payout.amount / 100}`)
+        console.warn(`   Status: ${payout.status}`)
+
+        // Track which user's payout was cancelled
+        const { data: user } = await supabase
+          .from("users")
+          .select("id, name, email")
+          .eq("stripe_connect_account_id", payout.destination)
+          .single()
+
+        if (user) {
+          console.warn(`   User: ${user.name} (${user.email})`)
+          // TODO: Consider notifying user about cancelled payout
+        }
         break
       }
 
@@ -563,9 +633,497 @@ export async function POST(req: NextRequest) {
       case "transfer.created": {
         const transfer = event.data.object as Stripe.Transfer
         const userId = transfer.metadata?.userId
-        
+
         if (userId) {
           console.log(`Transfer created for user ${userId}: ${transfer.amount / 100} USD`)
+        }
+        break
+      }
+
+      // Failed invoice payment (recurring payment failure)
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice
+        const customerId = invoice.customer as string
+        const attemptCount = invoice.attempt_count || 0
+        const nextPaymentAttempt = invoice.next_payment_attempt
+          ? new Date(invoice.next_payment_attempt * 1000).toISOString()
+          : null
+
+        console.error(`❌ Invoice payment failed for customer ${customerId}`)
+        console.error(`   Attempt count: ${attemptCount}`)
+        console.error(`   Amount due: $${invoice.amount_due / 100}`)
+        console.error(`   Next retry: ${nextPaymentAttempt || 'No retry scheduled'}`)
+
+        // Get user from customer ID
+        const { data: user } = await supabase
+          .from("users")
+          .select("id, email, name")
+          .eq("stripe_customer_id", customerId)
+          .single()
+
+        if (user) {
+          // Record failed payment
+          const paymentIntentId = ('payment_intent' in invoice && typeof invoice.payment_intent === 'string')
+            ? invoice.payment_intent
+            : invoice.id
+
+          await supabase
+            .from("payments")
+            .insert({
+              user_id: user.id,
+              stripe_payment_intent_id: paymentIntentId,
+              amount: invoice.amount_due / 100,
+              payment_type: "monthly",
+              status: "failed",
+            })
+
+          console.log(`📝 Recorded failed payment for user ${user.id} (${user.email})`)
+          console.log(`⚠️  Stripe will retry automatically. If all retries fail, subscription will be cancelled.`)
+
+          // TODO: Send notification to user to update payment method
+          // await sendPaymentFailureEmail(user.email, attemptCount, nextPaymentAttempt)
+        }
+        break
+      }
+
+      // Failed payment intent (initial payment failure)
+      case "payment_intent.payment_failed": {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent
+        const customerId = paymentIntent.customer as string
+        const failureMessage = paymentIntent.last_payment_error?.message || "Unknown error"
+
+        console.error(`❌ Payment Intent failed: ${paymentIntent.id}`)
+        console.error(`   Customer: ${customerId}`)
+        console.error(`   Amount: $${paymentIntent.amount / 100}`)
+        console.error(`   Failure reason: ${failureMessage}`)
+
+        // Get user from customer ID
+        const { data: user } = await supabase
+          .from("users")
+          .select("id, email, name")
+          .eq("stripe_customer_id", customerId)
+          .single()
+
+        if (user) {
+          // Record failed payment attempt
+          await supabase
+            .from("payments")
+            .insert({
+              user_id: user.id,
+              stripe_payment_intent_id: paymentIntent.id,
+              amount: paymentIntent.amount / 100,
+              payment_type: paymentIntent.amount === 49900 ? "initial" : "monthly",
+              status: "failed",
+            })
+
+          console.log(`📝 Recorded failed payment intent for user ${user.id} (${user.email})`)
+          console.log(`   User can retry payment through checkout`)
+
+          // TODO: Send notification to user about failed payment
+          // await sendPaymentFailedNotification(user.email, failureMessage)
+        }
+        break
+      }
+
+      // Dispute created (chargeback initiated)
+      case "charge.dispute.created": {
+        const dispute = event.data.object as Stripe.Dispute
+        const chargeId = dispute.charge as string
+        const amount = dispute.amount / 100
+        const reason = dispute.reason
+        const evidenceDeadline = dispute.evidence_details?.due_by
+          ? new Date(dispute.evidence_details.due_by * 1000).toISOString()
+          : null
+
+        console.error(`⚠️  DISPUTE CREATED: ${dispute.id}`)
+        console.error(`   Charge: ${chargeId}`)
+        console.error(`   Amount: $${amount}`)
+        console.error(`   Reason: ${reason}`)
+        console.error(`   Evidence due by: ${evidenceDeadline}`)
+
+        // Find the payment record
+        const { data: payment } = await supabase
+          .from("payments")
+          .select("id, user_id, payment_type, amount")
+          .eq("stripe_payment_intent_id", chargeId)
+          .single()
+
+        if (payment) {
+          // Update payment to mark as disputed
+          await supabase
+            .from("payments")
+            .update({ status: "disputed" })
+            .eq("id", payment.id)
+
+          console.log(`📝 Marked payment ${payment.id} as disputed`)
+
+          // If initial payment, flag the direct bonus as disputed
+          if (payment.payment_type === "initial") {
+            const { data: commission } = await supabase
+              .from("commissions")
+              .update({ status: "cancelled" })
+              .eq("referred_id", payment.user_id)
+              .eq("commission_type", "direct_bonus")
+              .eq("status", "pending")
+              .select()
+
+            if (commission && commission.length > 0) {
+              console.log(`⚠️  Cancelled ${commission.length} pending direct bonus(es) due to dispute`)
+            }
+          }
+
+          // If recurring payment, flag upline commissions as disputed
+          if (payment.payment_type === "monthly" || payment.payment_type === "weekly") {
+            const { data: commissions } = await supabase
+              .from("commissions")
+              .update({ status: "cancelled" })
+              .eq("referred_id", payment.user_id)
+              .eq("commission_type", "residual")
+              .eq("status", "pending")
+              .select()
+
+            if (commissions && commissions.length > 0) {
+              console.log(`⚠️  Cancelled ${commissions.length} pending residual commission(s) due to dispute`)
+            }
+          }
+
+          console.log(`🚨 ADMIN ALERT: Dispute created for user ${payment.user_id}`)
+          console.log(`   Evidence deadline: ${evidenceDeadline}`)
+
+          // TODO: Send admin notification about dispute
+          // await sendAdminDisputeAlert(payment.user_id, dispute.id, amount, reason, evidenceDeadline)
+        }
+        break
+      }
+
+      // Charge refunded
+      case "charge.refunded": {
+        const charge = event.data.object as Stripe.Charge
+        const refundAmount = charge.amount_refunded / 100
+        const chargeId = charge.id
+
+        console.log(`💸 REFUND PROCESSED: ${chargeId}`)
+        console.log(`   Amount refunded: $${refundAmount}`)
+
+        // Find the payment record
+        const { data: payment } = await supabase
+          .from("payments")
+          .select("id, user_id, payment_type, amount")
+          .eq("stripe_payment_intent_id", chargeId)
+          .single()
+
+        if (payment) {
+          // Update payment to mark as refunded
+          await supabase
+            .from("payments")
+            .update({ status: "refunded" })
+            .eq("id", payment.id)
+
+          console.log(`📝 Marked payment ${payment.id} as refunded`)
+
+          // Handle initial payment refund ($499)
+          if (payment.payment_type === "initial" && payment.amount >= 499) {
+            console.log(`⚠️  Initial payment refunded for user ${payment.user_id}`)
+
+            // Get user details
+            const { data: user } = await supabase
+              .from("users")
+              .select("referred_by, is_active, network_position_id")
+              .eq("id", payment.user_id)
+              .single()
+
+            // Cancel the $249.50 direct bonus if not already withdrawn
+            const { data: cancelledBonus } = await supabase
+              .from("commissions")
+              .update({ status: "cancelled" })
+              .eq("referred_id", payment.user_id)
+              .eq("commission_type", "direct_bonus")
+              .in("status", ["pending"])
+              .select()
+
+            if (cancelledBonus && cancelledBonus.length > 0) {
+              console.log(`✅ Cancelled direct bonus of $249.50 for refunded initial payment`)
+            }
+
+            // Decrement referrer's direct_referrals_count
+            if (user?.referred_by) {
+              // Get current count first
+              const { data: referrer } = await supabase
+                .from("users")
+                .select("direct_referrals_count")
+                .eq("id", user.referred_by)
+                .single()
+
+              if (referrer) {
+                await supabase
+                  .from("users")
+                  .update({
+                    direct_referrals_count: Math.max((referrer.direct_referrals_count || 0) - 1, 0)
+                  })
+                  .eq("id", user.referred_by)
+
+                console.log(`✅ Decremented referrer's direct_referrals_count`)
+              }
+            }
+
+            // Deactivate user and decrement upchain counts
+            if (user?.is_active && user?.network_position_id) {
+              await supabase
+                .from("users")
+                .update({
+                  is_active: false,
+                  membership_status: "locked"
+                })
+                .eq("id", payment.user_id)
+
+              // Decrement upchain active count
+              await supabase
+                .rpc('decrement_upchain_active_count', {
+                  p_user_id: payment.user_id
+                })
+
+              console.log(`✅ Deactivated user and decremented upchain counts`)
+            }
+
+            // Update referral status
+            await supabase
+              .from("referrals")
+              .update({
+                status: "inactive",
+                initial_payment_status: "failed"
+              })
+              .eq("referred_id", payment.user_id)
+
+            console.log(`📝 User ${payment.user_id} access revoked due to refunded initial payment`)
+          }
+
+          // Handle recurring payment refund
+          else if (payment.payment_type === "monthly" || payment.payment_type === "weekly") {
+            console.log(`⚠️  Recurring payment refunded for user ${payment.user_id}`)
+
+            // Cancel any pending residual commissions from this payment
+            const { data: cancelledCommissions } = await supabase
+              .from("commissions")
+              .update({ status: "cancelled" })
+              .eq("referred_id", payment.user_id)
+              .eq("commission_type", "residual")
+              .eq("status", "pending")
+              .select()
+
+            if (cancelledCommissions && cancelledCommissions.length > 0) {
+              console.log(`✅ Cancelled ${cancelledCommissions.length} pending residual commission(s)`)
+            }
+          }
+
+          console.log(`✅ Refund processed for payment ${payment.id}`)
+        }
+        break
+      }
+
+      // Subscription paused
+      case "customer.subscription.paused": {
+        const subscription = event.data.object as Stripe.Subscription
+
+        console.log(`⏸️  Subscription paused: ${subscription.id}`)
+
+        // Get user's current active status BEFORE updating
+        const { data: subData } = await supabase
+          .from("subscriptions")
+          .select("user_id")
+          .eq("stripe_subscription_id", subscription.id)
+          .single()
+
+        if (!subData) {
+          console.error(`No subscription found for ${subscription.id}`)
+          break
+        }
+
+        const { data: userData } = await supabase
+          .from("users")
+          .select("is_active, network_position_id")
+          .eq("id", subData.user_id)
+          .single()
+
+        const wasActiveBefore = userData?.is_active || false
+
+        // Update subscription status
+        await supabase
+          .from("subscriptions")
+          .update({
+            status: "paused",
+            updated_at: new Date().toISOString()
+          })
+          .eq("stripe_subscription_id", subscription.id)
+
+        // Temporarily deactivate user
+        await supabase
+          .from("users")
+          .update({ is_active: false })
+          .eq("id", subData.user_id)
+
+        console.log(`📝 Subscription ${subscription.id} paused, user ${subData.user_id} deactivated`)
+
+        // Decrement upchain active count if user was active
+        if (wasActiveBefore && userData?.network_position_id) {
+          const { data: ancestorsDecremented } = await supabase
+            .rpc('decrement_upchain_active_count', {
+              p_user_id: subData.user_id
+            })
+
+          console.log(`✅ Decremented active_network_count for ${ancestorsDecremented || 0} ancestors`)
+        }
+        break
+      }
+
+      // Dispute closed (resolved)
+      case "charge.dispute.closed": {
+        const dispute = event.data.object as Stripe.Dispute
+        const chargeId = dispute.charge as string
+        const status = dispute.status // 'won', 'lost', 'warning_closed'
+        const amount = dispute.amount / 100
+
+        console.log(`🏁 DISPUTE CLOSED: ${dispute.id}`)
+        console.log(`   Status: ${status}`)
+        console.log(`   Charge: ${chargeId}`)
+        console.log(`   Amount: $${amount}`)
+
+        // Find the payment record
+        const { data: payment } = await supabase
+          .from("payments")
+          .select("id, user_id, payment_type")
+          .eq("stripe_payment_intent_id", chargeId)
+          .single()
+
+        if (payment) {
+          if (status === "won") {
+            // Dispute won - restore payment status
+            await supabase
+              .from("payments")
+              .update({ status: "succeeded" })
+              .eq("id", payment.id)
+
+            console.log(`✅ Dispute WON! Payment ${payment.id} restored to succeeded status`)
+            console.log(`   Note: Previously cancelled commissions were not restored`)
+
+            // TODO: Consider restoring commissions if they were cancelled
+            // This requires more complex logic to check if commissions are still valid
+          }
+          else if (status === "lost") {
+            // Dispute lost - ensure payment is marked as refunded
+            await supabase
+              .from("payments")
+              .update({ status: "refunded" })
+              .eq("id", payment.id)
+
+            console.log(`❌ Dispute LOST. Payment ${payment.id} marked as refunded`)
+
+            // Ensure commissions are cancelled (should already be done)
+            if (payment.payment_type === "initial") {
+              await supabase
+                .from("commissions")
+                .update({ status: "cancelled" })
+                .eq("referred_id", payment.user_id)
+                .eq("commission_type", "direct_bonus")
+                .in("status", ["pending"])
+            }
+          }
+          else if (status === "warning_closed") {
+            // Warning closed without escalation
+            await supabase
+              .from("payments")
+              .update({ status: "succeeded" })
+              .eq("id", payment.id)
+
+            console.log(`ℹ️  Dispute warning closed without escalation. Payment ${payment.id} remains valid`)
+          }
+
+          console.log(`📝 Dispute ${dispute.id} closed with status: ${status}`)
+        }
+        break
+      }
+
+      // External account events (bank account changes)
+      case "account.external_account.created": {
+        const externalAccount = event.data.object as Stripe.BankAccount | Stripe.Card
+        const accountId = event.account as string
+
+        console.log(`🏦 External account CREATED for Connect account: ${accountId}`)
+        console.log(`   Account type: ${externalAccount.object}`)
+
+        if (externalAccount.object === "bank_account") {
+          const bankAccount = externalAccount as Stripe.BankAccount
+          console.log(`   Bank: ${bankAccount.bank_name || 'Unknown'}`)
+          console.log(`   Last 4: ${bankAccount.last4}`)
+          console.log(`   Status: ${bankAccount.status}`)
+        }
+
+        // Find user with this Connect account
+        const { data: user } = await supabase
+          .from("users")
+          .select("id, name, email")
+          .eq("stripe_connect_account_id", accountId)
+          .single()
+
+        if (user) {
+          console.log(`📝 External account added for user ${user.id} (${user.email})`)
+          // Store audit trail if needed
+        }
+        break
+      }
+
+      case "account.external_account.updated": {
+        const externalAccount = event.data.object as Stripe.BankAccount | Stripe.Card
+        const accountId = event.account as string
+
+        console.log(`🏦 External account UPDATED for Connect account: ${accountId}`)
+        console.log(`   Account type: ${externalAccount.object}`)
+
+        if (externalAccount.object === "bank_account") {
+          const bankAccount = externalAccount as Stripe.BankAccount
+          console.log(`   Bank: ${bankAccount.bank_name || 'Unknown'}`)
+          console.log(`   Last 4: ${bankAccount.last4}`)
+          console.log(`   Status: ${bankAccount.status}`)
+        }
+
+        // Find user with this Connect account
+        const { data: user } = await supabase
+          .from("users")
+          .select("id, name, email")
+          .eq("stripe_connect_account_id", accountId)
+          .single()
+
+        if (user) {
+          console.log(`📝 External account updated for user ${user.id} (${user.email})`)
+          // Store audit trail if needed
+        }
+        break
+      }
+
+      case "account.external_account.deleted": {
+        const externalAccount = event.data.object as Stripe.BankAccount | Stripe.Card
+        const accountId = event.account as string
+
+        console.warn(`🚨 External account DELETED for Connect account: ${accountId}`)
+        console.warn(`   Account type: ${externalAccount.object}`)
+
+        if (externalAccount.object === "bank_account") {
+          const bankAccount = externalAccount as Stripe.BankAccount
+          console.warn(`   Bank: ${bankAccount.bank_name || 'Unknown'}`)
+          console.warn(`   Last 4: ${bankAccount.last4}`)
+        }
+
+        // Find user with this Connect account
+        const { data: user } = await supabase
+          .from("users")
+          .select("id, name, email")
+          .eq("stripe_connect_account_id", accountId)
+          .single()
+
+        if (user) {
+          console.warn(`⚠️  Bank account removed by user ${user.id} (${user.email})`)
+          console.warn(`   This may be a red flag - consider reviewing user account`)
+          // TODO: Send admin notification if suspicious
+          // Store audit trail for security review
         }
         break
       }
