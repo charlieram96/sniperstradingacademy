@@ -11,12 +11,6 @@
       "staging": true
     }
   },
-  "env": {
-    "NEXT_PUBLIC_ENVIRONMENT": {
-      "value": "production",
-      "target": ["production"]
-    }
-  },
   "headers": [
     {
       "source": "/api/:path*",
