@@ -24,6 +24,13 @@ export async function POST(req: NextRequest) {
       .single()
 
     const stripe = getStripe()
+
+    // DEBUG: Log which Stripe key is being used
+    console.log('🔍 STRIPE DEBUG:')
+    console.log('  Key prefix:', process.env.STRIPE_SECRET_KEY?.substring(0, 15))
+    console.log('  Mode:', process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_') ? 'LIVE' : 'TEST')
+    console.log('  Publishable key:', process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.substring(0, 15))
+
     let customerId = userData?.stripe_customer_id
 
     if (!customerId) {
