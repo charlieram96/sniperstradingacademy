@@ -48,6 +48,7 @@ interface Module {
 export default function AcademyPage() {
   const [academyClasses, setAcademyClasses] = useState<AcademyClass[]>([])
   const [classesLoading, setClassesLoading] = useState(true)
+  const [progressLoading, setProgressLoading] = useState(true)
 
   // Fetch academy classes
   useEffect(() => {
@@ -70,6 +71,41 @@ export default function AcademyPage() {
     }
 
     fetchClasses()
+  }, [])
+
+  // Fetch user's academy progress
+  useEffect(() => {
+    async function fetchProgress() {
+      try {
+        const response = await fetch('/api/academy/progress')
+        if (response.ok) {
+          const { progress } = await response.json()
+
+          // Update modules with completed lessons
+          if (progress && progress.length > 0) {
+            const completedLessonIds = new Set(
+              progress.map((p: { lesson_id: string }) => p.lesson_id)
+            )
+
+            setModules(prevModules =>
+              prevModules.map(module => ({
+                ...module,
+                lessons: module.lessons.map(lesson => ({
+                  ...lesson,
+                  completed: completedLessonIds.has(lesson.id)
+                }))
+              }))
+            )
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching academy progress:', error)
+      } finally {
+        setProgressLoading(false)
+      }
+    }
+
+    fetchProgress()
   }, [])
 
   // Mock data - replace with actual API calls
@@ -319,20 +355,32 @@ export default function AcademyPage() {
   ).length
   const overallProgress = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0
 
-  const toggleLessonComplete = (moduleId: string, lessonId: string) => {
+  const markLessonComplete = async (moduleId: string, lessonId: string) => {
+    // Optimistically update UI
     setModules(prevModules =>
       prevModules.map(module => {
         if (module.id === moduleId) {
           return {
             ...module,
             lessons: module.lessons.map(lesson =>
-              lesson.id === lessonId ? { ...lesson, completed: !lesson.completed } : lesson
+              lesson.id === lessonId ? { ...lesson, completed: true } : lesson
             )
           }
         }
         return module
       })
     )
+
+    // Save to database
+    try {
+      await fetch('/api/academy/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lessonId })
+      })
+    } catch (error) {
+      console.error('Error saving lesson progress:', error)
+    }
   }
 
   const getModuleProgress = (module: Module) => {
@@ -523,16 +571,13 @@ export default function AcademyPage() {
                         <div key={lesson.id} className="space-y-3">
                           <div className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-accent-hover transition-colors duration-200">
                             <div className="flex items-center gap-3 flex-1">
-                              <button
-                                onClick={() => toggleLessonComplete(module.id, lesson.id)}
-                                className="flex-shrink-0"
-                              >
+                              <div className="flex-shrink-0">
                                 {lesson.completed ? (
                                   <CheckCircle className="h-5 w-5 text-green-500" />
                                 ) : (
                                   <Circle className="h-5 w-5 text-muted-foreground" />
                                 )}
-                              </button>
+                              </div>
                               <div className="flex items-center gap-2 flex-1">
                                 {lesson.type === "video" ? (
                                   <PlayCircle className="h-4 w-4 text-primary" />
@@ -561,7 +606,14 @@ export default function AcademyPage() {
                                 size="sm"
                                 variant="outline"
                                 className="ml-4"
-                                onClick={() => lesson.url && window.open(lesson.url, '_blank')}
+                                onClick={() => {
+                                  if (lesson.url) {
+                                    window.open(lesson.url, '_blank')
+                                    if (!lesson.completed) {
+                                      markLessonComplete(module.id, lesson.id)
+                                    }
+                                  }
+                                }}
                                 disabled={!lesson.url}
                               >
                                 <Download className="h-4 w-4 mr-1" />
@@ -576,6 +628,7 @@ export default function AcademyPage() {
                                 className="w-full"
                                 style={{ maxHeight: '500px' }}
                                 preload="metadata"
+                                onPlay={() => !lesson.completed && markLessonComplete(module.id, lesson.id)}
                               >
                                 <source src={lesson.url} type="video/mp4" />
                                 Your browser does not support the video tag.
