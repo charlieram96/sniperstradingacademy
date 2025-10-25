@@ -248,38 +248,58 @@ export default function AdminNetworkPage() {
 
     setIsUpdating(true)
 
-    const supabase = createClient()
-    const { error } = await supabase
-      .from("users")
-      .update({
-        bypass_direct_referrals: bypassSelections.directReferrals,
-        bypass_subscription: bypassSelections.subscription,
-        bypass_initial_payment: bypassSelections.initialPayment
+    try {
+      // Call new bypass grant API endpoint
+      const response = await fetch("/api/admin/bypass/grant", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: userForBypass.id,
+          bypassDirectReferrals: bypassSelections.directReferrals,
+          bypassSubscription: bypassSelections.subscription,
+          bypassInitialPayment: bypassSelections.initialPayment
+        })
       })
-      .eq("id", userForBypass.id)
 
-    if (error) {
-      console.error("Error updating bypass settings:", error)
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error("Error granting bypass access:", errorData)
+        alert(`Failed to grant bypass: ${errorData.error || 'Unknown error'}`)
+        setIsUpdating(false)
+        return
+      }
+
+      const result = await response.json()
+      console.log("Bypass grant result:", result)
+
+      // Show success message with process log
+      if (result.processLog && result.processLog.length > 0) {
+        console.log("Process log:", result.processLog.join("\n"))
+      }
+
+      // Refresh user list
+      await fetchAllUsers()
+
+      // Update selected user if it's the one we just modified
+      if (selectedUser?.id === userForBypass.id) {
+        setSelectedUser({
+          ...selectedUser,
+          bypass_direct_referrals: bypassSelections.directReferrals,
+          bypass_subscription: bypassSelections.subscription,
+          bypass_initial_payment: bypassSelections.initialPayment
+        })
+      }
+
       setIsUpdating(false)
-      return
+      setShowBypassDialog(false)
+      setUserForBypass(null)
+    } catch (error) {
+      console.error("Exception granting bypass:", error)
+      alert("Failed to grant bypass access. Please try again.")
+      setIsUpdating(false)
     }
-
-    // Refresh user list
-    await fetchAllUsers()
-
-    // Update selected user if it's the one we just modified
-    if (selectedUser?.id === userForBypass.id) {
-      setSelectedUser({
-        ...selectedUser,
-        bypass_direct_referrals: bypassSelections.directReferrals,
-        bypass_subscription: bypassSelections.subscription,
-        bypass_initial_payment: bypassSelections.initialPayment
-      })
-    }
-
-    setIsUpdating(false)
-    setShowBypassDialog(false)
-    setUserForBypass(null)
   }
 
   if (loading) {
@@ -712,6 +732,7 @@ export default function AdminNetworkPage() {
               <Checkbox
                 id="bypass-initial"
                 checked={bypassSelections.initialPayment}
+                disabled={userForBypass?.currentBypasses.initialPayment}
                 onCheckedChange={(checked) =>
                   setBypassSelections(prev => ({ ...prev, initialPayment: checked === true }))
                 }
@@ -719,12 +740,17 @@ export default function AdminNetworkPage() {
               <div className="grid gap-1.5 leading-none">
                 <label
                   htmlFor="bypass-initial"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${userForBypass?.currentBypasses.initialPayment ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                 >
                   Bypass Initial Payment Requirement
+                  {userForBypass?.currentBypasses.initialPayment && (
+                    <span className="text-purple-600 ml-2">(Permanent - Cannot be revoked)</span>
+                  )}
                 </label>
                 <p className="text-sm text-muted-foreground">
-                  User gets platform access without the $499 initial payment
+                  {userForBypass?.currentBypasses.initialPayment
+                    ? "This bypass is permanent once granted and cannot be revoked"
+                    : "User gets platform access without the $499 initial payment"}
                 </p>
               </div>
             </div>

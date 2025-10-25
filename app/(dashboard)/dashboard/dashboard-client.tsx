@@ -8,10 +8,11 @@ import { Progress } from "@/components/ui/progress"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { formatCurrency } from "@/lib/utils"
-import { Users, DollarSign, TrendingUp, UserPlus, Lock, Unlock, CreditCard, AlertTriangle, Medal, Trophy, Star, Award, Target, Crown, GraduationCap, BookOpen, PlayCircle, CheckCircle2, Wallet, ExternalLink, XCircle, Clock, Sparkles, Calendar } from "lucide-react"
+import { Users, DollarSign, TrendingUp, UserPlus, Lock, Unlock, CreditCard, AlertTriangle, Medal, Trophy, Star, Award, Target, Crown, GraduationCap, BookOpen, PlayCircle, CheckCircle2, Wallet, ExternalLink, XCircle, Clock, Calendar } from "lucide-react"
 import { NavigationLink } from "@/components/navigation-link"
 import { isTestUser } from "@/lib/mock-data"
 import { createClient } from "@/lib/supabase/client"
+import { BypassAccessBanner } from "@/components/bypass-access-banner"
 
 interface AcademyClass {
   id: string
@@ -74,7 +75,14 @@ const getRankInfo = (completedStructures: number) => {
   return ranks[Math.min(completedStructures - 1, 5)]
 }
 
-export function DashboardClient({ data, session, hasPremiumBypass = false }: {
+export function DashboardClient({
+  data,
+  session,
+  bypassInitialPayment = false,
+  bypassSubscription = false,
+  premiumBypass = false,
+  bypassBannerDismissed = false
+}: {
   data: DashboardData
   session: {
     user: {
@@ -83,7 +91,10 @@ export function DashboardClient({ data, session, hasPremiumBypass = false }: {
       name?: string
     }
   }
-  hasPremiumBypass?: boolean
+  bypassInitialPayment?: boolean
+  bypassSubscription?: boolean
+  premiumBypass?: boolean
+  bypassBannerDismissed?: boolean
 }) {
   const [selectedStructure, setSelectedStructure] = useState("1")
   const [connectStatus, setConnectStatus] = useState<{
@@ -100,6 +111,7 @@ export function DashboardClient({ data, session, hasPremiumBypass = false }: {
   const [connectLoading, setConnectLoading] = useState(true)
   const [academyClasses, setAcademyClasses] = useState<AcademyClass[]>([])
   const [classesLoading, setClassesLoading] = useState(true)
+  const [bannerDismissed, setBannerDismissed] = useState(bypassBannerDismissed)
   const rankInfo = getRankInfo(data.completedStructures)
   
   // Check Stripe Connect status
@@ -164,7 +176,7 @@ export function DashboardClient({ data, session, hasPremiumBypass = false }: {
           'Content-Type': 'application/json',
         },
       })
-      
+
       if (response.ok) {
         const { url } = await response.json()
         if (url) {
@@ -173,6 +185,20 @@ export function DashboardClient({ data, session, hasPremiumBypass = false }: {
       }
     } catch (error) {
       console.error('Error starting Connect onboarding:', error)
+    }
+  }
+
+  async function handleDismissBanner() {
+    try {
+      const response = await fetch('/api/user/dismiss-bypass-banner', {
+        method: 'POST',
+      })
+
+      if (response.ok) {
+        setBannerDismissed(true)
+      }
+    } catch (error) {
+      console.error('Error dismissing bypass banner:', error)
     }
   }
   
@@ -199,24 +225,15 @@ export function DashboardClient({ data, session, hasPremiumBypass = false }: {
         </div>
       )}
 
-      {/* Premium Bypass Banner */}
-      {hasPremiumBypass && !isTestUser(session.user.id) && (
-        <div className="mb-6 p-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg shadow-lg shadow-purple-500/20">
-          <div className="flex items-center gap-3">
-            <Crown className="h-6 w-6" />
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-                  PREMIUM BYPASS
-                </Badge>
-                <Sparkles className="h-4 w-4" />
-              </div>
-              <span className="font-medium">
-                You have complimentary premium access to all features without payment requirements
-              </span>
-            </div>
-          </div>
-        </div>
+      {/* Bypass Access Banner */}
+      {!isTestUser(session.user.id) && (
+        <BypassAccessBanner
+          bypassInitialPayment={bypassInitialPayment}
+          bypassSubscription={bypassSubscription}
+          premiumBypass={premiumBypass}
+          dismissed={bannerDismissed}
+          onDismiss={handleDismissBanner}
+        />
       )}
 
       <div className="mb-8">
@@ -425,7 +442,7 @@ export function DashboardClient({ data, session, hasPremiumBypass = false }: {
       )}
 
       {/* Membership Status Alert */}
-      {!data.initialPaymentCompleted && !isTestUser(session.user.id) && !hasPremiumBypass && (
+      {!data.initialPaymentCompleted && !isTestUser(session.user.id) && !premiumBypass && (
         <Card className="mb-6 border-destructive/20 bg-destructive/5">
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -448,7 +465,7 @@ export function DashboardClient({ data, session, hasPremiumBypass = false }: {
       )}
 
       {/* Subscription Alert */}
-      {data.initialPaymentCompleted && !data.subscription && !isTestUser(session.user.id) && !hasPremiumBypass && (
+      {data.initialPaymentCompleted && !data.subscription && !isTestUser(session.user.id) && !premiumBypass && (
         <Card className="mb-6 border-yellow-500/20 bg-yellow-500/5">
           <CardHeader>
             <div className="flex items-center gap-2">

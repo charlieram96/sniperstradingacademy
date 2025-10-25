@@ -34,6 +34,8 @@ interface NetworkUser {
   created_at: string
   initial_payment_completed: boolean
   last_referral_branch: number | null
+  total_network_count: number
+  active_network_count: number
 }
 
 interface ChildPosition {
@@ -392,6 +394,32 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
                       <span className="font-medium">{selectedUser.last_referral_branch}</span>
                     </div>
                   )}
+                </div>
+              </div>
+
+              {/* Network Stats */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border-2 border-blue-200 dark:border-blue-900">
+                  <div className="text-sm text-blue-600 dark:text-blue-400 font-medium mb-1">
+                    Total Network
+                  </div>
+                  <div className="text-2xl font-bold text-blue-900 dark:text-blue-300">
+                    {selectedUser.total_network_count}
+                  </div>
+                  <div className="text-xs text-blue-600/80 dark:text-blue-400/80 mt-1">
+                    members in downline
+                  </div>
+                </div>
+                <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border-2 border-green-200 dark:border-green-900">
+                  <div className="text-sm text-green-600 dark:text-green-400 font-medium mb-1">
+                    Active Members
+                  </div>
+                  <div className="text-2xl font-bold text-green-900 dark:text-green-300">
+                    {selectedUser.active_network_count}
+                  </div>
+                  <div className="text-xs text-green-600/80 dark:text-green-400/80 mt-1">
+                    active in downline
+                  </div>
                 </div>
               </div>
 
