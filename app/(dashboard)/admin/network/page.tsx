@@ -5,9 +5,10 @@ import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Network, Search, Shield, ShieldCheck, Users, CheckCircle2, XCircle, AlertTriangle, Crown, Sparkles } from "lucide-react"
+import { Network, Search, Shield, ShieldCheck, Users, CheckCircle2, XCircle, AlertTriangle, Crown, Sparkles, Trash2, UserPlus, Loader2 } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import {
   Select,
@@ -85,6 +86,30 @@ export default function AdminNetworkPage() {
     subscription: false,
     initialPayment: false
   })
+  const [orphanedUsers, setOrphanedUsers] = useState<Array<{
+    id: string
+    email: string
+    name: string | null
+    created_at: string
+    referred_by: string | null
+    provider: string
+  }>>([])
+  const [loadingOrphaned, setLoadingOrphaned] = useState(true)
+  const [showFixDialog, setShowFixDialog] = useState(false)
+  const [showDeleteAuthDialog, setShowDeleteAuthDialog] = useState(false)
+  const [orphanedUserToFix, setOrphanedUserToFix] = useState<{
+    id: string
+    email: string
+    name: string | null
+    referred_by: string | null
+  } | null>(null)
+  const [orphanedUserToDelete, setOrphanedUserToDelete] = useState<{
+    id: string
+    email: string
+    name: string | null
+  } | null>(null)
+  const [emailConfirmation, setEmailConfirmation] = useState("")
+  const [isProcessing, setIsProcessing] = useState(false)
 
   const filterAndSortUsers = useCallback(() => {
     let result = [...users]
@@ -138,6 +163,7 @@ export default function AdminNetworkPage() {
   useEffect(() => {
     checkAdminStatus()
     fetchAllUsers()
+    fetchOrphanedUsers()
   }, [])
 
   useEffect(() => {
@@ -193,6 +219,107 @@ export default function AdminNetworkPage() {
       setUsers(data)
     }
     setLoading(false)
+  }
+
+  async function fetchOrphanedUsers() {
+    if (!isSuperAdmin) {
+      setLoadingOrphaned(false)
+      return
+    }
+
+    try {
+      const response = await fetch("/api/admin/users/orphaned")
+      if (response.ok) {
+        const data = await response.json()
+        setOrphanedUsers(data.orphanedUsers || [])
+      }
+    } catch (error) {
+      console.error("Error fetching orphaned users:", error)
+    } finally {
+      setLoadingOrphaned(false)
+    }
+  }
+
+  function openFixDialog(user: { id: string; email: string; name: string | null; referred_by: string | null }) {
+    setOrphanedUserToFix(user)
+    setShowFixDialog(true)
+  }
+
+  function openDeleteAuthDialog(user: { id: string; email: string; name: string | null }) {
+    setOrphanedUserToDelete(user)
+    setEmailConfirmation("")
+    setShowDeleteAuthDialog(true)
+  }
+
+  async function handleFixOrphanedUser() {
+    if (!orphanedUserToFix) return
+
+    setIsProcessing(true)
+    try {
+      const response = await fetch("/api/admin/users/fix-orphaned", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: orphanedUserToFix.id,
+          referred_by: orphanedUserToFix.referred_by
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        alert(`Failed to fix user: ${errorData.error || 'Unknown error'}`)
+        setIsProcessing(false)
+        return
+      }
+
+      await fetchOrphanedUsers()
+      await fetchAllUsers()
+      setShowFixDialog(false)
+      setOrphanedUserToFix(null)
+      alert("User fixed successfully!")
+    } catch (error) {
+      console.error("Error fixing user:", error)
+      alert("Failed to fix user. Please try again.")
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  async function handleDeleteAuthUser() {
+    if (!orphanedUserToDelete || emailConfirmation !== orphanedUserToDelete.email) {
+      alert("Email confirmation does not match")
+      return
+    }
+
+    setIsProcessing(true)
+    try {
+      const response = await fetch("/api/admin/users/delete-auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: orphanedUserToDelete.id,
+          email_confirmation: emailConfirmation
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        alert(`Failed to delete user: ${errorData.error || 'Unknown error'}`)
+        setIsProcessing(false)
+        return
+      }
+
+      await fetchOrphanedUsers()
+      setShowDeleteAuthDialog(false)
+      setOrphanedUserToDelete(null)
+      setEmailConfirmation("")
+      alert("User deleted successfully from auth.users!")
+    } catch (error) {
+      console.error("Error deleting user:", error)
+      alert("Failed to delete user. Please try again.")
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   function openConfirmDialog(userId: string, userName: string, currentRole: "member" | "admin" | "superadmin") {
@@ -334,6 +461,95 @@ export default function AdminNetworkPage() {
         </div>
         <p className="text-muted-foreground">Complete view of all users in the Trading Hub network</p>
       </div>
+
+      {/* Orphaned Users Section - Superadmin Only */}
+      {isSuperAdmin && (
+        <Card className="mb-6 border-amber-500">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                  <AlertTriangle className="h-5 w-5" />
+                  Orphaned Users
+                </CardTitle>
+                <CardDescription>
+                  Users in auth.users but not in public.users (incomplete signups)
+                </CardDescription>
+              </div>
+              {!loadingOrphaned && (
+                <Badge variant={orphanedUsers.length > 0 ? "destructive" : "secondary"}>
+                  {orphanedUsers.length} orphaned
+                </Badge>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loadingOrphaned ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : orphanedUsers.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground">
+                <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                <p>No orphaned users found</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2 text-sm font-semibold">Email</th>
+                      <th className="text-left p-2 text-sm font-semibold">Name</th>
+                      <th className="text-left p-2 text-sm font-semibold">Created</th>
+                      <th className="text-left p-2 text-sm font-semibold">Provider</th>
+                      <th className="text-right p-2 text-sm font-semibold">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orphanedUsers.map((user) => (
+                      <tr key={user.id} className="border-b hover:bg-muted/50">
+                        <td className="p-2 text-sm">{user.email}</td>
+                        <td className="p-2 text-sm">{user.name || <span className="text-muted-foreground">—</span>}</td>
+                        <td className="p-2 text-sm">{new Date(user.created_at).toLocaleDateString()}</td>
+                        <td className="p-2 text-sm">{user.provider}</td>
+                        <td className="p-2 text-right">
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openFixDialog({
+                                id: user.id,
+                                email: user.email,
+                                name: user.name,
+                                referred_by: user.referred_by
+                              })}
+                            >
+                              <UserPlus className="h-3 w-3 mr-1" />
+                              Fix
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => openDeleteAuthDialog({
+                                id: user.id,
+                                email: user.email,
+                                name: user.name
+                              })}
+                            >
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              Delete
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
@@ -794,6 +1010,113 @@ export default function AdminNetworkPage() {
               disabled={isUpdating}
             >
               {isUpdating ? "Updating..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Fix Orphaned User Dialog */}
+      <Dialog open={showFixDialog} onOpenChange={setShowFixDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Fix Orphaned User</DialogTitle>
+            <DialogDescription>
+              This will create a public.users record for this user, completing their signup process.
+            </DialogDescription>
+          </DialogHeader>
+          {orphanedUserToFix && (
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <p className="text-sm"><strong>Email:</strong> {orphanedUserToFix.email}</p>
+                <p className="text-sm"><strong>Name:</strong> {orphanedUserToFix.name || "Not set"}</p>
+                {orphanedUserToFix.referred_by && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Will be referred by: {orphanedUserToFix.referred_by}
+                  </p>
+                )}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                <p>This will:</p>
+                <ul className="list-disc list-inside mt-1 space-y-1">
+                  <li>Create user record in public.users</li>
+                  <li>Generate referral code</li>
+                  <li>Create referral relationship (if referrer exists)</li>
+                  <li>Set initial_payment_completed = false</li>
+                </ul>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowFixDialog(false)} disabled={isProcessing}>
+              Cancel
+            </Button>
+            <Button onClick={handleFixOrphanedUser} disabled={isProcessing}>
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Fixing...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Fix User
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Auth User Dialog */}
+      <Dialog open={showDeleteAuthDialog} onOpenChange={setShowDeleteAuthDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="h-5 w-5" />
+              Delete User from Auth
+            </DialogTitle>
+            <DialogDescription>
+              This will permanently delete this user from the auth.users table. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {orphanedUserToDelete && (
+            <div className="space-y-4">
+              <div className="p-4 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-900">
+                <p className="text-sm"><strong>Email:</strong> {orphanedUserToDelete.email}</p>
+                <p className="text-sm"><strong>Name:</strong> {orphanedUserToDelete.name || "Not set"}</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email-confirm">Type the email to confirm deletion:</Label>
+                <Input
+                  id="email-confirm"
+                  type="text"
+                  value={emailConfirmation}
+                  onChange={(e) => setEmailConfirmation(e.target.value)}
+                  placeholder={orphanedUserToDelete.email}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteAuthDialog(false)} disabled={isProcessing}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteAuthUser}
+              disabled={isProcessing || emailConfirmation !== orphanedUserToDelete?.email}
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Permanently
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
