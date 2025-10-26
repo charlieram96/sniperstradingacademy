@@ -3,12 +3,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Unlock, CreditCard, Crown, Info } from "lucide-react"
+import { Unlock, CreditCard, Users, Info } from "lucide-react"
 
 interface BypassAccessBannerProps {
   bypassInitialPayment?: boolean
   bypassSubscription?: boolean
-  premiumBypass?: boolean
+  bypassDirectReferrals?: boolean
   dismissed?: boolean
   onDismiss?: () => void
 }
@@ -16,12 +16,12 @@ interface BypassAccessBannerProps {
 export function BypassAccessBanner({
   bypassInitialPayment = false,
   bypassSubscription = false,
-  premiumBypass = false,
+  bypassDirectReferrals = false,
   dismissed = false,
   onDismiss,
 }: BypassAccessBannerProps) {
   // Don't show banner if dismissed or no bypasses are active
-  const hasAnyBypass = bypassInitialPayment || bypassSubscription || premiumBypass
+  const hasAnyBypass = bypassInitialPayment || bypassSubscription || bypassDirectReferrals
   if (!hasAnyBypass || dismissed) return null
 
   return (
@@ -51,10 +51,10 @@ export function BypassAccessBanner({
               Monthly Subscription ($199)
             </Badge>
           )}
-          {premiumBypass && (
-            <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-200">
-              <Crown className="h-3 w-3 mr-1" />
-              Premium Access (All Payments)
+          {bypassDirectReferrals && (
+            <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200">
+              <Users className="h-3 w-3 mr-1" />
+              Direct Referrals Requirement
             </Badge>
           )}
         </div>

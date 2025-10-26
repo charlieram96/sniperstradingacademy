@@ -45,6 +45,11 @@ interface NetworkUser {
   bypass_direct_referrals: boolean
   bypass_subscription: boolean
   bypass_initial_payment: boolean
+  referred_by: string | null
+  referrer: Array<{
+    name: string | null
+    network_position_id: string | null
+  }> | null
 }
 
 type SortField = "name" | "email" | "created_at" | "total_network_count" | "monthly_commission" | "active_direct_referrals_count"
@@ -178,7 +183,9 @@ export default function AdminNetworkPage() {
         premium_bypass,
         bypass_direct_referrals,
         bypass_subscription,
-        bypass_initial_payment
+        bypass_initial_payment,
+        referred_by,
+        referrer:users!referred_by(name, network_position_id)
       `)
       .order("created_at", { ascending: false })
 
@@ -566,6 +573,23 @@ export default function AdminNetworkPage() {
                           <p className="text-muted-foreground">Initial Payment</p>
                           <p className={`font-medium ${user.initial_payment_completed ? 'text-green-600' : 'text-yellow-600'}`}>
                             {user.initial_payment_completed ? "Completed" : "Pending"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Referred By</p>
+                          <p className="font-medium">
+                            {user.referrer && user.referrer.length > 0 ? (
+                              <>
+                                {user.referrer[0].name || "Unknown"}
+                                {user.referrer[0].network_position_id && (
+                                  <span className="text-xs text-muted-foreground ml-1">
+                                    (Pos: {user.referrer[0].network_position_id})
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-muted-foreground">No Referrer</span>
+                            )}
                           </p>
                         </div>
                         <div>

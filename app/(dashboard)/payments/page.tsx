@@ -13,6 +13,7 @@ function PaymentsContent() {
   const [userId, setUserId] = useState<string | null>(null)
   const searchParams = useSearchParams()
   const [initialPaymentCompleted, setInitialPaymentCompleted] = useState(false)
+  const [bypassSubscription, setBypassSubscription] = useState(false)
   const [processingInitial, setProcessingInitial] = useState(false)
   const [paymentSchedule, setPaymentSchedule] = useState<"weekly" | "monthly">("monthly")
   const [subscription, setSubscription] = useState<{
@@ -72,12 +73,13 @@ function PaymentsContent() {
       // Get user data
       const { data: userData } = await supabase
         .from("users")
-        .select("initial_payment_completed")
+        .select("initial_payment_completed, bypass_subscription")
         .eq("id", userId)
         .single()
-      
+
       if (userData) {
         setInitialPaymentCompleted(userData.initial_payment_completed || false)
+        setBypassSubscription(userData.bypass_subscription || false)
       }
       
       // Get subscription
@@ -230,6 +232,35 @@ function PaymentsContent() {
         <p className="text-muted-foreground mt-2">Manage your subscription and view payment history</p>
       </div>
 
+      {/* Activation Required Banner */}
+      {!initialPaymentCompleted && (
+        <Card className="mb-6 border-red-500 bg-red-50 dark:bg-red-950/20">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <Lock className="h-6 w-6 text-red-600 dark:text-red-400" />
+              <div>
+                <CardTitle className="text-red-900 dark:text-red-200">Account Locked - Activation Required</CardTitle>
+                <CardDescription className="text-red-700 dark:text-red-300 mt-1">
+                  Complete the initial payment below to activate your account and unlock all platform features.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="p-3 bg-white dark:bg-gray-900 rounded-lg border border-red-200 dark:border-red-800">
+              <p className="text-sm text-red-800 dark:text-red-300">
+                <strong>Important:</strong> Until you complete the $499 activation payment, your account will remain locked and:
+              </p>
+              <ul className="mt-2 space-y-1 text-sm text-red-700 dark:text-red-300 list-disc list-inside">
+                <li>Your referral code will not work (referrals cannot sign up using your code)</li>
+                <li>You cannot access the Trading Academy or other platform features</li>
+                <li>You cannot view team statistics or earn commissions</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Success/Cancel Messages */}
       {success && (
         <Card className="mb-6 border-green-500/20 bg-green-500/5">
@@ -322,6 +353,18 @@ function PaymentsContent() {
                   Cancel Subscription
                 </Button>
               </div>
+            </div>
+          ) : bypassSubscription ? (
+            <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border-2 border-green-200 dark:border-green-900">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <p className="font-semibold text-green-900 dark:text-green-300">
+                  Subscription Bypass Active
+                </p>
+              </div>
+              <p className="text-sm text-green-700 dark:text-green-400">
+                You have been granted subscription bypass. You do not need to pay the monthly subscription fee.
+              </p>
             </div>
           ) : (
             <div>

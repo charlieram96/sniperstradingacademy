@@ -37,6 +37,9 @@ export async function middleware(req: NextRequest) {
   const isAuthPage = req.nextUrl.pathname.startsWith("/login") ||
                      req.nextUrl.pathname.startsWith("/register")
   const isMFAPage = req.nextUrl.pathname.startsWith("/mfa-verify")
+  const isPaymentsPage = req.nextUrl.pathname.startsWith("/payments")
+  const isSettingsPage = req.nextUrl.pathname.startsWith("/settings")
+  const isAdminPage = req.nextUrl.pathname.startsWith("/admin")
   const isDashboard = req.nextUrl.pathname.startsWith("/dashboard") ||
                       req.nextUrl.pathname.startsWith("/academy") ||
                       req.nextUrl.pathname.startsWith("/team") ||
@@ -54,6 +57,24 @@ export async function middleware(req: NextRequest) {
   // If user needs MFA but hasn't completed it, redirect to MFA verify page
   if (isLoggedIn && needsMFA && !isMFAPage) {
     return NextResponse.redirect(new URL("/mfa-verify", req.url))
+  }
+
+  // Check if user is active (paid initial fee or has bypass)
+  if (isLoggedIn && isDashboard && !isMFAPage) {
+    const { data: userData } = await supabase
+      .from("users")
+      .select("initial_payment_completed, bypass_initial_payment, role")
+      .eq("id", user.id)
+      .single()
+
+    const isActive = userData?.initial_payment_completed || userData?.bypass_initial_payment
+    const isAdmin = userData?.role === "admin" || userData?.role === "superadmin"
+
+    // Admins bypass activation check
+    // Inactive users can only access /payments, /settings, and /mfa-verify
+    if (!isActive && !isAdmin && !isPaymentsPage && !isSettingsPage) {
+      return NextResponse.redirect(new URL("/payments", req.url))
+    }
   }
 
   // Redirect authenticated users away from auth pages (but not from MFA page)

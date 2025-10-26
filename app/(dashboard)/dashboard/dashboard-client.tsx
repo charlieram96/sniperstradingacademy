@@ -80,7 +80,7 @@ export function DashboardClient({
   session,
   bypassInitialPayment = false,
   bypassSubscription = false,
-  premiumBypass = false,
+  bypassDirectReferrals = false,
   bypassBannerDismissed = false
 }: {
   data: DashboardData
@@ -93,7 +93,7 @@ export function DashboardClient({
   }
   bypassInitialPayment?: boolean
   bypassSubscription?: boolean
-  premiumBypass?: boolean
+  bypassDirectReferrals?: boolean
   bypassBannerDismissed?: boolean
 }) {
   const [selectedStructure, setSelectedStructure] = useState("1")
@@ -230,10 +230,58 @@ export function DashboardClient({
         <BypassAccessBanner
           bypassInitialPayment={bypassInitialPayment}
           bypassSubscription={bypassSubscription}
-          premiumBypass={premiumBypass}
+          bypassDirectReferrals={bypassDirectReferrals}
           dismissed={bannerDismissed}
           onDismiss={handleDismissBanner}
         />
+      )}
+
+      {/* Activation Required Banner */}
+      {!data.initialPaymentCompleted && !bypassInitialPayment && !isTestUser(session.user.id) && (
+        <Card className="mb-6 border-amber-500 bg-amber-50 dark:bg-amber-950/20">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <Lock className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+              <div>
+                <CardTitle className="text-amber-900 dark:text-amber-200">Account Activation Required</CardTitle>
+                <CardDescription className="text-amber-700 dark:text-amber-300 mt-1">
+                  Your account is currently locked. Complete the initial payment to unlock all platform features.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="p-4 bg-white dark:bg-gray-900 rounded-lg border border-amber-200 dark:border-amber-800">
+                <h3 className="font-semibold text-amber-900 dark:text-amber-200 mb-2">What you&apos;ll unlock:</h3>
+                <ul className="space-y-2 text-sm text-amber-800 dark:text-amber-300">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    Access to Trading Academy and live classes
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    Ability to refer others and earn commissions
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    View your team and network statistics
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    Access to financial dashboard and earnings
+                  </li>
+                </ul>
+              </div>
+              <NavigationLink href="/payments">
+                <Button size="lg" className="w-full bg-amber-600 hover:bg-amber-700 text-white">
+                  <Unlock className="h-5 w-5 mr-2" />
+                  Activate Account - Pay $499
+                </Button>
+              </NavigationLink>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       <div className="mb-8">
@@ -442,7 +490,7 @@ export function DashboardClient({
       )}
 
       {/* Membership Status Alert */}
-      {!data.initialPaymentCompleted && !isTestUser(session.user.id) && !premiumBypass && (
+      {!data.initialPaymentCompleted && !isTestUser(session.user.id) && !bypassInitialPayment && (
         <Card className="mb-6 border-destructive/20 bg-destructive/5">
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -465,7 +513,7 @@ export function DashboardClient({
       )}
 
       {/* Subscription Alert */}
-      {data.initialPaymentCompleted && !data.subscription && !isTestUser(session.user.id) && !premiumBypass && (
+      {data.initialPaymentCompleted && !data.subscription && !isTestUser(session.user.id) && !bypassSubscription && (
         <Card className="mb-6 border-yellow-500/20 bg-yellow-500/5">
           <CardHeader>
             <div className="flex items-center gap-2">

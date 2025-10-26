@@ -24,7 +24,7 @@ export default async function NetworkVisualizerPage() {
   // Fetch all users with network positions
   const { data: networkUsers, error: usersError } = await supabase
     .from("users")
-    .select("id, email, name, network_position_id, network_level, network_position, tree_parent_network_position_id, is_active, created_at, initial_payment_completed, last_referral_branch, total_network_count, active_network_count")
+    .select("id, email, name, network_position_id, network_level, network_position, tree_parent_network_position_id, is_active, created_at, initial_payment_completed, last_referral_branch, total_network_count, active_network_count, referred_by, referrer:users!referred_by(name, network_position_id)")
     .not("network_position_id", "is", null)
     .order("network_level", { ascending: true })
     .order("network_position", { ascending: true })
