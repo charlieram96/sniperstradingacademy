@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     // Find user by referral code (case-insensitive)
     const { data: user, error } = await supabase
       .from("users")
-      .select("id, name, email, referral_code")
+      .select("id, name, email, referral_code, initial_payment_completed, bypass_initial_payment")
       .ilike("referral_code", codeUpperCase)
       .single()
 
@@ -38,6 +38,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Invalid referral code" },
         { status: 404 }
+      )
+    }
+
+    // Check if referrer is active (has paid or has bypass)
+    const isReferrerActive = user.initial_payment_completed || user.bypass_initial_payment
+    if (!isReferrerActive) {
+      console.log("Referral code from inactive user:", { code: codeUpperCase, userId: user.id })
+      return NextResponse.json(
+        { error: "This referral code is from an inactive account. Please ask your referrer to activate their account first, or use a different referral code." },
+        { status: 403 }
       )
     }
 

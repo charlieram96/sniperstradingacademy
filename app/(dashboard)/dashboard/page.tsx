@@ -142,7 +142,7 @@ export default async function DashboardPage() {
   // Get all bypass flags
   const { data: userBypassData } = await supabase
     .from("users")
-    .select("bypass_initial_payment, bypass_subscription, premium_bypass, bypass_banner_dismissed")
+    .select("bypass_initial_payment, bypass_subscription, bypass_direct_referrals, bypass_banner_dismissed")
     .eq("id", user.id)
     .single()
 
@@ -158,7 +158,7 @@ export default async function DashboardPage() {
       }}
       bypassInitialPayment={userBypassData?.bypass_initial_payment || false}
       bypassSubscription={userBypassData?.bypass_subscription || false}
-      premiumBypass={userBypassData?.premium_bypass || false}
+      bypassDirectReferrals={userBypassData?.bypass_direct_referrals || false}
       bypassBannerDismissed={userBypassData?.bypass_banner_dismissed || false}
     />
   )

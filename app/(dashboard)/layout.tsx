@@ -31,16 +31,17 @@ export default async function DashboardLayout({
     redirect("/login")
   }
 
-  // Get user role from database
+  // Get user role and activation status from database
   const { data: userData } = await supabase
     .from("users")
-    .select("role")
+    .select("role, initial_payment_completed, bypass_initial_payment")
     .eq("id", user.id)
     .single()
 
   const userRole = userData?.role
   const isAdminOrSuper = userRole === "admin" || userRole === "superadmin"
   const isSuperAdmin = userRole === "superadmin"
+  const isActive = userData?.initial_payment_completed || userData?.bypass_initial_payment || isAdminOrSuper
 
   return (
     <div className="min-h-screen bg-background">
@@ -53,6 +54,7 @@ export default async function DashboardLayout({
         <nav className="flex-1 py-4 overflow-y-auto">
           <NavigationLink
             href="/dashboard"
+            isLocked={!isActive}
             className="flex items-center gap-3 px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
             <LayoutDashboard className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
@@ -60,6 +62,7 @@ export default async function DashboardLayout({
           </NavigationLink>
           <NavigationLink
             href="/academy"
+            isLocked={!isActive}
             className="flex items-center gap-3 px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
             <GraduationCap className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
@@ -67,6 +70,7 @@ export default async function DashboardLayout({
           </NavigationLink>
           <NavigationLink
             href="/team"
+            isLocked={!isActive}
             className="flex items-center gap-3 px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
             <Users className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
@@ -74,6 +78,7 @@ export default async function DashboardLayout({
           </NavigationLink>
           <NavigationLink
             href="/finance"
+            isLocked={!isActive}
             className="flex items-center gap-3 px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
             <DollarSign className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
@@ -88,6 +93,7 @@ export default async function DashboardLayout({
           </NavigationLink>
           <NavigationLink
             href="/referrals"
+            isLocked={!isActive}
             className="flex items-center gap-3 px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
             <Share2 className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />

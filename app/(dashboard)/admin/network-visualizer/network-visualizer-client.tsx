@@ -36,6 +36,11 @@ interface NetworkUser {
   last_referral_branch: number | null
   total_network_count: number
   active_network_count: number
+  referred_by: string | null
+  referrer: Array<{
+    name: string | null
+    network_position_id: string | null
+  }> | null
 }
 
 interface ChildPosition {
@@ -422,6 +427,25 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
                   </div>
                 </div>
               </div>
+
+              {/* Referred By */}
+              {selectedUser.referrer && selectedUser.referrer.length > 0 && (
+                <div className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border-2 border-amber-200 dark:border-amber-900">
+                  <h3 className="font-semibold text-sm mb-2 text-amber-700 dark:text-amber-400">Referred By</h3>
+                  <div className="space-y-1 text-sm">
+                    <div>
+                      <span className="font-medium">{selectedUser.referrer[0].name || "Unknown"}</span>
+                    </div>
+                    {selectedUser.referrer[0].network_position_id && (
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs bg-background px-2 py-1 rounded">
+                          Position: {selectedUser.referrer[0].network_position_id}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Children */}
               <div>

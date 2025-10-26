@@ -52,6 +52,7 @@ export default function AdminClassesPage() {
   const [showCompleteDialog, setShowCompleteDialog] = useState(false)
   const [classToDelete, setClassToDelete] = useState<AcademyClass | null>(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [openCalendarIndex, setOpenCalendarIndex] = useState<number | null>(null)
 
   useEffect(() => {
     checkAdminStatus()
@@ -133,12 +134,14 @@ export default function AdminClassesPage() {
 
     setEditingIndex(null)
     setEditData(null)
+    setOpenCalendarIndex(null)
     fetchClasses()
   }
 
   function cancelEdit() {
     setEditingIndex(null)
     setEditData(null)
+    setOpenCalendarIndex(null)
   }
 
   function openCompleteDialog(classItem: AcademyClass) {
@@ -403,7 +406,7 @@ export default function AdminClassesPage() {
                           <CalendarIcon className="h-3 w-3" />
                           Scheduled Date & Time (EST)
                         </Label>
-                        <Popover>
+                        <Popover open={openCalendarIndex === index} onOpenChange={(open) => setOpenCalendarIndex(open ? index : null)}>
                           <PopoverTrigger asChild>
                             <Button
                               variant="outline"

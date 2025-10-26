@@ -29,16 +29,16 @@ export default function CompleteSignupPage() {
       try {
         const supabase = createClient()
 
-        // Get current Supabase session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        // Get current authenticated user
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
 
         // If not authenticated, redirect to register
-        if (sessionError || !session) {
+        if (userError || !user) {
           router.push("/register")
           return
         }
 
-        const userEmail = session.user.email
+        const userEmail = user.email
         if (!userEmail) {
           throw new Error("No user email found")
         }
