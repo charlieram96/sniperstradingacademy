@@ -331,7 +331,7 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
 
       {/* User Details Dialog */}
       <Dialog open={!!selectedUser} onOpenChange={(open) => !open && closeDialog()}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>User Details & Child Positions</DialogTitle>
           </DialogHeader>
