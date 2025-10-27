@@ -503,7 +503,7 @@ export default function AdminClassesPage() {
                         <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{classItem.description}</p>
                       )}
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
-                        <Calendar className="h-3.5 w-3.5" />
+                        <CalendarIcon className="h-3.5 w-3.5" />
                         <span>
                           {new Date(classItem.scheduled_at).toLocaleString("en-US", {
                             month: "short",
@@ -577,7 +577,7 @@ export default function AdminClassesPage() {
                 <div className="text-sm text-muted-foreground mb-2">{classToComplete.description}</div>
               )}
               <div className="text-xs text-muted-foreground flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
+                <CalendarIcon className="h-3 w-3" />
                 {new Date(classToComplete.scheduled_at).toLocaleString("en-US", {
                   month: "short",
                   day: "numeric",

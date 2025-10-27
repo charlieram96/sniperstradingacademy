@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server"
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,8 +28,9 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get all users from auth.users (need to use admin client)
-    const { data: { users: authUsers }, error: authUsersError } = await supabase.auth.admin.listUsers()
+    // Get all users from auth.users (need to use service role client for admin API)
+    const adminClient = createServiceRoleClient()
+    const { data: { users: authUsers }, error: authUsersError } = await adminClient.auth.admin.listUsers()
 
     if (authUsersError) {
       console.error("Error fetching auth users:", authUsersError)
