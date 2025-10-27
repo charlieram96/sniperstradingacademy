@@ -222,11 +222,6 @@ export default function AdminNetworkPage() {
   }
 
   async function fetchOrphanedUsers() {
-    if (!isSuperAdmin) {
-      setLoadingOrphaned(false)
-      return
-    }
-
     try {
       const response = await fetch("/api/admin/users/orphaned")
       if (response.ok) {
