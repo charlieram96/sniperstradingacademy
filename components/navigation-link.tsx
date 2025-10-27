@@ -53,7 +53,7 @@ export function NavigationLink({ href, children, className, onClick, isLocked = 
 
   return (
     <Link href={href} onClick={handleClick} className={combinedClassName}>
-      <div className="flex items-center justify-between w-full">
+      <div className="flex items-center w-full">
         {children}
         {isLocked && <Lock className="h-3 w-3 ml-auto text-muted-foreground" />}
       </div>
