@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server"
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,8 +38,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get user from auth.users to verify email matches
-    const { data: { user: authUser }, error: authUserError } = await supabase.auth.admin.getUserById(user_id)
+    // Get user from auth.users to verify email matches (need service role client for admin API)
+    const adminClient = createServiceRoleClient()
+    const { data: { user: authUser }, error: authUserError } = await adminClient.auth.admin.getUserById(user_id)
 
     if (authUserError || !authUser) {
       console.error("Error fetching auth user:", authUserError)
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Delete user from auth.users using admin API
-    const { error: deleteError } = await supabase.auth.admin.deleteUser(user_id)
+    const { error: deleteError } = await adminClient.auth.admin.deleteUser(user_id)
 
     if (deleteError) {
       console.error("Error deleting auth user:", deleteError)
