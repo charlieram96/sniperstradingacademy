@@ -738,7 +738,7 @@ export default function AdminNetworkPage() {
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground mb-2">{user.email}</p>
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-sm">
                         <div>
                           <p className="text-muted-foreground">Direct Referrals</p>
                           <p className="font-medium">{user.active_direct_referrals_count}</p>
@@ -758,6 +758,16 @@ export default function AdminNetworkPage() {
                         <div>
                           <p className="text-muted-foreground">Monthly Earnings</p>
                           <p className="font-medium text-primary">{formatCurrency(user.monthly_commission)}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Referred By</p>
+                          <p className="font-medium truncate">
+                            {user.referrer && user.referrer.length > 0 ? (
+                              user.referrer[0].name || "Unknown"
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </p>
                         </div>
                       </div>
                     </div>
