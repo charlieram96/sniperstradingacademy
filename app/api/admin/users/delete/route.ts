@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function POST(request: NextRequest) {
@@ -53,7 +53,8 @@ export async function POST(request: NextRequest) {
 
     // If successful, also delete from auth.users using Supabase Admin API
     try {
-      const { error: authDeleteError } = await supabase.auth.admin.deleteUser(userId)
+      const adminClient = createServiceRoleClient()
+      const { error: authDeleteError } = await adminClient.auth.admin.deleteUser(userId)
 
       if (authDeleteError) {
         console.error("Auth deletion error:", authDeleteError)

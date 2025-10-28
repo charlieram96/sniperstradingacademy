@@ -2,12 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { AlertCircle, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { AlertCircle } from "lucide-react"
 
 export function GlobalBanner() {
   const [banner, setBanner] = useState<string | null>(null)
-  const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
     async function fetchBanner() {
@@ -26,25 +24,15 @@ export function GlobalBanner() {
     fetchBanner()
   }, [])
 
-  if (!banner || dismissed) {
+  if (!banner) {
     return null
   }
 
   return (
-    <div className="w-full bg-primary/10 border-b border-primary/20 px-4 py-3">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2 flex-1">
-          <AlertCircle className="h-4 w-4 text-primary flex-shrink-0" />
-          <p className="text-sm text-foreground">{banner}</p>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setDismissed(true)}
-          className="flex-shrink-0 h-6 w-6 p-0"
-        >
-          <X className="h-4 w-4" />
-        </Button>
+    <div className="fixed top-0 left-0 right-0 z-[60] w-full bg-primary/10 border-b border-primary/20 px-4 py-3">
+      <div className="max-w-7xl mx-auto flex items-center gap-2">
+        <AlertCircle className="h-4 w-4 text-primary flex-shrink-0" />
+        <p className="text-sm text-foreground">{banner}</p>
       </div>
     </div>
   )
