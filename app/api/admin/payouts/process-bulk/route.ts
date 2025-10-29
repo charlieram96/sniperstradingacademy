@@ -41,7 +41,12 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { commissionIds } = body
 
-    // Get commissions to process
+    // Calculate date range for previous month's direct bonuses
+    const now = new Date()
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+
+    // Get commissions to process (both residual and previous month's direct bonuses)
     let query = supabase
       .from("commissions")
       .select(`
@@ -50,20 +55,22 @@ export async function POST(req: NextRequest) {
         amount,
         status,
         retry_count,
+        commission_type,
         users!commissions_referrer_id_fkey (
           name,
           email,
           stripe_connect_account_id
         )
       `)
-      .eq("commission_type", "residual_monthly")
 
     // If specific IDs provided, filter by them
     if (commissionIds && Array.isArray(commissionIds) && commissionIds.length > 0) {
       query = query.in("id", commissionIds)
     } else {
-      // Otherwise process all pending/failed
-      query = query.in("status", ["pending", "failed"])
+      // Otherwise process all pending/failed residual commissions AND previous month's direct bonuses
+      query = query
+        .or(`commission_type.eq.residual_monthly,and(commission_type.eq.direct_bonus,created_at.gte.${previousMonthStart.toISOString()},created_at.lt.${currentMonthStart.toISOString()})`)
+        .in("status", ["pending", "failed"])
     }
 
     const { data: commissions, error: commissionsError } = await query
@@ -96,12 +103,15 @@ export async function POST(req: NextRequest) {
     const availableBalance = balance.available.find(b => b.currency === 'usd')
     const availableAmount = availableBalance ? availableBalance.amount / 100 : 0
 
-    const totalNeeded = commissions.reduce((sum, c) => sum + parseFloat(c.amount), 0)
-    const totalFees = commissions.length * 0.25
+    // Calculate total needed after 3.5% fee deduction
+    const FEE_PERCENTAGE = 0.035
+    const totalGross = commissions.reduce((sum, c) => sum + parseFloat(c.amount), 0)
+    const totalNet = totalGross * (1 - FEE_PERCENTAGE)
+    const stripeFees = commissions.length * 0.25 // Stripe's own processing fees
 
-    if (availableAmount < totalNeeded + totalFees) {
+    if (availableAmount < totalNet + stripeFees) {
       return NextResponse.json({
-        error: `Insufficient Stripe balance. Available: $${availableAmount.toFixed(2)}, Needed: $${(totalNeeded + totalFees).toFixed(2)}`,
+        error: `Insufficient Stripe balance. Available: $${availableAmount.toFixed(2)}, Needed: $${(totalNet + stripeFees).toFixed(2)}`,
       }, { status: 400 })
     }
 
@@ -197,18 +207,24 @@ export async function POST(req: NextRequest) {
       }
 
       // Create Stripe transfer
-      const amountInCents = Math.round(parseFloat(commission.amount) * 100)
+      // Apply 3.5% Stripe transaction fee (pass-through cost, not markup)
+      const FEE_PERCENTAGE = 0.035
+      const grossAmount = parseFloat(commission.amount)
+      const feeAmount = grossAmount * FEE_PERCENTAGE
+      const netAmount = grossAmount - feeAmount
+      const amountInCents = Math.round(netAmount * 100)
 
       try {
         const transfer = await stripe.transfers.create({
           amount: amountInCents,
           currency: "usd",
           destination: user.stripe_connect_account_id,
-          transfer_group: `residual_${commission.id}`,
+          transfer_group: `monthly_payout_${commission.id}`,
           metadata: {
             userId: commission.referrer_id,
             commissionId: commission.id,
-            type: "residual_monthly",
+            type: commission.commission_type, // Can be "residual_monthly" or "direct_bonus"
+            paymentMonth: now.toISOString().slice(0, 7), // e.g., "2025-11"
           },
         })
 
@@ -228,7 +244,7 @@ export async function POST(req: NextRequest) {
         results.push({
           commissionId: commission.id,
           userName: user.name || "Unknown",
-          amount: parseFloat(commission.amount),
+          amount: netAmount, // Net amount after fee
           success: true,
           transferId: transfer.id
         })

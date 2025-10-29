@@ -35,6 +35,7 @@ interface Commission {
   referrerId: string
   amount: number
   status: string
+  commissionType: string
   userName: string
   userEmail: string
   stripeConnectAccountId: string | null
@@ -219,18 +220,38 @@ export default function AdminPayoutsPage() {
           <DollarSign className="h-6 w-6 text-primary" />
           <h1 className="text-3xl font-bold text-foreground">Monthly Commission Payouts</h1>
         </div>
-        <p className="text-muted-foreground">Process residual commission payouts to users</p>
+        <p className="text-muted-foreground">Process residual commissions and direct bonuses (~15th of each month)</p>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Pending</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Gross Total</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-amber-500">${summary.totalAmount.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">{summary.total} users</p>
+            <div className="text-2xl font-bold">${summary.totalAmount.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">Before fees</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Fees</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-500">-${(summary.totalAmount * 0.035).toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">Stripe 3.5%</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Net Transfer</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-primary">${(summary.totalAmount * 0.965).toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">Actual payout</p>
           </CardContent>
         </Card>
 
@@ -239,8 +260,8 @@ export default function AdminPayoutsPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.pending}</div>
-            <p className="text-xs text-muted-foreground">Not yet processed</p>
+            <div className="text-2xl font-bold text-amber-500">{summary.pending}</div>
+            <p className="text-xs text-muted-foreground">Not processed</p>
           </CardContent>
         </Card>
 
@@ -334,7 +355,10 @@ export default function AdminPayoutsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>User</TableHead>
-                  <TableHead>Amount</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Gross Amount</TableHead>
+                  <TableHead>Fee (3.5%)</TableHead>
+                  <TableHead>Net Transfer</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Error</TableHead>
                   <TableHead>Retries</TableHead>
@@ -344,7 +368,7 @@ export default function AdminPayoutsPage() {
               <TableBody>
                 {filteredCommissions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       No commissions to display
                     </TableCell>
                   </TableRow>
@@ -357,8 +381,25 @@ export default function AdminPayoutsPage() {
                           <p className="text-sm text-muted-foreground">{commission.userEmail}</p>
                         </div>
                       </TableCell>
-                      <TableCell className="font-mono font-semibold">
+                      <TableCell>
+                        {commission.commissionType === "direct_bonus" ? (
+                          <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/20">
+                            Direct Bonus
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20">
+                            Residual
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="font-mono">
                         ${commission.amount.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="font-mono text-red-500">
+                        -${(commission.amount * 0.035).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="font-mono font-semibold text-primary">
+                        ${(commission.amount * 0.965).toFixed(2)}
                       </TableCell>
                       <TableCell>
                         {commission.status === "pending" ? (

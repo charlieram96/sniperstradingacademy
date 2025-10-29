@@ -27,7 +27,12 @@ export async function GET() {
       )
     }
 
-    // Fetch all pending residual commissions with user details
+    // Calculate date range for previous month's direct bonuses
+    const now = new Date()
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+
+    // Fetch ALL pending/failed residual commissions AND previous month's direct bonuses
     const { data: commissions, error: commissionsError } = await supabase
       .from("commissions")
       .select(`
@@ -48,7 +53,7 @@ export async function GET() {
           stripe_connect_account_id
         )
       `)
-      .eq("commission_type", "residual_monthly")
+      .or(`commission_type.eq.residual_monthly,and(commission_type.eq.direct_bonus,created_at.gte.${previousMonthStart.toISOString()},created_at.lt.${currentMonthStart.toISOString()})`)
       .in("status", ["pending", "failed"])
       .order("created_at", { ascending: false })
 
@@ -68,6 +73,7 @@ export async function GET() {
         referrerId: commission.referrer_id,
         amount: parseFloat(commission.amount),
         status: commission.status,
+        commissionType: commission.commission_type, // Add this for display
         userName: user?.name || "Unknown",
         userEmail: user?.email || "No email",
         stripeConnectAccountId: user?.stripe_connect_account_id || null,
