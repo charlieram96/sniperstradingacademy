@@ -205,7 +205,7 @@ export default function TeamPage() {
           activeMembers: stats.network.activeMembers,
           directReferralsCount: stats.network.directReferrals,
           activeDirectReferralsCount: activeDirectCount,
-          totalMonthlyVolume: stats.earnings.actualMonthlyEarnings,
+          totalMonthlyVolume: stats.sniperVolume.currentMonth,
           qualificationStatus: stats.earnings.canWithdraw,
           levels,
           structures: stats.structures.current,
@@ -752,9 +752,9 @@ export default function TeamPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-primary">
-              ${teamStats.qualificationStatus ? (teamStats.totalMonthlyVolume * 0.1).toLocaleString() : "0"}
+              ${teamStats.qualificationStatus ? (teamStats.totalMonthlyVolume * teamStats.commissionRate).toLocaleString() : "0"}
             </div>
-            <p className="text-xs text-muted-foreground">10% commission</p>
+            <p className="text-xs text-muted-foreground">{(teamStats.commissionRate * 100).toFixed(0)}% commission</p>
           </CardContent>
         </Card>
       </div>

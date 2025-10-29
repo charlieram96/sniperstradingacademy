@@ -50,7 +50,7 @@ export default async function DashboardLayout({
 
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col fixed h-full z-40 pt-[98px]">
+        <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col fixed h-full z-40 pt-[calc(var(--banner-height,0px)+50px)] transition-all duration-200" style={{ paddingTop: 'calc(var(--banner-height, 0px) + 50px)' }}>
         <nav className="flex-1 py-4 overflow-y-auto">
           <NavigationLink
             href="/dashboard"
@@ -183,7 +183,7 @@ export default async function DashboardLayout({
       <DashboardHeader user={user} />
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto ml-64 pt-[98px]">
+      <main className="flex-1 overflow-auto ml-64 transition-all duration-200" style={{ paddingTop: 'calc(var(--banner-height, 0px) + 50px)' }}>
         <div className="p-8">
           {children}
         </div>
