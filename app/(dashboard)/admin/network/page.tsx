@@ -37,7 +37,8 @@ interface NetworkUser {
   total_network_count: number
   active_network_count: number
   current_commission_rate: number
-  monthly_commission: number
+  sniper_volume_current_month: number
+  monthly_commission: number // Calculated: sniper_volume_current_month × current_commission_rate
   created_at: string
   last_payment_date: string | null
   payment_schedule: "weekly" | "monthly"
@@ -201,7 +202,7 @@ export default function AdminNetworkPage() {
         total_network_count,
         active_network_count,
         current_commission_rate,
-        monthly_commission,
+        sniper_volume_current_month,
         created_at,
         last_payment_date,
         payment_schedule,
@@ -216,7 +217,12 @@ export default function AdminNetworkPage() {
       .order("created_at", { ascending: false })
 
     if (!error && data) {
-      setUsers(data)
+      // Calculate monthly_commission dynamically
+      const usersWithCommission = data.map(user => ({
+        ...user,
+        monthly_commission: parseFloat(user.sniper_volume_current_month || 0) * parseFloat(user.current_commission_rate || 0)
+      }))
+      setUsers(usersWithCommission)
     }
     setLoading(false)
   }

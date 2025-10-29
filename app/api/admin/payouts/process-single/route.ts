@@ -139,7 +139,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Create Stripe transfer
-    const amountInCents = Math.round(parseFloat(commission.amount) * 100)
+    // Apply 3.5% Stripe transaction fee (pass-through cost, not markup)
+    const FEE_PERCENTAGE = 0.035
+    const grossAmount = parseFloat(commission.amount)
+    const feeAmount = grossAmount * FEE_PERCENTAGE
+    const netAmount = grossAmount - feeAmount
+    const amountInCents = Math.round(netAmount * 100)
 
     try {
       const transfer = await stripe.transfers.create({
@@ -180,7 +185,10 @@ export async function POST(req: NextRequest) {
         success: true,
         transferId: transfer.id,
         commissionId: commission.id,
-        amount: parseFloat(commission.amount),
+        grossAmount: grossAmount,
+        netAmount: netAmount,
+        feeAmount: feeAmount,
+        amount: netAmount, // For backward compatibility
         userName: user.name,
       })
     } catch (stripeError) {

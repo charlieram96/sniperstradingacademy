@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Pencil, Save, X, PlayCircle, Shield, CheckCircle, Bell, Calendar as CalendarIcon, AlertTriangle, Trash2, Plus } from "lucide-react"
+import { Pencil, Save, X, PlayCircle, Shield, CheckCircle, Bell, Calendar as CalendarIcon, AlertTriangle, Trash2, Plus, AlertCircle, Info, Megaphone, Sparkles, Star, Zap, Clock } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
@@ -48,6 +48,8 @@ export default function AdminClassesPage() {
   const [banner, setBanner] = useState("")
   const [editingBanner, setEditingBanner] = useState(false)
   const [bannerText, setBannerText] = useState("")
+  const [bannerColor, setBannerColor] = useState("green")
+  const [bannerIcon, setBannerIcon] = useState("AlertCircle")
   const [classToComplete, setClassToComplete] = useState<AcademyClass | null>(null)
   const [showCompleteDialog, setShowCompleteDialog] = useState(false)
   const [classToDelete, setClassToDelete] = useState<AcademyClass | null>(null)
@@ -97,7 +99,18 @@ export default function AdminClassesPage() {
       .single()
 
     if (data?.setting_value) {
-      setBanner(data.setting_value)
+      // Try to parse as JSON
+      try {
+        const parsed = JSON.parse(data.setting_value)
+        setBanner(parsed.text || "")
+        setBannerColor(parsed.color || "green")
+        setBannerIcon(parsed.icon || "AlertCircle")
+      } catch {
+        // Plain text - use defaults
+        setBanner(data.setting_value)
+        setBannerColor("green")
+        setBannerIcon("AlertCircle")
+      }
     }
   }
 
@@ -228,10 +241,18 @@ export default function AdminClassesPage() {
 
   async function saveBanner() {
     const supabase = createClient()
+
+    // Create JSON config
+    const bannerConfig = bannerText ? JSON.stringify({
+      text: bannerText,
+      color: bannerColor,
+      icon: bannerIcon
+    }) : null
+
     const { error } = await supabase
       .from("site_settings")
       .update({
-        setting_value: bannerText || null,
+        setting_value: bannerConfig,
         updated_at: new Date().toISOString()
       })
       .eq("setting_key", "global_banner")
@@ -306,8 +327,150 @@ export default function AdminClassesPage() {
                   onChange={(e) => setBannerText(e.target.value)}
                   placeholder="Enter banner message (e.g., 'System maintenance scheduled for Dec 25th')"
                   rows={3}
+                  className="mt-2"
                 />
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="bannerColor">Banner Color</Label>
+                  <Select value={bannerColor} onValueChange={setBannerColor}>
+                    <SelectTrigger id="bannerColor" className="mt-2">
+                      <SelectValue placeholder="Select color" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="green">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded bg-green-600"></div>
+                          <span>Green</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="red">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded bg-red-600"></div>
+                          <span>Red</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="purple">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded bg-gradient-to-r from-purple-600 to-purple-700"></div>
+                          <span>Purple</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="gray">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded bg-gray-700"></div>
+                          <span>Gray</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="black">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded bg-black border border-gray-600"></div>
+                          <span>Black</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="bannerIcon">Banner Icon</Label>
+                  <Select value={bannerIcon} onValueChange={setBannerIcon}>
+                    <SelectTrigger id="bannerIcon" className="mt-2">
+                      <SelectValue placeholder="Select icon" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="AlertCircle">
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4" />
+                          <span>Alert Circle</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="Info">
+                        <div className="flex items-center gap-2">
+                          <Info className="h-4 w-4" />
+                          <span>Info</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="Bell">
+                        <div className="flex items-center gap-2">
+                          <Bell className="h-4 w-4" />
+                          <span>Bell</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="AlertTriangle">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4" />
+                          <span>Alert Triangle</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="Megaphone">
+                        <div className="flex items-center gap-2">
+                          <Megaphone className="h-4 w-4" />
+                          <span>Megaphone</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="Sparkles">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="h-4 w-4" />
+                          <span>Sparkles</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="Star">
+                        <div className="flex items-center gap-2">
+                          <Star className="h-4 w-4" />
+                          <span>Star</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="Zap">
+                        <div className="flex items-center gap-2">
+                          <Zap className="h-4 w-4" />
+                          <span>Zap</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="Clock">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          <span>Clock</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="CheckCircle">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4" />
+                          <span>Check Circle</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Live Preview */}
+              {bannerText && (
+                <div>
+                  <Label>Preview</Label>
+                  <div className={`mt-2 p-3 rounded-lg border flex items-center justify-center gap-2 ${
+                    bannerColor === "green" ? "bg-green-600 border-green-700" :
+                    bannerColor === "red" ? "bg-red-600 border-red-700" :
+                    bannerColor === "purple" ? "bg-gradient-to-r from-purple-600 to-purple-700 border-purple-800" :
+                    bannerColor === "gray" ? "bg-gray-700 border-gray-800" :
+                    "bg-black border-gray-900"
+                  }`}>
+                    {bannerIcon === "AlertCircle" && <AlertCircle className="h-4 w-4 text-white" />}
+                    {bannerIcon === "Info" && <Info className="h-4 w-4 text-white" />}
+                    {bannerIcon === "Bell" && <Bell className="h-4 w-4 text-white" />}
+                    {bannerIcon === "AlertTriangle" && <AlertTriangle className="h-4 w-4 text-white" />}
+                    {bannerIcon === "Megaphone" && <Megaphone className="h-4 w-4 text-white" />}
+                    {bannerIcon === "Sparkles" && <Sparkles className="h-4 w-4 text-white" />}
+                    {bannerIcon === "Star" && <Star className="h-4 w-4 text-white" />}
+                    {bannerIcon === "Zap" && <Zap className="h-4 w-4 text-white" />}
+                    {bannerIcon === "Clock" && <Clock className="h-4 w-4 text-white" />}
+                    {bannerIcon === "CheckCircle" && <CheckCircle className="h-4 w-4 text-white" />}
+                    <p className="text-sm text-white text-center">{bannerText}</p>
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-2">
                 <Button onClick={saveBanner}>
                   <Save className="h-4 w-4 mr-2" />
@@ -321,8 +484,24 @@ export default function AdminClassesPage() {
           ) : (
             <div>
               {banner ? (
-                <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
-                  <p className="text-sm">{banner}</p>
+                <div className={`p-3 rounded-lg border flex items-center gap-2 ${
+                  bannerColor === "green" ? "bg-green-600 border-green-700" :
+                  bannerColor === "red" ? "bg-red-600 border-red-700" :
+                  bannerColor === "purple" ? "bg-gradient-to-r from-purple-600 to-purple-700 border-purple-800" :
+                  bannerColor === "gray" ? "bg-gray-700 border-gray-800" :
+                  "bg-black border-gray-900"
+                }`}>
+                  {bannerIcon === "AlertCircle" && <AlertCircle className="h-4 w-4 text-white" />}
+                  {bannerIcon === "Info" && <Info className="h-4 w-4 text-white" />}
+                  {bannerIcon === "Bell" && <Bell className="h-4 w-4 text-white" />}
+                  {bannerIcon === "AlertTriangle" && <AlertTriangle className="h-4 w-4 text-white" />}
+                  {bannerIcon === "Megaphone" && <Megaphone className="h-4 w-4 text-white" />}
+                  {bannerIcon === "Sparkles" && <Sparkles className="h-4 w-4 text-white" />}
+                  {bannerIcon === "Star" && <Star className="h-4 w-4 text-white" />}
+                  {bannerIcon === "Zap" && <Zap className="h-4 w-4 text-white" />}
+                  {bannerIcon === "Clock" && <Clock className="h-4 w-4 text-white" />}
+                  {bannerIcon === "CheckCircle" && <CheckCircle className="h-4 w-4 text-white" />}
+                  <p className="text-sm text-white">{banner}</p>
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">No banner set. Click Edit Banner to add one.</p>
