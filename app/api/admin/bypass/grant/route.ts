@@ -34,12 +34,20 @@ export async function POST(req: NextRequest) {
       userId,
       bypassInitialPayment = false,
       bypassSubscription = false,
-      bypassDirectReferrals = false
+      bypassDirectReferralsCount = 0
     } = body
 
     if (!userId) {
       return NextResponse.json(
         { error: "userId is required" },
+        { status: 400 }
+      )
+    }
+
+    // Validate direct referrals count
+    if (typeof bypassDirectReferralsCount !== 'number' || bypassDirectReferralsCount < 0 || bypassDirectReferralsCount > 18) {
+      return NextResponse.json(
+        { error: "bypassDirectReferralsCount must be a number between 0 and 18" },
         { status: 400 }
       )
     }
@@ -199,31 +207,35 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Process bypass_subscription
+    // Process bypass_subscription (can grant or remove)
+    processLog.push("Processing subscription bypass...")
+
+    await serviceSupabase
+      .from("users")
+      .update({
+        bypass_subscription: bypassSubscription,
+        ...(bypassSubscription ? { is_active: true } : {}) // Only set active if granting bypass
+      })
+      .eq("id", userId)
+
     if (bypassSubscription) {
-      processLog.push("Processing subscription bypass...")
-
-      await serviceSupabase
-        .from("users")
-        .update({
-          bypass_subscription: true,
-          is_active: true // Ensure user is active
-        })
-        .eq("id", userId)
-
       processLog.push("✅ Subscription bypass granted, user set to active")
+    } else {
+      processLog.push("✅ Subscription bypass removed (user status unchanged, will be handled by cron)")
     }
 
-    // Process bypass_direct_referrals
-    if (bypassDirectReferrals) {
-      processLog.push("Processing direct referrals bypass...")
+    // Process bypass_direct_referrals (set count 0-18)
+    processLog.push("Processing direct referrals bypass count...")
 
-      await serviceSupabase
-        .from("users")
-        .update({ bypass_direct_referrals: true })
-        .eq("id", userId)
+    await serviceSupabase
+      .from("users")
+      .update({ bypass_direct_referrals: bypassDirectReferralsCount })
+      .eq("id", userId)
 
-      processLog.push("✅ Direct referrals bypass granted")
+    if (bypassDirectReferralsCount > 0) {
+      processLog.push(`✅ Direct referrals bypass count set to ${bypassDirectReferralsCount}`)
+    } else {
+      processLog.push("✅ Direct referrals bypass removed (count set to 0)")
     }
 
     return NextResponse.json({

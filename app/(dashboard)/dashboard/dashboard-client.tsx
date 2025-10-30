@@ -80,7 +80,7 @@ export function DashboardClient({
   session,
   bypassInitialPayment = false,
   bypassSubscription = false,
-  bypassDirectReferrals = false,
+  bypassDirectReferrals = 0,
   bypassBannerDismissed = false
 }: {
   data: DashboardData
@@ -93,7 +93,7 @@ export function DashboardClient({
   }
   bypassInitialPayment?: boolean
   bypassSubscription?: boolean
-  bypassDirectReferrals?: boolean
+  bypassDirectReferrals?: number // Changed from boolean to number (0-18)
   bypassBannerDismissed?: boolean
 }) {
   const [selectedStructure, setSelectedStructure] = useState("1")
