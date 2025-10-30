@@ -122,9 +122,11 @@ export async function GET(request: Request) {
       : !!(user.last_payment_date &&
         new Date(user.last_payment_date) >= new Date(Date.now() - 33 * 24 * 60 * 60 * 1000))
 
-    // Check referral requirement (can be bypassed)
-    const hasEnoughReferrals = user.bypass_direct_referrals || referralCount >= requiredReferrals
-    const referralDeficit = user.bypass_direct_referrals ? 0 : Math.max(0, requiredReferrals - referralCount)
+    // Check referral requirement (can be bypassed with count)
+    // User is treated as having whichever is greater: actual count or bypass count
+    const effectiveReferralCount = Math.max(referralCount, user.bypass_direct_referrals || 0)
+    const hasEnoughReferrals = effectiveReferralCount >= requiredReferrals
+    const referralDeficit = Math.max(0, requiredReferrals - effectiveReferralCount)
 
     // Determine withdrawal eligibility
     const canWithdraw = isActive && hasEnoughReferrals
@@ -136,15 +138,18 @@ export async function GET(request: Request) {
     const actualMonthlyEarnings = canWithdraw ? potentialMonthlyEarnings : 0
 
     // Withdrawal eligibility message
-    if (user.bypass_direct_referrals && user.bypass_subscription) {
-      withdrawalMessage = 'Qualified via Bypass Access (Referrals & Subscription)'
-    } else if (user.bypass_direct_referrals) {
+    const hasReferralBypass = user.bypass_direct_referrals > 0
+    const hasSubscriptionBypass = user.bypass_subscription
+
+    if (hasReferralBypass && hasSubscriptionBypass) {
+      withdrawalMessage = `Qualified via Bypass Access (${user.bypass_direct_referrals} referrals & subscription)`
+    } else if (hasReferralBypass) {
       if (!isActive) {
         withdrawalMessage = 'Account not active (must pay within 33 days)'
       } else {
-        withdrawalMessage = 'Qualified via Bypass Access (Referrals)'
+        withdrawalMessage = `Qualified with ${user.bypass_direct_referrals} bypassed referral${user.bypass_direct_referrals !== 1 ? 's' : ''}`
       }
-    } else if (user.bypass_subscription) {
+    } else if (hasSubscriptionBypass) {
       if (referralDeficit > 0) {
         withdrawalMessage = `Need ${referralDeficit} more direct referral${referralDeficit !== 1 ? 's' : ''} to withdraw`
       } else {

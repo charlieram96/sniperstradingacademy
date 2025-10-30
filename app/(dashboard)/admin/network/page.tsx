@@ -44,7 +44,7 @@ interface NetworkUser {
   payment_schedule: "weekly" | "monthly"
   referral_code: string | null
   premium_bypass: boolean
-  bypass_direct_referrals: boolean
+  bypass_direct_referrals: number // Changed from boolean to number (0-18)
   bypass_subscription: boolean
   bypass_initial_payment: boolean
   referred_by: string | null
@@ -77,13 +77,13 @@ export default function AdminNetworkPage() {
     id: string;
     name: string;
     currentBypasses: {
-      directReferrals: boolean;
+      directReferralsCount: number;
       subscription: boolean;
       initialPayment: boolean;
     }
   } | null>(null)
   const [bypassSelections, setBypassSelections] = useState({
-    directReferrals: false,
+    directReferralsCount: 0,
     subscription: false,
     initialPayment: false
   })
@@ -333,14 +333,14 @@ export default function AdminNetworkPage() {
       id: user.id,
       name: user.name || user.email,
       currentBypasses: {
-        directReferrals: user.bypass_direct_referrals,
+        directReferralsCount: user.bypass_direct_referrals,
         subscription: user.bypass_subscription,
         initialPayment: user.bypass_initial_payment
       }
     })
-    // Initialize checkbox states with current values
+    // Initialize states with current values
     setBypassSelections({
-      directReferrals: user.bypass_direct_referrals,
+      directReferralsCount: user.bypass_direct_referrals,
       subscription: user.bypass_subscription,
       initialPayment: user.bypass_initial_payment
     })
@@ -384,7 +384,7 @@ export default function AdminNetworkPage() {
     setIsUpdating(true)
 
     try {
-      // Call new bypass grant API endpoint
+      // Call bypass grant API endpoint
       const response = await fetch("/api/admin/bypass/grant", {
         method: "POST",
         headers: {
@@ -392,7 +392,7 @@ export default function AdminNetworkPage() {
         },
         body: JSON.stringify({
           userId: userForBypass.id,
-          bypassDirectReferrals: bypassSelections.directReferrals,
+          bypassDirectReferralsCount: bypassSelections.directReferralsCount,
           bypassSubscription: bypassSelections.subscription,
           bypassInitialPayment: bypassSelections.initialPayment
         })
@@ -421,7 +421,7 @@ export default function AdminNetworkPage() {
       if (selectedUser?.id === userForBypass.id) {
         setSelectedUser({
           ...selectedUser,
-          bypass_direct_referrals: bypassSelections.directReferrals,
+          bypass_direct_referrals: bypassSelections.directReferralsCount,
           bypass_subscription: bypassSelections.subscription,
           bypass_initial_payment: bypassSelections.initialPayment
         })
@@ -937,25 +937,25 @@ export default function AdminNetworkPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="flex items-start space-x-3">
-              <Checkbox
-                id="bypass-referrals"
-                checked={bypassSelections.directReferrals}
-                onCheckedChange={(checked) =>
-                  setBypassSelections(prev => ({ ...prev, directReferrals: checked === true }))
-                }
+            <div className="space-y-2">
+              <Label htmlFor="bypass-referrals-count" className="text-sm font-medium">
+                Direct Referrals Bypass Count (0-18)
+              </Label>
+              <Input
+                id="bypass-referrals-count"
+                type="number"
+                min={0}
+                max={18}
+                value={bypassSelections.directReferralsCount}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 0
+                  const clamped = Math.max(0, Math.min(18, value))
+                  setBypassSelections(prev => ({ ...prev, directReferralsCount: clamped }))
+                }}
               />
-              <div className="grid gap-1.5 leading-none">
-                <label
-                  htmlFor="bypass-referrals"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                >
-                  Bypass Direct Referrals Requirement
-                </label>
-                <p className="text-sm text-muted-foreground">
-                  User can receive payouts without needing 3 active direct referrals
-                </p>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                Set to 0 to disable bypass. User is treated as having <strong>whichever is greater</strong>: their actual active direct referral count or this number. (Qualification requires 3 referrals)
+              </p>
             </div>
 
             <div className="flex items-start space-x-3">
@@ -974,7 +974,7 @@ export default function AdminNetworkPage() {
                   Bypass Subscription Requirement
                 </label>
                 <p className="text-sm text-muted-foreground">
-                  User maintains active status without monthly subscription payments
+                  User maintains active status without monthly subscription payments. <strong>Uncheck to remove bypass</strong> (user status will be updated by cron if they lack an active subscription).
                 </p>
               </div>
             </div>

@@ -158,7 +158,7 @@ export default async function DashboardPage() {
       }}
       bypassInitialPayment={userBypassData?.bypass_initial_payment || false}
       bypassSubscription={userBypassData?.bypass_subscription || false}
-      bypassDirectReferrals={userBypassData?.bypass_direct_referrals || false}
+      bypassDirectReferrals={userBypassData?.bypass_direct_referrals || 0}
       bypassBannerDismissed={userBypassData?.bypass_banner_dismissed || false}
     />
   )

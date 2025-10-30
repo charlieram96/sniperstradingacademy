@@ -8,7 +8,7 @@ import { Unlock, CreditCard, Users, Info } from "lucide-react"
 interface BypassAccessBannerProps {
   bypassInitialPayment?: boolean
   bypassSubscription?: boolean
-  bypassDirectReferrals?: boolean
+  bypassDirectReferrals?: number // Changed from boolean to number (0-18)
   dismissed?: boolean
   onDismiss?: () => void
 }
@@ -16,12 +16,12 @@ interface BypassAccessBannerProps {
 export function BypassAccessBanner({
   bypassInitialPayment = false,
   bypassSubscription = false,
-  bypassDirectReferrals = false,
+  bypassDirectReferrals = 0,
   dismissed = false,
   onDismiss,
 }: BypassAccessBannerProps) {
   // Don't show banner if dismissed or no bypasses are active
-  const hasAnyBypass = bypassInitialPayment || bypassSubscription || bypassDirectReferrals
+  const hasAnyBypass = bypassInitialPayment || bypassSubscription || (bypassDirectReferrals > 0)
   if (!hasAnyBypass || dismissed) return null
 
   return (
@@ -51,10 +51,10 @@ export function BypassAccessBanner({
               Monthly Subscription ($199)
             </Badge>
           )}
-          {bypassDirectReferrals && (
+          {bypassDirectReferrals > 0 && (
             <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200">
               <Users className="h-3 w-3 mr-1" />
-              Direct Referrals Requirement
+              {bypassDirectReferrals} Direct Referral{bypassDirectReferrals !== 1 ? 's' : ''} Bypassed
             </Badge>
           )}
         </div>

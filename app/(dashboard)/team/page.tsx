@@ -114,7 +114,7 @@ export default function TeamPage() {
         .single()
 
       setIsUserActive(currentUser?.is_active || currentUser?.bypass_subscription || false)
-      setHasPremiumBypass(currentUser?.bypass_direct_referrals || false)
+      setHasPremiumBypass((currentUser?.bypass_direct_referrals || 0) > 0)
 
       if (!currentUser?.network_position_id) {
         // User doesn't have a network position yet
