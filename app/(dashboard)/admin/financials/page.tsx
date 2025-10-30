@@ -116,7 +116,7 @@ export default function AdminFinancialsPage() {
         status,
         payment_type,
         created_at,
-        users!inner (
+        users (
           name,
           email
         )
