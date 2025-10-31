@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { TrendingUp, DollarSign, ArrowDownCircle, ArrowUpCircle, Users, Search } from "lucide-react"
-import { formatCurrency } from "@/lib/utils"
+import { formatDollars } from "@/lib/utils"
 import {
   Select,
   SelectContent,
@@ -99,7 +99,7 @@ export default function AdminFinancialsPage() {
   const [commissions, setCommissions] = useState<Commission[]>([])
   const [paymentSearch, setPaymentSearch] = useState("")
   const [commissionSearch, setCommissionSearch] = useState("")
-  const [paymentTypeFilter, setPaymentTypeFilter] = useState<"all" | "initial" | "monthly" | "commission">("all")
+  const [paymentTypeFilter, setPaymentTypeFilter] = useState<"all" | "initial" | "weekly" | "monthly" | "commission">("all")
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<"all" | "succeeded" | "pending" | "failed">("all")
   const [commissionStatusFilter, setCommissionStatusFilter] = useState<"all" | "pending" | "paid" | "cancelled">("all")
 
@@ -282,7 +282,7 @@ export default function AdminFinancialsPage() {
           <CardContent>
             <div className="flex items-center gap-2">
               <ArrowUpCircle className="h-5 w-5 text-green-600" />
-              <p className="text-2xl font-bold text-green-600">{formatCurrency(stats.totalRevenue)}</p>
+              <p className="text-2xl font-bold text-green-600">{formatDollars(stats.totalRevenue)}</p>
             </div>
           </CardContent>
         </Card>
@@ -293,7 +293,7 @@ export default function AdminFinancialsPage() {
           <CardContent>
             <div className="flex items-center gap-2">
               <ArrowDownCircle className="h-5 w-5 text-red-600" />
-              <p className="text-2xl font-bold text-red-600">{formatCurrency(stats.totalPayouts)}</p>
+              <p className="text-2xl font-bold text-red-600">{formatDollars(stats.totalPayouts)}</p>
             </div>
           </CardContent>
         </Card>
@@ -304,7 +304,7 @@ export default function AdminFinancialsPage() {
           <CardContent>
             <div className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-primary" />
-              <p className="text-2xl font-bold text-primary">{formatCurrency(stats.netProfit)}</p>
+              <p className="text-2xl font-bold text-primary">{formatDollars(stats.netProfit)}</p>
             </div>
           </CardContent>
         </Card>
@@ -341,13 +341,14 @@ export default function AdminFinancialsPage() {
                 className="pl-9"
               />
             </div>
-            <Select value={paymentTypeFilter} onValueChange={(value: "all" | "initial" | "monthly" | "commission") => setPaymentTypeFilter(value)}>
+            <Select value={paymentTypeFilter} onValueChange={(value: "all" | "initial" | "weekly" | "monthly" | "commission") => setPaymentTypeFilter(value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Filter by type" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="initial">Initial Payment</SelectItem>
+                <SelectItem value="weekly">Weekly Payment</SelectItem>
                 <SelectItem value="monthly">Monthly Payment</SelectItem>
                 <SelectItem value="commission">Commission</SelectItem>
               </SelectContent>
@@ -393,7 +394,7 @@ export default function AdminFinancialsPage() {
                         </div>
                       </TableCell>
                       <TableCell className="font-mono font-semibold text-green-600">
-                        {formatCurrency(payment.amount)}
+                        {formatDollars(payment.amount)}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">
@@ -488,7 +489,7 @@ export default function AdminFinancialsPage() {
                         </div>
                       </TableCell>
                       <TableCell className="font-mono font-semibold text-red-600">
-                        {formatCurrency(commission.amount)}
+                        {formatDollars(commission.amount)}
                       </TableCell>
                       <TableCell>
                         {commission.status === "paid" ? (
