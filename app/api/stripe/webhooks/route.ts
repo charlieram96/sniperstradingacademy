@@ -332,7 +332,7 @@ export async function POST(req: NextRequest) {
               user_id: userId,
               stripe_subscription_id: subscriptionId,
               status: stripeSubscription.status,
-              monthly_amount: 199,
+              amount: (stripeSubscription.items.data[0]?.price?.unit_amount || 19900) / 100,
               current_period_end: periodEnd,
             })
 
@@ -379,7 +379,7 @@ export async function POST(req: NextRequest) {
                 user_id: user.id,
                 stripe_subscription_id: subscription.id,
                 status: subscription.status,
-                monthly_amount: (subscription.items.data[0]?.price?.unit_amount || 19900) / 100,
+                amount: (subscription.items.data[0]?.price?.unit_amount || 19900) / 100,
                 current_period_end: periodEnd,
               })
 
