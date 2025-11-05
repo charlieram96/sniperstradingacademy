@@ -154,7 +154,7 @@ export default function AcademyManagerPage() {
         title: "",
         description: "",
         display_order: (modules.length + 1).toString(),
-        is_published: false
+        is_published: true
       })
     }
     setModuleDialogOpen(true)
@@ -167,7 +167,7 @@ export default function AcademyManagerPage() {
         title: moduleForm.title,
         description: moduleForm.description,
         display_order: parseInt(moduleForm.display_order),
-        is_published: moduleForm.is_published
+        is_published: true
       }
 
       let response
@@ -239,7 +239,7 @@ export default function AcademyManagerPage() {
         pdf_url: "",
         duration: "",
         file_size: "",
-        is_published: false
+        is_published: true
       })
     }
     setUploadFile(null)
@@ -292,7 +292,7 @@ export default function AcademyManagerPage() {
         pdf_url: lessonForm.type === "pdf" ? (fileData?.url || lessonForm.pdf_url) : null,
         duration: lessonForm.duration || null,
         file_size: fileData?.fileSize || lessonForm.file_size || null,
-        is_published: lessonForm.is_published
+        is_published: true
       }
 
       let response
@@ -512,7 +512,7 @@ export default function AcademyManagerPage() {
 
       {/* Module Dialog */}
       <Dialog open={moduleDialogOpen} onOpenChange={setModuleDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingModule ? "Edit Module" : "Add New Module"}</DialogTitle>
             <DialogDescription>
@@ -558,16 +558,6 @@ export default function AcademyManagerPage() {
                 placeholder="1"
               />
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="module-published"
-                checked={moduleForm.is_published}
-                onChange={(e) => setModuleForm({ ...moduleForm, is_published: e.target.checked })}
-                className="rounded"
-              />
-              <Label htmlFor="module-published">Publish immediately</Label>
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setModuleDialogOpen(false)}>
@@ -582,7 +572,7 @@ export default function AcademyManagerPage() {
 
       {/* Lesson Dialog */}
       <Dialog open={lessonDialogOpen} onOpenChange={setLessonDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingLesson ? "Edit Lesson" : "Add New Lesson"}</DialogTitle>
             <DialogDescription>
@@ -666,16 +656,6 @@ export default function AcademyManagerPage() {
                 />
               </div>
             )}
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="lesson-published"
-                checked={lessonForm.is_published}
-                onChange={(e) => setLessonForm({ ...lessonForm, is_published: e.target.checked })}
-                className="rounded"
-              />
-              <Label htmlFor="lesson-published">Publish immediately</Label>
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setLessonDialogOpen(false)}>
