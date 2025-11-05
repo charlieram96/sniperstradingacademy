@@ -828,7 +828,7 @@ export default function AdminNetworkPage() {
                           </p>
                         </div>
                       </div>
-                      {isSuperAdmin && user.role !== "superadmin" && (
+                      {isSuperAdmin && (
                         <div className="flex gap-2 mt-4">
                           <Button
                             size="sm"
