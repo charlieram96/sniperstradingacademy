@@ -16,7 +16,9 @@ import {
   TrendingUp,
   Wallet,
   Settings,
-  GitBranch
+  GitBranch,
+  Activity,
+  BookOpen
 } from "lucide-react"
 
 export default async function DashboardLayout({
@@ -152,6 +154,20 @@ export default async function DashboardLayout({
                   >
                     <Wallet className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
                     <span className="text-sm font-medium">Payouts</span>
+                  </NavigationLink>
+                  <NavigationLink
+                    href="/admin/sniper-logs"
+                    className="flex items-center gap-[10px] px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+                  >
+                    <Activity className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+                    <span className="text-sm font-medium">Sniper Logs</span>
+                  </NavigationLink>
+                  <NavigationLink
+                    href="/admin/academy-manager"
+                    className="flex items-center gap-[10px] px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+                  >
+                    <BookOpen className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+                    <span className="text-sm font-medium">Academy Manager</span>
                   </NavigationLink>
                 </>
               )}
