@@ -317,7 +317,9 @@ async function migrateAcademyContent() {
     // Insert lessons
     console.log(`   \n   📝 Migrating ${moduleData.lessons.length} lessons:`)
 
-    for (const lesson of moduleData.lessons) {
+    for (let i = 0; i < moduleData.lessons.length; i++) {
+      const lesson = moduleData.lessons[i]
+
       // Check if lesson already exists
       const { data: existingLesson } = await supabase
         .from("academy_lessons")
@@ -337,6 +339,7 @@ async function migrateAcademyContent() {
           module_id: moduleId,
           title: lesson.title,
           type: lesson.type,
+          display_order: i + 1,
           video_url: lesson.type === "video" ? lesson.url || null : null,
           pdf_url: lesson.type === "pdf" ? lesson.url || null : null,
           duration: lesson.duration || null,

@@ -77,6 +77,18 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Get the next display_order for this module
+    const { data: existingLessons } = await supabase
+      .from("academy_lessons")
+      .select("display_order")
+      .eq("module_id", module_id)
+      .order("display_order", { ascending: false })
+      .limit(1)
+
+    const nextDisplayOrder = existingLessons && existingLessons.length > 0
+      ? existingLessons[0].display_order + 1
+      : 1
+
     // Insert new lesson
     const { data: lesson, error: insertError } = await supabase
       .from("academy_lessons")
@@ -85,6 +97,7 @@ export async function POST(req: NextRequest) {
         module_id,
         title,
         type,
+        display_order: nextDisplayOrder,
         video_url: video_url || null,
         pdf_url: pdf_url || null,
         duration: duration || null,
