@@ -17,14 +17,16 @@ interface AccountStatusCardProps {
   accountActive: boolean
   monthlyPaymentDueDate: Date | null
   lastPaymentDate: Date | null
+  paymentSchedule?: 'weekly' | 'monthly'
   onPayNow?: () => void
 }
 
-export function AccountStatusCard({ 
-  accountActive, 
+export function AccountStatusCard({
+  accountActive,
   monthlyPaymentDueDate,
   lastPaymentDate,
-  onPayNow 
+  paymentSchedule = 'monthly',
+  onPayNow
 }: AccountStatusCardProps) {
   const [timeUntilDue, setTimeUntilDue] = useState<string>("")
   const [isOverdue, setIsOverdue] = useState(false)
@@ -96,18 +98,21 @@ export function AccountStatusCard({
 
   const getStatusDescription = () => {
     if (!accountActive && isOverdue) {
-      return "Your monthly payment is overdue. Pay now to reactivate your account and receive residual income."
+      const interval = paymentSchedule === 'weekly' ? 'weekly' : 'monthly'
+      return `Your ${interval} payment is overdue. Pay now to reactivate your account and receive residual income.`
     }
     if (!accountActive) {
       return "Your account is inactive. Activate it to start earning and receiving payouts."
     }
     if (isOverdue) {
-      return "Your $199 monthly payment is overdue. Your account will be deactivated if not paid."
+      const amount = paymentSchedule === 'weekly' ? '$49.75 weekly' : '$199 monthly'
+      return `Your ${amount} payment is overdue. Your account will be deactivated if not paid.`
     }
     if (daysUntilDue <= 3) {
-      return "Your monthly payment is due very soon. Ensure your payment method is up to date."
+      const interval = paymentSchedule === 'weekly' ? 'weekly' : 'monthly'
+      return `Your ${interval} payment is due very soon. Ensure your payment method is up to date.`
     }
-    return "Your account is in good standing. Keep your subscription active to receive monthly residual payouts."
+    return "Your account is in good standing. Keep your subscription active to receive residual payouts."
   }
 
   return (
@@ -134,10 +139,10 @@ export function AccountStatusCard({
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <CreditCard className="h-4 w-4" />
-              <span>Monthly Subscription</span>
+              <span>{paymentSchedule === 'weekly' ? 'Weekly' : 'Monthly'} Subscription</span>
             </div>
-            <p className="text-2xl font-bold">$199</p>
-            <p className="text-xs text-muted-foreground">Due monthly</p>
+            <p className="text-2xl font-bold">${paymentSchedule === 'weekly' ? '49.75' : '199'}</p>
+            <p className="text-xs text-muted-foreground">Due {paymentSchedule === 'weekly' ? 'weekly' : 'monthly'}</p>
           </div>
           
           <div className="space-y-1">

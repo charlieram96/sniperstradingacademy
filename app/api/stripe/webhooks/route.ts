@@ -8,6 +8,10 @@ const stripe = getStripe()
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
 export async function POST(req: NextRequest) {
+  // Declare variables outside try block so they're accessible in catch
+  let webhookEventId: string | null = null
+  const supabase = createServiceRoleClient()
+
   try {
     const body = await req.text()
     const headersList = await headers()
@@ -32,8 +36,37 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Use service role client to bypass RLS (webhooks have no user session)
-    const supabase = createServiceRoleClient()
+    // WEBHOOK EVENT PERSISTENCE: Store event for debugging and replay capability
+
+    try {
+      const { data: webhookEvent, error: insertError } = await supabase
+        .from('webhook_events')
+        .insert({
+          stripe_event_id: event.id,
+          event_type: event.type,
+          payload: event as unknown as Record<string, unknown>,
+          processed: false,
+          processing_attempts: 1,
+          last_attempt_at: new Date().toISOString()
+        })
+        .select('id')
+        .single()
+
+      if (!insertError && webhookEvent) {
+        webhookEventId = webhookEvent.id
+        console.log(`📝 Webhook event persisted: ${event.id} (${event.type})`)
+      } else if (insertError?.code === '23505') {
+        // Duplicate event - already processed
+        console.log(`⚠️  Duplicate webhook event (already processed): ${event.id}`)
+        return NextResponse.json({ received: true, duplicate: true })
+      } else {
+        console.error(`❌ Failed to persist webhook event:`, insertError)
+        // Continue processing even if persistence fails
+      }
+    } catch (persistError) {
+      console.error(`❌ Webhook persistence error:`, persistError)
+      // Continue processing
+    }
 
     // Handle different event types
     switch (event.type) {
@@ -1132,9 +1165,34 @@ export async function POST(req: NextRequest) {
         console.log(`Unhandled event type: ${event.type}`)
     }
 
+    // Mark webhook event as processed
+    if (webhookEventId) {
+      await supabase
+        .from('webhook_events')
+        .update({
+          processed: true,
+          processed_at: new Date().toISOString()
+        })
+        .eq('id', webhookEventId)
+
+      console.log(`✅ Webhook event marked as processed: ${event.id}`)
+    }
+
     return NextResponse.json({ received: true })
   } catch (error) {
     console.error("Webhook handler error:", error)
+
+    // Mark webhook event as failed
+    if (webhookEventId) {
+      await supabase
+        .from('webhook_events')
+        .update({
+          last_error: error instanceof Error ? error.message : String(error),
+          last_attempt_at: new Date().toISOString()
+        })
+        .eq('id', webhookEventId)
+    }
+
     return NextResponse.json(
       { error: "Webhook handler failed" },
       { status: 500 }

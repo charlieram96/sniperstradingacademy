@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getStripe } from "@/lib/stripe/server"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server"
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+    // Use regular client for authentication
+    const authSupabase = await createClient()
+    const { data: { user: authUser }, error: authError } = await authSupabase.auth.getUser()
 
     if (authError || !authUser) {
       return NextResponse.json(
@@ -15,7 +16,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if user is superadmin
-    const { data: userData } = await supabase
+    const { data: userData } = await authSupabase
       .from("users")
       .select("role")
       .eq("id", authUser.id)
@@ -27,6 +28,9 @@ export async function POST(req: NextRequest) {
         { status: 403 }
       )
     }
+
+    // Use service role client for database operations (bypasses RLS)
+    const supabase = createServiceRoleClient()
 
     const { commissionId } = await req.json()
 
@@ -174,11 +178,12 @@ export async function POST(req: NextRequest) {
       if (updateError) {
         console.error("Error updating commission status:", updateError)
         return NextResponse.json({
-          success: true,
-          warning: "Transfer completed but status update failed",
+          success: false,
+          error: "Transfer completed but database update failed. Please check logs.",
+          details: updateError.message,
           transferId: transfer.id,
           commissionId: commission.id,
-        })
+        }, { status: 500 })
       }
 
       return NextResponse.json({

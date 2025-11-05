@@ -61,7 +61,8 @@ export default function FinancePage() {
     qualificationDeadline: null as Date | null,
     qualifiedAt: null as Date | null,
     directReferralsCount: 0,
-    accumulatedResidual: 0
+    accumulatedResidual: 0,
+    paymentSchedule: 'monthly' as 'weekly' | 'monthly'
   })
   const [financialStats, setFinancialStats] = useState({
     totalSniperVolume: 0,
@@ -105,18 +106,23 @@ export default function FinancePage() {
         // Fetch user account data
         const { data: userData } = await supabase
           .from('users')
-          .select('is_active, last_payment_date, initial_payment_date, qualified_at, direct_referrals_count, active_network_count, current_commission_rate, bypass_direct_referrals, bypass_subscription, bypass_initial_payment, stripe_connect_account_id')
+          .select('is_active, last_payment_date, initial_payment_date, qualified_at, direct_referrals_count, active_network_count, current_commission_rate, bypass_direct_referrals, bypass_subscription, bypass_initial_payment, stripe_connect_account_id, payment_schedule')
           .eq('id', userId)
           .single()
 
         // Check if user has completed Stripe Connect onboarding
         setStripeConnected(!!userData?.stripe_connect_account_id)
 
-        // Calculate monthly payment due date (30 days after initial payment or last payment)
+        // Calculate next payment due date based on payment schedule
         let monthlyPaymentDueDate = null
-        if (userData?.initial_payment_date) {
-          const initialDate = new Date(userData.initial_payment_date)
-          monthlyPaymentDueDate = new Date(initialDate.getTime() + 30 * 24 * 60 * 60 * 1000)
+        const paymentSchedule = userData?.payment_schedule || 'monthly'
+        const daysToAdd = paymentSchedule === 'weekly' ? 7 : 30
+
+        // Use last_payment_date if available, otherwise fall back to initial_payment_date
+        const referenceDate = userData?.last_payment_date || userData?.initial_payment_date
+        if (referenceDate) {
+          const dateObj = new Date(referenceDate)
+          monthlyPaymentDueDate = new Date(dateObj.getTime() + daysToAdd * 24 * 60 * 60 * 1000)
         }
 
         setAccountStatus({
@@ -127,7 +133,8 @@ export default function FinancePage() {
           qualificationDeadline: null,
           qualifiedAt: userData?.qualified_at ? new Date(userData.qualified_at) : null,
           directReferralsCount: userData?.direct_referrals_count || 0,
-          accumulatedResidual: 0
+          accumulatedResidual: 0,
+          paymentSchedule: paymentSchedule as 'weekly' | 'monthly'
         })
 
         // Fetch real network stats
@@ -326,6 +333,7 @@ export default function FinancePage() {
           accountActive={accountStatus.accountActive}
           monthlyPaymentDueDate={accountStatus.monthlyPaymentDueDate}
           lastPaymentDate={accountStatus.lastPaymentDate}
+          paymentSchedule={accountStatus.paymentSchedule}
           onPayNow={handlePayNow}
         />
       </div>

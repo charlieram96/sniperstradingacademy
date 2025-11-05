@@ -100,7 +100,7 @@ export default function AdminFinancialsPage() {
   const [paymentSearch, setPaymentSearch] = useState("")
   const [commissionSearch, setCommissionSearch] = useState("")
   const [paymentTypeFilter, setPaymentTypeFilter] = useState<"all" | "initial" | "weekly" | "monthly" | "commission">("all")
-  const [paymentStatusFilter, setPaymentStatusFilter] = useState<"all" | "succeeded" | "pending" | "failed">("all")
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<"all" | "succeeded" | "bypassed" | "pending" | "failed">("all")
   const [commissionStatusFilter, setCommissionStatusFilter] = useState<"all" | "pending" | "paid" | "cancelled">("all")
 
   const fetchFinancialData = useCallback(async () => {
@@ -353,13 +353,14 @@ export default function AdminFinancialsPage() {
                 <SelectItem value="commission">Commission</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={paymentStatusFilter} onValueChange={(value: "all" | "succeeded" | "pending" | "failed") => setPaymentStatusFilter(value)}>
+            <Select value={paymentStatusFilter} onValueChange={(value: "all" | "succeeded" | "bypassed" | "pending" | "failed") => setPaymentStatusFilter(value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="succeeded">Succeeded</SelectItem>
+                <SelectItem value="bypassed">Bypassed</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="failed">Failed</SelectItem>
               </SelectContent>
@@ -404,6 +405,8 @@ export default function AdminFinancialsPage() {
                       <TableCell>
                         {payment.status === "succeeded" ? (
                           <Badge className="bg-green-500 text-white">Succeeded</Badge>
+                        ) : payment.status === "bypassed" ? (
+                          <Badge className="bg-amber-500 text-white">Bypassed</Badge>
                         ) : payment.status === "pending" ? (
                           <Badge className="bg-yellow-500 text-white">Pending</Badge>
                         ) : (
