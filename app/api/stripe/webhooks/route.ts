@@ -324,7 +324,6 @@ export async function POST(req: NextRequest) {
           // Create $249.50 direct bonus for referrer (50% of $499)
           if (referralData?.referrer_id) {
             const bonusAmount = 249.50
-            const availableAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) // 3 days from now
 
             const { error: bonusError } = await supabase
               .from("commissions")
@@ -334,14 +333,12 @@ export async function POST(req: NextRequest) {
                 amount: bonusAmount,
                 commission_type: 'direct_bonus',
                 status: 'pending',
-                available_at: availableAt.toISOString(),
               })
 
             if (bonusError) {
               console.error("❌ Error creating direct bonus:", bonusError)
             } else {
               console.log(`✅ Created $${bonusAmount} direct bonus for referrer ${referralData.referrer_id}`)
-              console.log(`   Available for withdrawal after: ${availableAt.toISOString()}`)
             }
           }
 
