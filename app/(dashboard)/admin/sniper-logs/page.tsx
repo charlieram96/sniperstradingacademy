@@ -13,6 +13,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
   Activity,
   CheckCircle,
   XCircle,
@@ -20,8 +26,41 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
-  Eye
+  Eye,
+  Copy,
+  Info
 } from "lucide-react"
+
+// Webhook event type descriptions
+const WEBHOOK_DESCRIPTIONS: Record<string, string> = {
+  "checkout.session.completed": "Payment checkout completed - Initial payment or subscription created",
+  "customer.subscription.created": "New subscription created for a customer",
+  "customer.subscription.updated": "Subscription status or details changed",
+  "customer.subscription.deleted": "Subscription cancelled or expired",
+  "invoice.payment_succeeded": "Recurring payment succeeded (weekly/monthly)",
+  "invoice.payment_failed": "Recurring payment failed",
+  "invoice.created": "New invoice created for upcoming payment",
+  "invoice.finalized": "Invoice finalized and ready for payment",
+  "payment_intent.succeeded": "Payment successfully completed",
+  "payment_intent.payment_failed": "Payment attempt failed",
+  "payment_intent.created": "New payment intent created",
+  "payout.paid": "Commission payout completed to user's bank",
+  "payout.failed": "Payout to user's bank failed",
+  "payout.created": "New payout initiated",
+  "charge.succeeded": "One-time charge succeeded",
+  "charge.failed": "One-time charge failed",
+  "charge.refunded": "Payment refunded to customer",
+  "charge.dispute.created": "Customer initiated a chargeback/dispute",
+  "charge.dispute.closed": "Dispute resolved",
+  "account.updated": "Stripe Connect account information updated",
+  "account.application.deauthorized": "User disconnected their Stripe account",
+  "account.external_account.created": "Bank account added to Stripe Connect",
+  "account.external_account.updated": "Bank account details updated",
+  "account.external_account.deleted": "Bank account removed from Stripe Connect",
+  "customer.created": "New Stripe customer created",
+  "customer.updated": "Customer information updated",
+  "customer.deleted": "Customer deleted from Stripe"
+}
 
 interface WebhookEvent {
   id: string
@@ -34,6 +73,9 @@ interface WebhookEvent {
   last_attempt_at: string | null
   created_at: string
   processed_at: string | null
+  user_id?: string | null
+  user_email?: string | null
+  user_name?: string | null
 }
 
 interface Statistics {
@@ -122,6 +164,18 @@ export default function SniperLogsPage() {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString()
+  }
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch (err) {
+      console.error("Failed to copy:", err)
+    }
+  }
+
+  const getEventDescription = (eventType: string) => {
+    return WEBHOOK_DESCRIPTIONS[eventType] || "Stripe webhook event"
   }
 
   const successRate = data?.statistics.total24h
@@ -266,68 +320,109 @@ export default function SniperLogsPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-3 font-medium">Event Type</th>
-                    <th className="text-left p-3 font-medium">Status</th>
-                    <th className="text-left p-3 font-medium">Stripe ID</th>
-                    <th className="text-left p-3 font-medium">Attempts</th>
-                    <th className="text-left p-3 font-medium">Created</th>
-                    <th className="text-left p-3 font-medium">Error</th>
-                    <th className="text-left p-3 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data?.webhooks.map((event) => (
-                    <tr
-                      key={event.id}
-                      className="border-b hover:bg-muted/50 transition-colors"
-                    >
-                      <td className="p-3">
-                        <code className="text-xs bg-muted px-2 py-1 rounded">
-                          {event.event_type}
-                        </code>
-                      </td>
-                      <td className="p-3">{getStatusBadge(event)}</td>
-                      <td className="p-3">
-                        <span className="text-sm font-mono text-muted-foreground">
-                          {event.stripe_event_id.substring(0, 20)}...
-                        </span>
-                      </td>
-                      <td className="p-3">
-                        <div className="flex items-center gap-1">
-                          {event.processing_attempts > 1 && (
-                            <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                          )}
-                          <span className="text-sm">{event.processing_attempts}</span>
-                        </div>
-                      </td>
-                      <td className="p-3 text-sm text-muted-foreground">
-                        {formatDate(event.created_at)}
-                      </td>
-                      <td className="p-3">
-                        {event.last_error ? (
-                          <span className="text-xs text-red-500 truncate max-w-[200px] block">
-                            {event.last_error}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">-</span>
-                        )}
-                      </td>
-                      <td className="p-3">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedEvent(event)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </td>
+              <TooltipProvider>
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-3 font-medium">Event Type</th>
+                      <th className="text-left p-3 font-medium">User</th>
+                      <th className="text-left p-3 font-medium">Status</th>
+                      <th className="text-left p-3 font-medium">Stripe ID</th>
+                      <th className="text-left p-3 font-medium">Attempts</th>
+                      <th className="text-left p-3 font-medium">Created</th>
+                      <th className="text-left p-3 font-medium">Error</th>
+                      <th className="text-left p-3 font-medium">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {data?.webhooks.map((event) => (
+                      <tr
+                        key={event.id}
+                        className="border-b hover:bg-muted/50 transition-colors"
+                      >
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <code className="text-xs bg-muted px-2 py-1 rounded">
+                              {event.event_type}
+                            </code>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p className="text-xs">{getEventDescription(event.event_type)}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          {event.user_email ? (
+                            <div className="text-xs">
+                              <div className="font-medium">{event.user_name || "Unknown"}</div>
+                              <div className="text-muted-foreground">{event.user_email}</div>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">-</span>
+                          )}
+                        </td>
+                        <td className="p-3">{getStatusBadge(event)}</td>
+                        <td className="p-3">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-1 cursor-pointer">
+                                <span className="text-sm font-mono text-muted-foreground">
+                                  {event.stripe_event_id.substring(0, 20)}...
+                                </span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => copyToClipboard(event.stripe_event_id)}
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="font-mono text-xs">{event.stripe_event_id}</p>
+                              <p className="text-xs text-muted-foreground mt-1">Click copy to clipboard</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-1">
+                            {event.processing_attempts > 1 && (
+                              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                            )}
+                            <span className="text-sm">{event.processing_attempts}</span>
+                          </div>
+                        </td>
+                        <td className="p-3 text-sm text-muted-foreground">
+                          {formatDate(event.created_at)}
+                        </td>
+                        <td className="p-3">
+                          {event.last_error ? (
+                            <span className="text-xs text-red-500 truncate max-w-[200px] block">
+                              {event.last_error}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">-</span>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedEvent(event)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </TooltipProvider>
             </div>
           )}
 
@@ -369,7 +464,22 @@ export default function SniperLogsPage() {
             <DialogTitle>Webhook Event Details</DialogTitle>
             <DialogDescription>
               {selectedEvent && (
-                <span className="font-mono text-xs">{selectedEvent.stripe_event_id}</span>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs">{selectedEvent.stripe_event_id}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-5 w-5 p-0"
+                      onClick={() => copyToClipboard(selectedEvent.stripe_event_id)}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {getEventDescription(selectedEvent.event_type)}
+                  </p>
+                </div>
               )}
             </DialogDescription>
           </DialogHeader>
@@ -386,6 +496,15 @@ export default function SniperLogsPage() {
                   <p className="text-sm font-medium">Status</p>
                   <div className="mt-1">{getStatusBadge(selectedEvent)}</div>
                 </div>
+                {selectedEvent.user_email && (
+                  <div className="col-span-2">
+                    <p className="text-sm font-medium">User</p>
+                    <div className="text-sm mt-1">
+                      <div className="font-medium">{selectedEvent.user_name || "Unknown"}</div>
+                      <div className="text-muted-foreground">{selectedEvent.user_email}</div>
+                    </div>
+                  </div>
+                )}
                 <div>
                   <p className="text-sm font-medium">Processing Attempts</p>
                   <p className="text-sm mt-1">{selectedEvent.processing_attempts}</p>

@@ -66,11 +66,15 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // Get statistics for the dashboard
-    const { data: stats } = await supabase
+    // Get statistics for the dashboard with proper error handling
+    const { data: stats, error: statsError } = await supabase
       .from("webhook_events")
       .select("processed, processing_attempts, created_at")
       .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+
+    if (statsError) {
+      console.error("Error fetching stats:", statsError)
+    }
 
     const statistics = {
       total24h: stats?.length || 0,
@@ -80,18 +84,103 @@ export async function GET(req: NextRequest) {
     }
 
     // Get event type breakdown
-    const { data: eventTypes } = await supabase
+    const { data: eventTypes, error: eventTypesError } = await supabase
       .from("webhook_events")
       .select("event_type")
       .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+
+    if (eventTypesError) {
+      console.error("Error fetching event types:", eventTypesError)
+    }
 
     const eventTypeCount = eventTypes?.reduce((acc, e) => {
       acc[e.event_type] = (acc[e.event_type] || 0) + 1
       return acc
     }, {} as Record<string, number>)
 
+    // Extract user information from webhook payloads
+    const webhooksWithUsers = await Promise.all(
+      (webhooks || []).map(async (webhook) => {
+        let userId: string | null = null
+        let userEmail: string | null = null
+        let userName: string | null = null
+
+        // Extract user ID from payload based on event type
+        try {
+          const payload = webhook.payload as {
+            data?: {
+              object?: {
+                metadata?: { userId?: string }
+                customer?: string
+                account?: string
+              }
+            }
+          }
+
+          // Try different paths to find user information
+          if (payload?.data?.object?.metadata?.userId) {
+            userId = payload.data.object.metadata.userId
+          } else if (payload?.data?.object?.customer) {
+            // For customer-related events, we have a stripe_customer_id
+            const stripeCustomerId = payload.data.object.customer
+
+            // Look up user by stripe_customer_id
+            const { data: user } = await supabase
+              .from("users")
+              .select("id, email, name")
+              .eq("stripe_customer_id", stripeCustomerId)
+              .single()
+
+            if (user) {
+              userId = user.id
+              userEmail = user.email
+              userName = user.name
+            }
+          } else if (payload?.data?.object?.account) {
+            // For connect account events
+            const stripeAccountId = payload.data.object.account
+
+            const { data: user } = await supabase
+              .from("users")
+              .select("id, email, name")
+              .eq("stripe_connect_account_id", stripeAccountId)
+              .single()
+
+            if (user) {
+              userId = user.id
+              userEmail = user.email
+              userName = user.name
+            }
+          }
+
+          // If we found a userId but no email/name, fetch it
+          if (userId && !userEmail) {
+            const { data: user } = await supabase
+              .from("users")
+              .select("email, name")
+              .eq("id", userId)
+              .single()
+
+            if (user) {
+              userEmail = user.email
+              userName = user.name
+            }
+          }
+        } catch (error) {
+          console.error("Error extracting user info:", error)
+        }
+
+        return {
+          ...webhook,
+          user_id: userId,
+          user_email: userEmail,
+          user_name: userName
+        }
+      })
+    )
+
     return NextResponse.json({
-      webhooks,
+      webhooks: webhooksWithUsers,
       pagination: {
         page,
         limit,
