@@ -441,7 +441,7 @@ export function DashboardClient({
                 <div className="flex items-center gap-2 p-3 bg-green-500/10 rounded-lg">
                   <CheckCircle2 className="h-4 w-4 text-green-600" />
                   <p className="text-sm">
-                    Your bank account is connected. Commissions will be paid out automatically on the 1st of each month.
+                    Your bank account is connected. Commissions will be paid out automatically on the 15th of each month.
                   </p>
                 </div>
                 <Button variant="outline" onClick={handleConnectOnboarding}>
@@ -471,7 +471,7 @@ export function DashboardClient({
                     </li>
                     <li className="flex items-center gap-2">
                       <div className="w-1 h-1 rounded-full bg-muted-foreground" />
-                      Automatic monthly payouts on the 1st
+                      Automatic monthly payouts on the 15th
                     </li>
                     <li className="flex items-center gap-2">
                       <div className="w-1 h-1 rounded-full bg-muted-foreground" />

@@ -339,10 +339,12 @@ function PaymentsContent() {
                 </span>
               </div>
               <div className="space-y-2 text-sm">
-                <p>
-                  <span className="text-muted-foreground">Next billing date:</span>{" "}
-                  {new Date(subscription.current_period_end).toLocaleDateString()}
-                </p>
+                {!bypassSubscription && (
+                  <p>
+                    <span className="text-muted-foreground">Next billing date:</span>{" "}
+                    {new Date(subscription.current_period_end).toLocaleDateString()}
+                  </p>
+                )}
                 <p>
                   <span className="text-muted-foreground">Member since:</span>{" "}
                   {new Date(subscription.created_at).toLocaleDateString()}

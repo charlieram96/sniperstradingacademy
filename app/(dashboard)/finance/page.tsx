@@ -62,7 +62,8 @@ export default function FinancePage() {
     qualifiedAt: null as Date | null,
     directReferralsCount: 0,
     accumulatedResidual: 0,
-    paymentSchedule: 'monthly' as 'weekly' | 'monthly'
+    paymentSchedule: 'monthly' as 'weekly' | 'monthly',
+    bypassSubscription: false
   })
   const [financialStats, setFinancialStats] = useState({
     totalSniperVolume: 0,
@@ -134,7 +135,8 @@ export default function FinancePage() {
           qualifiedAt: userData?.qualified_at ? new Date(userData.qualified_at) : null,
           directReferralsCount: userData?.direct_referrals_count || 0,
           accumulatedResidual: 0,
-          paymentSchedule: paymentSchedule as 'weekly' | 'monthly'
+          paymentSchedule: paymentSchedule as 'weekly' | 'monthly',
+          bypassSubscription: userData?.bypass_subscription || false
         })
 
         // Fetch real network stats
@@ -334,6 +336,7 @@ export default function FinancePage() {
           monthlyPaymentDueDate={accountStatus.monthlyPaymentDueDate}
           lastPaymentDate={accountStatus.lastPaymentDate}
           paymentSchedule={accountStatus.paymentSchedule}
+          bypassSubscription={accountStatus.bypassSubscription}
           onPayNow={handlePayNow}
         />
       </div>

@@ -18,6 +18,7 @@ interface AccountStatusCardProps {
   monthlyPaymentDueDate: Date | null
   lastPaymentDate: Date | null
   paymentSchedule?: 'weekly' | 'monthly'
+  bypassSubscription?: boolean
   onPayNow?: () => void
 }
 
@@ -26,6 +27,7 @@ export function AccountStatusCard({
   monthlyPaymentDueDate,
   lastPaymentDate,
   paymentSchedule = 'monthly',
+  bypassSubscription = false,
   onPayNow
 }: AccountStatusCardProps) {
   const [timeUntilDue, setTimeUntilDue] = useState<string>("")
@@ -136,29 +138,59 @@ export function AccountStatusCard({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <CreditCard className="h-4 w-4" />
-              <span>{paymentSchedule === 'weekly' ? 'Weekly' : 'Monthly'} Subscription</span>
+          {!bypassSubscription && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <CreditCard className="h-4 w-4" />
+                <span>{paymentSchedule === 'weekly' ? 'Weekly' : 'Monthly'} Subscription</span>
+              </div>
+              <p className="text-2xl font-bold">${paymentSchedule === 'weekly' ? '49.75' : '199'}</p>
+              <p className="text-xs text-muted-foreground">Due {paymentSchedule === 'weekly' ? 'weekly' : 'monthly'}</p>
             </div>
-            <p className="text-2xl font-bold">${paymentSchedule === 'weekly' ? '49.75' : '199'}</p>
-            <p className="text-xs text-muted-foreground">Due {paymentSchedule === 'weekly' ? 'weekly' : 'monthly'}</p>
-          </div>
+          )}
+
+          {bypassSubscription && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <CreditCard className="h-4 w-4" />
+                <span>Subscription Status</span>
+              </div>
+              <p className="text-2xl font-bold">Bypassed</p>
+              <p className="text-xs text-muted-foreground">Administrative access</p>
+            </div>
+          )}
           
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock className="h-4 w-4" />
-              <span>Next Payment</span>
-            </div>
-            <p className="text-lg font-semibold">
-              {timeUntilDue}
-            </p>
-            {monthlyPaymentDueDate && (
-              <p className="text-xs text-muted-foreground">
-                {new Date(monthlyPaymentDueDate).toLocaleDateString()}
+          {!bypassSubscription && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Clock className="h-4 w-4" />
+                <span>Next Payment</span>
+              </div>
+              <p className="text-lg font-semibold">
+                {timeUntilDue}
               </p>
-            )}
-          </div>
+              {monthlyPaymentDueDate && (
+                <p className="text-xs text-muted-foreground">
+                  {new Date(monthlyPaymentDueDate).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+          )}
+
+          {bypassSubscription && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <CheckCircle className="h-4 w-4" />
+                <span>Subscription</span>
+              </div>
+              <p className="text-lg font-semibold">
+                Bypassed
+              </p>
+              <p className="text-xs text-muted-foreground">
+                No payment required
+              </p>
+            </div>
+          )}
           
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">

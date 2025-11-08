@@ -755,6 +755,420 @@ export async function POST(req: NextRequest) {
         break
       }
 
+      // Payment intent succeeded (handles failed→succeeded recovery)
+      case "payment_intent.succeeded": {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent
+        const customerId = paymentIntent.customer as string
+        const amount = paymentIntent.amount / 100 // Convert to dollars
+        const amountCents = paymentIntent.amount
+
+        console.log(`✅ Payment Intent succeeded: ${paymentIntent.id}`)
+        console.log(`   Customer: ${customerId}`)
+        console.log(`   Amount: $${amount}`)
+
+        // Get user from customer ID
+        const { data: user } = await supabase
+          .from("users")
+          .select("id, email, name, is_active, network_position_id, referred_by, membership_status, initial_payment_completed")
+          .eq("stripe_customer_id", customerId)
+          .single()
+
+        if (!user) {
+          console.error(`❌ No user found for customer ${customerId}`)
+          break
+        }
+
+        // Check if existing payment record exists
+        const { data: existingPayment } = await supabase
+          .from("payments")
+          .select("id, status, user_id")
+          .eq("stripe_payment_intent_id", paymentIntent.id)
+          .single()
+
+        const wasFailedPayment = existingPayment?.status === "failed"
+        const wasAlreadySucceeded = existingPayment?.status === "succeeded"
+
+        // IDEMPOTENCY: If payment already succeeded, don't process again
+        if (wasAlreadySucceeded) {
+          console.log(`ℹ️  Payment ${paymentIntent.id} already processed as succeeded - skipping`)
+          break
+        }
+
+        if (wasFailedPayment) {
+          console.log(`🔄 PAYMENT RECOVERY: Updating failed payment to succeeded`)
+          console.log(`   Payment ID: ${existingPayment.id}`)
+          console.log(`   User: ${user.name} (${user.email})`)
+
+          // Update existing failed payment to succeeded
+          await supabase
+            .from("payments")
+            .update({ status: "succeeded" })
+            .eq("id", existingPayment.id)
+
+          console.log(`✅ Payment status updated: failed → succeeded`)
+        } else if (!existingPayment) {
+          // No existing payment record - this is a first-time success
+          console.log(`📝 Creating new succeeded payment record`)
+        }
+
+        // Determine payment type based on amount
+        let paymentType: "initial" | "weekly" | "monthly"
+        if (amountCents === 49900) {
+          paymentType = "initial" // $499
+        } else if (amountCents === 4975) {
+          paymentType = "weekly" // $49.75
+        } else if (amountCents === 19900 || amountCents === 20000) {
+          paymentType = "monthly" // $199 or legacy $200
+        } else {
+          console.warn(`⚠️  Unknown payment amount: $${amount}`)
+          paymentType = "monthly" // Default to monthly
+        }
+
+        console.log(`   Payment type: ${paymentType}`)
+
+        // Create payment record if it doesn't exist
+        if (!existingPayment) {
+          const { error: paymentError } = await supabase
+            .from("payments")
+            .insert({
+              user_id: user.id,
+              stripe_payment_intent_id: paymentIntent.id,
+              amount: amount,
+              payment_type: paymentType,
+              status: "succeeded",
+            })
+
+          if (paymentError) {
+            console.error("❌ Error creating payment record:", paymentError)
+          } else {
+            console.log("✅ Payment record created")
+          }
+        }
+
+        // Handle INITIAL PAYMENT ($499) - Full activation
+        if (paymentType === "initial") {
+          console.log(`💰 Processing INITIAL payment recovery ($${amount})`)
+
+          // IDEMPOTENCY: Check if user is already activated
+          if (user.is_active && user.initial_payment_completed) {
+            console.log(`⚠️  User ${user.id} already activated - skipping activation logic`)
+            break
+          }
+
+          const wasActiveBefore = user.is_active || false
+
+          // STEP 1: Assign network position if user doesn't have one yet
+          if (!user.network_position_id) {
+            console.log("🎯 User has no network position yet, assigning now...")
+
+            const { data: positionId, error: positionError } = await supabase
+              .rpc('assign_network_position', {
+                p_user_id: user.id,
+                p_referrer_id: user.referred_by || null
+              })
+
+            if (positionError) {
+              console.error('❌ Error assigning network position:', positionError)
+            } else {
+              console.log(`✅ Network position assigned: ${positionId}`)
+
+              // Log upchain for visibility
+              try {
+                const { data: upchain, error: upchainError } = await supabase
+                  .rpc('get_upline_chain', { start_position_id: positionId })
+
+                if (!upchainError && upchain && upchain.length > 0) {
+                  const ancestorIds = (upchain as Array<{ user_id: string }>).filter((a) => a.user_id !== user.id).map((a) => a.user_id)
+                  console.log(`✅ Incremented total_network_count for ${ancestorIds.length} ancestors`)
+
+                  if (ancestorIds.length > 0) {
+                    const preview = ancestorIds.slice(0, 3)
+                    console.log(`   Affected ancestor IDs: [${preview.join(', ')}${ancestorIds.length > 3 ? `, ... +${ancestorIds.length - 3} more` : ''}]`)
+                  }
+                }
+              } catch (upchainErr) {
+                console.error('Error fetching upchain for logging:', upchainErr)
+              }
+            }
+          } else {
+            console.log(`ℹ️  User already has network position: ${user.network_position_id}`)
+          }
+
+          // STEP 2: Update user status with 30-day grace period
+          const { data: userData, error: userError } = await supabase
+            .from("users")
+            .update({
+              membership_status: "unlocked",
+              initial_payment_completed: true,
+              initial_payment_date: new Date().toISOString(),
+              is_active: true,
+              last_payment_date: new Date().toISOString()
+            })
+            .eq("id", user.id)
+            .select()
+
+          if (userError) {
+            console.error("❌ Error updating user:", userError)
+          } else {
+            console.log("✅ User activated with 30-day grace period:", userData)
+          }
+
+          // STEP 3: Increment active network count for all ancestors
+          // Re-fetch user to get the potentially newly assigned network_position_id
+          const { data: userAfterPositionAssignment } = await supabase
+            .from("users")
+            .select("network_position_id")
+            .eq("id", user.id)
+            .single()
+
+          if (userAfterPositionAssignment?.network_position_id && !wasActiveBefore) {
+            try {
+              const { data: ancestorsIncremented, error: incrementError } = await supabase
+                .rpc('increment_upchain_active_count', {
+                  p_user_id: user.id
+                })
+
+              if (incrementError) {
+                console.error('❌ Error incrementing active count:', incrementError)
+              } else {
+                console.log(`✅ User ${user.id} became ACTIVE after payment recovery!`)
+                console.log(`✅ Incremented active_network_count for ${ancestorsIncremented || 0} ancestors in upchain`)
+
+                // Log which ancestors were affected
+                try {
+                  const { data: upchain, error: upchainError } = await supabase
+                    .rpc('get_upline_chain', { start_position_id: userAfterPositionAssignment.network_position_id })
+
+                  if (!upchainError && upchain && upchain.length > 0) {
+                    const ancestorIds = (upchain as Array<{ user_id: string }>).filter((a) => a.user_id !== user.id).map((a) => a.user_id)
+                    if (ancestorIds.length > 0) {
+                      const preview = ancestorIds.slice(0, 3)
+                      console.log(`   Affected ancestor IDs: [${preview.join(', ')}${ancestorIds.length > 3 ? `, ... +${ancestorIds.length - 3} more` : ''}]`)
+                    }
+                  }
+                } catch (upchainErr) {
+                  console.error('Error fetching upchain for logging:', upchainErr)
+                }
+              }
+            } catch (err) {
+              console.error('❌ Exception incrementing active count:', err)
+            }
+          } else if (!userAfterPositionAssignment?.network_position_id) {
+            console.warn('⚠️  Cannot increment active count: User has no network position')
+          }
+
+          // STEP 4: Update or create referral record
+          const { data: existingReferral } = await supabase
+            .from("referrals")
+            .select("id, referrer_id")
+            .eq("referred_id", user.id)
+            .single()
+
+          let referralData: { referrer_id: string } | null = null
+          let referralError: unknown = null
+
+          if (!existingReferral && user.referred_by) {
+            // Create missing referral record (defensive - should have been created at signup)
+            console.log("⚠️  Creating missing referral record for user:", user.id)
+            const { data: createdReferral, error: createError } = await supabase
+              .from("referrals")
+              .insert({
+                referrer_id: user.referred_by,
+                referred_id: user.id,
+                status: "active",
+                initial_payment_status: "completed"
+              })
+              .select("referrer_id")
+              .single()
+
+            referralData = createdReferral
+            referralError = createError
+
+            if (createError) {
+              console.error("❌ Error creating referral:", createError)
+            } else {
+              console.log("✅ Referral created with 'active' status")
+            }
+          } else if (existingReferral) {
+            // Update existing referral (normal path)
+            const { error: updateError } = await supabase
+              .from("referrals")
+              .update({
+                initial_payment_status: "completed",
+                status: "active"
+              })
+              .eq("referred_id", user.id)
+
+            referralData = { referrer_id: existingReferral.referrer_id }
+            referralError = updateError
+
+            if (updateError) {
+              console.error("❌ Error updating referral:", updateError)
+            } else {
+              console.log("✅ Referral updated to 'active' status")
+            }
+          } else {
+            console.log("ℹ️  No referral to update (user not referred)")
+          }
+
+          // Log the direct referrals count update (triggered by database trigger)
+          if (!referralError && referralData?.referrer_id) {
+            try {
+              // Query referrer's updated count
+              const { data: referrerData, error: countError } = await supabase
+                .from("users")
+                .select("name, direct_referrals_count")
+                .eq("id", referralData.referrer_id)
+                .single()
+
+              if (countError) {
+                console.warn("⚠️  Could not fetch direct_referrals_count - column may not exist")
+              } else if (referrerData) {
+                console.log(`✅ Referrer's direct_referrals_count updated via trigger`)
+                console.log(`   Referrer: ${referrerData.name} (${referralData.referrer_id})`)
+                console.log(`   New direct_referrals_count: ${referrerData.direct_referrals_count}`)
+              }
+            } catch (err) {
+              console.warn("⚠️  Error fetching direct_referrals_count:", err)
+            }
+          }
+
+          // STEP 5: Create $249.50 direct bonus for referrer (50% of $499)
+          if (referralData?.referrer_id) {
+            const bonusAmount = 249.50
+
+            // IDEMPOTENCY: Check if bonus already exists
+            const { data: existingBonus } = await supabase
+              .from("commissions")
+              .select("id")
+              .eq("referrer_id", referralData.referrer_id)
+              .eq("referred_id", user.id)
+              .eq("commission_type", "direct_bonus")
+              .single()
+
+            if (existingBonus) {
+              console.log(`ℹ️  Direct bonus already exists - skipping creation`)
+            } else {
+              const { error: bonusError } = await supabase
+                .from("commissions")
+                .insert({
+                  referrer_id: referralData.referrer_id,
+                  referred_id: user.id,
+                  amount: bonusAmount,
+                  commission_type: 'direct_bonus',
+                  status: 'pending',
+                })
+
+              if (bonusError) {
+                console.error("❌ Error creating direct bonus:", bonusError)
+              } else {
+                console.log(`✅ Created $${bonusAmount} direct bonus for referrer ${referralData.referrer_id}`)
+              }
+            }
+          }
+
+          console.log(`🎉 Initial payment recovery completed successfully for user: ${user.id}`)
+        }
+
+        // Handle RECURRING PAYMENT ($49.75 weekly or $199 monthly)
+        else if (paymentType === "weekly" || paymentType === "monthly") {
+          console.log(`💰 Processing RECURRING payment recovery ($${amount} ${paymentType})`)
+
+          // Determine distribution amount
+          const distributionAmount = paymentType === "weekly" ? 49.75 : 199.00
+
+          // 1. Update last_payment_date and reactivate if needed
+          const updateData: { last_payment_date: string; is_active?: boolean } = {
+            last_payment_date: new Date().toISOString()
+          }
+
+          // If user was inactive, reactivate them
+          if (!user.is_active) {
+            updateData.is_active = true
+            console.log(`🔄 Reactivating user ${user.id}`)
+          }
+
+          await supabase
+            .from("users")
+            .update(updateData)
+            .eq("id", user.id)
+
+          console.log(`✅ ${paymentType.charAt(0).toUpperCase() + paymentType.slice(1)} payment ($${amount}) recorded for user ${user.id}`)
+
+          // If user was reactivated, increment upchain active count
+          if (!user.is_active && user.network_position_id) {
+            try {
+              const { data: ancestorsIncremented, error: incrementError } = await supabase
+                .rpc('increment_upchain_active_count', {
+                  p_user_id: user.id
+                })
+
+              if (incrementError) {
+                console.error('❌ Error incrementing active count:', incrementError)
+              } else {
+                console.log(`✅ User reactivated! Incremented active_network_count for ${ancestorsIncremented || 0} ancestors`)
+              }
+            } catch (err) {
+              console.error('❌ Exception incrementing active count:', err)
+            }
+          }
+
+          // 2. Distribute to ENTIRE upline chain
+          try {
+            const { data: ancestorCount, error: distError } = await supabase
+              .rpc('distribute_to_upline_batch', {
+                p_user_id: user.id,
+                p_amount: distributionAmount
+              })
+
+            if (distError) {
+              console.error('❌ Error distributing to upline:', distError)
+            } else {
+              console.log(`✅ Distributed $${distributionAmount} to ${ancestorCount || 0} ancestors (all the way to root)`)
+            }
+          } catch (err) {
+            console.error('❌ Exception distributing to upline:', err)
+          }
+
+          // 3. Update commission rate and structure number
+          try {
+            const { data: updatedUser } = await supabase
+              .from("users")
+              .select("active_network_count")
+              .eq("id", user.id)
+              .single()
+
+            if (updatedUser) {
+              const { data: commissionRate } = await supabase
+                .rpc('calculate_commission_rate', {
+                  active_count: updatedUser.active_network_count
+                })
+
+              const { data: structureNumber } = await supabase
+                .rpc('calculate_structure_number', {
+                  active_count: updatedUser.active_network_count
+                })
+
+              await supabase
+                .from("users")
+                .update({
+                  current_commission_rate: commissionRate,
+                  current_structure_number: structureNumber
+                })
+                .eq("id", user.id)
+
+              console.log(`✅ Updated commission rate (${commissionRate}) and structure (${structureNumber}) for user ${user.id}`)
+            }
+          } catch (err) {
+            console.error('❌ Error updating commission rate:', err)
+          }
+
+          console.log(`🎉 Recurring payment recovery completed successfully for user: ${user.id}`)
+        }
+
+        break
+      }
+
       // Dispute created (chargeback initiated)
       case "charge.dispute.created": {
         const dispute = event.data.object as Stripe.Dispute

@@ -276,7 +276,7 @@ Cron job runs: process_monthly_volumes()
     → Ready for new month
 ```
 
-### **Payout Processing (~7th of Month)**
+### **Payout Processing (~15th of Month)**
 
 ```
 Admin runs payout process
