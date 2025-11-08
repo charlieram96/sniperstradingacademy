@@ -28,7 +28,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { DollarSign, AlertCircle, CheckCircle, XCircle, Loader2, RefreshCw, Wallet } from "lucide-react"
+import { DollarSign, AlertCircle, CheckCircle, XCircle, Loader2, RefreshCw, Wallet, Plus } from "lucide-react"
+import { ManualPayoutDialog } from "@/components/admin/manual-payout-dialog"
+import { PayoutUser } from "@/components/admin/user-search-combobox"
 
 interface Commission {
   id: string
@@ -44,6 +46,8 @@ interface Commission {
   processedAt: string | null
   retryCount: number
   createdAt: string
+  description?: string | null
+  createdByAdminId?: string | null
 }
 
 interface Summary {
@@ -75,6 +79,8 @@ export default function AdminPayoutsPage() {
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [processResults, setProcessResults] = useState<ProcessResult[]>([])
   const [showResultsModal, setShowResultsModal] = useState(false)
+  const [showManualPayoutDialog, setShowManualPayoutDialog] = useState(false)
+  const [users, setUsers] = useState<PayoutUser[]>([])
 
   const fetchCommissions = useCallback(async () => {
     try {
@@ -103,9 +109,25 @@ export default function AdminPayoutsPage() {
     }
   }, [])
 
+  const fetchUsers = useCallback(async () => {
+    try {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from("users")
+        .select("id, name, email, stripe_connect_account_id")
+        .order("name", { ascending: true })
+
+      if (!error && data) {
+        setUsers(data as PayoutUser[])
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error)
+    }
+  }, [])
+
   const fetchData = useCallback(async () => {
-    await Promise.all([fetchCommissions(), fetchStripeBalance()])
-  }, [fetchCommissions, fetchStripeBalance])
+    await Promise.all([fetchCommissions(), fetchStripeBalance(), fetchUsers()])
+  }, [fetchCommissions, fetchStripeBalance, fetchUsers])
 
   const checkSuperAdminStatus = useCallback(async () => {
     const supabase = createClient()
@@ -322,23 +344,34 @@ export default function AdminPayoutsPage() {
               </Button>
             </div>
 
-            <Button
-              onClick={() => setShowConfirmModal(true)}
-              disabled={processing || summary.pending === 0 || balanceWarning}
-              className="bg-primary hover:bg-primary/90"
-            >
-              {processing ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <DollarSign className="h-4 w-4 mr-2" />
-                  Process All Pending ({summary.pending})
-                </>
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowManualPayoutDialog(true)}
+                disabled={processing}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Manual Payout
+              </Button>
+
+              <Button
+                onClick={() => setShowConfirmModal(true)}
+                disabled={processing || summary.pending === 0 || balanceWarning}
+                className="bg-primary hover:bg-primary/90"
+              >
+                {processing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    Process All Pending ({summary.pending})
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -560,6 +593,14 @@ export default function AdminPayoutsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Manual Payout Dialog */}
+      <ManualPayoutDialog
+        open={showManualPayoutDialog}
+        onOpenChange={setShowManualPayoutDialog}
+        users={users}
+        onSuccess={fetchData}
+      />
     </div>
   )
 }

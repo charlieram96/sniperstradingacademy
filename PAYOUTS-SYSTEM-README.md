@@ -84,7 +84,7 @@ For each user with sniper volume:
   - Reset sniper_volume_current_month = 0
 ```
 
-**~7th of Month (Manual by Superadmin):**
+**~15th of Month (Manual by Superadmin):**
 ```
 Superadmin visits /admin/payouts
   ↓

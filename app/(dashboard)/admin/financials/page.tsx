@@ -62,10 +62,10 @@ interface PaymentData {
   status: string
   payment_type: string
   created_at: string
-  users: Array<{
+  users: {
     name: string | null
     email: string
-  }>
+  } | null
 }
 
 interface CommissionData {
@@ -76,14 +76,14 @@ interface CommissionData {
   status: string
   paid_at: string | null
   created_at: string
-  referrer: Array<{
+  referrer: {
     name: string | null
     email: string
-  }>
-  referred: Array<{
+  } | null
+  referred: {
     name: string | null
     email: string
-  }>
+  } | null
 }
 
 export default function AdminFinancialsPage() {
@@ -124,16 +124,19 @@ export default function AdminFinancialsPage() {
       .order("created_at", { ascending: false })
 
     if (!paymentsError && paymentsData) {
-      const formattedPayments = paymentsData.map((p: PaymentData) => ({
-        id: p.id,
-        user_id: p.user_id,
-        amount: p.amount,
-        status: p.status,
-        payment_type: p.payment_type,
-        created_at: p.created_at,
-        user_name: p.users[0]?.name || null,
-        user_email: p.users[0]?.email || ""
-      }))
+      const formattedPayments = paymentsData.map((p) => {
+        const user = Array.isArray(p.users) ? p.users[0] : p.users
+        return {
+          id: p.id,
+          user_id: p.user_id,
+          amount: p.amount,
+          status: p.status,
+          payment_type: p.payment_type,
+          created_at: p.created_at,
+          user_name: user?.name || null,
+          user_email: user?.email || ""
+        }
+      })
       setPayments(formattedPayments)
     }
 
@@ -160,19 +163,23 @@ export default function AdminFinancialsPage() {
       .order("created_at", { ascending: false })
 
     if (!commissionsError && commissionsData) {
-      const formattedCommissions = commissionsData.map((c: CommissionData) => ({
-        id: c.id,
-        referrer_id: c.referrer_id,
-        referred_id: c.referred_id,
-        amount: c.amount,
-        status: c.status,
-        paid_at: c.paid_at,
-        created_at: c.created_at,
-        referrer_name: c.referrer[0]?.name || null,
-        referrer_email: c.referrer[0]?.email || "",
-        referred_name: c.referred[0]?.name || null,
-        referred_email: c.referred[0]?.email || ""
-      }))
+      const formattedCommissions = commissionsData.map((c) => {
+        const referrer = Array.isArray(c.referrer) ? c.referrer[0] : c.referrer
+        const referred = Array.isArray(c.referred) ? c.referred[0] : c.referred
+        return {
+          id: c.id,
+          referrer_id: c.referrer_id,
+          referred_id: c.referred_id,
+          amount: c.amount,
+          status: c.status,
+          paid_at: c.paid_at,
+          created_at: c.created_at,
+          referrer_name: referrer?.name || null,
+          referrer_email: referrer?.email || "",
+          referred_name: referred?.name || null,
+          referred_email: referred?.email || ""
+        }
+      })
       setCommissions(formattedCommissions)
     }
 
@@ -184,12 +191,12 @@ export default function AdminFinancialsPage() {
 
     // Calculate stats
     const totalRevenue = paymentsData
-      ?.filter((p: PaymentData) => p.status === "succeeded")
-      .reduce((sum: number, p: PaymentData) => sum + parseFloat(String(p.amount)), 0) || 0
+      ?.filter((p) => p.status === "succeeded")
+      .reduce((sum: number, p) => sum + parseFloat(String(p.amount)), 0) || 0
 
     const totalPayouts = commissionsData
-      ?.filter((c: CommissionData) => c.status === "paid")
-      .reduce((sum: number, c: CommissionData) => sum + parseFloat(String(c.amount)), 0) || 0
+      ?.filter((c) => c.status === "paid")
+      .reduce((sum: number, c) => sum + parseFloat(String(c.amount)), 0) || 0
 
     setStats({
       totalRevenue,

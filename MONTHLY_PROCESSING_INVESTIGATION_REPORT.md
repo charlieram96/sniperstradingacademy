@@ -178,7 +178,7 @@ process_monthly_volumes()
    └─ Set current_month = 0 for all users
 ```
 
-### Payout Processing (~7th of Month)
+### Payout Processing (~15th of Month)
 
 Bulk payout includes:
 - ALL `residual_monthly` commissions (pending/failed)
