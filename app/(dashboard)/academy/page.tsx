@@ -510,7 +510,7 @@ export default function AcademyPage() {
         </CardContent>
       </Card>
 
-      {/* Course Modules */}
+      {/* Course Module */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
