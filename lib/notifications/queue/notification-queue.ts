@@ -24,50 +24,72 @@ import type { SendNotificationParams } from '../notification-types'
  * - Use TLS (rediss://) for production
  */
 
-const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.REDIS_URL || 'redis://localhost:6379'
+// Check if we have a valid Redis URL configured
+// For Upstash native Redis (not REST API), use UPSTASH_REDIS_URL or REDIS_URL
+// Format: rediss://default:PASSWORD@ENDPOINT:PORT
+const REDIS_URL = process.env.UPSTASH_REDIS_URL || process.env.REDIS_URL
 
-// Parse Upstash REST URL to Redis connection URL if needed
-// Upstash REST URL format: https://xxxxx.upstash.io
-// Convert to Redis URL: rediss://default:PASSWORD@xxxxx.upstash.io:PORT
-let connectionUrl = REDIS_URL
+// Track if Redis is available
+let redisAvailable = false
+let connection: Redis | null = null
 
-// If using Upstash REST URL, construct proper Redis connection
-if (REDIS_URL.startsWith('https://') && REDIS_URL.includes('upstash.io')) {
-  // For Upstash, use separate environment variables
-  const upstashHost = new URL(REDIS_URL).hostname
-  const upstashPassword = process.env.UPSTASH_REDIS_REST_TOKEN || ''
-  const upstashPort = process.env.UPSTASH_REDIS_PORT || '6379'
+// Only create Redis connection if URL is configured and valid
+if (REDIS_URL && !REDIS_URL.includes('localhost')) {
+  try {
+    // Create Redis connection optimized for Upstash/serverless
+    connection = new Redis(REDIS_URL, {
+      maxRetriesPerRequest: null,  // Required for BullMQ
+      enableReadyCheck: false,      // Better for serverless environments
+      family: 6,                     // Prefer IPv6 (Upstash supports both)
 
-  connectionUrl = `rediss://default:${upstashPassword}@${upstashHost}:${upstashPort}`
+      // Optimized for Upstash/serverless
+      lazyConnect: true,             // Don't connect immediately
+      enableOfflineQueue: true,      // Queue commands when disconnected
+      retryStrategy: (times) => {
+        if (times > 10) {
+          console.warn('Redis connection failed after 10 retries')
+          return null  // Stop retrying after 10 attempts
+        }
+        return Math.min(times * 100, 3000)  // Exponential backoff, max 3s
+      },
+
+      // TLS for production Upstash
+      tls: REDIS_URL.startsWith('rediss://') ? {
+        rejectUnauthorized: true
+      } : undefined,
+
+      // Connection pool settings for serverless
+      keepAlive: 30000,              // Keep connections alive
+      connectTimeout: 10000,         // 10s connection timeout
+      commandTimeout: 5000,          // 5s command timeout
+    })
+
+    // Handle connection errors
+    connection.on('error', (error) => {
+      console.warn('Redis connection error (notifications will be sent directly):', error.message)
+      redisAvailable = false
+    })
+
+    connection.on('connect', () => {
+      console.log('✅ Redis connected successfully')
+      redisAvailable = true
+    })
+
+    redisAvailable = true
+  } catch (error) {
+    console.warn('Failed to create Redis connection, notifications will be sent directly:', error)
+    connection = null
+    redisAvailable = false
+  }
+} else {
+  console.warn('⚠️  No Redis URL configured. Notifications will be sent directly without queue.')
+  console.warn('   To enable queue: Set UPSTASH_REDIS_URL in .env.local')
+  console.warn('   Get it from: https://console.upstash.com/ → Your Database → Redis Connect → ioredis')
 }
 
-// Create Redis connection optimized for Upstash/serverless
-const connection = new Redis(connectionUrl, {
-  maxRetriesPerRequest: null,  // Required for BullMQ
-  enableReadyCheck: false,      // Better for serverless environments
-  family: 6,                     // Prefer IPv6 (Upstash supports both)
-
-  // Optimized for Upstash/serverless
-  lazyConnect: true,             // Don't connect immediately
-  enableOfflineQueue: true,      // Queue commands when disconnected
-  retryStrategy: (times) => {
-    if (times > 10) return null  // Stop retrying after 10 attempts
-    return Math.min(times * 100, 3000)  // Exponential backoff, max 3s
-  },
-
-  // TLS for production Upstash
-  tls: connectionUrl.startsWith('rediss://') ? {
-    rejectUnauthorized: true
-  } : undefined,
-
-  // Connection pool settings for serverless
-  keepAlive: 30000,              // Keep connections alive
-  connectTimeout: 10000,         // 10s connection timeout
-  commandTimeout: 5000,          // 5s command timeout
-})
-
 // Export Redis connection for use in other modules (e.g., cache invalidation)
-export { connection }
+// Export flag to check if Redis is available
+export { connection, redisAvailable }
 
 // Queue names
 export const NOTIFICATION_QUEUE_NAME = 'notifications'
@@ -77,8 +99,9 @@ export const DEAD_LETTER_QUEUE_NAME = 'notifications-dlq'
  * Notification Queue
  *
  * Handles queueing of notification jobs with retry logic
+ * Only created if Redis is available
  */
-export const notificationQueue = new Queue(NOTIFICATION_QUEUE_NAME, {
+export const notificationQueue = connection ? new Queue(NOTIFICATION_QUEUE_NAME, {
   connection,
   defaultJobOptions: {
     attempts: 5,  // Max retries
@@ -94,37 +117,41 @@ export const notificationQueue = new Queue(NOTIFICATION_QUEUE_NAME, {
       age: 604800  // Keep failed jobs for 7 days
     }
   }
-})
+}) : null
 
 /**
  * Dead Letter Queue
  *
  * Permanently failed jobs go here for manual review
+ * Only created if Redis is available
  */
-export const deadLetterQueue = new Queue(DEAD_LETTER_QUEUE_NAME, {
+export const deadLetterQueue = connection ? new Queue(DEAD_LETTER_QUEUE_NAME, {
   connection
-})
+}) : null
 
 /**
  * Queue Events
  *
  * Listen to queue events for monitoring
+ * Only created if Redis is available
  */
-export const queueEvents = new QueueEvents(NOTIFICATION_QUEUE_NAME, {
+export const queueEvents = connection ? new QueueEvents(NOTIFICATION_QUEUE_NAME, {
   connection
-})
+}) : null
 
-// Event listeners for monitoring
-queueEvents.on('completed', ({ jobId }) => {
-  console.log(`✅ Notification job ${jobId} completed`)
-})
+// Event listeners for monitoring (only if queue is available)
+if (queueEvents) {
+  queueEvents.on('completed', ({ jobId }) => {
+    console.log(`✅ Notification job ${jobId} completed`)
+  })
 
-queueEvents.on('failed', ({ jobId, failedReason }) => {
-  console.error(`❌ Notification job ${jobId} failed:`, failedReason)
-})
+  queueEvents.on('failed', ({ jobId, failedReason }) => {
+    console.error(`❌ Notification job ${jobId} failed:`, failedReason)
+  })
 
-// Note: 'retrying' event is not available in QueueEvents
-// Retry logic is handled by BullMQ automatically based on job options
+  // Note: 'retrying' event is not available in QueueEvents
+  // Retry logic is handled by BullMQ automatically based on job options
+}
 
 /**
  * Add notification to queue
@@ -142,6 +169,10 @@ export async function queueNotification(
     priority?: number  // 1 (highest) to 100 (lowest)
   }
 ): Promise<string> {
+  if (!notificationQueue) {
+    throw new Error('Notification queue not available - Redis not configured. Notification will be sent directly.')
+  }
+
   const job = await notificationQueue.add(
     'send-notification',
     params,
@@ -190,6 +221,17 @@ export async function queueCampaignBatch(
  * @returns Queue statistics
  */
 export async function getQueueMetrics() {
+  if (!notificationQueue) {
+    return {
+      waiting: 0,
+      active: 0,
+      completed: 0,
+      failed: 0,
+      delayed: 0,
+      total: 0
+    }
+  }
+
   const [waiting, active, completed, failed, delayed] = await Promise.all([
     notificationQueue.getWaitingCount(),
     notificationQueue.getActiveCount(),
@@ -215,6 +257,9 @@ export async function getQueueMetrics() {
  * @returns Array of failed jobs
  */
 export async function getFailedJobs(limit: number = 50): Promise<Job[]> {
+  if (!notificationQueue) {
+    return []
+  }
   return notificationQueue.getFailed(0, limit)
 }
 
@@ -225,6 +270,10 @@ export async function getFailedJobs(limit: number = 50): Promise<Job[]> {
  * @returns True if successfully retried
  */
 export async function retryFailedJob(jobId: string): Promise<boolean> {
+  if (!notificationQueue) {
+    return false
+  }
+
   try {
     const job = await notificationQueue.getJob(jobId)
     if (job) {
@@ -248,6 +297,11 @@ export async function moveToDeadLetterQueue(
   jobId: string,
   reason: string
 ): Promise<void> {
+  if (!notificationQueue || !deadLetterQueue) {
+    console.warn('Queue not available, cannot move to dead letter queue')
+    return
+  }
+
   try {
     const job = await notificationQueue.getJob(jobId)
     if (job) {
@@ -276,6 +330,10 @@ export async function moveToDeadLetterQueue(
  * @returns Number of jobs cleaned
  */
 export async function cleanOldJobs(maxAge: number = 604800000): Promise<number> {
+  if (!notificationQueue) {
+    return 0
+  }
+
   const cleaned = await notificationQueue.clean(maxAge, 100, 'completed')
   console.log(`Cleaned ${cleaned.length} old jobs from queue`)
   return cleaned.length
@@ -287,6 +345,10 @@ export async function cleanOldJobs(maxAge: number = 604800000): Promise<number> 
  * Useful for maintenance or emergencies
  */
 export async function pauseQueue(): Promise<void> {
+  if (!notificationQueue) {
+    console.warn('Queue not available, cannot pause')
+    return
+  }
   await notificationQueue.pause()
   console.log('Notification queue paused')
 }
@@ -295,6 +357,10 @@ export async function pauseQueue(): Promise<void> {
  * Resume queue processing
  */
 export async function resumeQueue(): Promise<void> {
+  if (!notificationQueue) {
+    console.warn('Queue not available, cannot resume')
+    return
+  }
   await notificationQueue.resume()
   console.log('Notification queue resumed')
 }
@@ -303,6 +369,10 @@ export async function resumeQueue(): Promise<void> {
  * Drain queue (wait for all active jobs to complete)
  */
 export async function drainQueue(): Promise<void> {
+  if (!notificationQueue) {
+    console.warn('Queue not available, cannot drain')
+    return
+  }
   await notificationQueue.drain()
   console.log('Notification queue drained')
 }
@@ -311,6 +381,10 @@ export async function drainQueue(): Promise<void> {
  * Obliterate queue (remove all jobs - use with caution!)
  */
 export async function obliterateQueue(): Promise<void> {
+  if (!notificationQueue) {
+    console.warn('Queue not available, cannot obliterate')
+    return
+  }
   await notificationQueue.obliterate({ force: true })
   console.log('Notification queue obliterated')
 }
@@ -322,6 +396,9 @@ export async function obliterateQueue(): Promise<void> {
  * @returns Job or null
  */
 export async function getJob(jobId: string): Promise<Job | undefined> {
+  if (!notificationQueue) {
+    return undefined
+  }
   return notificationQueue.getJob(jobId)
 }
 
