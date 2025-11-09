@@ -101,6 +101,7 @@ export default function AcademyManagerPage() {
   })
 
   const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const [fileSizeError, setFileSizeError] = useState<string | null>(null)
 
   // Fetch data
   const fetchModules = async () => {
@@ -243,6 +244,7 @@ export default function AcademyManagerPage() {
       })
     }
     setUploadFile(null)
+    setFileSizeError(null)
     setLessonDialogOpen(true)
   }
 
@@ -263,9 +265,15 @@ export default function AcademyManagerPage() {
       if (response.ok) {
         const data = await response.json()
         return data
+      } else {
+        // Handle error response
+        const errorData = await response.json()
+        alert(errorData.error || "File upload failed")
+        return null
       }
     } catch (error) {
       console.error("Error uploading file:", error)
+      alert("Error uploading file. Please try again.")
     } finally {
       setUploading(false)
     }
@@ -637,12 +645,31 @@ export default function AcademyManagerPage() {
                 id="lesson-file"
                 type="file"
                 accept={lessonForm.type === "video" ? "video/*" : "application/pdf"}
-                onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null
+                  setUploadFile(file)
+
+                  // Validate file size (50 MB limit)
+                  const MAX_SIZE_MB = 50
+                  const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024
+
+                  if (file && file.size > MAX_SIZE_BYTES) {
+                    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2)
+                    setFileSizeError(`File too large: ${fileSizeMB} MB / ${MAX_SIZE_MB} MB max`)
+                  } else {
+                    setFileSizeError(null)
+                  }
+                }}
               />
               {uploadFile && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  Selected: {uploadFile.name}
-                </p>
+                <div className="mt-1 space-y-1">
+                  <p className="text-sm text-muted-foreground">
+                    Selected: {uploadFile.name} ({(uploadFile.size / (1024 * 1024)).toFixed(2)} MB)
+                  </p>
+                  {fileSizeError && (
+                    <p className="text-sm text-red-500">{fileSizeError}</p>
+                  )}
+                </div>
               )}
             </div>
             {lessonForm.type === "video" && (
@@ -661,7 +688,7 @@ export default function AcademyManagerPage() {
             <Button variant="outline" onClick={() => setLessonDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleLessonSubmit} disabled={uploading}>
+            <Button onClick={handleLessonSubmit} disabled={uploading || !!fileSizeError}>
               {uploading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
