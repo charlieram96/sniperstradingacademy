@@ -28,21 +28,23 @@ export interface GlobalSettings {
  * @returns Map of notification types to enabled status
  */
 export async function getGlobalSettings(
-  redis: Redis,
+  redis: Redis | null,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any
 ): Promise<GlobalSettings> {
-  try {
-    // Try cache first
-    const cached = await redis.get(CACHE_KEY)
-    if (cached) {
-      return JSON.parse(cached)
+  // Try cache first (if Redis is available)
+  if (redis) {
+    try {
+      const cached = await redis.get(CACHE_KEY)
+      if (cached) {
+        return JSON.parse(cached)
+      }
+    } catch (error) {
+      console.warn('Redis cache unavailable, querying database:', error)
     }
-  } catch (error) {
-    console.warn('Redis cache unavailable, querying database:', error)
   }
 
-  // Cache miss - query database
+  // Cache miss or Redis unavailable - query database
   try {
     const { data, error } = await supabase
       .from('notification_global_settings')
@@ -64,12 +66,14 @@ export async function getGlobalSettings(
       settings[row.notification_type] = row.enabled
     })
 
-    // Store in cache
-    try {
-      await redis.setex(CACHE_KEY, CACHE_TTL, JSON.stringify(settings))
-    } catch (error) {
-      console.warn('Failed to cache global settings:', error)
-      // Continue even if cache write fails
+    // Store in cache (if Redis is available)
+    if (redis) {
+      try {
+        await redis.setex(CACHE_KEY, CACHE_TTL, JSON.stringify(settings))
+      } catch (error) {
+        console.warn('Failed to cache global settings:', error)
+        // Continue even if cache write fails
+      }
     }
 
     return settings
@@ -85,9 +89,14 @@ export async function getGlobalSettings(
  *
  * Call this whenever global settings are updated
  *
- * @param redis Redis connection
+ * @param redis Redis connection (can be null)
  */
-export async function invalidateGlobalSettingsCache(redis: Redis): Promise<void> {
+export async function invalidateGlobalSettingsCache(redis: Redis | null): Promise<void> {
+  if (!redis) {
+    console.warn('Redis not available, skipping cache invalidation')
+    return
+  }
+
   try {
     await redis.del(CACHE_KEY)
     console.log('Global settings cache invalidated')
