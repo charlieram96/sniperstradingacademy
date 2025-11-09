@@ -178,6 +178,36 @@ export default function AdminPayoutsPage() {
     }
   }
 
+  const handleMarkCompleted = async (commissionId: string) => {
+    if (!confirm("Mark this commission as completed? Use this only if payment was made outside the platform (check, cash, wire, etc.).")) {
+      return
+    }
+
+    setProcessingId(commissionId)
+    try {
+      const response = await fetch("/api/admin/payouts/mark-completed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ commissionId }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        alert(`Success! Commission marked as completed (manual payment)`)
+      } else {
+        alert(`Failed: ${data.error || "Unknown error"}`)
+      }
+
+      await fetchData()
+    } catch (error) {
+      alert("Error marking commission as completed")
+      console.error(error)
+    } finally {
+      setProcessingId(null)
+    }
+  }
+
   const handleProcessBulk = async () => {
     setShowConfirmModal(false)
     setProcessing(true)
@@ -471,23 +501,34 @@ export default function AdminPayoutsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         {(commission.status === "pending" || commission.status === "failed") ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleProcessSingle(commission.id)}
-                            disabled={processing || processingId === commission.id}
-                          >
-                            {processingId === commission.id ? (
-                              <>
-                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                Processing
-                              </>
-                            ) : commission.status === "failed" ? (
-                              "Retry"
-                            ) : (
-                              "Process"
-                            )}
-                          </Button>
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleProcessSingle(commission.id)}
+                              disabled={processing || processingId === commission.id}
+                            >
+                              {processingId === commission.id ? (
+                                <>
+                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                  Processing
+                                </>
+                              ) : commission.status === "failed" ? (
+                                "Retry"
+                              ) : (
+                                "Process"
+                              )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => handleMarkCompleted(commission.id)}
+                              disabled={processing || processingId === commission.id}
+                            >
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Mark Complete
+                            </Button>
+                          </div>
                         ) : (
                           <Badge className="bg-green-600">
                             <CheckCircle className="h-3 w-3 mr-1" />
