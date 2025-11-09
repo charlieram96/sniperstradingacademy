@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getStripe } from "@/lib/stripe/server"
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server"
-import { notifyPayoutProcessed, notifyPayoutFailed } from '@/lib/notifications/notification-service'
 
 const MAX_MANUAL_PAYOUT_AMOUNT = 2000
 const FEE_PERCENTAGE = 0.035 // 3.5% Stripe fee
@@ -182,6 +181,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Send success notification
+      const { notifyPayoutProcessed } = await import('@/lib/notifications/notification-service')
       await notifyPayoutProcessed({
         userId: userId,
         amount: grossAmount,
@@ -214,6 +214,7 @@ export async function POST(req: NextRequest) {
         .eq("id", commissionId)
 
       // Send failure notification
+      const { notifyPayoutFailed } = await import('@/lib/notifications/notification-service')
       await notifyPayoutFailed({
         userId: userId,
         amount: grossAmount,

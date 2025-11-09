@@ -9,7 +9,6 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server"
-import { notifyPayoutProcessed } from "@/lib/notifications/notification-service"
 
 export async function POST(req: NextRequest) {
   try {
@@ -95,6 +94,7 @@ export async function POST(req: NextRequest) {
 
     // Send success notification to user
     try {
+      const { notifyPayoutProcessed } = await import("@/lib/notifications/notification-service")
       await notifyPayoutProcessed({
         userId: commission.referrer_id,
         amount: parseFloat(commission.amount),

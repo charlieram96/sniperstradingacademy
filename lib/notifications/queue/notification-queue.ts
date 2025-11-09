@@ -29,12 +29,16 @@ import type { SendNotificationParams } from '../notification-types'
 // Format: rediss://default:PASSWORD@ENDPOINT:PORT
 const REDIS_URL = process.env.UPSTASH_REDIS_URL || process.env.REDIS_URL
 
+// Detect if we're in build phase (Next.js build)
+// During build, we don't need Redis connections
+const isBuildTime = process.argv.some(arg => arg.includes('build') || arg.includes('.next'))
+
 // Track if Redis is available
 let redisAvailable = false
 let connection: Redis | null = null
 
-// Only create Redis connection if URL is configured and valid
-if (REDIS_URL && !REDIS_URL.includes('localhost')) {
+// Only create Redis connection if URL is configured, valid, and NOT during build
+if (REDIS_URL && !REDIS_URL.includes('localhost') && !isBuildTime) {
   try {
     // Create Redis connection optimized for Upstash/serverless
     connection = new Redis(REDIS_URL, {
@@ -82,9 +86,14 @@ if (REDIS_URL && !REDIS_URL.includes('localhost')) {
     redisAvailable = false
   }
 } else {
-  console.warn('⚠️  No Redis URL configured. Notifications will be sent directly without queue.')
-  console.warn('   To enable queue: Set UPSTASH_REDIS_URL in .env.local')
-  console.warn('   Get it from: https://console.upstash.com/ → Your Database → Redis Connect → ioredis')
+  if (isBuildTime) {
+    // During build, skip Redis connection (prevents EBUSY errors)
+    // Redis will be available at runtime
+  } else if (!REDIS_URL || REDIS_URL.includes('localhost')) {
+    console.warn('⚠️  No Redis URL configured. Notifications will be sent directly without queue.')
+    console.warn('   To enable queue: Set UPSTASH_REDIS_URL in .env.local')
+    console.warn('   Get it from: https://console.upstash.com/ → Your Database → Redis Connect → ioredis')
+  }
 }
 
 // Export Redis connection for use in other modules (e.g., cache invalidation)
