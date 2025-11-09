@@ -20,6 +20,8 @@ import type {
 import { generateIdempotencyKey, isNotificationDuplicate } from './utils/idempotency'
 import { isInQuietHours } from './utils/quiet-hours'
 import { queueNotification } from './queue/notification-queue'
+import { getGlobalSettings, isNotificationEnabled } from './utils/global-settings-cache'
+import { connection } from './queue/notification-queue'
 
 /**
  * Main function to send a notification
@@ -60,6 +62,40 @@ export async function sendNotification(
         status: 'failed',
         channel: 'email'
       }]
+    }
+
+    // Check global notification toggle (master kill switch)
+    // Allows superadmins to disable notification types system-wide
+    try {
+      const globalSettings = await getGlobalSettings(connection, supabase)
+      const globallyEnabled = isNotificationEnabled(globalSettings, params.type)
+
+      if (!globallyEnabled) {
+        // Log the blocked notification for audit trail
+        await supabase.from('notification_logs').insert({
+          user_id: params.userId,
+          notification_type: params.type,
+          status: 'blocked_globally',
+          channel: 'email',
+          message: `Notification type "${params.type}" is globally disabled`,
+          idempotency_key: generateIdempotencyKey({
+            userId: params.userId,
+            type: params.type,
+            channel: 'email',
+            eventId: params.data.eventId as string | undefined
+          })
+        })
+
+        return [{
+          success: false,
+          error: `Notification type "${params.type}" is globally disabled by administrator`,
+          status: 'failed',
+          channel: 'email'
+        }]
+      }
+    } catch (error) {
+      // Log error but continue (fail open - allow notifications if global settings check fails)
+      console.error('Error checking global notification settings:', error)
     }
 
     // Determine which channels to use
