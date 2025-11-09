@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
+// Route segment config for larger file uploads
+export const maxDuration = 60 // 60 seconds for large uploads
+export const dynamic = 'force-dynamic' // Disable static optimization
+
+// File size limits (in bytes)
+const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
+const MAX_FILE_SIZE_MB = 50
+
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient()
@@ -32,6 +40,19 @@ export async function POST(req: NextRequest) {
 
     if (!type || !["video", "pdf"].includes(type)) {
       return NextResponse.json({ error: "Invalid type. Must be 'video' or 'pdf'" }, { status: 400 })
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2)
+      return NextResponse.json(
+        {
+          error: `File too large. File is ${fileSizeMB} MB but maximum size is ${MAX_FILE_SIZE_MB} MB.`,
+          fileSize: fileSizeMB,
+          maxSize: MAX_FILE_SIZE_MB
+        },
+        { status: 413 }
+      )
     }
 
     // Validate file type
