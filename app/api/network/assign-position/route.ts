@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     // Verify user exists and get their details
     const { data: existingUser, error: userError } = await supabase
       .from('users')
-      .select('id, network_position_id, created_at')
+      .select('id, network_position_id, created_at, name, email, referral_code')
       .eq('id', userId)
       .single()
 
@@ -131,6 +131,22 @@ export async function POST(request: Request) {
         }
       } catch (err) {
         console.error('Exception while logging upchain:', err)
+      }
+    }
+
+    // Send referral signup notification to referrer
+    if (referrerId && existingUser) {
+      try {
+        const { notifyReferralSignup } = await import('@/lib/notifications/notification-service')
+        await notifyReferralSignup({
+          referrerId: referrerId,
+          referredName: existingUser.name || 'New Member',
+          referredEmail: existingUser.email || '',
+          referralCode: existingUser.referral_code || ''
+        })
+        console.log(`✅ Sent referral signup notification to referrer ${referrerId}`)
+      } catch (notifError) {
+        console.error('❌ Error sending referral signup notification:', notifError)
       }
     }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getStripe } from "@/lib/stripe/server"
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server"
+import { notifyPayoutProcessed, notifyPayoutFailed } from '@/lib/notifications/notification-service'
 
 const MAX_MANUAL_PAYOUT_AMOUNT = 2000
 const FEE_PERCENTAGE = 0.035 // 3.5% Stripe fee
@@ -180,6 +181,14 @@ export async function POST(req: NextRequest) {
         }, { status: 500 })
       }
 
+      // Send success notification
+      await notifyPayoutProcessed({
+        userId: userId,
+        amount: grossAmount,
+        commissionType: 'manual_payout',
+        payoutId: commissionId
+      })
+
       return NextResponse.json({
         success: true,
         transferId: transfer.id,
@@ -203,6 +212,15 @@ export async function POST(req: NextRequest) {
           processed_at: new Date().toISOString(),
         })
         .eq("id", commissionId)
+
+      // Send failure notification
+      await notifyPayoutFailed({
+        userId: userId,
+        amount: grossAmount,
+        reason: errorMsg,
+        dashboardUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://tradinghub.com'}/payouts`,
+        payoutId: commissionId
+      })
 
       return NextResponse.json({
         success: false,

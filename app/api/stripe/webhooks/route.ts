@@ -325,7 +325,7 @@ export async function POST(req: NextRequest) {
           if (referralData?.referrer_id) {
             const bonusAmount = 249.50
 
-            const { error: bonusError } = await supabase
+            const { data: commission, error: bonusError } = await supabase
               .from("commissions")
               .insert({
                 referrer_id: referralData.referrer_id,
@@ -334,11 +334,28 @@ export async function POST(req: NextRequest) {
                 commission_type: 'direct_bonus',
                 status: 'pending',
               })
+              .select()
+              .single()
 
             if (bonusError) {
               console.error("❌ Error creating direct bonus:", bonusError)
             } else {
               console.log(`✅ Created $${bonusAmount} direct bonus for referrer ${referralData.referrer_id}`)
+
+              // Send notification about direct bonus
+              try {
+                const { notifyDirectBonus } = await import('@/lib/notifications/notification-service')
+                const user = Array.isArray(userData) ? userData[0] : userData
+                await notifyDirectBonus({
+                  referrerId: referralData.referrer_id,
+                  referredName: user?.name || 'New Member',
+                  amount: bonusAmount,
+                  commissionId: commission?.id || 'unknown'
+                })
+                console.log(`✅ Sent direct bonus notification to ${referralData.referrer_id}`)
+              } catch (notifError) {
+                console.error('❌ Error sending direct bonus notification:', notifError)
+              }
             }
           }
 
@@ -710,8 +727,18 @@ export async function POST(req: NextRequest) {
           console.log(`📝 Recorded failed payment for user ${user.id} (${user.email})`)
           console.log(`⚠️  Stripe will retry automatically. If all retries fail, subscription will be cancelled.`)
 
-          // TODO: Send notification to user to update payment method
-          // await sendPaymentFailureEmail(user.email, attemptCount, nextPaymentAttempt)
+          // Send notification to user to update payment method
+          try {
+            const { notifyPaymentFailed } = await import('@/lib/notifications/notification-service')
+            await notifyPaymentFailed({
+              userId: user.id,
+              amount: invoice.amount_due / 100,
+              paymentUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/payments`
+            })
+            console.log(`✅ Sent payment failed notification to ${user.email}`)
+          } catch (notifError) {
+            console.error('❌ Error sending payment failed notification:', notifError)
+          }
         }
         break
       }
