@@ -31,27 +31,27 @@ const COMMON_TIMEZONES = [
 interface NotificationPreferences {
   email: {
     enabled: boolean
-    notification_types: {
-      referral_signup: boolean
-      direct_bonus: boolean
-      monthly_commission: boolean
-      payout_processed: boolean
-      payout_failed: boolean
-      payment_failed: boolean
-      structure_milestone: boolean
-    }
+    referral_signups: boolean
+    network_joins: boolean
+    direct_bonus: boolean
+    monthly_commission: boolean
+    payouts: boolean
+    volume_updates: boolean
+    structure_milestones: boolean
+    payment_failed: boolean
+    account_inactive: boolean
   }
   sms: {
     enabled: boolean
-    notification_types: {
-      referral_signup: boolean
-      direct_bonus: boolean
-      monthly_commission: boolean
-      payout_processed: boolean
-      payout_failed: boolean
-      payment_failed: boolean
-      structure_milestone: boolean
-    }
+    referral_signups: boolean
+    network_joins: boolean
+    direct_bonus: boolean
+    monthly_commission: boolean
+    payouts: boolean
+    volume_updates: boolean
+    structure_milestones: boolean
+    payment_failed: boolean
+    account_inactive: boolean
   }
   quiet_hours: {
     enabled: boolean
@@ -213,30 +213,24 @@ export default function NotificationsPage() {
     })
   }
 
-  const toggleEmailNotification = (type: keyof NotificationPreferences['email']['notification_types']) => {
+  const toggleEmailNotification = (type: keyof Omit<NotificationPreferences['email'], 'enabled'>) => {
     if (!preferences) return
     setPreferences({
       ...preferences,
       email: {
         ...preferences.email,
-        notification_types: {
-          ...preferences.email.notification_types,
-          [type]: !preferences.email.notification_types[type]
-        }
+        [type]: !preferences.email[type]
       }
     })
   }
 
-  const toggleSmsNotification = (type: keyof NotificationPreferences['sms']['notification_types']) => {
+  const toggleSmsNotification = (type: keyof Omit<NotificationPreferences['sms'], 'enabled'>) => {
     if (!preferences) return
     setPreferences({
       ...preferences,
       sms: {
         ...preferences.sms,
-        notification_types: {
-          ...preferences.sms.notification_types,
-          [type]: !preferences.sms.notification_types[type]
-        }
+        [type]: !preferences.sms[type]
       }
     })
   }
@@ -272,13 +266,12 @@ export default function NotificationsPage() {
   }
 
   const notificationTypes = [
-    { id: 'referral_signup', label: 'Referral Signups', description: 'When someone uses your referral code' },
+    { id: 'referral_signups', label: 'Referral Signups', description: 'When someone uses your referral code' },
     { id: 'direct_bonus', label: 'Direct Bonuses', description: 'When you earn a $249.50 direct bonus' },
     { id: 'monthly_commission', label: 'Monthly Commissions', description: 'Monthly residual commission notifications' },
-    { id: 'payout_processed', label: 'Payout Success', description: 'When your commission is paid out' },
-    { id: 'payout_failed', label: 'Payout Issues', description: 'When a payout needs attention' },
+    { id: 'payouts', label: 'Payouts', description: 'When your commission is paid out' },
     { id: 'payment_failed', label: 'Payment Failures', description: 'When your subscription payment fails' },
-    { id: 'structure_milestone', label: 'Network Milestones', description: 'When you achieve network goals' }
+    { id: 'structure_milestones', label: 'Network Milestones', description: 'When you achieve network goals' }
   ]
 
   return (
@@ -484,16 +477,16 @@ export default function NotificationsPage() {
                 <div className="flex gap-6">
                   <div className="flex items-center gap-2">
                     <Switch
-                      checked={preferences?.email.notification_types[type.id as keyof NotificationPreferences['email']['notification_types']] || false}
-                      onCheckedChange={() => toggleEmailNotification(type.id as keyof NotificationPreferences['email']['notification_types'])}
+                      checked={preferences?.email[type.id as keyof Omit<NotificationPreferences['email'], 'enabled'>] || false}
+                      onCheckedChange={() => toggleEmailNotification(type.id as keyof Omit<NotificationPreferences['email'], 'enabled'>)}
                       disabled={!preferences?.email.enabled || notificationHealth?.email_disabled}
                     />
                     <Label className="text-sm">Email</Label>
                   </div>
                   <div className="flex items-center gap-2">
                     <Switch
-                      checked={preferences?.sms.notification_types[type.id as keyof NotificationPreferences['sms']['notification_types']] || false}
-                      onCheckedChange={() => toggleSmsNotification(type.id as keyof NotificationPreferences['sms']['notification_types'])}
+                      checked={preferences?.sms[type.id as keyof Omit<NotificationPreferences['sms'], 'enabled'>] || false}
+                      onCheckedChange={() => toggleSmsNotification(type.id as keyof Omit<NotificationPreferences['sms'], 'enabled'>)}
                       disabled={!preferences?.sms.enabled || !smsConsent?.is_verified || notificationHealth?.sms_disabled}
                     />
                     <Label className="text-sm">SMS</Label>

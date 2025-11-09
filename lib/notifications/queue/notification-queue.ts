@@ -66,6 +66,9 @@ const connection = new Redis(connectionUrl, {
   commandTimeout: 5000,          // 5s command timeout
 })
 
+// Export Redis connection for use in other modules (e.g., cache invalidation)
+export { connection }
+
 // Queue names
 export const NOTIFICATION_QUEUE_NAME = 'notifications'
 export const DEAD_LETTER_QUEUE_NAME = 'notifications-dlq'
