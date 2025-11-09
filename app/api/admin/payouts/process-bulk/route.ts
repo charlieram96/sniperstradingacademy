@@ -151,6 +151,21 @@ export async function POST(req: NextRequest) {
           })
           .eq("id", commission.id)
 
+        // Send payout failure notification
+        try {
+          const { notifyPayoutFailed } = await import('@/lib/notifications/notification-service')
+          await notifyPayoutFailed({
+            userId: commission.referrer_id,
+            amount: parseFloat(commission.amount),
+            reason: errorMsg,
+            dashboardUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://tradinghub.com'}/settings`,
+            payoutId: commission.id
+          })
+          console.log(`✅ Sent payout failed notification to user ${commission.referrer_id}`)
+        } catch (notifError) {
+          console.error('❌ Error sending payout failed notification:', notifError)
+        }
+
         results.push({
           commissionId: commission.id,
           userName: user?.name || "Unknown",
@@ -178,6 +193,21 @@ export async function POST(req: NextRequest) {
             })
             .eq("id", commission.id)
 
+          // Send payout failure notification
+          try {
+            const { notifyPayoutFailed } = await import('@/lib/notifications/notification-service')
+            await notifyPayoutFailed({
+              userId: commission.referrer_id,
+              amount: parseFloat(commission.amount),
+              reason: errorMsg,
+              dashboardUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://tradinghub.com'}/settings`,
+              payoutId: commission.id
+            })
+            console.log(`✅ Sent payout failed notification to user ${commission.referrer_id}`)
+          } catch (notifError) {
+            console.error('❌ Error sending payout failed notification:', notifError)
+          }
+
           results.push({
             commissionId: commission.id,
             userName: user.name || "Unknown",
@@ -199,6 +229,21 @@ export async function POST(req: NextRequest) {
             retry_count: (commission.retry_count || 0) + 1,
           })
           .eq("id", commission.id)
+
+        // Send payout failure notification
+        try {
+          const { notifyPayoutFailed } = await import('@/lib/notifications/notification-service')
+          await notifyPayoutFailed({
+            userId: commission.referrer_id,
+            amount: parseFloat(commission.amount),
+            reason: errorMsg,
+            dashboardUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://tradinghub.com'}/settings`,
+            payoutId: commission.id
+          })
+          console.log(`✅ Sent payout failed notification to user ${commission.referrer_id}`)
+        } catch (notifError) {
+          console.error('❌ Error sending payout failed notification:', notifError)
+        }
 
         results.push({
           commissionId: commission.id,
@@ -226,7 +271,7 @@ export async function POST(req: NextRequest) {
           transfer_group: `monthly_payout_${commission.id}`,
           metadata: {
             userId: commission.referrer_id,
-            commissionId: commission.id,
+            payoutId: commission.id,
             type: commission.commission_type, // Can be "residual_monthly" or "direct_bonus"
             paymentMonth: now.toISOString().slice(0, 7), // e.g., "2025-11"
           },
@@ -257,6 +302,20 @@ export async function POST(req: NextRequest) {
           continue
         }
 
+        // Send payout success notification
+        try {
+          const { notifyPayoutProcessed } = await import('@/lib/notifications/notification-service')
+          await notifyPayoutProcessed({
+            userId: commission.referrer_id,
+            amount: netAmount,
+            commissionType: commission.commission_type,
+            payoutId: commission.id
+          })
+          console.log(`✅ Sent payout processed notification to user ${commission.referrer_id}`)
+        } catch (notifError) {
+          console.error('❌ Error sending payout processed notification:', notifError)
+        }
+
         successCount++
         results.push({
           commissionId: commission.id,
@@ -277,6 +336,21 @@ export async function POST(req: NextRequest) {
             retry_count: (commission.retry_count || 0) + 1,
           })
           .eq("id", commission.id)
+
+        // Send payout failure notification
+        try {
+          const { notifyPayoutFailed } = await import('@/lib/notifications/notification-service')
+          await notifyPayoutFailed({
+            userId: commission.referrer_id,
+            amount: parseFloat(commission.amount),
+            reason: errorMsg,
+            dashboardUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://tradinghub.com'}/settings`,
+            payoutId: commission.id
+          })
+          console.log(`✅ Sent payout failed notification to user ${commission.referrer_id}`)
+        } catch (notifError) {
+          console.error('❌ Error sending payout failed notification:', notifError)
+        }
 
         results.push({
           commissionId: commission.id,
