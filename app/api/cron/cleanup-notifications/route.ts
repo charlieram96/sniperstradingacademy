@@ -32,14 +32,25 @@ const OUTBOX_RETENTION_DAYS = 7 // Keep processed outbox records for 7 days
 const LOGS_RETENTION_DAYS = 90 // Keep notification logs for 90 days
 
 /**
- * Verify this is a legitimate Vercel cron request
+ * Verify this is a legitimate Vercel cron request or authorized manual trigger
+ *
+ * Accepts requests that meet EITHER condition:
+ * 1. x-vercel-cron: 1 header (automatically added by Vercel) - PRIMARY
+ * 2. Authorization header or query token matches CRON_SECRET (for manual testing)
+ *
+ * The x-vercel-cron header can only be set by Vercel infrastructure and is secure.
  */
 function verifyCronRequest(request: NextRequest): boolean {
+  // Check 1: Vercel cron header (can only be set by Vercel)
   const isCron = request.headers.get('x-vercel-cron') === '1'
+
+  // Check 2: Authorization secret (for manual triggers)
   const authHeader = request.headers.get('authorization')
   const token = authHeader?.replace('Bearer ', '') || request.nextUrl.searchParams.get('token')
   const validToken = token === process.env.CRON_SECRET
-  return isCron && validToken
+
+  // Allow if EITHER condition is met
+  return isCron || validToken
 }
 
 export async function GET(request: NextRequest) {
