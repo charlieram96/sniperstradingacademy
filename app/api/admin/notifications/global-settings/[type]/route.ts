@@ -7,7 +7,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { invalidateGlobalSettingsCache } from "@/lib/notifications/utils/global-settings-cache"
-import { connection } from "@/lib/notifications/queue/notification-queue"
 
 export async function PUT(
   request: NextRequest,
@@ -80,7 +79,8 @@ export async function PUT(
     }
 
     // Invalidate cache so changes take effect immediately
-    await invalidateGlobalSettingsCache(connection)
+    // Note: Redis cache removed, this now does nothing but kept for future cache implementation
+    await invalidateGlobalSettingsCache(null)
 
     console.log({
       event: 'global_toggle_changed',

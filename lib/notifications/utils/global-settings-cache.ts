@@ -1,50 +1,30 @@
 /**
- * GLOBAL NOTIFICATION SETTINGS CACHE
+ * GLOBAL NOTIFICATION SETTINGS
  *
- * Redis caching for global notification toggles to prevent
- * database queries on every notification send.
+ * Query global notification toggles from database.
  *
- * Cache Strategy:
- * - TTL: 5 minutes (300 seconds)
- * - Invalidation: On any toggle update
- * - Fail-open: If cache/db unavailable, allow notifications
+ * Strategy:
+ * - Direct database query (no caching)
+ * - Fail-open: If db unavailable, allow notifications
  */
 
-import type { Redis } from 'ioredis'
 import type { SupabaseClient } from '@supabase/supabase-js'
-
-const CACHE_KEY = 'global:notification:settings'
-const CACHE_TTL = 300 // 5 minutes
 
 export interface GlobalSettings {
   [notificationType: string]: boolean
 }
 
 /**
- * Get global notification settings (with caching)
+ * Get global notification settings
  *
- * @param redis Redis connection
  * @param supabase Supabase client
  * @returns Map of notification types to enabled status
  */
 export async function getGlobalSettings(
-  redis: Redis | null,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any
 ): Promise<GlobalSettings> {
-  // Try cache first (if Redis is available)
-  if (redis) {
-    try {
-      const cached = await redis.get(CACHE_KEY)
-      if (cached) {
-        return JSON.parse(cached)
-      }
-    } catch (error) {
-      console.warn('Redis cache unavailable, querying database:', error)
-    }
-  }
-
-  // Cache miss or Redis unavailable - query database
+  // Query database directly
   try {
     const { data, error } = await supabase
       .from('notification_global_settings')
@@ -66,16 +46,6 @@ export async function getGlobalSettings(
       settings[row.notification_type] = row.enabled
     })
 
-    // Store in cache (if Redis is available)
-    if (redis) {
-      try {
-        await redis.setex(CACHE_KEY, CACHE_TTL, JSON.stringify(settings))
-      } catch (error) {
-        console.warn('Failed to cache global settings:', error)
-        // Continue even if cache write fails
-      }
-    }
-
     return settings
   } catch (error) {
     console.error('Error in getGlobalSettings:', error)
@@ -85,25 +55,16 @@ export async function getGlobalSettings(
 }
 
 /**
- * Invalidate global settings cache
+ * Invalidate global settings cache (no-op)
  *
- * Call this whenever global settings are updated
+ * Kept for backwards compatibility. Since we no longer use caching,
+ * this function does nothing.
  *
- * @param redis Redis connection (can be null)
+ * @param _redis Unused parameter (kept for compatibility)
  */
-export async function invalidateGlobalSettingsCache(redis: Redis | null): Promise<void> {
-  if (!redis) {
-    console.warn('Redis not available, skipping cache invalidation')
-    return
-  }
-
-  try {
-    await redis.del(CACHE_KEY)
-    console.log('Global settings cache invalidated')
-  } catch (error) {
-    console.error('Error invalidating global settings cache:', error)
-    // Non-fatal - cache will expire naturally
-  }
+export async function invalidateGlobalSettingsCache(_redis: unknown): Promise<void> {
+  // No-op - no cache to invalidate
+  return
 }
 
 /**
