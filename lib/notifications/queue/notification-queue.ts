@@ -10,6 +10,7 @@
 
 import { Queue, QueueEvents, Worker, Job } from 'bullmq'
 import { Redis } from 'ioredis'
+import dns from 'node:dns'
 import type { SendNotificationParams } from '../notification-types'
 
 /**
@@ -40,22 +41,24 @@ let connection: Redis | null = null
 // Only create Redis connection if URL is configured, valid, and NOT during build
 if (REDIS_URL && !REDIS_URL.includes('localhost') && !isBuildTime) {
   try {
-    // Create Redis connection optimized for Upstash/serverless
-    connection = new Redis(REDIS_URL, {
+    // Create Redis connection options with IPv4 DNS lookup
+    // Type assertion needed as ioredis types don't include dnsLookup, but it works at runtime
+    const redisOptions = {
+      // BullMQ recommended flags
       maxRetriesPerRequest: null,  // Required for BullMQ
       enableReadyCheck: false,      // Better for serverless environments
-      family: 6,                     // Prefer IPv6 (Upstash supports both)
 
-      // Optimized for Upstash/serverless
-      lazyConnect: false,            // Connect immediately to avoid parallel DNS lookups
-      enableOfflineQueue: true,      // Queue commands when disconnected
-      retryStrategy: (times) => {
+      // Don't open sockets during module import in serverless
+      lazyConnect: true,            // Delay connection until needed
+      enableOfflineQueue: true,     // Queue commands when disconnected
+
+      retryStrategy: (times: number) => {
         if (times > 10) {
           console.warn('Redis connection failed after 10 retries')
           redisAvailable = false
           return null  // Stop retrying after 10 attempts
         }
-        return Math.min(times * 100, 3000)  // Exponential backoff, max 3s
+        return Math.min(1000 * 2 ** times, 30000)  // Exponential backoff, max 30s
       },
 
       // TLS for production Upstash
@@ -64,10 +67,16 @@ if (REDIS_URL && !REDIS_URL.includes('localhost') && !isBuildTime) {
       } : undefined,
 
       // Connection pool settings for serverless
-      keepAlive: 30000,              // Keep connections alive
+      keepAlive: 1,                  // Enable keepalive
       connectTimeout: 10000,         // 10s connection timeout
-      commandTimeout: 5000,          // 5s command timeout
-    })
+
+      // --- IMPORTANT: Force IPv4 to avoid getaddrinfo EBUSY / IPv6 issues ---
+      dnsLookup: (hostname: string, cb: (err: NodeJS.ErrnoException | null, address: string, family: number) => void) =>
+        dns.lookup(hostname, { family: 4, all: false }, cb)
+    }
+
+    // Create Redis connection optimized for Upstash/serverless
+    connection = new Redis(REDIS_URL, redisOptions)
 
     // Handle connection errors
     connection.on('error', (error) => {
@@ -96,10 +105,11 @@ if (REDIS_URL && !REDIS_URL.includes('localhost') && !isBuildTime) {
       redisAvailable = false
     })
 
-    // Pre-warm the connection (connect immediately)
-    // Since lazyConnect: false, this happens automatically
-    // But we'll set initial state
-    redisAvailable = false  // Will be set to true on 'connect' event
+    // Explicitly connect now (gives us control over when connection happens)
+    connection.connect().catch((err) => {
+      console.error('❌ Redis initial connect failed:', err?.message || err)
+      redisAvailable = false
+    })
   } catch (error) {
     console.warn('Failed to create Redis connection, notifications will be sent directly:', error)
     connection = null
