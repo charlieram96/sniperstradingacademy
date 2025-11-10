@@ -11,7 +11,7 @@
 
 import sgMail from '@sendgrid/mail'
 
-const sendGridApiKey = process.env.TWILIO_SENDGRID_API_KEY
+const sendGridApiKey = process.env.SENDGRID_API_KEY
 const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'notifications@tradinghub.com'
 const fromName = process.env.SENDGRID_FROM_NAME || 'Trading Hub'
 
