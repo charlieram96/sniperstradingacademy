@@ -227,7 +227,7 @@ export async function sendNotification(
         results.push({
           success: true,
           notificationId: idempotencyKey, // Use idempotency key as ID
-          status: delay ? 'scheduled' : 'queued',
+          status: delay ? 'deferred' : 'queued',
           channel,
           deferredUntil: scheduledAt ? scheduledAt.toISOString() : undefined
         })
