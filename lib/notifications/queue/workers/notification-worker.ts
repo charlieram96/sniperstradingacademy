@@ -6,19 +6,14 @@
  */
 
 import { Worker, Job } from 'bullmq'
-import { Redis } from 'ioredis'
 import { createClient } from '@/lib/supabase/server'
 import { sendEmail } from '../../twilio/email-service'
 import { sendSMS } from '../../twilio/sms-service'
 import type { SendNotificationParams, NotificationChannel } from '../../notification-types'
-import { NOTIFICATION_QUEUE_NAME, moveToDeadLetterQueue } from '../notification-queue'
+import { NOTIFICATION_QUEUE_NAME, moveToDeadLetterQueue, connection } from '../notification-queue'
 
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379'
-
-const connection = new Redis(REDIS_URL, {
-  maxRetriesPerRequest: null,
-  enableReadyCheck: false
-})
+// Import shared Redis connection from notification-queue (singleton pattern)
+// This prevents creating multiple connections which cause EBUSY errors
 
 /**
  * Process notification job
@@ -263,6 +258,12 @@ function formatTemplate(template: string, variables: Record<string, unknown>): s
  * This should be run as a separate process or in a serverless function
  */
 export function createNotificationWorker() {
+  // If Redis connection is not available, don't create worker
+  if (!connection) {
+    console.warn('⚠️  Redis connection not available. Worker not created. Using direct send fallback.')
+    return null
+  }
+
   const worker = new Worker(
     NOTIFICATION_QUEUE_NAME,
     async (job) => {
@@ -307,7 +308,7 @@ export function createNotificationWorker() {
 // Export singleton worker instance
 let workerInstance: Worker | null = null
 
-export function getNotificationWorker(): Worker {
+export function getNotificationWorker(): Worker | null {
   if (!workerInstance) {
     workerInstance = createNotificationWorker()
   }
