@@ -19,10 +19,7 @@ import type {
 } from './notification-types'
 import { generateIdempotencyKey, isNotificationDuplicate } from './utils/idempotency'
 import { isInQuietHours } from './utils/quiet-hours'
-import { queueNotification } from './queue/notification-queue'
 import { getGlobalSettings, isNotificationEnabled } from './utils/global-settings-cache'
-import { connection } from './queue/notification-queue'
-import { sendNotificationDirectly } from './direct-send'
 
 /**
  * Main function to send a notification
@@ -68,7 +65,7 @@ export async function sendNotification(
     // Check global notification toggle (master kill switch)
     // Allows superadmins to disable notification types system-wide
     try {
-      const globalSettings = await getGlobalSettings(connection, supabase)
+      const globalSettings = await getGlobalSettings(null, supabase)
       const globallyEnabled = isNotificationEnabled(globalSettings, params.type)
 
       if (!globallyEnabled) {
@@ -205,57 +202,44 @@ export async function sendNotification(
         }
       }
 
-      // Queue the notification
+      // Insert notification into outbox (DB-based queue)
       try {
-        const jobId = await queueNotification(
-          {
-            ...params,
-            channel: [channel],
-            idempotencyKey
-          },
-          {
-            delay,
-            priority: params.priority === 'urgent' ? 1 :
-                      params.priority === 'high' ? 25 :
-                      params.priority === 'low' ? 75 : 50
-          }
-        )
+        // Calculate scheduled_at time (for quiet hours / deferred sending)
+        const scheduledAt = delay ? new Date(Date.now() + delay) : null
+
+        // Insert into notification_outbox table
+        const { error: outboxError } = await supabase
+          .from('notification_outbox')
+          .insert({
+            user_id: params.userId,
+            notification_type: params.type,
+            channel,
+            data: params.data,
+            idempotency_key: idempotencyKey,
+            scheduled_at: scheduledAt ? scheduledAt.toISOString() : null,
+            max_retries: 5
+          })
+
+        if (outboxError) {
+          throw new Error(`Failed to queue notification: ${outboxError.message}`)
+        }
 
         results.push({
           success: true,
-          notificationId: jobId,
-          status: delay ? 'deferred' : 'queued',
+          notificationId: idempotencyKey, // Use idempotency key as ID
+          status: delay ? 'scheduled' : 'queued',
           channel,
-          deferredUntil: delay ? new Date(Date.now() + delay).toISOString() : undefined
+          deferredUntil: scheduledAt ? scheduledAt.toISOString() : undefined
         })
-      } catch (queueError) {
-        // Queue failed (likely Redis unavailable) - use direct send fallback
-        console.warn(`⚠️  Queue unavailable, sending directly: ${queueError instanceof Error ? queueError.message : 'Unknown error'}`)
-
-        try {
-          // Send directly without queue (fallback)
-          const directResults = await sendNotificationDirectly(
-            {
-              ...params,
-              channel: [channel]
-            },
-            idempotencyKey
-          )
-
-          // Add direct send results
-          results.push(...directResults)
-
-          console.log(`✅ Notification sent directly (bypassed queue) for user ${params.userId}`)
-        } catch (directError) {
-          // Direct send also failed
-          console.error(`❌ Direct send failed:`, directError)
-          results.push({
-            success: false,
-            error: directError instanceof Error ? directError.message : 'Failed to send notification',
-            status: 'failed',
-            channel
-          })
-        }
+      } catch (outboxError) {
+        // Outbox insert failed - log error
+        console.error(`❌ Failed to queue notification:`, outboxError)
+        results.push({
+          success: false,
+          error: outboxError instanceof Error ? outboxError.message : 'Failed to queue notification',
+          status: 'failed',
+          channel
+        })
       }
     }
 

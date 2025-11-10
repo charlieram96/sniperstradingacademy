@@ -7,8 +7,7 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "check-env": "node -e \"console.log('AUTH_SECRET:', !!process.env.AUTH_SECRET, '\\nNEXTAUTH_URL:', process.env.NEXTAUTH_URL || 'NOT SET', '\\nAUTH_URL:', process.env.AUTH_URL || 'NOT SET')\"",
-    "notification-worker": "tsx scripts/notification-worker.ts"
+    "check-env": "node -e \"console.log('AUTH_SECRET:', !!process.env.AUTH_SECRET, '\\nNEXTAUTH_URL:', process.env.NEXTAUTH_URL || 'NOT SET', '\\nAUTH_URL:', process.env.AUTH_URL || 'NOT SET')\""
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.12",
@@ -38,12 +37,9 @@
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.4",
     "@tanstack/react-query": "^5.87.4",
-    "@upstash/redis": "^1.35.6",
-    "bullmq": "^5.63.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
-    "ioredis": "^5.8.2",
     "lucide-react": "^0.544.0",
     "next": "15.5.3",
     "next-auth": "^5.0.0-beta.29",

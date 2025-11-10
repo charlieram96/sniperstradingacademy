@@ -11,6 +11,16 @@
       "staging": true
     }
   },
+  "crons": [
+    {
+      "path": "/api/cron/process-notifications",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-notifications",
+      "schedule": "0 2 * * 0"
+    }
+  ],
   "headers": [
     {
       "source": "/api/:path*",
