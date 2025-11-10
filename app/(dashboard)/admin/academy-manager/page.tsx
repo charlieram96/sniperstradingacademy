@@ -253,31 +253,56 @@ export default function AcademyManagerPage() {
 
     setUploading(true)
     try {
-      const formData = new FormData()
-      formData.append("file", uploadFile)
-      formData.append("type", lessonForm.type)
-
-      const response = await fetch("/api/academy/upload", {
+      // Step 1: Get signed upload URL from API
+      const urlResponse = await fetch("/api/academy/upload-url", {
         method: "POST",
-        body: formData
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: uploadFile.name,
+          fileType: uploadFile.type,
+          type: lessonForm.type
+        })
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        return data
-      } else {
-        // Handle error response
-        const errorData = await response.json()
-        alert(errorData.error || "File upload failed")
+      if (!urlResponse.ok) {
+        const errorData = await urlResponse.json()
+        alert(errorData.error || "Failed to get upload URL")
         return null
       }
+
+      const { uploadUrl, publicUrl } = await urlResponse.json()
+
+      // Step 2: Upload file directly to Supabase Storage
+      const uploadResponse = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": uploadFile.type,
+          "x-upsert": "false"
+        },
+        body: uploadFile
+      })
+
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text()
+        console.error("Direct upload failed:", errorText)
+        alert("File upload to storage failed")
+        return null
+      }
+
+      // Step 3: Return the public URL (same format as old API)
+      const fileSizeMB = (uploadFile.size / (1024 * 1024)).toFixed(2)
+      return {
+        url: publicUrl,
+        fileSize: `${fileSizeMB} MB`
+      }
+
     } catch (error) {
       console.error("Error uploading file:", error)
       alert("Error uploading file. Please try again.")
+      return null
     } finally {
       setUploading(false)
     }
-    return null
   }
 
   const handleLessonSubmit = async () => {
