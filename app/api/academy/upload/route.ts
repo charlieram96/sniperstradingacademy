@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
 // Route segment config for larger file uploads
+export const runtime = 'nodejs' // Use Node.js runtime for large file handling
 export const maxDuration = 60 // 60 seconds for large uploads
 export const dynamic = 'force-dynamic' // Disable static optimization
 
