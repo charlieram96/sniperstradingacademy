@@ -65,7 +65,7 @@ export async function sendNotification(
     // Check global notification toggle (master kill switch)
     // Allows superadmins to disable notification types system-wide
     try {
-      const globalSettings = await getGlobalSettings(null, supabase)
+      const globalSettings = await getGlobalSettings(supabase)
       const globallyEnabled = isNotificationEnabled(globalSettings, params.type)
 
       if (!globallyEnabled) {
