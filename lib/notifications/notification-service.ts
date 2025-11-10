@@ -10,7 +10,7 @@
  * - Queueing with retry logic
  */
 
-import { createClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/server'
 import type {
   SendNotificationParams,
   NotificationResult,
@@ -33,7 +33,7 @@ import { getGlobalSettings, isNotificationEnabled } from './utils/global-setting
 export async function sendNotification(
   params: SendNotificationParams
 ): Promise<NotificationResult[]> {
-  const supabase = await createClient()
+  const supabase = createServiceRoleClient()
 
   try {
     // Get user details and preferences
