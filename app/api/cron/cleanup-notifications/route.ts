@@ -20,7 +20,7 @@
  */
 
 import { NextRequest } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/server'
 
 // Use Node runtime (not Edge)
 export const runtime = 'nodejs'
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
 
   console.log('🧹 Starting notification cleanup...')
 
-  const supabase = await createClient()
+  const supabase = createServiceRoleClient()
 
   try {
     // Calculate cutoff dates

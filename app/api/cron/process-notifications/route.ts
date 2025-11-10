@@ -19,7 +19,7 @@
  */
 
 import { NextRequest } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/server'
 import { sendNotificationDirectly } from '@/lib/notifications/direct-send'
 
 // IMPORTANT: Use Node runtime (not Edge)
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
 
   console.log(`🚀 Starting notification processor (worker: ${WORKER_ID})`)
 
-  const supabase = await createClient()
+  const supabase = createServiceRoleClient()
 
   try {
     // Step 1: Atomically claim batch with SKIP LOCKED
