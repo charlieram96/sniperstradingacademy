@@ -87,36 +87,45 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Send notifications to each user
-    const results = await Promise.all(
-      userIds.map(async (userId) => {
-        try {
-          const result = await sendNotification({
-            userId,
-            type: 'admin_announcement',
-            channel: channels,
-            data: {
-              subject: subject || 'Message from Admin',
-              message: message.trim(),
-              eventId: `manual_${authUser.id}_${Date.now()}_${userId}`,
-              senderName: userData.name || 'Admin'
-            }
-          })
-          return { userId, result }
-        } catch (error) {
-          console.error(`Error sending to user ${userId}:`, error)
-          return {
-            userId,
-            result: [{
-              success: false,
-              error: error instanceof Error ? error.message : 'Unknown error',
-              status: 'failed' as const,
-              channel: 'email' as const
-            }]
+    // Send notifications to each user SEQUENTIALLY
+    // Sequential sending prevents parallel DNS resolution and reuses Redis connection
+    const results: Array<{ userId: string; result: Array<{success: boolean; error?: string; status: string; channel: string}> }> = []
+
+    for (let i = 0; i < userIds.length; i++) {
+      const userId = userIds[i]
+
+      try {
+        const result = await sendNotification({
+          userId,
+          type: 'admin_announcement',
+          channel: channels,
+          data: {
+            subject: subject || 'Message from Admin',
+            message: message.trim(),
+            eventId: `manual_${authUser.id}_${Date.now()}_${userId}`,
+            senderName: userData.name || 'Admin'
           }
-        }
-      })
-    )
+        })
+        results.push({ userId, result })
+      } catch (error) {
+        console.error(`Error sending to user ${userId}:`, error)
+        results.push({
+          userId,
+          result: [{
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            status: 'failed' as const,
+            channel: 'email' as const
+          }]
+        })
+      }
+
+      // Add small delay between sends to prevent overwhelming Redis/DNS
+      // Skip delay for last user
+      if (i < userIds.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 100)) // 100ms delay
+      }
+    }
 
     // Calculate statistics
     const successful = results.filter(r => r.result.some(res => res.success)).length

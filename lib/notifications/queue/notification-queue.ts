@@ -47,11 +47,12 @@ if (REDIS_URL && !REDIS_URL.includes('localhost') && !isBuildTime) {
       family: 6,                     // Prefer IPv6 (Upstash supports both)
 
       // Optimized for Upstash/serverless
-      lazyConnect: true,             // Don't connect immediately
+      lazyConnect: false,            // Connect immediately to avoid parallel DNS lookups
       enableOfflineQueue: true,      // Queue commands when disconnected
       retryStrategy: (times) => {
         if (times > 10) {
           console.warn('Redis connection failed after 10 retries')
+          redisAvailable = false
           return null  // Stop retrying after 10 attempts
         }
         return Math.min(times * 100, 3000)  // Exponential backoff, max 3s
@@ -70,7 +71,8 @@ if (REDIS_URL && !REDIS_URL.includes('localhost') && !isBuildTime) {
 
     // Handle connection errors
     connection.on('error', (error) => {
-      console.warn('Redis connection error (notifications will be sent directly):', error.message)
+      console.error('❌ Redis connection error:', error.message)
+      console.warn('⚠️  Notifications will be sent directly without queue')
       redisAvailable = false
     })
 
@@ -79,7 +81,25 @@ if (REDIS_URL && !REDIS_URL.includes('localhost') && !isBuildTime) {
       redisAvailable = true
     })
 
-    redisAvailable = true
+    connection.on('ready', () => {
+      console.log('✅ Redis ready to accept commands')
+      redisAvailable = true
+    })
+
+    connection.on('close', () => {
+      console.warn('⚠️  Redis connection closed')
+      redisAvailable = false
+    })
+
+    connection.on('reconnecting', () => {
+      console.log('🔄 Redis reconnecting...')
+      redisAvailable = false
+    })
+
+    // Pre-warm the connection (connect immediately)
+    // Since lazyConnect: false, this happens automatically
+    // But we'll set initial state
+    redisAvailable = false  // Will be set to true on 'connect' event
   } catch (error) {
     console.warn('Failed to create Redis connection, notifications will be sent directly:', error)
     connection = null

@@ -22,6 +22,7 @@ import { isInQuietHours } from './utils/quiet-hours'
 import { queueNotification } from './queue/notification-queue'
 import { getGlobalSettings, isNotificationEnabled } from './utils/global-settings-cache'
 import { connection } from './queue/notification-queue'
+import { sendNotificationDirectly } from './direct-send'
 
 /**
  * Main function to send a notification
@@ -227,13 +228,34 @@ export async function sendNotification(
           channel,
           deferredUntil: delay ? new Date(Date.now() + delay).toISOString() : undefined
         })
-      } catch (error) {
-        results.push({
-          success: false,
-          error: error instanceof Error ? error.message : 'Failed to queue notification',
-          status: 'failed',
-          channel
-        })
+      } catch (queueError) {
+        // Queue failed (likely Redis unavailable) - use direct send fallback
+        console.warn(`⚠️  Queue unavailable, sending directly: ${queueError instanceof Error ? queueError.message : 'Unknown error'}`)
+
+        try {
+          // Send directly without queue (fallback)
+          const directResults = await sendNotificationDirectly(
+            {
+              ...params,
+              channel: [channel]
+            },
+            idempotencyKey
+          )
+
+          // Add direct send results
+          results.push(...directResults)
+
+          console.log(`✅ Notification sent directly (bypassed queue) for user ${params.userId}`)
+        } catch (directError) {
+          // Direct send also failed
+          console.error(`❌ Direct send failed:`, directError)
+          results.push({
+            success: false,
+            error: directError instanceof Error ? directError.message : 'Failed to send notification',
+            status: 'failed',
+            channel
+          })
+        }
       }
     }
 
