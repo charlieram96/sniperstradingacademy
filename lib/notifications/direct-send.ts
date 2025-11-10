@@ -5,7 +5,7 @@
  * Used by both the worker and as a fallback when Redis is unavailable.
  */
 
-import { createClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/server'
 import { sendEmail } from './twilio/email-service'
 import { sendSMS } from './twilio/sms-service'
 import type { SendNotificationParams, NotificationResult, NotificationChannel } from './notification-types'
@@ -42,7 +42,7 @@ export async function sendNotificationDirectly(
 
   console.log(`📧 Sending notification directly: ${type} for user ${userId} via ${channel?.join(', ') || 'email'}`)
 
-  const supabase = await createClient()
+  const supabase = createServiceRoleClient()
   const results: NotificationResult[] = []
 
   try {
