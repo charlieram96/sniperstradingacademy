@@ -5,6 +5,12 @@ import { NavigationLink } from "@/components/navigation-link"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { GlobalBanner } from "@/components/global-banner"
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+import {
   LayoutDashboard,
   Users,
   CreditCard,
@@ -126,43 +132,96 @@ export default async function DashboardLayout({
               <div className="px-4 py-2 mx-2">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Admin</p>
               </div>
-              <NavigationLink
-                href="/admin/classes"
-                className="flex items-center gap-[10px] px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-              >
-                <Shield className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                <span className="text-sm font-medium">Admin Panel</span>
-              </NavigationLink>
-              <NavigationLink
-                href="/admin/network"
-                className="flex items-center gap-[10px] px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-              >
-                <Network className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                <span className="text-sm font-medium">Network View</span>
-              </NavigationLink>
+
+              <Accordion type="multiple" className="mx-2">
+                {/* Notifiers Group */}
+                <AccordionItem value="notifiers" className="border-b-0">
+                  <AccordionTrigger className="flex items-center gap-[10px] px-4 py-2.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 hover:no-underline">
+                    <div className="flex items-center gap-[10px] flex-1">
+                      <Bell className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Notifiers</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-0">
+                    <NavigationLink
+                      href="/admin/classes"
+                      className="flex items-center gap-[10px] pl-8 pr-4 py-2.5 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+                    >
+                      <Shield className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+                      <span className="text-sm font-medium">Admin Panel</span>
+                    </NavigationLink>
+                    {isSuperAdmin && (
+                      <NavigationLink
+                        href="/admin/notifications"
+                        className="flex items-center gap-[10px] pl-8 pr-4 py-2.5 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+                      >
+                        <Bell className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+                        <span className="text-sm font-medium">Notifications Manager</span>
+                      </NavigationLink>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* Network Group */}
+                <AccordionItem value="network" className="border-b-0">
+                  <AccordionTrigger className="flex items-center gap-[10px] px-4 py-2.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 hover:no-underline">
+                    <div className="flex items-center gap-[10px] flex-1">
+                      <Network className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Network</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-0">
+                    <NavigationLink
+                      href="/admin/network"
+                      className="flex items-center gap-[10px] pl-8 pr-4 py-2.5 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+                    >
+                      <Network className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+                      <span className="text-sm font-medium">Network View</span>
+                    </NavigationLink>
+                    {isSuperAdmin && (
+                      <NavigationLink
+                        href="/admin/network-visualizer"
+                        className="flex items-center gap-[10px] pl-8 pr-4 py-2.5 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+                      >
+                        <GitBranch className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+                        <span className="text-sm font-medium">Network Visualizer</span>
+                      </NavigationLink>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* Payments Group */}
+                {isSuperAdmin && (
+                  <AccordionItem value="payments" className="border-b-0">
+                    <AccordionTrigger className="flex items-center gap-[10px] px-4 py-2.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 hover:no-underline">
+                      <div className="flex items-center gap-[10px] flex-1">
+                        <Wallet className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">Payments</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-0">
+                      <NavigationLink
+                        href="/admin/financials"
+                        className="flex items-center gap-[10px] pl-8 pr-4 py-2.5 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+                      >
+                        <TrendingUp className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+                        <span className="text-sm font-medium">Financials</span>
+                      </NavigationLink>
+                      <NavigationLink
+                        href="/admin/payouts"
+                        className="flex items-center gap-[10px] pl-8 pr-4 py-2.5 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+                      >
+                        <Wallet className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+                        <span className="text-sm font-medium">Payouts</span>
+                      </NavigationLink>
+                    </AccordionContent>
+                  </AccordionItem>
+                )}
+              </Accordion>
+
+              {/* Standalone Items (SuperAdmin only) */}
               {isSuperAdmin && (
                 <>
-                  <NavigationLink
-                    href="/admin/network-visualizer"
-                    className="flex items-center gap-[10px] px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-                  >
-                    <GitBranch className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                    <span className="text-sm font-medium">Network Visualizer</span>
-                  </NavigationLink>
-                  <NavigationLink
-                    href="/admin/financials"
-                    className="flex items-center gap-[10px] px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-                  >
-                    <TrendingUp className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                    <span className="text-sm font-medium">Financials</span>
-                  </NavigationLink>
-                  <NavigationLink
-                    href="/admin/payouts"
-                    className="flex items-center gap-[10px] px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-                  >
-                    <Wallet className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                    <span className="text-sm font-medium">Payouts</span>
-                  </NavigationLink>
                   <NavigationLink
                     href="/admin/sniper-logs"
                     className="flex items-center gap-[10px] px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
@@ -176,13 +235,6 @@ export default async function DashboardLayout({
                   >
                     <BookOpen className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
                     <span className="text-sm font-medium">Academy Manager</span>
-                  </NavigationLink>
-                  <NavigationLink
-                    href="/admin/notifications"
-                    className="flex items-center gap-[10px] px-4 py-2.5 mx-2 mb-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-                  >
-                    <Bell className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                    <span className="text-sm font-medium">Notifications Manager</span>
                   </NavigationLink>
                 </>
               )}
