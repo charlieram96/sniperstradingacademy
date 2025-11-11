@@ -64,7 +64,7 @@ export default async function DashboardLayout({
           <NavigationLink
             href="/dashboard"
             isLocked={!isActive}
-            className="flex items-center gap-[10px] px-4 py-[5px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+            className="flex items-center gap-[10px] px-4 py-[10px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
             <LayoutDashboard className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
             <span className="text-sm font-medium">Dashboard</span>
@@ -72,7 +72,7 @@ export default async function DashboardLayout({
           <NavigationLink
             href="/academy"
             isLocked={!isActive}
-            className="flex items-center gap-[10px] px-4 py-[5px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+            className="flex items-center gap-[10px] px-4 py-[10px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
             <GraduationCap className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
             <span className="text-sm font-medium">Academy</span>
@@ -80,7 +80,7 @@ export default async function DashboardLayout({
           <NavigationLink
             href="/team"
             isLocked={!isActive}
-            className="flex items-center gap-[10px] px-4 py-[5px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+            className="flex items-center gap-[10px] px-4 py-[10px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
             <Users className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
             <span className="text-sm font-medium">My Team</span>
@@ -88,14 +88,14 @@ export default async function DashboardLayout({
           <NavigationLink
             href="/finance"
             isLocked={!isActive}
-            className="flex items-center gap-[10px] px-4 py-[5px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+            className="flex items-center gap-[10px] px-4 py-[10px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
             <DollarSign className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
             <span className="text-sm font-medium">Finance</span>
           </NavigationLink>
           <NavigationLink
             href="/payments"
-            className="flex items-center gap-[10px] px-4 py-[5px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+            className="flex items-center gap-[10px] px-4 py-[10px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
             <CreditCard className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
             <span className="text-sm font-medium">Payments</span>
@@ -103,7 +103,7 @@ export default async function DashboardLayout({
           <NavigationLink
             href="/referrals"
             isLocked={!isActive}
-            className="flex items-center gap-[10px] px-4 py-[5px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+            className="flex items-center gap-[10px] px-4 py-[10px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
             <Share2 className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
             <span className="text-sm font-medium">Referrals</span>
@@ -112,14 +112,14 @@ export default async function DashboardLayout({
           <div className="mx-4 my-3 border-t border-sidebar-border"></div>
           <NavigationLink
             href="/notifications"
-            className="flex items-center gap-[10px] px-4 py-[5px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+            className="flex items-center gap-[10px] px-4 py-[10px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
             <Bell className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
             <span className="text-sm font-medium">Notifications</span>
           </NavigationLink>
           <NavigationLink
             href="/settings"
-            className="flex items-center gap-[10px] px-4 py-[5px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+            className="flex items-center gap-[10px] px-4 py-[10px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
             <Settings className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
             <span className="text-sm font-medium">Settings</span>
@@ -136,7 +136,7 @@ export default async function DashboardLayout({
               <Accordion type="multiple" className="mx-2">
                 {/* Notifiers Group */}
                 <AccordionItem value="notifiers" className="border-b-0">
-                  <AccordionTrigger className="flex items-center gap-[10px] px-4 py-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 hover:no-underline">
+                  <AccordionTrigger className="flex items-center gap-[10px] px-4 py-[10px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 hover:no-underline">
                     <div className="flex items-center gap-[10px] flex-1">
                       <Bell className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-medium">Notifiers</span>
@@ -145,7 +145,7 @@ export default async function DashboardLayout({
                   <AccordionContent className="pb-0">
                     <NavigationLink
                       href="/admin/classes"
-                      className="flex items-center gap-[10px] pl-8 pr-4 py-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+                      className="flex items-center gap-[10px] pl-8 pr-4 py-[10px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
                     >
                       <Shield className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
                       <span className="text-sm font-medium">Admin Panel</span>
@@ -153,7 +153,7 @@ export default async function DashboardLayout({
                     {isSuperAdmin && (
                       <NavigationLink
                         href="/admin/notifications"
-                        className="flex items-center gap-[10px] pl-8 pr-4 py-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+                        className="flex items-center gap-[10px] pl-8 pr-4 py-[10px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
                       >
                         <Bell className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
                         <span className="text-sm font-medium">Notifications Manager</span>
@@ -164,7 +164,7 @@ export default async function DashboardLayout({
 
                 {/* Network Group */}
                 <AccordionItem value="network" className="border-b-0">
-                  <AccordionTrigger className="flex items-center gap-[10px] px-4 py-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 hover:no-underline">
+                  <AccordionTrigger className="flex items-center gap-[10px] px-4 py-[10px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 hover:no-underline">
                     <div className="flex items-center gap-[10px] flex-1">
                       <Network className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-medium">Network</span>
@@ -173,7 +173,7 @@ export default async function DashboardLayout({
                   <AccordionContent className="pb-0">
                     <NavigationLink
                       href="/admin/network"
-                      className="flex items-center gap-[10px] pl-8 pr-4 py-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+                      className="flex items-center gap-[10px] pl-8 pr-4 py-[10px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
                     >
                       <Network className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
                       <span className="text-sm font-medium">Network View</span>
@@ -181,7 +181,7 @@ export default async function DashboardLayout({
                     {isSuperAdmin && (
                       <NavigationLink
                         href="/admin/network-visualizer"
-                        className="flex items-center gap-[10px] pl-8 pr-4 py-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+                        className="flex items-center gap-[10px] pl-8 pr-4 py-[10px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
                       >
                         <GitBranch className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
                         <span className="text-sm font-medium">Network Visualizer</span>
@@ -193,7 +193,7 @@ export default async function DashboardLayout({
                 {/* Payments Group */}
                 {isSuperAdmin && (
                   <AccordionItem value="payments" className="border-b-0">
-                    <AccordionTrigger className="flex items-center gap-[10px] px-4 py-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 hover:no-underline">
+                    <AccordionTrigger className="flex items-center gap-[10px] px-4 py-[10px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 hover:no-underline">
                       <div className="flex items-center gap-[10px] flex-1">
                         <Wallet className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium">Payments</span>
@@ -202,14 +202,14 @@ export default async function DashboardLayout({
                     <AccordionContent className="pb-0">
                       <NavigationLink
                         href="/admin/financials"
-                        className="flex items-center gap-[10px] pl-8 pr-4 py-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+                        className="flex items-center gap-[10px] pl-8 pr-4 py-[10px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
                       >
                         <TrendingUp className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
                         <span className="text-sm font-medium">Financials</span>
                       </NavigationLink>
                       <NavigationLink
                         href="/admin/payouts"
-                        className="flex items-center gap-[10px] pl-8 pr-4 py-[5px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+                        className="flex items-center gap-[10px] pl-8 pr-4 py-[10px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
                       >
                         <Wallet className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
                         <span className="text-sm font-medium">Payouts</span>
@@ -224,14 +224,14 @@ export default async function DashboardLayout({
                 <>
                   <NavigationLink
                     href="/admin/sniper-logs"
-                    className="flex items-center gap-[10px] px-4 py-[5px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+                    className="flex items-center gap-[10px] px-4 py-[10px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
                   >
                     <Activity className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
                     <span className="text-sm font-medium">Sniper Logs</span>
                   </NavigationLink>
                   <NavigationLink
                     href="/admin/academy-manager"
-                    className="flex items-center gap-[10px] px-4 py-[5px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+                    className="flex items-center gap-[10px] px-4 py-[10px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
                   >
                     <BookOpen className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
                     <span className="text-sm font-medium">Academy Manager</span>
