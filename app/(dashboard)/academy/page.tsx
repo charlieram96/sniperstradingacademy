@@ -45,10 +45,35 @@ interface Module {
   lessons: Lesson[]
 }
 
+interface DBModule {
+  id: string
+  number: number
+  title: string
+  description: string | null
+  display_order: number
+  is_published: boolean
+}
+
+interface DBLesson {
+  id: string
+  lesson_id: string
+  module_id: string
+  title: string
+  type: 'video' | 'pdf'
+  video_url: string | null
+  pdf_url: string | null
+  duration: string | null
+  file_size: string | null
+  display_order: number
+  is_published: boolean
+}
+
 export default function AcademyPage() {
   const [academyClasses, setAcademyClasses] = useState<AcademyClass[]>([])
   const [classesLoading, setClassesLoading] = useState(true)
   const [progressLoading, setProgressLoading] = useState(true)
+  const [modules, setModules] = useState<Module[]>([])
+  const [modulesLoading, setModulesLoading] = useState(true)
 
   // Fetch academy classes
   useEffect(() => {
@@ -71,6 +96,50 @@ export default function AcademyPage() {
     }
 
     fetchClasses()
+  }, [])
+
+  // Fetch modules and lessons
+  useEffect(() => {
+    async function fetchModulesAndLessons() {
+      try {
+        // Fetch modules
+        const modulesResponse = await fetch('/api/academy/modules')
+        if (!modulesResponse.ok) throw new Error('Failed to fetch modules')
+        const { modules: modulesData } = await modulesResponse.json()
+
+        // Fetch lessons
+        const lessonsResponse = await fetch('/api/academy/lessons')
+        if (!lessonsResponse.ok) throw new Error('Failed to fetch lessons')
+        const { lessons: lessonsData } = await lessonsResponse.json()
+
+        // Group lessons by module
+        const modulesWithLessons: Module[] = modulesData.map((mod: DBModule) => ({
+          id: mod.id,
+          number: mod.number,
+          title: mod.title,
+          description: mod.description || '',
+          lessons: lessonsData
+            .filter((lesson: DBLesson) => lesson.module_id === mod.id)
+            .map((lesson: DBLesson) => ({
+              id: lesson.id,
+              title: lesson.title,
+              type: lesson.type,
+              duration: lesson.duration || undefined,
+              size: lesson.file_size || undefined,
+              url: lesson.type === 'pdf' ? lesson.pdf_url || undefined : lesson.video_url || undefined,
+              completed: false // Will be updated by progress fetch
+            }))
+        }))
+
+        setModules(modulesWithLessons)
+      } catch (error) {
+        console.error('Error fetching modules and lessons:', error)
+      } finally {
+        setModulesLoading(false)
+      }
+    }
+
+    fetchModulesAndLessons()
   }, [])
 
   // Fetch user's academy progress
@@ -107,242 +176,6 @@ export default function AcademyPage() {
 
     fetchProgress()
   }, [])
-
-  // Mock data - replace with actual API calls
-  const [modules, setModules] = useState<Module[]>([
-    {
-      id: "module-1",
-      number: 1,
-      title: "Introduction",
-      description: "Get started with options trading fundamentals",
-      lessons: [
-        {
-          id: "1-1",
-          title: "Welcome",
-          type: "video",
-          duration: "2:13",
-          url: "https://faduoctunhntejvbhwqm.supabase.co/storage/v1/object/public/academy-videos/module-1/module-1-1.mp4",
-          completed: false
-        },
-        {
-          id: "1-2",
-          title: "Snipers Trading Academy Philosophy",
-          type: "video",
-          duration: "2:41",
-          url: "https://faduoctunhntejvbhwqm.supabase.co/storage/v1/object/public/academy-videos/module-1/module-1-2.mp4",
-          completed: false
-        }
-      ]
-    },
-    {
-      id: "module-2",
-      number: 2,
-      title: "Fundamentals",
-      description: "Master the core concepts of options trading",
-      lessons: [
-        {
-          id: "2-1",
-          title: "Understanding Calls and Puts",
-          type: "video",
-          duration: "20 min",
-          completed: false
-        },
-        {
-          id: "2-2",
-          title: "Options Pricing Basics",
-          type: "video",
-          duration: "18 min",
-          completed: false
-        },
-        {
-          id: "2-3",
-          title: "The Greeks Explained",
-          type: "video",
-          duration: "25 min",
-          completed: false
-        },
-        {
-          id: "2-4",
-          title: "Options Trading Glossary",
-          type: "pdf",
-          size: "1.2 MB",
-          completed: false
-        },
-        {
-          id: "2-5",
-          title: "Market Basics Workbook",
-          type: "pdf",
-          size: "2.5 MB",
-          completed: false
-        }
-      ]
-    },
-    {
-      id: "module-3",
-      number: 3,
-      title: "Strategy",
-      description: "Learn proven trading strategies and techniques",
-      lessons: [
-        {
-          id: "3-1",
-          title: "Covered Calls Strategy",
-          type: "video",
-          duration: "22 min",
-          completed: false
-        },
-        {
-          id: "3-2",
-          title: "Protective Puts",
-          type: "video",
-          duration: "18 min",
-          completed: false
-        },
-        {
-          id: "3-3",
-          title: "Spreads and Combinations",
-          type: "video",
-          duration: "30 min",
-          completed: false
-        },
-        {
-          id: "3-4",
-          title: "Strategy Selection Framework",
-          type: "pdf",
-          size: "3.1 MB",
-          completed: false
-        },
-        {
-          id: "3-5",
-          title: "Advanced Strategies Guide",
-          type: "pdf",
-          size: "4.2 MB",
-          completed: false
-        }
-      ]
-    },
-    {
-      id: "module-4",
-      number: 4,
-      title: "Tools",
-      description: "Master the tools and platforms for successful trading",
-      lessons: [
-        {
-          id: "4-1",
-          title: "Trading Platform Setup",
-          type: "video",
-          duration: "16 min",
-          completed: false
-        },
-        {
-          id: "4-2",
-          title: "Chart Analysis Tools",
-          type: "video",
-          duration: "24 min",
-          completed: false
-        },
-        {
-          id: "4-3",
-          title: "Options Calculator Usage",
-          type: "video",
-          duration: "14 min",
-          completed: false
-        },
-        {
-          id: "4-4",
-          title: "Trading Plan Template",
-          type: "pdf",
-          size: "850 KB",
-          completed: false
-        },
-        {
-          id: "4-5",
-          title: "Risk Management Spreadsheet",
-          type: "pdf",
-          size: "1.8 MB",
-          completed: false
-        }
-      ]
-    },
-    {
-      id: "module-5",
-      number: 5,
-      title: "Tutorials",
-      description: "Step-by-step guides for real trading scenarios",
-      lessons: [
-        {
-          id: "5-1",
-          title: "Placing Your First Trade",
-          type: "video",
-          duration: "20 min",
-          completed: false
-        },
-        {
-          id: "5-2",
-          title: "Reading Market Data",
-          type: "video",
-          duration: "18 min",
-          completed: false
-        },
-        {
-          id: "5-3",
-          title: "Managing Open Positions",
-          type: "video",
-          duration: "22 min",
-          completed: false
-        },
-        {
-          id: "5-4",
-          title: "Closing and Rolling Trades",
-          type: "video",
-          duration: "16 min",
-          completed: false
-        }
-      ]
-    },
-    {
-      id: "module-6",
-      number: 6,
-      title: "Resources",
-      description: "Additional materials and reference guides",
-      lessons: [
-        {
-          id: "6-1",
-          title: "Market Analysis Techniques",
-          type: "video",
-          duration: "28 min",
-          completed: false
-        },
-        {
-          id: "6-2",
-          title: "Advanced Chart Patterns",
-          type: "video",
-          duration: "26 min",
-          completed: false
-        },
-        {
-          id: "6-3",
-          title: "Risk Management Handbook",
-          type: "pdf",
-          size: "5.1 MB",
-          completed: false
-        },
-        {
-          id: "6-4",
-          title: "Technical Indicators Guide",
-          type: "pdf",
-          size: "3.8 MB",
-          completed: false
-        },
-        {
-          id: "6-5",
-          title: "Options Trading Cheat Sheet",
-          type: "pdf",
-          size: "1.5 MB",
-          completed: false
-        }
-      ]
-    }
-  ])
 
   // Calculate overall progress
   const totalLessons = modules.reduce((acc, module) => acc + module.lessons.length, 0)
