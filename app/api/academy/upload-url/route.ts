@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server"
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic'
  */
 export async function POST(req: NextRequest) {
   try {
+    // Use regular client for authentication check
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
@@ -27,6 +28,9 @@ export async function POST(req: NextRequest) {
     if (userData?.role !== "superadmin") {
       return NextResponse.json({ error: "Access denied. Superadmin only." }, { status: 403 })
     }
+
+    // Use service role client for storage operations (bypasses RLS)
+    const serviceSupabase = createServiceRoleClient()
 
     const { fileName, fileType, type } = await req.json()
 
@@ -62,7 +66,7 @@ export async function POST(req: NextRequest) {
     const bucket = type === "video" ? "academy-videos" : "academy-pdfs"
 
     // Create signed upload URL (valid for 5 minutes)
-    const { data, error } = await supabase
+    const { data, error } = await serviceSupabase
       .storage
       .from(bucket)
       .createSignedUploadUrl(uniqueFileName)
@@ -76,7 +80,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Get the public URL for the file (will be available after upload)
-    const { data: { publicUrl } } = supabase
+    const { data: { publicUrl } } = serviceSupabase
       .storage
       .from(bucket)
       .getPublicUrl(uniqueFileName)
