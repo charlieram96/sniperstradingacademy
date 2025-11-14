@@ -37,7 +37,8 @@ import {
   FileText,
   Eye,
   EyeOff,
-  Loader2
+  Loader2,
+  Info
 } from "lucide-react"
 
 interface Module {
@@ -674,8 +675,8 @@ export default function AcademyManagerPage() {
                   const file = e.target.files?.[0] || null
                   setUploadFile(file)
 
-                  // Validate file size (50 MB limit)
-                  const MAX_SIZE_MB = 50
+                  // Validate file size (1 GB limit)
+                  const MAX_SIZE_MB = 1024
                   const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024
 
                   if (file && file.size > MAX_SIZE_BYTES) {
@@ -696,6 +697,14 @@ export default function AcademyManagerPage() {
                   )}
                 </div>
               )}
+              {uploadFile && !fileSizeError && (
+                <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md">
+                  <p className="text-sm text-amber-800 dark:text-amber-200 flex items-start gap-1.5">
+                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <span>Large files may take several minutes to upload. Please don&apos;t close this window during upload.</span>
+                  </p>
+                </div>
+              )}
             </div>
             {lessonForm.type === "video" && (
               <div>
@@ -709,20 +718,29 @@ export default function AcademyManagerPage() {
               </div>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setLessonDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleLessonSubmit} disabled={uploading || !!fileSizeError}>
-              {uploading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                editingLesson ? "Update" : "Create"
-              )}
-            </Button>
+          <DialogFooter className="flex-col gap-3">
+            {uploading && (
+              <div className="w-full p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                <p className="text-sm text-blue-800 dark:text-blue-200 text-center">
+                  Please wait, this may take several minutes for large files...
+                </p>
+              </div>
+            )}
+            <div className="flex gap-2 w-full justify-end">
+              <Button variant="outline" onClick={() => setLessonDialogOpen(false)} disabled={uploading}>
+                Cancel
+              </Button>
+              <Button onClick={handleLessonSubmit} disabled={uploading || !!fileSizeError}>
+                {uploading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Uploading file to storage...
+                  </>
+                ) : (
+                  editingLesson ? "Update" : "Create"
+                )}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -7,8 +7,8 @@ export const maxDuration = 60 // 60 seconds for large uploads
 export const dynamic = 'force-dynamic' // Disable static optimization
 
 // File size limits (in bytes)
-const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
-const MAX_FILE_SIZE_MB = 50
+const MAX_FILE_SIZE = 1024 * 1024 * 1024 // 1 GB
+const MAX_FILE_SIZE_MB = 1024
 
 export async function POST(req: NextRequest) {
   try {
