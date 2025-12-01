@@ -121,8 +121,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check for existing active intent
-    const { data: existingIntent } = await supabase
+    // Check for existing active intent (use service role to bypass RLS)
+    const { data: existingIntent } = await serviceSupabase
       .from('payment_intents')
       .select('*')
       .eq('user_id', user.id)
@@ -144,10 +144,10 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Create payment intent
+    // Create payment intent (use service role to bypass RLS)
     const expiresAt = new Date(Date.now() + expirySeconds * 1000);
 
-    const { data: intent, error: intentError } = await supabase
+    const { data: intent, error: intentError } = await serviceSupabase
       .from('payment_intents')
       .insert({
         user_id: user.id,
