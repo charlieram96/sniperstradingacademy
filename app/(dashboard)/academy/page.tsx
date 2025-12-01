@@ -318,7 +318,7 @@ export default function AcademyPage() {
               <div className="text-3xl font-bold text-primary">
                 {Math.round(overallProgress)}%
               </div>
-              <p className="text-sm text-muted-foreground">Complete</p> 
+              <p className="text-sm text-muted-foreground">Complete</p>
             </div>
           </div>
         </CardHeader>
