@@ -79,7 +79,9 @@ class CoinbaseWalletService {
       }
 
       // Create account with user-specific name for idempotency
-      const accountName = `user-${params.userId}`;
+      // CDP requires names to be 2-36 chars, so use first segment of UUID
+      const shortId = params.userId.split('-')[0];
+      const accountName = `user-${shortId}`;
       const account = await this.cdp.evm.getOrCreateAccount({
         name: accountName,
       });
