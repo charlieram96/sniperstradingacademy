@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { coinbaseWalletService } from '@/lib/coinbase/wallet-service';
 import { PAYMENT_AMOUNTS, PAYMENT_INTENT_EXPIRY } from '@/lib/coinbase/wallet-types';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/middleware/rate-limit';
@@ -88,12 +88,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Get or create user's crypto wallet
-    let walletResponse = await coinbaseWalletService.getWalletByUserId(user.id, supabase);
+    // Use service role client for wallet operations (bypasses RLS)
+    const serviceSupabase = createServiceRoleClient();
+    let walletResponse = await coinbaseWalletService.getWalletByUserId(user.id, serviceSupabase);
 
     if (!walletResponse.success) {
       // Create wallet if doesn't exist
       console.log('[CreateIntent] Creating new wallet for user:', user.id);
-      walletResponse = await coinbaseWalletService.createWalletForUser(user.id, supabase);
+      walletResponse = await coinbaseWalletService.createWalletForUser(user.id, serviceSupabase);
 
       if (!walletResponse.success || !walletResponse.data) {
         return NextResponse.json(
