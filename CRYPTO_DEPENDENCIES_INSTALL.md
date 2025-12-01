@@ -70,11 +70,16 @@ MATIC_PRICE_USD=0.50
 CRON_SECRET=your_random_secret_here
 
 # =============================================
-# OPTIONAL: TRANSFI ON-RAMP
+# TRANSFI FIAT ON-RAMP (Credit Card Payments)
+# Get from: https://www.transfi.com/
 # =============================================
 
-# NEXT_PUBLIC_TRANSFI_API_KEY=xxx
-# TRANSFI_PROJECT_ID=xxx
+# TransFi uses MID/Username/Password authentication
+TRANSFI_MID=your_merchant_id
+TRANSFI_USERNAME=your_username
+TRANSFI_PASSWORD=your_password
+NEXT_PUBLIC_TRANSFI_ENV=sandbox  # or 'production'
+TRANSFI_WEBHOOK_SECRET=your_webhook_secret
 ```
 
 ---
@@ -117,6 +122,11 @@ Expected tables:
 ### Withdrawals (Users)
 - `POST /api/crypto/withdrawals` - Withdraw USDC to external wallet
 - `GET /api/crypto/withdrawals` - Get withdrawal history
+
+### Fiat On-Ramp (TransFi)
+- `POST /api/crypto/on-ramp/create-session` - Create fiat payment session
+- `GET /api/crypto/on-ramp/create-session?sessionId=xxx` - Get session status
+- `POST /api/crypto/on-ramp/webhook` - TransFi webhook handler
 
 ### Cron Jobs
 - `GET /api/cron/monitor-payment-intents` - Monitor for funds (every minute)
@@ -225,4 +235,66 @@ curl -H "Authorization: Bearer $CRON_SECRET" \
 
 ---
 
-**Last Updated:** November 29, 2025
+## TransFi Fiat On-Ramp Setup
+
+### 1. Create TransFi Account
+1. Go to https://www.transfi.com/
+2. Sign up for a business account
+3. Complete KYB (Know Your Business) verification
+4. Wait for approval (may take 1-3 business days)
+
+### 2. Get API Credentials
+1. Log into TransFi dashboard
+2. Navigate to "API Authentication" section
+3. You'll receive:
+   - **MID** (Merchant ID)
+   - **Username**
+   - **Password**
+4. Configure webhook to get the webhook secret
+
+### 3. Configure Webhook
+1. In TransFi dashboard, go to "Webhooks" settings
+2. Add webhook URL: `https://your-domain.com/api/crypto/on-ramp/webhook`
+3. Select events: `order.created`, `order.processing`, `order.completed`, `order.failed`, `order.cancelled`
+4. Save the webhook secret
+
+### 4. Test with Sandbox
+1. Use sandbox credentials first
+2. TransFi provides test card numbers for sandbox testing
+3. Verify webhooks are being received
+
+### 5. Switch to Production
+```env
+NEXT_PUBLIC_TRANSFI_ENV=production
+```
+
+### TransFi User Flow
+1. User creates payment intent (existing flow)
+2. User clicks "Pay with Card" button
+3. TransFi widget opens in dialog
+4. User enters card details and completes KYC
+5. TransFi processes fiat payment
+6. TransFi converts to USDC and sends to user's wallet
+7. System detects funds via existing cron job
+8. Payment is completed
+
+---
+
+## Troubleshooting
+
+### "TransFi not configured"
+- Verify `TRANSFI_MID`, `TRANSFI_USERNAME`, and `TRANSFI_PASSWORD` are set
+- Check `NEXT_PUBLIC_TRANSFI_ENV` is set to `sandbox` or `production`
+
+### "Fiat payment not available"
+- TransFi integration may not be fully configured
+- Check API key permissions in TransFi dashboard
+
+### "Webhook not receiving events"
+- Verify webhook URL is publicly accessible
+- Check `TRANSFI_WEBHOOK_SECRET` matches TransFi dashboard
+- Review Vercel function logs for errors
+
+---
+
+**Last Updated:** December 1, 2025

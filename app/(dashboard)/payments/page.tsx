@@ -1,16 +1,49 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, Suspense, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/utils"
-import { CreditCard, CheckCircle, XCircle, Clock, Lock, Unlock, ArrowDownToLine, ArrowUpFromLine, Wallet } from "lucide-react"
+import {
+  CheckCircle,
+  XCircle,
+  Clock,
+  Lock,
+  Unlock,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Wallet,
+  Copy,
+  ExternalLink,
+  Loader2,
+  QrCode,
+  CreditCard
+} from "lucide-react"
 import { PaymentScheduleSelector } from "@/components/payment-schedule-selector"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { TransFiWidget } from "@/components/crypto/TransFiWidget"
+import QRCode from "qrcode"
+
+interface PaymentIntent {
+  id: string
+  intent_type: string
+  amount_usdc: string
+  status: string
+  user_wallet_address: string
+  expires_at: string
+}
 
 function PaymentsContent() {
   const [userId, setUserId] = useState<string | null>(null)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
   const searchParams = useSearchParams()
   const [initialPaymentCompleted, setInitialPaymentCompleted] = useState(false)
   const [bypassSubscription, setBypassSubscription] = useState(false)
@@ -50,26 +83,38 @@ function PaymentsContent() {
   const [loading, setLoading] = useState(true)
   const [subscribing, setSubscribing] = useState(false)
 
+  // Payment modal state
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false)
+  const [currentIntent, setCurrentIntent] = useState<PaymentIntent | null>(null)
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+  const [expiryCountdown, setExpiryCountdown] = useState<number>(0)
+  const [checkingPayment, setCheckingPayment] = useState(false)
+
   const success = searchParams.get("success")
   const canceled = searchParams.get("canceled")
+  const intentId = searchParams.get("intentId")
 
+  // Fetch user on mount
   useEffect(() => {
     async function getUser() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUserId(user.id)
+        setUserEmail(user.email || null)
       }
     }
     getUser()
   }, [])
 
+  // Fetch payment data when user is available
   useEffect(() => {
     async function fetchPaymentData() {
       if (!userId) return
 
       const supabase = createClient()
-      
+
       // Get user data
       const { data: userData } = await supabase
         .from("users")
@@ -81,7 +126,7 @@ function PaymentsContent() {
         setInitialPaymentCompleted(userData.initial_payment_completed || false)
         setBypassSubscription(userData.bypass_subscription || false)
       }
-      
+
       // Get subscription
       const { data: sub } = await supabase
         .from("subscriptions")
@@ -89,7 +134,7 @@ function PaymentsContent() {
         .eq("user_id", userId)
         .eq("status", "active")
         .single()
-      
+
       setSubscription(sub)
 
       // Get payments
@@ -122,17 +167,27 @@ function PaymentsContent() {
         setCommissions(commissionData)
       }
 
-      // Get payouts from Stripe Connect
-      try {
-        const response = await fetch('/api/stripe/connect/payouts')
-        if (response.ok) {
-          const payoutsData = await response.json()
-          if (payoutsData.payouts) {
-            setPayouts(payoutsData.payouts)
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching payouts:', error)
+      // Get USDC payouts (crypto withdrawals)
+      const { data: usdcPayouts } = await supabase
+        .from("usdc_transactions")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("transaction_type", "withdrawal")
+        .order("created_at", { ascending: false })
+        .limit(10)
+
+      if (usdcPayouts) {
+        // Map to payout format for display
+        const mappedPayouts = usdcPayouts.map((tx: { id: string; amount: number; status: string; created_at: string }) => ({
+          id: tx.id,
+          amount: tx.amount * 100, // Convert to cents for formatCurrency
+          currency: 'USDC',
+          arrival_date: new Date(tx.created_at).getTime() / 1000,
+          status: tx.status,
+          type: 'crypto',
+          created: new Date(tx.created_at).getTime() / 1000
+        }))
+        setPayouts(mappedPayouts)
       }
 
       setLoading(false)
@@ -141,80 +196,195 @@ function PaymentsContent() {
     fetchPaymentData()
   }, [userId])
 
+  // Generate QR code when wallet address changes
+  useEffect(() => {
+    async function generateQR() {
+      if (currentIntent?.user_wallet_address) {
+        try {
+          const url = await QRCode.toDataURL(currentIntent.user_wallet_address, {
+            width: 200,
+            margin: 2,
+            color: {
+              dark: '#000000',
+              light: '#FFFFFF'
+            }
+          })
+          setQrCodeUrl(url)
+        } catch (err) {
+          console.error('Failed to generate QR code:', err)
+        }
+      }
+    }
+    generateQR()
+  }, [currentIntent?.user_wallet_address])
+
+  // Countdown timer for payment expiry
+  useEffect(() => {
+    if (!currentIntent?.expires_at) return
+
+    const updateCountdown = () => {
+      const remaining = Math.max(0, Math.floor((new Date(currentIntent.expires_at).getTime() - Date.now()) / 1000))
+      setExpiryCountdown(remaining)
+
+      if (remaining === 0) {
+        setPaymentModalOpen(false)
+        setCurrentIntent(null)
+      }
+    }
+
+    updateCountdown()
+    const interval = setInterval(updateCountdown, 1000)
+    return () => clearInterval(interval)
+  }, [currentIntent?.expires_at])
+
+  // Poll for payment status
+  const checkPaymentStatus = useCallback(async () => {
+    if (!currentIntent?.id) return
+
+    setCheckingPayment(true)
+    try {
+      const response = await fetch(`/api/crypto/payments/check-status?intentId=${currentIntent.id}`)
+      const data = await response.json()
+
+      if (data.success && data.intent) {
+        if (data.intent.status === 'completed') {
+          setPaymentModalOpen(false)
+          setCurrentIntent(null)
+          // Refresh page data
+          window.location.reload()
+        } else if (data.intent.status === 'processing') {
+          // Keep modal open, show processing state
+          setCurrentIntent(prev => prev ? { ...prev, status: 'processing' } : null)
+        }
+      }
+    } catch (error) {
+      console.error('Error checking payment status:', error)
+    } finally {
+      setCheckingPayment(false)
+    }
+  }, [currentIntent?.id])
+
+  // Auto-poll when modal is open
+  useEffect(() => {
+    if (!paymentModalOpen || !currentIntent) return
+
+    const interval = setInterval(checkPaymentStatus, 10000) // Every 10 seconds
+    return () => clearInterval(interval)
+  }, [paymentModalOpen, currentIntent, checkPaymentStatus])
+
+  // Check for pending intent on page load (from redirect)
+  useEffect(() => {
+    async function checkPendingIntent() {
+      if (!intentId || !userId) return
+
+      try {
+        const response = await fetch(`/api/crypto/payments/check-status?intentId=${intentId}`)
+        const data = await response.json()
+
+        if (data.success && data.intent && data.intent.status !== 'completed') {
+          setCurrentIntent(data.intent)
+          setPaymentModalOpen(true)
+        }
+      } catch (error) {
+        console.error('Error checking intent:', error)
+      }
+    }
+
+    checkPendingIntent()
+  }, [intentId, userId])
+
+  // Create payment intent for initial unlock
   async function handleInitialPayment() {
     setProcessingInitial(true)
-    
+
     try {
-      const response = await fetch("/api/stripe/checkout", {
+      const response = await fetch("/api/crypto/payments/create-intent", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ paymentType: "initial" }),
+        body: JSON.stringify({ intentType: "initial_unlock" }),
       })
-      
+
       if (!response.ok) {
         const error = await response.json()
-        console.error("Checkout error:", error)
-        alert(error.error || "Failed to create checkout session")
+        console.error("Payment intent error:", error)
+        alert(error.error || "Failed to create payment intent")
         return
       }
-      
+
       const data = await response.json()
-      
-      if (data.url) {
-        window.location.href = data.url
+
+      if (data.success && data.intent) {
+        setCurrentIntent(data.intent)
+        setPaymentModalOpen(true)
       }
     } catch (error) {
       console.error("Initial payment error:", error)
-      alert("Failed to start checkout. Please try again.")
+      alert("Failed to start payment. Please try again.")
     } finally {
       setProcessingInitial(false)
     }
   }
 
+  // Create payment intent for subscription
   async function handleSubscribe() {
     setSubscribing(true)
 
     try {
-      const response = await fetch("/api/stripe/checkout", {
+      const intentType = paymentSchedule === 'weekly' ? 'weekly_subscription' : 'monthly_subscription'
+
+      const response = await fetch("/api/crypto/payments/create-intent", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          paymentType: "subscription",
-          paymentSchedule: paymentSchedule
-        }),
+        body: JSON.stringify({ intentType }),
       })
 
       if (!response.ok) {
         const error = await response.json()
-        console.error("Checkout error:", error)
-        alert(error.error || "Failed to create checkout session")
+        console.error("Payment intent error:", error)
+        alert(error.error || "Failed to create payment intent")
         return
       }
 
       const data = await response.json()
 
-      if (data.url) {
-        window.location.href = data.url
+      if (data.success && data.intent) {
+        setCurrentIntent(data.intent)
+        setPaymentModalOpen(true)
       }
     } catch (error) {
       console.error("Subscribe error:", error)
-      alert("Failed to start checkout. Please try again.")
+      alert("Failed to start payment. Please try again.")
     } finally {
       setSubscribing(false)
     }
+  }
+
+  // Copy wallet address
+  function handleCopyAddress() {
+    if (currentIntent?.user_wallet_address) {
+      navigator.clipboard.writeText(currentIntent.user_wallet_address)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  // Format countdown time
+  function formatCountdown(seconds: number): string {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
   async function handleCancelSubscription() {
     if (!confirm("Are you sure you want to cancel your subscription?")) {
       return
     }
-
-    // Implement subscription cancellation
-    alert("Subscription cancellation will be implemented with Stripe customer portal")
+    // TODO: Implement subscription cancellation
+    alert("Subscription cancellation will be implemented soon")
   }
 
   if (loading) {
@@ -267,10 +437,10 @@ function PaymentsContent() {
           <CardHeader>
             <CardTitle className="text-foreground flex items-center">
               <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
-              Subscription Activated!
+              Payment Successful!
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              Your subscription is now active. You can start earning commissions from referrals.
+              Your payment has been confirmed. You can start earning commissions from referrals.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -281,10 +451,10 @@ function PaymentsContent() {
           <CardHeader>
             <CardTitle className="text-foreground flex items-center">
               <XCircle className="h-5 w-5 mr-2 text-yellow-500" />
-              Subscription Canceled
+              Payment Canceled
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              Your subscription process was canceled. You can try again anytime.
+              Your payment process was canceled. You can try again anytime.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -304,15 +474,25 @@ function PaymentsContent() {
           </CardHeader>
           <CardContent>
             <div className="mb-4">
-              <p className="text-2xl font-bold text-foreground">{formatCurrency(50000)}</p>
-              <p className="text-sm text-muted-foreground">One-time membership fee</p>
+              <p className="text-2xl font-bold text-foreground">{formatCurrency(49900)}</p>
+              <p className="text-sm text-muted-foreground">One-time membership fee (USDC)</p>
             </div>
-            <Button 
-              onClick={handleInitialPayment} 
+            <Button
+              onClick={handleInitialPayment}
               disabled={processingInitial}
+              size="lg"
             >
-              <Unlock className="h-4 w-4 mr-2" />
-              {processingInitial ? "Processing..." : "Unlock Membership"}
+              {processingInitial ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating Payment...
+                </>
+              ) : (
+                <>
+                  <Unlock className="h-4 w-4 mr-2" />
+                  Unlock Membership
+                </>
+              )}
             </Button>
           </CardContent>
         </Card>
@@ -331,7 +511,7 @@ function PaymentsContent() {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-2xl font-bold">{formatCurrency(20000)}/month</p>
+                  <p className="text-2xl font-bold">{formatCurrency(19900)}/month</p>
                   <p className="text-sm text-muted-foreground">Trading Hub Premium</p>
                 </div>
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
@@ -392,11 +572,17 @@ function PaymentsContent() {
                     size="lg"
                     className="w-full"
                   >
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    {subscribing
-                      ? "Processing..."
-                      : `Subscribe ${paymentSchedule === 'weekly' ? '$49.75/week' : '$199/month'}`
-                    }
+                    {subscribing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Creating Payment...
+                      </>
+                    ) : (
+                      <>
+                        <Wallet className="h-4 w-4 mr-2" />
+                        Subscribe {paymentSchedule === 'weekly' ? '$49.75/week' : '$199/month'}
+                      </>
+                    )}
                   </Button>
                 </div>
               )}
@@ -425,8 +611,8 @@ function PaymentsContent() {
                     </p>
                   </div>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    payment.status === "succeeded" 
-                      ? "bg-green-100 text-green-800" 
+                    payment.status === "succeeded" || payment.status === "completed"
+                      ? "bg-green-100 text-green-800"
                       : "bg-muted text-muted-foreground"
                   }`}>
                     {payment.status}
@@ -461,8 +647,8 @@ function PaymentsContent() {
                     </p>
                   </div>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    commission.status === "paid" 
-                      ? "bg-green-100 text-green-800" 
+                    commission.status === "paid"
+                      ? "bg-green-100 text-green-800"
                       : commission.status === "pending"
                       ? "bg-yellow-100 text-yellow-800"
                       : "bg-muted text-muted-foreground"
@@ -481,7 +667,7 @@ function PaymentsContent() {
       <Card className="mt-8">
         <CardHeader>
           <CardTitle>Payout History</CardTitle>
-          <CardDescription>Your commission payouts to bank account</CardDescription>
+          <CardDescription>Your USDC withdrawals</CardDescription>
         </CardHeader>
         <CardContent>
           {payouts.length === 0 ? (
@@ -489,7 +675,7 @@ function PaymentsContent() {
               <Wallet className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
               <p className="text-muted-foreground">No payouts yet</p>
               <p className="text-sm text-muted-foreground/70 mt-2">
-                Connect your bank account to start receiving automatic monthly payouts
+                Earn commissions and withdraw your USDC to an external wallet
               </p>
             </div>
           ) : (
@@ -498,8 +684,8 @@ function PaymentsContent() {
                 <div key={payout.id} className="flex items-center justify-between py-3 border-b last:border-0">
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-full ${
-                      payout.status === 'paid' 
-                        ? 'bg-green-100 text-green-700' 
+                      payout.status === 'confirmed'
+                        ? 'bg-green-100 text-green-700'
                         : payout.status === 'pending'
                         ? 'bg-yellow-100 text-yellow-700'
                         : 'bg-muted text-muted-foreground'
@@ -508,31 +694,26 @@ function PaymentsContent() {
                     </div>
                     <div>
                       <p className="font-medium">
-                        {formatCurrency(payout.amount)} {payout.currency.toUpperCase()}
+                        ${(payout.amount / 100).toFixed(2)} {payout.currency}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Arrival: {new Date(payout.arrival_date * 1000).toLocaleDateString()}
+                        {new Date(payout.created * 1000).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      payout.status === 'paid' 
-                        ? 'bg-green-100 text-green-800' 
+                      payout.status === 'confirmed'
+                        ? 'bg-green-100 text-green-800'
                         : payout.status === 'pending'
                         ? 'bg-yellow-100 text-yellow-800'
-                        : payout.status === 'in_transit'
-                        ? 'bg-blue-100 text-blue-800'
                         : 'bg-muted text-muted-foreground'
                     }`}>
-                      {payout.status === 'paid' && <CheckCircle className="h-3 w-3 mr-1" />}
+                      {payout.status === 'confirmed' && <CheckCircle className="h-3 w-3 mr-1" />}
                       {payout.status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
-                      {payout.status === 'in_transit' && <ArrowUpFromLine className="h-3 w-3 mr-1" />}
+                      {payout.status === 'processing' && <ArrowUpFromLine className="h-3 w-3 mr-1" />}
                       {payout.status}
                     </span>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(payout.created * 1000).toLocaleDateString()}
-                    </p>
                   </div>
                 </div>
               ))}
@@ -540,6 +721,149 @@ function PaymentsContent() {
           )}
         </CardContent>
       </Card>
+
+      {/* Payment Modal */}
+      <Dialog open={paymentModalOpen} onOpenChange={setPaymentModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wallet className="h-5 w-5" />
+              Complete Your Payment
+            </DialogTitle>
+            <DialogDescription>
+              Pay ${currentIntent?.amount_usdc} USDC to complete your {currentIntent?.intent_type === 'initial_unlock' ? 'membership activation' : 'subscription'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {currentIntent && (
+            <div className="space-y-6">
+              {/* Countdown Timer */}
+              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <span className="text-sm text-muted-foreground">Time remaining</span>
+                <span className={`font-mono font-bold ${expiryCountdown < 300 ? 'text-red-500' : 'text-foreground'}`}>
+                  {formatCountdown(expiryCountdown)}
+                </span>
+              </div>
+
+              {/* Status */}
+              {currentIntent.status === 'processing' && (
+                <div className="flex items-center gap-3 p-4 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border border-yellow-200 dark:border-yellow-900">
+                  <Loader2 className="h-5 w-5 text-yellow-600 animate-spin" />
+                  <div>
+                    <p className="font-medium text-yellow-900 dark:text-yellow-200">Payment Processing</p>
+                    <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                      We detected your payment and are confirming it...
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* QR Code and Address */}
+              {currentIntent.status !== 'processing' && (
+                <>
+                  <div className="flex flex-col items-center gap-4">
+                    {qrCodeUrl && (
+                      <div className="p-4 bg-white rounded-lg border">
+                        <img src={qrCodeUrl} alt="Payment QR Code" className="w-48 h-48" />
+                      </div>
+                    )}
+
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Send USDC (Polygon) to this address:
+                      </p>
+                      <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                        <code className="text-xs font-mono break-all flex-1">
+                          {currentIntent.user_wallet_address}
+                        </code>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleCopyAddress}
+                          className="shrink-0"
+                        >
+                          {copied ? (
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Amount Info */}
+                  <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Amount</span>
+                      <span className="text-xl font-bold">${currentIntent.amount_usdc} USDC</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Send exactly this amount on the Polygon network
+                    </p>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        Or pay with card
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* TransFi Widget */}
+                  <TransFiWidget
+                    walletAddress={currentIntent.user_wallet_address}
+                    amount={currentIntent.amount_usdc}
+                    intentId={currentIntent.id}
+                    email={userEmail || undefined}
+                    onSuccess={() => {
+                      window.location.reload()
+                    }}
+                    onError={(error) => {
+                      console.error('TransFi error:', error)
+                    }}
+                  />
+                </>
+              )}
+
+              {/* Manual Check Button */}
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={checkPaymentStatus}
+                disabled={checkingPayment}
+              >
+                {checkingPayment ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Checking...
+                  </>
+                ) : (
+                  <>
+                    <QrCode className="h-4 w-4 mr-2" />
+                    I&apos;ve Sent the Payment
+                  </>
+                )}
+              </Button>
+
+              {/* Help Text */}
+              <div className="text-center text-xs text-muted-foreground">
+                <p>
+                  Need help?{' '}
+                  <a href="mailto:support@sniperstradingacademy.com" className="text-primary hover:underline">
+                    Contact Support
+                  </a>
+                </p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

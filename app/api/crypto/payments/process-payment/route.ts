@@ -329,11 +329,57 @@ export async function POST(req: NextRequest) {
 /**
  * Process initial unlock payment ($499)
  * - Mark membership as unlocked
+ * - Assign network position
+ * - Increment active count for all ancestors
  * - Trigger direct referral bonus ($249.50)
  */
 async function processInitialUnlock(supabase: any, intent: any, transaction: any) {
   try {
-    // Update user's membership status
+    // Get user's current data
+    const { data: userBeforeUpdate } = await supabase
+      .from('users')
+      .select('network_position_id, is_active, referred_by')
+      .eq('id', intent.user_id)
+      .single();
+
+    const wasActiveBefore = userBeforeUpdate?.is_active || false;
+
+    // STEP 1: Assign network position if user doesn't have one yet
+    if (!userBeforeUpdate?.network_position_id) {
+      console.log('[ProcessInitialUnlock] User has no network position yet, assigning now...');
+
+      const { data: positionId, error: positionError } = await supabase
+        .rpc('assign_network_position', {
+          p_user_id: intent.user_id,
+          p_referrer_id: userBeforeUpdate?.referred_by || null
+        });
+
+      if (positionError) {
+        console.error('[ProcessInitialUnlock] Error assigning network position:', positionError);
+        // Continue with payment processing even if position assignment fails
+      } else {
+        console.log(`[ProcessInitialUnlock] Network position assigned: ${positionId}`);
+
+        // Log upchain for visibility
+        try {
+          const { data: upchain, error: upchainError } = await supabase
+            .rpc('get_upline_chain', { start_position_id: positionId });
+
+          if (!upchainError && upchain && upchain.length > 0) {
+            const ancestorIds = (upchain as Array<{ user_id: string }>)
+              .filter((a) => a.user_id !== intent.user_id)
+              .map((a) => a.user_id);
+            console.log(`[ProcessInitialUnlock] Incremented total_network_count for ${ancestorIds.length} ancestors`);
+          }
+        } catch (upchainErr) {
+          console.error('[ProcessInitialUnlock] Error fetching upchain for logging:', upchainErr);
+        }
+      }
+    } else {
+      console.log(`[ProcessInitialUnlock] User already has network position: ${userBeforeUpdate.network_position_id}`);
+    }
+
+    // STEP 2: Update user's membership status
     await supabase
       .from('users')
       .update({
@@ -341,10 +387,39 @@ async function processInitialUnlock(supabase: any, intent: any, transaction: any
         initial_payment_date: new Date().toISOString(),
         membership_status: 'unlocked',
         is_active: true,
+        last_payment_date: new Date().toISOString(),
       })
       .eq('id', intent.user_id);
 
-    // Create payment record
+    // STEP 3: Increment active network count for all ancestors (user just became active)
+    // Re-fetch user to get the potentially newly assigned network_position_id
+    const { data: userAfterPositionAssignment } = await supabase
+      .from('users')
+      .select('network_position_id')
+      .eq('id', intent.user_id)
+      .single();
+
+    if (userAfterPositionAssignment?.network_position_id && !wasActiveBefore) {
+      try {
+        const { data: ancestorsIncremented, error: incrementError } = await supabase
+          .rpc('increment_upchain_active_count', {
+            p_user_id: intent.user_id
+          });
+
+        if (incrementError) {
+          console.error('[ProcessInitialUnlock] Error incrementing active count:', incrementError);
+        } else {
+          console.log(`[ProcessInitialUnlock] User ${intent.user_id} became ACTIVE after $499 payment!`);
+          console.log(`[ProcessInitialUnlock] Incremented active_network_count for ${ancestorsIncremented || 0} ancestors in upchain`);
+        }
+      } catch (err) {
+        console.error('[ProcessInitialUnlock] Exception incrementing active count:', err);
+      }
+    } else if (!userAfterPositionAssignment?.network_position_id) {
+      console.warn('[ProcessInitialUnlock] Cannot increment active count: User has no network position');
+    }
+
+    // STEP 4: Create payment record
     const { data: payment } = await supabase
       .from('payments')
       .insert({
@@ -366,19 +441,33 @@ async function processInitialUnlock(supabase: any, intent: any, transaction: any
         .eq('id', transaction.id);
     }
 
-    // Get user's referrer
-    const { data: referral } = await supabase
+    // STEP 5: Update referral status
+    const { data: existingReferral } = await supabase
       .from('referrals')
-      .select('referrer_id')
+      .select('id, referrer_id')
       .eq('referred_id', intent.user_id)
       .single();
 
-    if (referral && referral.referrer_id) {
-      // Create direct bonus commission ($249.50)
+    if (existingReferral) {
+      // Update existing referral to active
+      await supabase
+        .from('referrals')
+        .update({
+          initial_payment_status: 'completed',
+          status: 'active'
+        })
+        .eq('referred_id', intent.user_id);
+
+      console.log('[ProcessInitialUnlock] Referral updated to active status');
+    }
+
+    // STEP 6: Create direct bonus commission ($249.50)
+    const referrerId = existingReferral?.referrer_id || userBeforeUpdate?.referred_by;
+    if (referrerId) {
       const { data: commission } = await supabase
         .from('commissions')
         .insert({
-          referrer_id: referral.referrer_id,
+          referrer_id: referrerId,
           referred_id: intent.user_id,
           amount: PAYMENT_AMOUNTS.DIRECT_BONUS,
           commission_type: 'direct_bonus',
@@ -388,7 +477,27 @@ async function processInitialUnlock(supabase: any, intent: any, transaction: any
         .select()
         .single();
 
-      console.log(`[ProcessInitialUnlock] Created direct bonus commission ${commission?.id} for referrer ${referral.referrer_id}`);
+      console.log(`[ProcessInitialUnlock] Created direct bonus commission ${commission?.id} for referrer ${referrerId}`);
+
+      // Send notification about direct bonus
+      try {
+        const { notifyDirectBonus } = await import('@/lib/notifications/notification-service');
+        const { data: userData } = await supabase
+          .from('users')
+          .select('name')
+          .eq('id', intent.user_id)
+          .single();
+
+        await notifyDirectBonus({
+          referrerId: referrerId,
+          referredName: userData?.name || 'New Member',
+          amount: parseFloat(PAYMENT_AMOUNTS.DIRECT_BONUS),
+          commissionId: commission?.id || 'unknown'
+        });
+        console.log(`[ProcessInitialUnlock] Sent direct bonus notification to ${referrerId}`);
+      } catch (notifError) {
+        console.error('[ProcessInitialUnlock] Error sending direct bonus notification:', notifError);
+      }
     }
 
     console.log(`[ProcessInitialUnlock] Unlocked membership for user ${intent.user_id}`);
