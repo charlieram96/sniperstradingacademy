@@ -9,17 +9,12 @@ import { formatCurrency } from "@/lib/utils"
 import {
   CheckCircle,
   XCircle,
-  Clock,
   Lock,
   Unlock,
-  ArrowDownToLine,
-  ArrowUpFromLine,
   Wallet,
   Copy,
-  ExternalLink,
   Loader2,
   QrCode,
-  CreditCard
 } from "lucide-react"
 import { PaymentScheduleSelector } from "@/components/payment-schedule-selector"
 import {
@@ -30,6 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { TransFiWidget } from "@/components/crypto/TransFiWidget"
+import { UnifiedTransactionHistory } from "@/components/crypto/UnifiedTransactionHistory"
 import QRCode from "qrcode"
 
 interface PaymentIntent {
@@ -55,31 +51,6 @@ function PaymentsContent() {
     current_period_end: string
     created_at: string
   } | null>(null)
-  const [payments, setPayments] = useState<Array<{
-    id: string
-    amount: number
-    status: string
-    created_at: string
-  }>>([])
-  const [commissions, setCommissions] = useState<Array<{
-    id: string
-    amount: number
-    status: string
-    created_at: string
-    referred?: {
-      name: string | null
-      email: string
-    }
-  }>>([])
-  const [payouts, setPayouts] = useState<Array<{
-    id: string
-    amount: number
-    currency: string
-    arrival_date: number
-    status: string
-    type: string
-    created: number
-  }>>([])
   const [loading, setLoading] = useState(true)
   const [subscribing, setSubscribing] = useState(false)
 
@@ -136,59 +107,6 @@ function PaymentsContent() {
         .single()
 
       setSubscription(sub)
-
-      // Get payments
-      const { data: paymentData } = await supabase
-        .from("payments")
-        .select("*")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(10)
-
-      if (paymentData) {
-        setPayments(paymentData)
-      }
-
-      // Get commissions earned
-      const { data: commissionData } = await supabase
-        .from("commissions")
-        .select(`
-          *,
-          referred:referred_id (
-            name,
-            email
-          )
-        `)
-        .eq("referrer_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(10)
-
-      if (commissionData) {
-        setCommissions(commissionData)
-      }
-
-      // Get USDC payouts (crypto withdrawals)
-      const { data: usdcPayouts } = await supabase
-        .from("usdc_transactions")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("transaction_type", "withdrawal")
-        .order("created_at", { ascending: false })
-        .limit(10)
-
-      if (usdcPayouts) {
-        // Map to payout format for display
-        const mappedPayouts = usdcPayouts.map((tx: { id: string; amount: number; status: string; created_at: string }) => ({
-          id: tx.id,
-          amount: tx.amount * 100, // Convert to cents for formatCurrency
-          currency: 'USDC',
-          arrival_date: new Date(tx.created_at).getTime() / 1000,
-          status: tx.status,
-          type: 'crypto',
-          created: new Date(tx.created_at).getTime() / 1000
-        }))
-        setPayouts(mappedPayouts)
-      }
 
       setLoading(false)
     }
@@ -591,136 +509,10 @@ function PaymentsContent() {
         </CardContent>
       </Card>
 
-      {/* Payment History */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Payment History</CardTitle>
-          <CardDescription>Your recent payments</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {payments.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">No payments yet</p>
-          ) : (
-            <div className="space-y-3">
-              {payments.map((payment) => (
-                <div key={payment.id} className="flex items-center justify-between py-3 border-b last:border-0">
-                  <div>
-                    <p className="font-medium">{formatCurrency(payment.amount * 100)}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(payment.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    payment.status === "succeeded" || payment.status === "completed"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-muted text-muted-foreground"
-                  }`}>
-                    {payment.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Commissions Earned */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Commissions Earned</CardTitle>
-          <CardDescription>Your earnings from referrals</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {commissions.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">No commissions earned yet</p>
-          ) : (
-            <div className="space-y-3">
-              {commissions.map((commission) => (
-                <div key={commission.id} className="flex items-center justify-between py-3 border-b last:border-0">
-                  <div>
-                    <p className="font-medium">{formatCurrency(commission.amount * 100)}</p>
-                    <p className="text-sm text-muted-foreground">
-                      From {commission.referred?.name || commission.referred?.email}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(commission.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    commission.status === "paid"
-                      ? "bg-green-100 text-green-800"
-                      : commission.status === "pending"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : "bg-muted text-muted-foreground"
-                  }`}>
-                    <Clock className="h-3 w-3 mr-1" />
-                    {commission.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Payout History */}
-      <Card className="mt-8">
-        <CardHeader>
-          <CardTitle>Payout History</CardTitle>
-          <CardDescription>Your USDC withdrawals</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {payouts.length === 0 ? (
-            <div className="text-center py-8">
-              <Wallet className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-              <p className="text-muted-foreground">No payouts yet</p>
-              <p className="text-sm text-muted-foreground/70 mt-2">
-                Earn commissions and withdraw your USDC to an external wallet
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {payouts.map((payout) => (
-                <div key={payout.id} className="flex items-center justify-between py-3 border-b last:border-0">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-full ${
-                      payout.status === 'confirmed'
-                        ? 'bg-green-100 text-green-700'
-                        : payout.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-700'
-                        : 'bg-muted text-muted-foreground'
-                    }`}>
-                      <ArrowDownToLine className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="font-medium">
-                        ${(payout.amount / 100).toFixed(2)} {payout.currency}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(payout.created * 1000).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      payout.status === 'confirmed'
-                        ? 'bg-green-100 text-green-800'
-                        : payout.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {payout.status === 'confirmed' && <CheckCircle className="h-3 w-3 mr-1" />}
-                      {payout.status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
-                      {payout.status === 'processing' && <ArrowUpFromLine className="h-3 w-3 mr-1" />}
-                      {payout.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Unified Transaction History */}
+      <div className="mb-8">
+        <UnifiedTransactionHistory limit={50} showFilters={true} showTitle={true} />
+      </div>
 
       {/* Payment Modal */}
       <Dialog open={paymentModalOpen} onOpenChange={setPaymentModalOpen}>

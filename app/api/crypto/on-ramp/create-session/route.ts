@@ -85,43 +85,46 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Generate redirect/webhook URLs
+    // Generate redirect URL
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || req.headers.get('origin') || '';
     const redirectUrl = useRedirect
       ? `${baseUrl}/payment/complete?intentId=${intentId || ''}`
       : undefined;
-    const webhookUrl = `${baseUrl}/api/crypto/on-ramp/webhook`;
 
-    // Create TransFi session
-    const sessionResponse = await transfiClient.createSession({
+    // Create TransFi widget URL (no server-side session creation needed)
+    const widgetResponse = transfiClient.createWidgetUrl({
       userId: user.id,
       email: userEmail,
       walletAddress,
       cryptoCurrency: 'USDC',
       cryptoNetwork: 'polygon',
-      cryptoAmount: amount,
+      fiatAmount: amount,
       fiatCurrency: 'USD',
       redirectUrl,
-      webhookUrl,
-      metadata: {
+      partnerContext: {
         intentId,
         platform: 'tradinghub',
       },
     });
 
-    if (!sessionResponse.success || !sessionResponse.data) {
-      console.error('[OnRamp] Session creation failed:', sessionResponse.error);
+    if (!widgetResponse.success || !widgetResponse.data) {
+      console.error('[OnRamp] Widget URL creation failed:', widgetResponse.error);
       return NextResponse.json(
         {
           success: false,
-          error: sessionResponse.error?.message || 'Failed to create payment session',
-          details: sessionResponse.error,
+          error: widgetResponse.error?.message || 'Failed to create payment widget',
+          details: widgetResponse.error,
         },
         { status: 500 }
       );
     }
 
-    const session = sessionResponse.data;
+    // Generate a local session ID for tracking
+    const localSessionId = `onramp_${Date.now()}_${user.id.substring(0, 8)}`;
+    const session = {
+      ...widgetResponse.data,
+      sessionId: localSessionId,
+    };
 
     // Save session to database
     const serviceSupabase = createServiceRoleClient();
@@ -138,7 +141,6 @@ export async function POST(req: NextRequest) {
         metadata: {
           intent_id: intentId,
           widget_url: session.widgetUrl,
-          expires_at: session.expiresAt,
         },
       })
       .select()
@@ -182,7 +184,6 @@ export async function POST(req: NextRequest) {
       success: true,
       sessionId: session.sessionId,
       widgetUrl: session.widgetUrl,
-      expiresAt: session.expiresAt,
       databaseSessionId: dbSession?.id,
     });
   } catch (error: any) {
@@ -258,13 +259,12 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Optionally fetch latest status from TransFi
-    const statusResponse = await transfiClient.getSessionStatus(sessionId);
+    // TransFi widget approach doesn't have server-side session status
+    // Status is tracked via webhooks
 
     return NextResponse.json({
       success: true,
       session,
-      providerStatus: statusResponse.success ? statusResponse.data?.status : null,
     });
   } catch (error: any) {
     console.error('[OnRamp GET] Unexpected error:', error);

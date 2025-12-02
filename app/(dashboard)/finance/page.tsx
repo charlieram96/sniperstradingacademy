@@ -27,6 +27,8 @@ import {
   AlertCircle
 } from "lucide-react"
 import { AccountStatusCard } from "@/components/account-status-card"
+import { WalletBankCard } from "@/components/crypto/WalletBankCard"
+import { WithdrawalModal } from "@/components/crypto/WithdrawalModal"
 
 interface DirectBonus {
   id: string
@@ -85,6 +87,8 @@ export default function FinancePage() {
   const [loadingDashboard, setLoadingDashboard] = useState(false)
   const [dashboardError, setDashboardError] = useState<string | null>(null)
   const [showDashboardError, setShowDashboardError] = useState(false)
+  const [showWithdrawalModal, setShowWithdrawalModal] = useState(false)
+  const [walletBalance, setWalletBalance] = useState('0')
 
   useEffect(() => {
     async function getUser() {
@@ -293,6 +297,11 @@ export default function FinancePage() {
     console.log("Processing payment...")
   }
 
+  const handleWithdrawSuccess = () => {
+    // Wallet will refresh itself, but we can trigger a page refresh if needed
+    setShowWithdrawalModal(false)
+  }
+
   const handleOpenStripeDashboard = async () => {
     setLoadingDashboard(true)
     setDashboardError(null)
@@ -340,6 +349,22 @@ export default function FinancePage() {
           onPayNow={handlePayNow}
         />
       </div>
+
+      {/* Wallet / Bank Section */}
+      <div className="mb-6">
+        <WalletBankCard
+          onWithdraw={() => setShowWithdrawalModal(true)}
+          onBalanceChange={(balance) => setWalletBalance(balance)}
+        />
+      </div>
+
+      {/* Withdrawal Modal */}
+      <WithdrawalModal
+        open={showWithdrawalModal}
+        onClose={() => setShowWithdrawalModal(false)}
+        balance={walletBalance}
+        onSuccess={handleWithdrawSuccess}
+      />
 
       {/* Legacy Qualification Status - Hidden when using new countdown */}
       {false && !financialStats.isQualified && (

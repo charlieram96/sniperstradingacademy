@@ -2,7 +2,7 @@
 // =============================================
 // TransFi On-Ramp Client
 // Fiat-to-crypto payment integration
-// Uses MID/Username/Password authentication
+// Uses Widget URL approach (no REST API)
 // =============================================
 
 import crypto from 'crypto';
@@ -12,31 +12,26 @@ import crypto from 'crypto';
 // =============================================
 
 export interface TransFiConfig {
-  mid: string;
-  username: string;
-  password: string;
+  apiKey: string;
   environment: 'sandbox' | 'production';
   webhookSecret?: string;
 }
 
-export interface CreateSessionParams {
+export interface WidgetUrlParams {
   userId: string;
   email: string;
   walletAddress: string;
-  cryptoCurrency: 'USDC';
-  cryptoNetwork: 'polygon';
-  cryptoAmount: string;
+  cryptoCurrency?: 'USDC';
+  cryptoNetwork?: 'polygon';
+  fiatAmount?: string;
   fiatCurrency?: string;
   redirectUrl?: string;
-  webhookUrl?: string;
-  metadata?: Record<string, any>;
+  partnerContext?: Record<string, any>;
 }
 
 export interface TransFiSession {
-  sessionId: string;
   widgetUrl: string;
-  expiresAt: string;
-  status: 'created' | 'pending' | 'completed' | 'failed' | 'expired';
+  status: 'created';
 }
 
 export interface TransFiOrder {
@@ -87,56 +82,27 @@ export interface ServiceResponse<T> {
 
 class TransFiClient {
   private config: TransFiConfig | null = null;
-  private baseUrl: string = '';
 
   /**
-   * Initialize the TransFi client with MID/Username/Password
+   * Initialize the TransFi client with API Key
    */
   initialize(): void {
-    const mid = process.env.TRANSFI_MID;
-    const username = process.env.TRANSFI_USERNAME;
-    const password = process.env.TRANSFI_PASSWORD;
+    const apiKey = process.env.TRANSFI_API_KEY;
     const environment = (process.env.NEXT_PUBLIC_TRANSFI_ENV as 'sandbox' | 'production') || 'sandbox';
     const webhookSecret = process.env.TRANSFI_WEBHOOK_SECRET;
 
-    if (!mid || !username || !password) {
-      console.warn('[TransFi] API credentials not configured (MID, Username, Password required)');
+    if (!apiKey) {
+      console.warn('[TransFi] API key not configured (TRANSFI_API_KEY required)');
       return;
     }
 
     this.config = {
-      mid,
-      username,
-      password,
+      apiKey,
       environment,
       webhookSecret,
     };
 
-    this.baseUrl = environment === 'production'
-      ? 'https://api.transfi.com/v1'
-      : 'https://sandbox-api.transfi.com/v1';
-
-    console.log(`[TransFi] Initialized in ${environment} mode with MID: ${mid}`);
-  }
-
-  /**
-   * Get Basic Auth header value
-   */
-  private getAuthHeader(): string {
-    if (!this.config) return '';
-    const credentials = Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64');
-    return `Basic ${credentials}`;
-  }
-
-  /**
-   * Get common headers for API requests
-   */
-  private getHeaders(): Record<string, string> {
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': this.getAuthHeader(),
-      'X-MID': this.config?.mid || '',
-    };
+    console.log(`[TransFi] Initialized in ${environment} mode`);
   }
 
   /**
@@ -147,9 +113,19 @@ class TransFiClient {
   }
 
   /**
-   * Create an on-ramp session for the TransFi widget
+   * Get the widget base URL based on environment
    */
-  async createSession(params: CreateSessionParams): Promise<ServiceResponse<TransFiSession>> {
+  private getWidgetBaseUrl(): string {
+    return this.config?.environment === 'production'
+      ? 'https://buy.transfi.com'
+      : 'https://sandbox-buy.transfi.com';
+  }
+
+  /**
+   * Create widget URL for the TransFi on-ramp
+   * TransFi uses a widget URL approach - no server-side session creation needed
+   */
+  createWidgetUrl(params: WidgetUrlParams): ServiceResponse<TransFiSession> {
     try {
       if (!this.config) {
         this.initialize();
@@ -158,184 +134,57 @@ class TransFiClient {
             success: false,
             error: {
               code: 'NOT_CONFIGURED',
-              message: 'TransFi client not configured. Set TRANSFI_MID, TRANSFI_USERNAME, and TRANSFI_PASSWORD.',
+              message: 'TransFi client not configured. Set TRANSFI_API_KEY environment variable.',
             },
           };
         }
       }
 
-      const response = await fetch(`${this.baseUrl}/sessions`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({
-          external_user_id: params.userId,
-          email: params.email,
-          wallet_address: params.walletAddress,
-          crypto_currency: params.cryptoCurrency,
-          crypto_network: params.cryptoNetwork,
-          crypto_amount: params.cryptoAmount,
-          fiat_currency: params.fiatCurrency || 'USD',
-          redirect_url: params.redirectUrl,
-          webhook_url: params.webhookUrl,
-          metadata: params.metadata,
-        }),
-      });
+      const queryParams: Record<string, string> = {
+        apiKey: this.config.apiKey,
+        walletAddress: params.walletAddress,
+        cryptoTicker: params.cryptoCurrency || 'USDC',
+        cryptoNetwork: params.cryptoNetwork || 'polygon',
+        fiatTicker: params.fiatCurrency || 'USD',
+      };
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('[TransFi] Session creation failed:', errorData);
-        return {
-          success: false,
-          error: {
-            code: 'SESSION_CREATION_FAILED',
-            message: errorData.message || `Failed to create session: ${response.status}`,
-            details: errorData,
-          },
-        };
+      // Add optional parameters
+      if (params.fiatAmount) {
+        queryParams.fiatAmount = params.fiatAmount;
+      }
+      if (params.email) {
+        queryParams.email = params.email;
+      }
+      if (params.redirectUrl) {
+        queryParams.redirectUrl = params.redirectUrl;
+      }
+      if (params.partnerContext) {
+        queryParams.partnerContext = JSON.stringify({
+          ...params.partnerContext,
+          userId: params.userId,
+        });
+      } else {
+        queryParams.partnerContext = JSON.stringify({ userId: params.userId });
       }
 
-      const data = await response.json();
+      const widgetUrl = `${this.getWidgetBaseUrl()}/?${new URLSearchParams(queryParams).toString()}`;
+
+      console.log(`[TransFi] Widget URL created for wallet: ${params.walletAddress}`);
 
       return {
         success: true,
         data: {
-          sessionId: data.session_id || data.sessionId,
-          widgetUrl: data.widget_url || data.widgetUrl,
-          expiresAt: data.expires_at || data.expiresAt,
+          widgetUrl,
           status: 'created',
         },
       };
     } catch (error: any) {
-      console.error('[TransFi] createSession error:', error);
+      console.error('[TransFi] createWidgetUrl error:', error);
       return {
         success: false,
         error: {
-          code: 'REQUEST_FAILED',
-          message: error.message || 'Failed to create TransFi session',
-          details: error,
-        },
-      };
-    }
-  }
-
-  /**
-   * Get session status
-   */
-  async getSessionStatus(sessionId: string): Promise<ServiceResponse<TransFiSession>> {
-    try {
-      if (!this.config) {
-        this.initialize();
-        if (!this.config) {
-          return {
-            success: false,
-            error: {
-              code: 'NOT_CONFIGURED',
-              message: 'TransFi client not configured',
-            },
-          };
-        }
-      }
-
-      const response = await fetch(`${this.baseUrl}/sessions/${sessionId}`, {
-        method: 'GET',
-        headers: this.getHeaders(),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        return {
-          success: false,
-          error: {
-            code: 'SESSION_NOT_FOUND',
-            message: errorData.message || 'Session not found',
-            details: errorData,
-          },
-        };
-      }
-
-      const data = await response.json();
-
-      return {
-        success: true,
-        data: {
-          sessionId: data.session_id || data.sessionId,
-          widgetUrl: data.widget_url || data.widgetUrl,
-          expiresAt: data.expires_at || data.expiresAt,
-          status: data.status,
-        },
-      };
-    } catch (error: any) {
-      console.error('[TransFi] getSessionStatus error:', error);
-      return {
-        success: false,
-        error: {
-          code: 'REQUEST_FAILED',
-          message: error.message || 'Failed to get session status',
-          details: error,
-        },
-      };
-    }
-  }
-
-  /**
-   * Get order details
-   */
-  async getOrder(orderId: string): Promise<ServiceResponse<TransFiOrder>> {
-    try {
-      if (!this.config) {
-        this.initialize();
-        if (!this.config) {
-          return {
-            success: false,
-            error: {
-              code: 'NOT_CONFIGURED',
-              message: 'TransFi client not configured',
-            },
-          };
-        }
-      }
-
-      const response = await fetch(`${this.baseUrl}/orders/${orderId}`, {
-        method: 'GET',
-        headers: this.getHeaders(),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        return {
-          success: false,
-          error: {
-            code: 'ORDER_NOT_FOUND',
-            message: errorData.message || 'Order not found',
-            details: errorData,
-          },
-        };
-      }
-
-      const data = await response.json();
-
-      return {
-        success: true,
-        data: {
-          orderId: data.order_id || data.orderId,
-          sessionId: data.session_id || data.sessionId,
-          status: data.status,
-          fiatAmount: data.fiat_amount || data.fiatAmount,
-          fiatCurrency: data.fiat_currency || data.fiatCurrency,
-          cryptoAmount: data.crypto_amount || data.cryptoAmount,
-          cryptoCurrency: data.crypto_currency || data.cryptoCurrency,
-          fee: data.fee,
-          txHash: data.tx_hash || data.txHash,
-          completedAt: data.completed_at || data.completedAt,
-        },
-      };
-    } catch (error: any) {
-      console.error('[TransFi] getOrder error:', error);
-      return {
-        success: false,
-        error: {
-          code: 'REQUEST_FAILED',
-          message: error.message || 'Failed to get order',
+          code: 'URL_CREATION_FAILED',
+          message: error.message || 'Failed to create TransFi widget URL',
           details: error,
         },
       };
@@ -398,48 +247,15 @@ class TransFiClient {
   }
 
   /**
-   * Get widget URL for embedding
-   * This constructs the widget URL with necessary parameters
+   * Get the API key for reference (masked)
    */
-  getWidgetUrl(params: {
-    sessionId?: string;
-    walletAddress: string;
-    cryptoAmount: string;
-    cryptoCurrency?: string;
-    network?: string;
-    fiatCurrency?: string;
-    email?: string;
-  }): string {
+  getApiKeyMasked(): string {
     if (!this.config) {
       this.initialize();
     }
-
-    const baseWidgetUrl = this.config?.environment === 'production'
-      ? 'https://widget.transfi.com'
-      : 'https://sandbox-widget.transfi.com';
-
-    const queryParams = new URLSearchParams({
-      mid: this.config?.mid || '',
-      walletAddress: params.walletAddress,
-      cryptoAmount: params.cryptoAmount,
-      cryptoCurrency: params.cryptoCurrency || 'USDC',
-      network: params.network || 'polygon',
-      fiatCurrency: params.fiatCurrency || 'USD',
-      ...(params.sessionId && { sessionId: params.sessionId }),
-      ...(params.email && { email: params.email }),
-    });
-
-    return `${baseWidgetUrl}?${queryParams.toString()}`;
-  }
-
-  /**
-   * Get the MID for client-side use
-   */
-  getMID(): string {
-    if (!this.config) {
-      this.initialize();
-    }
-    return this.config?.mid || '';
+    const key = this.config?.apiKey || '';
+    if (key.length <= 8) return '****';
+    return `${key.substring(0, 4)}...${key.substring(key.length - 4)}`;
   }
 }
 
