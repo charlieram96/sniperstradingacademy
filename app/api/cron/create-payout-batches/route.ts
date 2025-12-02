@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { gasManager } from '@/lib/polygon/gas-manager';
+import { coinbaseWalletService } from '@/lib/coinbase/wallet-service';
 
 export const runtime = 'nodejs';
 
@@ -138,6 +139,32 @@ async function createBatch(
     const walletMap = new Map(
       (wallets || []).map((w: { user_id: string; wallet_address: string }) => [w.user_id, w.wallet_address])
     );
+
+    // Auto-create wallets for users who don't have one
+    const usersWithoutWallets = userIds.filter(id => !walletMap.has(id));
+
+    if (usersWithoutWallets.length > 0) {
+      console.log(`[CreatePayoutBatches] Creating wallets for ${usersWithoutWallets.length} users without wallets`);
+
+      const serviceSupabase = createServiceRoleClient();
+
+      for (const userId of usersWithoutWallets) {
+        try {
+          const walletResult = await coinbaseWalletService.ensureWalletForUser(userId, serviceSupabase);
+          if (walletResult.success && walletResult.data) {
+            walletMap.set(userId, walletResult.data.wallet_address);
+            console.log(`[CreatePayoutBatches] Created wallet for user ${userId}: ${walletResult.data.wallet_address}`);
+          }
+          // Small delay to respect rate limits
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (walletError) {
+          console.warn(`[CreatePayoutBatches] Failed to create wallet for user ${userId}:`, walletError);
+          // Continue with other users
+        }
+      }
+
+      console.log(`[CreatePayoutBatches] Wallet creation complete. ${walletMap.size} users now have wallets`);
+    }
 
     // Filter to users with wallets
     let totalAmount = 0;

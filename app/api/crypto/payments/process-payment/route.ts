@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { polygonUSDCClient } from '@/lib/polygon/usdc-client';
 import { coinbaseWalletService } from '@/lib/coinbase/wallet-service';
 import { gasManager } from '@/lib/polygon/gas-manager';
@@ -478,6 +478,17 @@ async function processInitialUnlock(supabase: any, intent: any, transaction: any
         .single();
 
       console.log(`[ProcessInitialUnlock] Created direct bonus commission ${commission?.id} for referrer ${referrerId}`);
+
+      // Ensure referrer has a wallet for receiving the commission
+      // This is non-blocking - if it fails, the commission still exists and
+      // wallet can be created later at payout time
+      try {
+        const serviceSupabase = createServiceRoleClient();
+        await coinbaseWalletService.ensureWalletForUser(referrerId, serviceSupabase);
+      } catch (walletError) {
+        console.warn(`[ProcessInitialUnlock] Non-blocking wallet creation failed for referrer ${referrerId}:`, walletError);
+        // Don't throw - commission is still valid, wallet can be created at payout time
+      }
 
       // Send notification about direct bonus
       try {

@@ -518,6 +518,53 @@ class CoinbaseWalletService {
     }
   }
 
+  /**
+   * Ensure a user has an active wallet, creating one if needed.
+   * Non-blocking: logs errors but doesn't throw.
+   * Idempotent: safely handles existing wallets.
+   *
+   * @param userId - The user's ID
+   * @param supabase - Supabase client (should be service role for RLS bypass)
+   * @returns The wallet if successful, null if failed
+   */
+  async ensureWalletForUser(
+    userId: string,
+    supabase: any
+  ): Promise<ServiceResponse<any>> {
+    try {
+      // First, check if wallet already exists
+      const existingWallet = await this.getWalletByUserId(userId, supabase);
+
+      if (existingWallet.success && existingWallet.data) {
+        console.log(`[EnsureWallet] User ${userId} already has wallet: ${existingWallet.data.wallet_address}`);
+        return { success: true, data: existingWallet.data };
+      }
+
+      // Create new wallet
+      console.log(`[EnsureWallet] Creating wallet for user ${userId}`);
+      const createResult = await this.createWalletForUser(userId, supabase);
+
+      if (!createResult.success) {
+        console.error(`[EnsureWallet] Failed to create wallet for ${userId}:`, createResult.error);
+        return { success: false, data: null, error: createResult.error };
+      }
+
+      console.log(`[EnsureWallet] Successfully created wallet for ${userId}: ${createResult.data?.wallet_address}`);
+      return createResult;
+    } catch (error: any) {
+      console.error(`[EnsureWallet] Error for user ${userId}:`, error);
+      return {
+        success: false,
+        data: null,
+        error: {
+          code: 'WALLET_ENSURE_FAILED',
+          message: error.message || 'Failed to ensure wallet exists',
+          details: error,
+        },
+      };
+    }
+  }
+
   // =============================================
   // Helper Methods
   // =============================================
