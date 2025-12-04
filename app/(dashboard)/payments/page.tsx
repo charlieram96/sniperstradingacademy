@@ -15,6 +15,7 @@ import {
   Copy,
   Loader2,
   QrCode,
+  AlertTriangle,
 } from "lucide-react"
 import { PaymentScheduleSelector } from "@/components/payment-schedule-selector"
 import {
@@ -24,8 +25,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { TransFiWidget } from "@/components/crypto/TransFiWidget"
 import { UnifiedTransactionHistory } from "@/components/crypto/UnifiedTransactionHistory"
+import PayoutWalletSetup from "@/components/crypto/PayoutWalletSetup"
 import QRCode from "qrcode"
 
 interface PaymentIntent {
@@ -35,6 +36,13 @@ interface PaymentIntent {
   status: string
   user_wallet_address: string
   expires_at: string
+  deposit_addresses?: {
+    is_underpaid?: boolean
+    shortfall_amount?: number
+    received_amount?: number
+    expected_amount?: number
+    is_late?: boolean
+  }
 }
 
 function PaymentsContent() {
@@ -62,6 +70,11 @@ function PaymentsContent() {
   const [expiryCountdown, setExpiryCountdown] = useState<number>(0)
   const [checkingPayment, setCheckingPayment] = useState(false)
 
+  // Payout wallet state
+  const [walletSetupOpen, setWalletSetupOpen] = useState(false)
+  const [hasPayoutWallet, setHasPayoutWallet] = useState(false)
+  const [pendingPaymentType, setPendingPaymentType] = useState<string | null>(null)
+
   const success = searchParams.get("success")
   const canceled = searchParams.get("canceled")
   const intentId = searchParams.get("intentId")
@@ -86,16 +99,17 @@ function PaymentsContent() {
 
       const supabase = createClient()
 
-      // Get user data
+      // Get user data including payout wallet
       const { data: userData } = await supabase
         .from("users")
-        .select("initial_payment_completed, bypass_subscription")
+        .select("initial_payment_completed, bypass_subscription, payout_wallet_address")
         .eq("id", userId)
         .single()
 
       if (userData) {
         setInitialPaymentCompleted(userData.initial_payment_completed || false)
         setBypassSubscription(userData.bypass_subscription || false)
+        setHasPayoutWallet(!!userData.payout_wallet_address)
       }
 
       // Get subscription
@@ -213,6 +227,13 @@ function PaymentsContent() {
 
   // Create payment intent for initial unlock
   async function handleInitialPayment() {
+    // Check if user has payout wallet set
+    if (!hasPayoutWallet) {
+      setPendingPaymentType("initial_unlock")
+      setWalletSetupOpen(true)
+      return
+    }
+
     setProcessingInitial(true)
 
     try {
@@ -224,14 +245,19 @@ function PaymentsContent() {
         body: JSON.stringify({ intentType: "initial_unlock" }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const error = await response.json()
-        console.error("Payment intent error:", error)
-        alert(error.error || "Failed to create payment intent")
+        console.error("Payment intent error:", data)
+        // Check if it's a payout wallet required error
+        if (data.code === "PAYOUT_WALLET_REQUIRED") {
+          setPendingPaymentType("initial_unlock")
+          setWalletSetupOpen(true)
+          return
+        }
+        alert(data.error || "Failed to create payment intent")
         return
       }
-
-      const data = await response.json()
 
       if (data.success && data.intent) {
         setCurrentIntent(data.intent)
@@ -245,13 +271,35 @@ function PaymentsContent() {
     }
   }
 
+  // Handle wallet setup success
+  function handleWalletSetupSuccess() {
+    setHasPayoutWallet(true)
+    setWalletSetupOpen(false)
+
+    // If there was a pending payment, start it now
+    if (pendingPaymentType === "initial_unlock") {
+      setPendingPaymentType(null)
+      setTimeout(() => handleInitialPayment(), 500)
+    } else if (pendingPaymentType) {
+      setPendingPaymentType(null)
+      setTimeout(() => handleSubscribe(), 500)
+    }
+  }
+
   // Create payment intent for subscription
   async function handleSubscribe() {
+    const intentType = paymentSchedule === 'weekly' ? 'weekly_subscription' : 'monthly_subscription'
+
+    // Check if user has payout wallet set
+    if (!hasPayoutWallet) {
+      setPendingPaymentType(intentType)
+      setWalletSetupOpen(true)
+      return
+    }
+
     setSubscribing(true)
 
     try {
-      const intentType = paymentSchedule === 'weekly' ? 'weekly_subscription' : 'monthly_subscription'
-
       const response = await fetch("/api/crypto/payments/create-intent", {
         method: "POST",
         headers: {
@@ -260,14 +308,19 @@ function PaymentsContent() {
         body: JSON.stringify({ intentType }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const error = await response.json()
-        console.error("Payment intent error:", error)
-        alert(error.error || "Failed to create payment intent")
+        console.error("Payment intent error:", data)
+        // Check if it's a payout wallet required error
+        if (data.code === "PAYOUT_WALLET_REQUIRED") {
+          setPendingPaymentType(intentType)
+          setWalletSetupOpen(true)
+          return
+        }
+        alert(data.error || "Failed to create payment intent")
         return
       }
-
-      const data = await response.json()
 
       if (data.success && data.intent) {
         setCurrentIntent(data.intent)
@@ -550,6 +603,38 @@ function PaymentsContent() {
                 </div>
               )}
 
+              {/* Underpaid Status */}
+              {currentIntent.deposit_addresses?.is_underpaid && (
+                <div className="flex items-start gap-3 p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-900">
+                  <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-medium text-orange-900 dark:text-orange-200">Partial Payment Received</p>
+                    <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
+                      We received ${((currentIntent.deposit_addresses.received_amount || 0) / 1000000).toFixed(2)} USDC,
+                      but you still need to send an additional{' '}
+                      <strong>${((currentIntent.deposit_addresses.shortfall_amount || 0) / 1000000).toFixed(2)} USDC</strong>{' '}
+                      to the same address below.
+                    </p>
+                    <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">
+                      Please send the remaining amount to complete your payment.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Late Payment Notice */}
+              {currentIntent.deposit_addresses?.is_late && (
+                <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-900">
+                  <CheckCircle className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <p className="font-medium text-blue-900 dark:text-blue-200">Late Payment Accepted</p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      Your payment arrived after the deadline but has been accepted and is being processed.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* QR Code and Address */}
               {currentIntent.status !== 'processing' && (
                 <>
@@ -595,31 +680,13 @@ function PaymentsContent() {
                     </p>
                   </div>
 
-                  {/* Divider */}
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-background px-2 text-muted-foreground">
-                        Or pay with card
-                      </span>
-                    </div>
+                  {/* Important note */}
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-900">
+                    <p className="text-xs text-amber-800 dark:text-amber-200">
+                      <strong>Important:</strong> Make sure you are sending USDC on the Polygon network.
+                      Sending on other networks (Ethereum, etc.) may result in loss of funds.
+                    </p>
                   </div>
-
-                  {/* TransFi Widget */}
-                  <TransFiWidget
-                    walletAddress={currentIntent.user_wallet_address}
-                    amount={currentIntent.amount_usdc}
-                    intentId={currentIntent.id}
-                    email={userEmail || undefined}
-                    onSuccess={() => {
-                      window.location.reload()
-                    }}
-                    onError={(error) => {
-                      console.error('TransFi error:', error)
-                    }}
-                  />
                 </>
               )}
 
@@ -656,6 +723,13 @@ function PaymentsContent() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Payout Wallet Setup Modal */}
+      <PayoutWalletSetup
+        open={walletSetupOpen}
+        onOpenChange={setWalletSetupOpen}
+        onSuccess={handleWalletSetupSuccess}
+      />
     </div>
   )
 }

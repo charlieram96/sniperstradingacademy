@@ -193,6 +193,137 @@
   }
 }
 
+/* Scroll-triggered animations */
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes reveal-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes reveal-left {
+  from {
+    opacity: 0;
+    transform: translateX(-60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes reveal-right {
+  from {
+    opacity: 0;
+    transform: translateX(60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes float-gentle {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0.1;
+    filter: blur(80px);
+  }
+  50% {
+    opacity: 0.15;
+    filter: blur(100px);
+  }
+}
+
+@keyframes glow-move-1 {
+  0%, 100% {
+    transform: translate(0, 0);
+    opacity: 0.15;
+  }
+  25% {
+    transform: translate(80px, -60px);
+    opacity: 0.25;
+  }
+  50% {
+    transform: translate(-40px, 40px);
+    opacity: 0.15;
+  }
+  75% {
+    transform: translate(60px, 80px);
+    opacity: 0.25;
+  }
+}
+
+@keyframes glow-move-2 {
+  0%, 100% {
+    transform: translate(0, 0);
+    opacity: 0.15;
+  }
+  25% {
+    transform: translate(-70px, 50px);
+    opacity: 0.25;
+  }
+  50% {
+    transform: translate(50px, -70px);
+    opacity: 0.15;
+  }
+  75% {
+    transform: translate(-60px, -40px);
+    opacity: 0.25;
+  }
+}
+
+@keyframes glow-move-3 {
+  0%, 100% {
+    transform: translate(0, 0);
+    opacity: 0.15;
+  }
+  25% {
+    transform: translate(50px, 70px);
+    opacity: 0.25;
+  }
+  50% {
+    transform: translate(-80px, -30px);
+    opacity: 0.15;
+  }
+  75% {
+    transform: translate(40px, -60px);
+    opacity: 0.25;
+  }
+}
+
 @layer utilities {
 
   .animate-fade-in {
@@ -258,4 +389,79 @@
   .animate-pulse-glow {
     animation: pulse-glow 8s ease-in-out infinite;
   }
+
+  /* Scroll-triggered animation utilities */
+  .scroll-reveal {
+    opacity: 0;
+    transform: translateY(60px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .scroll-reveal.revealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .scroll-reveal-scale {
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .scroll-reveal-scale.revealed {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .scroll-reveal-left {
+    opacity: 0;
+    transform: translateX(-60px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .scroll-reveal-left.revealed {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .scroll-reveal-right {
+    opacity: 0;
+    transform: translateX(60px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .scroll-reveal-right.revealed {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* Float animation */
+  .animate-float {
+    animation: float-gentle 6s ease-in-out infinite;
+  }
+
+  .animate-float-delayed {
+    animation: float-gentle 6s ease-in-out infinite;
+    animation-delay: 2s;
+  }
+
+  /* Shimmer effect for gold accents */
+  .animate-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.3), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 3s ease-in-out infinite;
+  }
+
+  /* Glow animation for decorative elements */
+  .animate-glow {
+    animation: glow-pulse 4s ease-in-out infinite;
+  }
+
+  /* Staggered delays for children */
+  .stagger-children > *:nth-child(1) { transition-delay: 0ms; }
+  .stagger-children > *:nth-child(2) { transition-delay: 100ms; }
+  .stagger-children > *:nth-child(3) { transition-delay: 200ms; }
+  .stagger-children > *:nth-child(4) { transition-delay: 300ms; }
+  .stagger-children > *:nth-child(5) { transition-delay: 400ms; }
+  .stagger-children > *:nth-child(6) { transition-delay: 500ms; }
 }

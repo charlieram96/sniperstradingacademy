@@ -31,10 +31,10 @@ async function getDashboardData(userId: string) {
 
   const supabase = await createClient()
 
-  // Get user data with membership status
+  // Get user data with membership status and payout wallet
   const { data: user } = await supabase
     .from("users")
-    .select("*")
+    .select("*, payout_wallet_address")
     .eq("id", userId)
     .single()
 
@@ -119,6 +119,7 @@ async function getDashboardData(userId: string) {
     completedStructures,
     unlockedStructures,
     maxMembersPerStructure,
+    payoutWalletAddress: user?.payout_wallet_address || null,
   }
 }
 

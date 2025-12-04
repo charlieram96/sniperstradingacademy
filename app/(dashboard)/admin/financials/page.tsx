@@ -5,7 +5,9 @@ import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { TrendingUp, DollarSign, ArrowDownCircle, ArrowUpCircle, Users, Search } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import { TrendingUp, DollarSign, ArrowDownCircle, ArrowUpCircle, Users, Search, Wallet, Settings, CheckCircle2, AlertCircle, Loader2, AlertTriangle, RefreshCw, Calendar, Play, Eye } from "lucide-react"
 import { formatDollars } from "@/lib/utils"
 import {
   Select,
@@ -22,6 +24,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+
+interface TreasurySettings {
+  treasuryWalletAddress: string
+  masterWalletXpub: string
+  masterWalletXpubFull: string
+  currentDerivationIndex: number
+  isConfigured: boolean
+}
 
 interface Payment {
   id: string
@@ -53,6 +63,66 @@ interface FinancialStats {
   totalPayouts: number
   netProfit: number
   activeSubscriptions: number
+}
+
+interface ReviewQueueItem {
+  id: string
+  depositAddress: string
+  userId: string
+  userName: string
+  userEmail: string
+  expectedAmount: number
+  receivedAmount: number
+  overpaymentAmount: number
+  isOverpaid: boolean
+  isLate: boolean
+  createdAt: string
+}
+
+interface MonthlyProcessingPreview {
+  monthPeriod: string
+  lastProcessedMonth: string
+  usersWithVolume: number
+  totalVolumeToArchive: number
+  commissionsToCreate: {
+    count: number
+    totalAmount: number
+    breakdown: Array<{
+      userId: string
+      userName: string
+      userEmail: string
+      volume: number
+      commissionRate: number
+      commissionAmount: number
+    }>
+    hasMore: boolean
+  }
+  ineligibleUsers: {
+    count: number
+    samples: Array<{
+      userId: string
+      userName: string
+      reason: string
+      volume: number
+    }>
+  }
+  warnings: string[]
+}
+
+interface MonthlyProcessingStatus {
+  currentPeriodStats: {
+    usersWithVolume: number
+    activeUsersWithVolume: number
+    totalCurrentMonthVolume: string
+    pendingResidualCommissions: number
+  }
+  lastExecution: {
+    execution_date: string
+    success: boolean
+    details?: {
+      month_period?: string
+    }
+  } | null
 }
 
 interface PaymentData {
@@ -102,6 +172,33 @@ export default function AdminFinancialsPage() {
   const [paymentTypeFilter, setPaymentTypeFilter] = useState<"all" | "initial" | "weekly" | "monthly" | "commission">("all")
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<"all" | "succeeded" | "bypassed" | "pending" | "failed">("all")
   const [commissionStatusFilter, setCommissionStatusFilter] = useState<"all" | "pending" | "paid" | "cancelled">("all")
+
+  // Treasury settings state
+  const [treasurySettings, setTreasurySettings] = useState<TreasurySettings | null>(null)
+  const [treasuryLoading, setTreasuryLoading] = useState(false)
+  const [treasurySaving, setTreasurySaving] = useState(false)
+  const [treasuryError, setTreasuryError] = useState<string | null>(null)
+  const [treasurySuccess, setTreasurySuccess] = useState(false)
+  const [editTreasuryAddress, setEditTreasuryAddress] = useState("")
+  const [editMasterXpub, setEditMasterXpub] = useState("")
+  const [showXpubInput, setShowXpubInput] = useState(false)
+
+  // Review queue state
+  const [reviewQueue, setReviewQueue] = useState<ReviewQueueItem[]>([])
+  const [reviewQueueLoading, setReviewQueueLoading] = useState(false)
+  const [resolvingId, setResolvingId] = useState<string | null>(null)
+
+  // Monthly processing state
+  const [monthlyStatus, setMonthlyStatus] = useState<MonthlyProcessingStatus | null>(null)
+  const [monthlyPreview, setMonthlyPreview] = useState<MonthlyProcessingPreview | null>(null)
+  const [monthlyStatusLoading, setMonthlyStatusLoading] = useState(false)
+  const [monthlyPreviewLoading, setMonthlyPreviewLoading] = useState(false)
+  const [monthlyProcessing, setMonthlyProcessing] = useState(false)
+  const [monthlyProcessResult, setMonthlyProcessResult] = useState<{
+    success: boolean
+    message: string
+    details?: Record<string, unknown>
+  } | null>(null)
 
   const fetchFinancialData = useCallback(async () => {
     const supabase = createClient()
@@ -206,6 +303,192 @@ export default function AdminFinancialsPage() {
     })
   }, [])
 
+  // Fetch treasury settings
+  const fetchTreasurySettings = useCallback(async () => {
+    setTreasuryLoading(true)
+    try {
+      const response = await fetch("/api/crypto/treasury/settings")
+      const data = await response.json()
+
+      if (data.success && data.data) {
+        setTreasurySettings(data.data)
+        setEditTreasuryAddress(data.data.treasuryWalletAddress || "")
+        setEditMasterXpub(data.data.masterWalletXpubFull || "")
+      }
+    } catch (error) {
+      console.error("Failed to fetch treasury settings:", error)
+    } finally {
+      setTreasuryLoading(false)
+    }
+  }, [])
+
+  // Save treasury settings
+  const saveTreasurySettings = async () => {
+    setTreasurySaving(true)
+    setTreasuryError(null)
+    setTreasurySuccess(false)
+
+    try {
+      const response = await fetch("/api/crypto/treasury/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          treasuryWalletAddress: editTreasuryAddress,
+          masterWalletXpub: editMasterXpub,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!data.success) {
+        setTreasuryError(data.error || "Failed to save settings")
+      } else {
+        setTreasurySuccess(true)
+        await fetchTreasurySettings()
+        setShowXpubInput(false)
+        setTimeout(() => setTreasurySuccess(false), 3000)
+      }
+    } catch (error) {
+      setTreasuryError("Failed to save treasury settings")
+    } finally {
+      setTreasurySaving(false)
+    }
+  }
+
+  // Fetch review queue
+  const fetchReviewQueue = useCallback(async () => {
+    setReviewQueueLoading(true)
+    try {
+      const response = await fetch("/api/crypto/admin/review-queue")
+      const data = await response.json()
+
+      if (data.success && data.data) {
+        setReviewQueue(data.data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch review queue:", error)
+    } finally {
+      setReviewQueueLoading(false)
+    }
+  }, [])
+
+  // Resolve a review queue item
+  const resolveReviewItem = async (depositAddressId: string, resolution: "refunded" | "credited" | "ignored") => {
+    setResolvingId(depositAddressId)
+    try {
+      const response = await fetch("/api/crypto/admin/review-queue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          depositAddressId,
+          resolution,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        // Remove from local state
+        setReviewQueue((prev) => prev.filter((item) => item.id !== depositAddressId))
+      }
+    } catch (error) {
+      console.error("Failed to resolve review item:", error)
+    } finally {
+      setResolvingId(null)
+    }
+  }
+
+  // Fetch monthly processing status
+  const fetchMonthlyStatus = useCallback(async () => {
+    setMonthlyStatusLoading(true)
+    try {
+      const response = await fetch("/api/admin/process-monthly-volumes")
+      const data = await response.json()
+
+      if (data.success) {
+        setMonthlyStatus({
+          currentPeriodStats: data.currentPeriodStats,
+          lastExecution: data.lastExecution,
+        })
+      }
+    } catch (error) {
+      console.error("Failed to fetch monthly status:", error)
+    } finally {
+      setMonthlyStatusLoading(false)
+    }
+  }, [])
+
+  // Fetch monthly processing preview (dry run)
+  const fetchMonthlyPreview = async () => {
+    setMonthlyPreviewLoading(true)
+    setMonthlyPreview(null)
+    setMonthlyProcessResult(null)
+    try {
+      const response = await fetch("/api/admin/process-monthly-volumes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dryRun: true }),
+      })
+      const data = await response.json()
+
+      if (data.success && data.preview) {
+        setMonthlyPreview(data.preview)
+      }
+    } catch (error) {
+      console.error("Failed to fetch monthly preview:", error)
+    } finally {
+      setMonthlyPreviewLoading(false)
+    }
+  }
+
+  // Execute monthly processing
+  const executeMonthlyProcessing = async () => {
+    setMonthlyProcessing(true)
+    setMonthlyProcessResult(null)
+    try {
+      const response = await fetch("/api/admin/process-monthly-volumes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dryRun: false }),
+      })
+      const data = await response.json()
+
+      if (data.success) {
+        setMonthlyProcessResult({
+          success: true,
+          message: "Monthly processing completed successfully!",
+          details: {
+            archiveStep: data.archiveStep,
+            commissionStep: data.commissionStep,
+            resetStep: data.resetStep,
+          },
+        })
+        setMonthlyPreview(null) // Clear preview after successful processing
+        await fetchMonthlyStatus() // Refresh status
+      } else {
+        setMonthlyProcessResult({
+          success: false,
+          message: data.error || "Processing failed",
+          details: data.details,
+        })
+      }
+    } catch (error) {
+      console.error("Failed to execute monthly processing:", error)
+      setMonthlyProcessResult({
+        success: false,
+        message: "Failed to execute monthly processing",
+      })
+    } finally {
+      setMonthlyProcessing(false)
+    }
+  }
+
+  // Cancel preview
+  const cancelPreview = () => {
+    setMonthlyPreview(null)
+    setMonthlyProcessResult(null)
+  }
+
   const checkSuperAdminStatus = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -220,10 +503,13 @@ export default function AdminFinancialsPage() {
       if (userData?.role === "superadmin") {
         setIsSuperAdmin(true)
         await fetchFinancialData()
+        await fetchTreasurySettings()
+        await fetchReviewQueue()
+        await fetchMonthlyStatus()
       }
     }
     setLoading(false)
-  }, [fetchFinancialData])
+  }, [fetchFinancialData, fetchTreasurySettings, fetchReviewQueue, fetchMonthlyStatus])
 
   useEffect(() => {
     checkSuperAdminStatus()
@@ -279,6 +565,532 @@ export default function AdminFinancialsPage() {
         </div>
         <p className="text-muted-foreground">Complete financial view of Trading Hub network revenue and payouts</p>
       </div>
+
+      {/* Treasury Settings */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wallet className="h-5 w-5 text-primary" />
+            Treasury Wallet Configuration
+          </CardTitle>
+          <CardDescription>
+            Configure the treasury wallet for receiving payments. Users will send USDC to unique deposit addresses derived from this wallet.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {treasuryLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Status indicator */}
+              <div className="flex items-center gap-2">
+                {treasurySettings?.isConfigured ? (
+                  <>
+                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    <span className="text-sm text-green-600 font-medium">Treasury configured and ready</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="h-5 w-5 text-amber-500" />
+                    <span className="text-sm text-amber-600 font-medium">Treasury not configured - payments disabled</span>
+                  </>
+                )}
+              </div>
+
+              {/* Treasury wallet address */}
+              <div className="space-y-2">
+                <Label htmlFor="treasuryAddress">Treasury Wallet Address</Label>
+                <Input
+                  id="treasuryAddress"
+                  placeholder="0x..."
+                  value={editTreasuryAddress}
+                  onChange={(e) => setEditTreasuryAddress(e.target.value)}
+                  className="font-mono"
+                />
+                <p className="text-xs text-muted-foreground">
+                  This is the main wallet address where funds will be collected. All derived deposit addresses funnel here.
+                </p>
+              </div>
+
+              {/* Master wallet xpub */}
+              <div className="space-y-2">
+                <Label htmlFor="masterXpub">Master Wallet Extended Public Key (xpub)</Label>
+                {treasurySettings?.masterWalletXpub && !showXpubInput ? (
+                  <div className="flex items-center gap-2">
+                    <code className="bg-muted px-3 py-2 rounded text-sm flex-1 font-mono">
+                      {treasurySettings.masterWalletXpub}
+                    </code>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowXpubInput(true)}
+                    >
+                      Change
+                    </Button>
+                  </div>
+                ) : (
+                  <Input
+                    id="masterXpub"
+                    placeholder="xpub..."
+                    value={editMasterXpub}
+                    onChange={(e) => setEditMasterXpub(e.target.value)}
+                    className="font-mono text-sm"
+                  />
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Used to derive unique deposit addresses for each payment. Get this from your HD wallet.
+                </p>
+              </div>
+
+              {/* Current derivation index */}
+              {treasurySettings && (
+                <div className="flex items-center gap-4 p-3 bg-muted rounded-lg">
+                  <Settings className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Current Derivation Index</p>
+                    <p className="text-xs text-muted-foreground">
+                      {treasurySettings.currentDerivationIndex} addresses generated
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Error/Success messages */}
+              {treasuryError && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <AlertCircle className="h-4 w-4 text-red-500" />
+                  <span className="text-sm text-red-600">{treasuryError}</span>
+                </div>
+              )}
+
+              {treasurySuccess && (
+                <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <span className="text-sm text-green-600">Treasury settings saved successfully</span>
+                </div>
+              )}
+
+              {/* Save button */}
+              <Button
+                onClick={saveTreasurySettings}
+                disabled={treasurySaving}
+              >
+                {treasurySaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Treasury Settings"
+                )}
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Monthly Volume Processing */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              <span>Monthly Volume Processing</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={fetchMonthlyStatus}
+              disabled={monthlyStatusLoading}
+            >
+              <RefreshCw className={`h-4 w-4 ${monthlyStatusLoading ? "animate-spin" : ""}`} />
+            </Button>
+          </CardTitle>
+          <CardDescription>
+            Archive sniper volumes, create commissions, and reset counters for the new month
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {monthlyStatusLoading && !monthlyStatus ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Status Overview */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">Last Processed</p>
+                  <p className="text-lg font-semibold">
+                    {monthlyStatus?.lastExecution?.details?.month_period || "Never"}
+                  </p>
+                  {monthlyStatus?.lastExecution && (
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(monthlyStatus.lastExecution.execution_date).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">Users with Volume</p>
+                  <p className="text-lg font-semibold">
+                    {monthlyStatus?.currentPeriodStats?.usersWithVolume || 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {monthlyStatus?.currentPeriodStats?.activeUsersWithVolume || 0} active
+                  </p>
+                </div>
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">Current Month Volume</p>
+                  <p className="text-lg font-semibold">
+                    {formatDollars(parseFloat(monthlyStatus?.currentPeriodStats?.totalCurrentMonthVolume || "0"))}
+                  </p>
+                </div>
+              </div>
+
+              {/* Preview Button */}
+              {!monthlyPreview && !monthlyProcessResult && (
+                <Button
+                  onClick={fetchMonthlyPreview}
+                  disabled={monthlyPreviewLoading}
+                  className="w-full"
+                >
+                  {monthlyPreviewLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating Preview...
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="mr-2 h-4 w-4" />
+                      Preview Monthly Reset
+                    </>
+                  )}
+                </Button>
+              )}
+
+              {/* Preview Results */}
+              {monthlyPreview && (
+                <div className="border rounded-lg p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold flex items-center gap-2">
+                      <Eye className="h-4 w-4" />
+                      Preview for {monthlyPreview.monthPeriod}
+                    </h4>
+                    <Badge variant="outline">Dry Run</Badge>
+                  </div>
+
+                  {/* Warnings */}
+                  {monthlyPreview.warnings.length > 0 && (
+                    <div className="space-y-2">
+                      {monthlyPreview.warnings.map((warning, i) => (
+                        <div key={i} className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                          <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
+                          <span className="text-sm text-amber-700">{warning}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Summary Stats */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="p-3 bg-blue-50 rounded-lg">
+                      <p className="text-xs text-blue-600">Volume to Archive</p>
+                      <p className="text-lg font-semibold text-blue-700">
+                        {formatDollars(monthlyPreview.totalVolumeToArchive)}
+                      </p>
+                    </div>
+                    <div className="p-3 bg-green-50 rounded-lg">
+                      <p className="text-xs text-green-600">Commissions</p>
+                      <p className="text-lg font-semibold text-green-700">
+                        {monthlyPreview.commissionsToCreate.count}
+                      </p>
+                    </div>
+                    <div className="p-3 bg-green-50 rounded-lg">
+                      <p className="text-xs text-green-600">Total Payout</p>
+                      <p className="text-lg font-semibold text-green-700">
+                        {formatDollars(monthlyPreview.commissionsToCreate.totalAmount)}
+                      </p>
+                    </div>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <p className="text-xs text-gray-600">Ineligible</p>
+                      <p className="text-lg font-semibold text-gray-700">
+                        {monthlyPreview.ineligibleUsers.count}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Commission Breakdown Table */}
+                  {monthlyPreview.commissionsToCreate.breakdown.length > 0 && (
+                    <div className="border rounded-lg overflow-hidden">
+                      <div className="bg-muted px-4 py-2">
+                        <h5 className="text-sm font-medium">Commission Breakdown (Top {Math.min(50, monthlyPreview.commissionsToCreate.count)})</h5>
+                      </div>
+                      <div className="max-h-64 overflow-y-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>User</TableHead>
+                              <TableHead className="text-right">Volume</TableHead>
+                              <TableHead className="text-right">Rate</TableHead>
+                              <TableHead className="text-right">Commission</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {monthlyPreview.commissionsToCreate.breakdown.map((user) => (
+                              <TableRow key={user.userId}>
+                                <TableCell>
+                                  <div>
+                                    <p className="font-medium text-sm">{user.userName}</p>
+                                    <p className="text-xs text-muted-foreground">{user.userEmail}</p>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-right font-mono">
+                                  {formatDollars(user.volume)}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {user.commissionRate.toFixed(0)}%
+                                </TableCell>
+                                <TableCell className="text-right font-mono font-semibold text-green-600">
+                                  {formatDollars(user.commissionAmount)}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                      {monthlyPreview.commissionsToCreate.hasMore && (
+                        <div className="px-4 py-2 bg-muted text-center text-sm text-muted-foreground">
+                          + {monthlyPreview.commissionsToCreate.count - 50} more users
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Ineligible Users */}
+                  {monthlyPreview.ineligibleUsers.count > 0 && (
+                    <div className="text-sm">
+                      <p className="text-muted-foreground mb-2">
+                        {monthlyPreview.ineligibleUsers.count} users have volume but are ineligible (inactive):
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {monthlyPreview.ineligibleUsers.samples.map((user) => (
+                          <Badge key={user.userId} variant="secondary" className="text-xs">
+                            {user.userName} ({formatDollars(user.volume)})
+                          </Badge>
+                        ))}
+                        {monthlyPreview.ineligibleUsers.count > 10 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{monthlyPreview.ineligibleUsers.count - 10} more
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3 pt-2">
+                    <Button
+                      variant="outline"
+                      onClick={cancelPreview}
+                      className="flex-1"
+                      disabled={monthlyProcessing}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={executeMonthlyProcessing}
+                      disabled={monthlyProcessing}
+                      className="flex-1"
+                    >
+                      {monthlyProcessing ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Play className="mr-2 h-4 w-4" />
+                          Confirm & Process
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Process Result */}
+              {monthlyProcessResult && (
+                <div className={`p-4 rounded-lg border ${
+                  monthlyProcessResult.success
+                    ? "bg-green-50 border-green-200"
+                    : "bg-red-50 border-red-200"
+                }`}>
+                  <div className="flex items-start gap-3">
+                    {monthlyProcessResult.success ? (
+                      <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                    )}
+                    <div className="flex-1">
+                      <p className={`font-medium ${
+                        monthlyProcessResult.success ? "text-green-700" : "text-red-700"
+                      }`}>
+                        {monthlyProcessResult.message}
+                      </p>
+                      {monthlyProcessResult.details && monthlyProcessResult.success && (
+                        <div className="mt-2 text-sm text-green-600 space-y-1">
+                          <p>Archived: {(monthlyProcessResult.details.archiveStep as { usersProcessed?: number })?.usersProcessed || 0} users</p>
+                          <p>Commissions created: {(monthlyProcessResult.details.commissionStep as { commissionsCreated?: number })?.commissionsCreated || 0}</p>
+                          <p>Total payout: {formatDollars((monthlyProcessResult.details.commissionStep as { totalPayoutAmount?: number })?.totalPayoutAmount || 0)}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={cancelPreview}
+                    className="mt-3"
+                  >
+                    Close
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Overpayments Requiring Review */}
+      {reviewQueue.length > 0 && (
+        <Card className="mb-6 border-amber-200 bg-amber-50/50">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+                <span>Overpayments Requiring Review ({reviewQueue.length})</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={fetchReviewQueue}
+                disabled={reviewQueueLoading}
+              >
+                <RefreshCw className={`h-4 w-4 ${reviewQueueLoading ? "animate-spin" : ""}`} />
+              </Button>
+            </CardTitle>
+            <CardDescription>
+              These payments received more than expected and need admin decision
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {reviewQueueLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="rounded-md border bg-white">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Expected</TableHead>
+                      <TableHead>Received</TableHead>
+                      <TableHead>Overpayment</TableHead>
+                      <TableHead>Flags</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {reviewQueue.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{item.userName}</p>
+                            <p className="text-sm text-muted-foreground">{item.userEmail}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-mono">
+                          {formatDollars(item.expectedAmount)}
+                        </TableCell>
+                        <TableCell className="font-mono text-green-600 font-semibold">
+                          {formatDollars(item.receivedAmount)}
+                        </TableCell>
+                        <TableCell className="font-mono text-amber-600 font-semibold">
+                          +{formatDollars(item.overpaymentAmount)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            {item.isOverpaid && (
+                              <Badge variant="outline" className="text-amber-600 border-amber-300 w-fit">
+                                Overpaid
+                              </Badge>
+                            )}
+                            {item.isLate && (
+                              <Badge variant="outline" className="text-blue-600 border-blue-300 w-fit">
+                                Late
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {new Date(item.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs"
+                              disabled={resolvingId === item.id}
+                              onClick={() => resolveReviewItem(item.id, "refunded")}
+                            >
+                              {resolvingId === item.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                "Refund"
+                              )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs"
+                              disabled={resolvingId === item.id}
+                              onClick={() => resolveReviewItem(item.id, "credited")}
+                            >
+                              {resolvingId === item.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                "Credit User"
+                              )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-xs text-muted-foreground"
+                              disabled={resolvingId === item.id}
+                              onClick={() => resolveReviewItem(item.id, "ignored")}
+                            >
+                              {resolvingId === item.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                "Ignore"
+                              )}
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">

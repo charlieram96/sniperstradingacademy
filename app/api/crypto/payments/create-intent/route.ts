@@ -1,15 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
-import { coinbaseWalletService } from '@/lib/coinbase/wallet-service';
 import { PAYMENT_AMOUNTS, PAYMENT_INTENT_EXPIRY } from '@/lib/coinbase/wallet-types';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/middleware/rate-limit';
+import {
+  generateDepositAddress,
+  getTreasurySetting,
+  isTreasuryConfigured,
+} from '@/lib/treasury/treasury-service';
 
 export const runtime = 'nodejs';
 
 /**
  * POST /api/crypto/payments/create-intent
  * Create a new payment intent for initial unlock or subscription payment
+ * Now uses unique deposit addresses derived from treasury HD wallet
  */
 export async function POST(req: NextRequest) {
   try {
@@ -46,6 +51,35 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Use service role client for database operations
+    const serviceSupabase = createServiceRoleClient();
+
+    // Get user data including payout wallet
+    const { data: userData, error: userDataError } = await serviceSupabase
+      .from('users')
+      .select('initial_payment_completed, payout_wallet_address')
+      .eq('id', user.id)
+      .single();
+
+    if (userDataError) {
+      return NextResponse.json(
+        { error: 'Failed to fetch user data' },
+        { status: 500 }
+      );
+    }
+
+    // Check if user has payout wallet configured (required before any payment)
+    if (!userData.payout_wallet_address) {
+      return NextResponse.json(
+        {
+          error: 'Payout wallet required',
+          code: 'PAYOUT_WALLET_REQUIRED',
+          message: 'Please set your payout wallet address before making a payment. This is where you will receive commissions and bonuses.',
+        },
+        { status: 400 }
+      );
+    }
+
     // Determine amount based on intent type
     let amountUSDC: string;
     let expirySeconds: number;
@@ -54,13 +88,6 @@ export async function POST(req: NextRequest) {
       case 'initial_unlock':
         amountUSDC = PAYMENT_AMOUNTS.INITIAL_UNLOCK;
         expirySeconds = PAYMENT_INTENT_EXPIRY.INITIAL_UNLOCK;
-
-        // Check if user already completed initial payment
-        const { data: userData } = await supabase
-          .from('users')
-          .select('initial_payment_completed')
-          .eq('id', user.id)
-          .single();
 
         if (userData?.initial_payment_completed) {
           return NextResponse.json(
@@ -87,44 +114,23 @@ export async function POST(req: NextRequest) {
         );
     }
 
-    // Get or create user's crypto wallet
-    // Use service role client for wallet operations (bypasses RLS)
-    const serviceSupabase = createServiceRoleClient();
-    let walletResponse = await coinbaseWalletService.getWalletByUserId(user.id, serviceSupabase);
-
-    if (!walletResponse.success) {
-      // Create wallet if doesn't exist
-      console.log('[CreateIntent] Creating new wallet for user:', user.id);
-      walletResponse = await coinbaseWalletService.createWalletForUser(user.id, serviceSupabase);
-
-      if (!walletResponse.success || !walletResponse.data) {
-        return NextResponse.json(
-          {
-            error: 'Failed to create wallet',
-            details: walletResponse.error?.message,
-          },
-          { status: 500 }
-        );
-      }
-    }
-
-    const userWallet = walletResponse.data;
-
-    // Get platform wallet address (for receiving payments)
-    const platformWalletAddress = process.env.PLATFORM_TREASURY_WALLET_ADDRESS;
-
-    if (!platformWalletAddress) {
-      console.error('[CreateIntent] Platform treasury wallet not configured');
+    // Check if treasury is configured
+    const treasuryConfigured = await isTreasuryConfigured();
+    if (!treasuryConfigured) {
+      console.error('[CreateIntent] Treasury not configured');
       return NextResponse.json(
-        { error: 'Platform wallet not configured' },
-        { status: 500 }
+        { error: 'Payment system not configured. Please contact support.' },
+        { status: 503 }
       );
     }
 
-    // Check for existing active intent (use service role to bypass RLS)
+    // Get treasury wallet address for reference
+    const treasuryWalletAddress = await getTreasurySetting('treasury_wallet_address');
+
+    // Check for existing active intent
     const { data: existingIntent } = await serviceSupabase
       .from('payment_intents')
-      .select('*')
+      .select('*, deposit_addresses(*)')
       .eq('user_id', user.id)
       .eq('intent_type', intentType)
       .in('status', ['created', 'awaiting_funds', 'processing'])
@@ -134,17 +140,19 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (existingIntent) {
-      // Return existing intent instead of creating duplicate
+      // Return existing intent with its deposit address
+      const depositAddress = existingIntent.deposit_addresses?.deposit_address || existingIntent.user_wallet_address;
+
       return NextResponse.json({
         success: true,
         intent: existingIntent,
-        userWalletAddress: userWallet.wallet_address,
-        qrCodeData: userWallet.wallet_address, // For QR code generation
+        depositAddress,
+        qrCodeData: depositAddress,
         expiresIn: Math.floor((new Date(existingIntent.expires_at).getTime() - Date.now()) / 1000),
       });
     }
 
-    // Create payment intent (use service role to bypass RLS)
+    // Create payment intent first (to get the ID for deposit address)
     const expiresAt = new Date(Date.now() + expirySeconds * 1000);
 
     const { data: intent, error: intentError } = await serviceSupabase
@@ -154,12 +162,13 @@ export async function POST(req: NextRequest) {
         intent_type: intentType,
         amount_usdc: amountUSDC,
         status: 'created',
-        user_wallet_address: userWallet.wallet_address,
-        platform_wallet_address: platformWalletAddress,
+        user_wallet_address: '', // Will be updated with deposit address
+        platform_wallet_address: treasuryWalletAddress || '',
         expires_at: expiresAt.toISOString(),
         metadata: {
           created_via: 'api',
           user_agent: req.headers.get('user-agent') || 'unknown',
+          simplified_crypto_system: true,
         },
       })
       .select()
@@ -173,35 +182,80 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`[CreateIntent] Created intent ${intent.id} for user ${user.id}: ${amountUSDC} USDC`);
+    // Generate unique deposit address
+    const depositResult = await generateDepositAddress(
+      user.id,
+      intent.id,
+      intentType as 'initial_unlock' | 'monthly_subscription' | 'weekly_subscription',
+      parseFloat(amountUSDC),
+      expiresAt
+    );
+
+    if (!depositResult.success || !depositResult.data) {
+      // Rollback the payment intent
+      await serviceSupabase
+        .from('payment_intents')
+        .delete()
+        .eq('id', intent.id);
+
+      return NextResponse.json(
+        { error: depositResult.error || 'Failed to generate deposit address' },
+        { status: 500 }
+      );
+    }
+
+    const { address: depositAddress, derivationIndex } = depositResult.data;
+
+    // Update payment intent with deposit address info
+    const { data: depositAddressRecord } = await serviceSupabase
+      .from('deposit_addresses')
+      .select('id')
+      .eq('deposit_address', depositAddress)
+      .single();
+
+    const { error: updateError } = await serviceSupabase
+      .from('payment_intents')
+      .update({
+        user_wallet_address: depositAddress, // Store deposit address for backwards compatibility
+        deposit_address_id: depositAddressRecord?.id,
+      })
+      .eq('id', intent.id);
+
+    if (updateError) {
+      console.error('[CreateIntent] Failed to update intent with deposit address:', updateError);
+    }
+
+    console.log(`[CreateIntent] Created intent ${intent.id} for user ${user.id}: ${amountUSDC} USDC, deposit address index ${derivationIndex}`);
 
     // Return success with intent details
     return NextResponse.json({
       success: true,
-      intent,
-      userWalletAddress: userWallet.wallet_address,
-      platformWalletAddress,
+      intent: {
+        ...intent,
+        user_wallet_address: depositAddress,
+        deposit_address_id: depositAddressRecord?.id,
+      },
+      depositAddress,
       amountUSDC,
-      qrCodeData: userWallet.wallet_address,
+      qrCodeData: depositAddress,
       expiresIn: expirySeconds,
       instructions: {
         title: `Pay ${amountUSDC} USDC`,
         steps: [
           {
             step: 1,
-            description: intentType === 'initial_unlock'
-              ? 'Buy USDC using the widget below, OR send USDC from your external wallet'
-              : 'Send USDC from your wallet to complete payment',
+            description: 'Open your crypto wallet (MetaMask, Coinbase Wallet, etc.)',
           },
           {
             step: 2,
-            description: `Send exactly ${amountUSDC} USDC to your wallet address`,
+            description: `Send exactly ${amountUSDC} USDC on the Polygon network to the address below`,
           },
           {
             step: 3,
-            description: 'Wait for confirmation (usually under 30 seconds)',
+            description: 'Wait for confirmation (usually under 2 minutes)',
           },
         ],
+        note: 'Make sure you are sending USDC on the Polygon network. Sending on other networks may result in loss of funds.',
       },
     });
   } catch (error: any) {
@@ -220,7 +274,7 @@ export async function POST(req: NextRequest) {
  * GET /api/crypto/payments/create-intent
  * Get active payment intents for current user
  */
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createClient();
 
@@ -236,10 +290,10 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Get active intents
+    // Get active intents with deposit address info
     const { data: intents, error: intentsError } = await supabase
       .from('payment_intents')
-      .select('*')
+      .select('*, deposit_addresses(*)')
       .eq('user_id', user.id)
       .in('status', ['created', 'awaiting_funds', 'processing'])
       .gte('expires_at', new Date().toISOString())
@@ -252,9 +306,15 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // Add deposit address to each intent for convenience
+    const intentsWithDepositAddress = intents?.map((intent: any) => ({
+      ...intent,
+      depositAddress: intent.deposit_addresses?.deposit_address || intent.user_wallet_address,
+    }));
+
     return NextResponse.json({
       success: true,
-      intents,
+      intents: intentsWithDepositAddress,
     });
   } catch (error: any) {
     console.error('[CreateIntent GET] Unexpected error:', error);

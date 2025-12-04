@@ -4,6 +4,8 @@ import { SignOutButton } from "@/components/sign-out-button"
 import { NavigationLink } from "@/components/navigation-link"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { GlobalBanner } from "@/components/global-banner"
+import { InactiveAccountBanner } from "@/components/inactive-account-banner"
+import { MissingWalletBanner } from "@/components/missing-wallet-banner"
 import {
   Accordion,
   AccordionContent,
@@ -43,7 +45,7 @@ export default async function DashboardLayout({
   // Get user role and activation status from database
   const { data: userData } = await supabase
     .from("users")
-    .select("role, initial_payment_completed, bypass_initial_payment")
+    .select("role, initial_payment_completed, bypass_initial_payment, bypass_subscription, last_payment_date, payout_wallet_address")
     .eq("id", user.id)
     .single()
 
@@ -57,9 +59,23 @@ export default async function DashboardLayout({
       {/* Global Banner */}
       <GlobalBanner />
 
+      {/* Inactive Account Banner - shows when subscription has lapsed */}
+      <InactiveAccountBanner
+        lastPaymentDate={userData?.last_payment_date || null}
+        bypassSubscription={userData?.bypass_subscription || false}
+        isAdmin={isAdminOrSuper}
+      />
+
+      {/* Missing Wallet Banner - shows when payout wallet not configured */}
+      <MissingWalletBanner
+        payoutWalletAddress={userData?.payout_wallet_address || null}
+        bypassSubscription={userData?.bypass_subscription || false}
+        isAdmin={isAdminOrSuper}
+      />
+
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col fixed h-full z-40 pt-[calc(var(--banner-height,0px)+50px)] transition-all duration-200" style={{ paddingTop: 'calc(var(--banner-height, 0px) + 50px)' }}>
+        <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col fixed h-full z-40 transition-all duration-200" style={{ paddingTop: 'calc(var(--banner-height, 0px) + var(--inactive-banner-height, 0px) + var(--wallet-banner-height, 0px) + 50px)' }}>
         <nav className="flex-1 py-4 overflow-y-auto">
           <NavigationLink
             href="/dashboard"
@@ -266,7 +282,7 @@ export default async function DashboardLayout({
       <DashboardHeader user={user} />
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto ml-64 transition-all duration-200" style={{ paddingTop: 'calc(var(--banner-height, 0px) + 50px)' }}>
+      <main className="flex-1 overflow-auto ml-64 transition-all duration-200" style={{ paddingTop: 'calc(var(--banner-height, 0px) + var(--inactive-banner-height, 0px) + var(--wallet-banner-height, 0px) + 50px)' }}>
         <div className="p-8">
           {children}
         </div>

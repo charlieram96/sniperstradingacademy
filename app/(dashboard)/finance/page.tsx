@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -27,8 +28,7 @@ import {
   AlertCircle
 } from "lucide-react"
 import { AccountStatusCard } from "@/components/account-status-card"
-import { WalletBankCard } from "@/components/crypto/WalletBankCard"
-import { WithdrawalModal } from "@/components/crypto/WithdrawalModal"
+import PayoutWalletSetup from "@/components/crypto/PayoutWalletSetup"
 
 interface DirectBonus {
   id: string
@@ -52,6 +52,7 @@ interface MonthlyEarning {
 }
 
 export default function FinancePage() {
+  const router = useRouter()
   const [userId, setUserId] = useState<string | null>(null)
   const [directBonuses, setDirectBonuses] = useState<DirectBonus[]>([])
   const [monthlyEarnings, setMonthlyEarnings] = useState<MonthlyEarning[]>([])
@@ -65,7 +66,8 @@ export default function FinancePage() {
     directReferralsCount: 0,
     accumulatedResidual: 0,
     paymentSchedule: 'monthly' as 'weekly' | 'monthly',
-    bypassSubscription: false
+    bypassSubscription: false,
+    payoutWalletAddress: null as string | null
   })
   const [financialStats, setFinancialStats] = useState({
     totalSniperVolume: 0,
@@ -87,8 +89,6 @@ export default function FinancePage() {
   const [loadingDashboard, setLoadingDashboard] = useState(false)
   const [dashboardError, setDashboardError] = useState<string | null>(null)
   const [showDashboardError, setShowDashboardError] = useState(false)
-  const [showWithdrawalModal, setShowWithdrawalModal] = useState(false)
-  const [walletBalance, setWalletBalance] = useState('0')
 
   useEffect(() => {
     async function getUser() {
@@ -111,7 +111,7 @@ export default function FinancePage() {
         // Fetch user account data
         const { data: userData } = await supabase
           .from('users')
-          .select('is_active, last_payment_date, initial_payment_date, qualified_at, direct_referrals_count, active_network_count, current_commission_rate, bypass_direct_referrals, bypass_subscription, bypass_initial_payment, stripe_connect_account_id, payment_schedule')
+          .select('is_active, last_payment_date, initial_payment_date, qualified_at, direct_referrals_count, active_network_count, current_commission_rate, bypass_direct_referrals, bypass_subscription, bypass_initial_payment, stripe_connect_account_id, payment_schedule, payout_wallet_address')
           .eq('id', userId)
           .single()
 
@@ -140,7 +140,8 @@ export default function FinancePage() {
           directReferralsCount: userData?.direct_referrals_count || 0,
           accumulatedResidual: 0,
           paymentSchedule: paymentSchedule as 'weekly' | 'monthly',
-          bypassSubscription: userData?.bypass_subscription || false
+          bypassSubscription: userData?.bypass_subscription || false,
+          payoutWalletAddress: userData?.payout_wallet_address || null
         })
 
         // Fetch real network stats
@@ -293,13 +294,7 @@ export default function FinancePage() {
   }
 
   const handlePayNow = () => {
-    // Handle payment logic
-    console.log("Processing payment...")
-  }
-
-  const handleWithdrawSuccess = () => {
-    // Wallet will refresh itself, but we can trigger a page refresh if needed
-    setShowWithdrawalModal(false)
+    router.push('/payments')
   }
 
   const handleOpenStripeDashboard = async () => {
@@ -346,25 +341,17 @@ export default function FinancePage() {
           lastPaymentDate={accountStatus.lastPaymentDate}
           paymentSchedule={accountStatus.paymentSchedule}
           bypassSubscription={accountStatus.bypassSubscription}
+          payoutWalletAddress={accountStatus.payoutWalletAddress}
           onPayNow={handlePayNow}
         />
       </div>
 
-      {/* Wallet / Bank Section */}
-      <div className="mb-6">
-        <WalletBankCard
-          onWithdraw={() => setShowWithdrawalModal(true)}
-          onBalanceChange={(balance) => setWalletBalance(balance)}
-        />
-      </div>
-
-      {/* Withdrawal Modal */}
-      <WithdrawalModal
-        open={showWithdrawalModal}
-        onClose={() => setShowWithdrawalModal(false)}
-        balance={walletBalance}
-        onSuccess={handleWithdrawSuccess}
-      />
+      {/* Payout Wallet Section */}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <PayoutWalletSetup showAsCard isModal={false} />
+        </CardContent>
+      </Card>
 
       {/* Legacy Qualification Status - Hidden when using new countdown */}
       {false && !financialStats.isQualified && (
@@ -378,6 +365,80 @@ export default function FinancePage() {
               Refer 3 people to unlock residual income from your team volume
             </CardDescription>
           </CardHeader>
+        </Card>
+      )}
+
+      {/* Inactive Account Financial Impact Notice */}
+      {!accountStatus.accountActive && !accountStatus.bypassSubscription && (
+        <Card className="mb-6 border-red-500/30 bg-red-950/50">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <div className="p-2 bg-red-500/20 rounded-full">
+                <AlertCircle className="h-6 w-6 text-red-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-red-400 text-lg">Your Earnings Are On Hold</h3>
+                <p className="text-sm text-red-300 mt-1">
+                  {!accountStatus.lastPaymentDate ? (
+                    "You haven't made any subscription payments yet. Until you activate your account, you cannot earn commissions or receive payouts."
+                  ) : (
+                    <>
+                      Your subscription payment is overdue. Your last payment was on{' '}
+                      <strong>{accountStatus.lastPaymentDate.toLocaleDateString()}</strong>
+                      {' '}({Math.floor((Date.now() - accountStatus.lastPaymentDate.getTime()) / (1000 * 60 * 60 * 24))} days ago).
+                      Subscriptions must be renewed every 30 days to keep earning.
+                    </>
+                  )}
+                </p>
+                <div className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                  <p className="text-sm font-medium text-red-400">Impact on your finances:</p>
+                  <ul className="text-xs text-red-300 mt-1 space-y-1 list-disc list-inside">
+                    <li>Your ${financialStats.currentMonthResidual.toLocaleString()} current month residual is <strong>not payable</strong></li>
+                    <li>Any pending direct bonuses (${financialStats.pendingBonuses.toLocaleString()}) are <strong>on hold</strong></li>
+                    <li>Your team&apos;s activity is not generating commissions for you</li>
+                  </ul>
+                </div>
+                <Button
+                  onClick={handlePayNow}
+                  className="mt-4 bg-red-600 hover:bg-red-700"
+                >
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Pay ${accountStatus.paymentSchedule === 'weekly' ? '49.75' : '199'} to Reactivate
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Missing Payout Wallet Warning */}
+      {!accountStatus.payoutWalletAddress && !accountStatus.bypassSubscription && (
+        <Card className="mb-6 border-amber-500/30 bg-amber-950/50">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <div className="p-2 bg-amber-500/20 rounded-full">
+                <Wallet className="h-6 w-6 text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-400 text-lg">Payout Wallet Not Configured</h3>
+                <p className="text-sm text-amber-300 mt-1">
+                  You need to set up a Polygon wallet address to receive your commission payouts.
+                  Without a wallet, we cannot send you any earnings.
+                </p>
+                <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                  <p className="text-sm font-medium text-amber-400">Without a payout wallet:</p>
+                  <ul className="text-xs text-amber-300 mt-1 space-y-1 list-disc list-inside">
+                    <li>Monthly residual commissions cannot be paid out</li>
+                    <li>Direct referral bonuses will remain pending</li>
+                    <li>All earned commissions are held until wallet is set</li>
+                  </ul>
+                </div>
+                <p className="text-xs text-amber-300 mt-3">
+                  Set up your wallet in the Payout Wallet section below.
+                </p>
+              </div>
+            </div>
+          </CardContent>
         </Card>
       )}
 

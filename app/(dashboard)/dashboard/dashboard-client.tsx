@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { formatCurrency } from "@/lib/utils"
-import { Users, DollarSign, TrendingUp, UserPlus, Lock, Unlock, CreditCard, AlertTriangle, Medal, Trophy, Star, Award, Target, Crown, GraduationCap, BookOpen, PlayCircle, CheckCircle2, Wallet, ExternalLink, XCircle, Clock, Calendar } from "lucide-react"
+import { Users, DollarSign, TrendingUp, UserPlus, Lock, Unlock, CreditCard, AlertTriangle, Medal, Trophy, Star, Award, Target, Crown, GraduationCap, BookOpen, PlayCircle, CheckCircle2, Wallet, ExternalLink, Clock, Calendar } from "lucide-react"
 import { NavigationLink } from "@/components/navigation-link"
 import { isTestUser } from "@/lib/mock-data"
 import { createClient } from "@/lib/supabase/client"
@@ -47,6 +47,7 @@ interface DashboardData {
   completedStructures: number
   unlockedStructures: number
   maxMembersPerStructure: number
+  payoutWalletAddress?: string | null
 }
 
 // Structure ranks based on COMPLETED structures
@@ -97,52 +98,10 @@ export function DashboardClient({
   bypassBannerDismissed?: boolean
 }) {
   const [selectedStructure, setSelectedStructure] = useState("1")
-  const [connectStatus, setConnectStatus] = useState<{
-    connected: boolean
-    onboarded: boolean
-    payouts_enabled?: boolean
-    charges_enabled?: boolean
-    account?: {
-      id: string
-      email?: string | null
-      created: number
-    }
-  }>({ connected: false, onboarded: false })
-  const [connectLoading, setConnectLoading] = useState(true)
   const [academyClasses, setAcademyClasses] = useState<AcademyClass[]>([])
   const [classesLoading, setClassesLoading] = useState(true)
   const [bannerDismissed, setBannerDismissed] = useState(bypassBannerDismissed)
   const rankInfo = getRankInfo(data.completedStructures)
-  
-  // Check Stripe Connect status
-  useEffect(() => {
-    async function checkConnectStatus() {
-      if (isTestUser(session.user.id)) {
-        setConnectStatus({
-          connected: true,
-          onboarded: true,
-          payouts_enabled: true,
-          charges_enabled: true
-        })
-        setConnectLoading(false)
-        return
-      }
-      
-      try {
-        const response = await fetch('/api/stripe/connect/onboarding')
-        if (response.ok) {
-          const status = await response.json()
-          setConnectStatus(status)
-        }
-      } catch (error) {
-        console.error('Error checking Connect status:', error)
-      } finally {
-        setConnectLoading(false)
-      }
-    }
-    
-    checkConnectStatus()
-  }, [session.user.id])
 
   // Fetch academy classes
   useEffect(() => {
@@ -167,26 +126,6 @@ export function DashboardClient({
 
     fetchClasses()
   }, [])
-
-  async function handleConnectOnboarding() {
-    try {
-      const response = await fetch('/api/stripe/connect/onboarding', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (response.ok) {
-        const { url } = await response.json()
-        if (url) {
-          window.location.href = url
-        }
-      }
-    } catch (error) {
-      console.error('Error starting Connect onboarding:', error)
-    }
-  }
 
   async function handleDismissBanner() {
     try {
@@ -382,107 +321,103 @@ export function DashboardClient({
         </CardContent>
       </Card>
 
-      {/* Connect Bank Account Section */}
+      {/* Payout Wallet Section */}
       {data.initialPaymentCompleted && (
-        <Card className="mb-6 border-green-500/20 bg-gradient-to-r from-green-500/5 to-green-600/10">
+        <Card className={`mb-6 ${data.payoutWalletAddress ? 'border-green-500/20 bg-gradient-to-r from-green-500/5 to-green-600/10' : 'border-amber-500/20 bg-gradient-to-r from-amber-500/5 to-amber-600/10'}`}>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <Wallet className="h-5 w-5 text-green-600" />
-                  Bank Account for Payouts
+                  <Wallet className={`h-5 w-5 ${data.payoutWalletAddress ? 'text-green-600' : 'text-amber-600'}`} />
+                  Payout Wallet (Polygon)
                 </CardTitle>
                 <CardDescription className="mt-1">
-                  Connect your bank account to receive monthly commission payouts automatically
+                  {data.payoutWalletAddress
+                    ? 'Your wallet is configured to receive USDC commission payouts'
+                    : 'Set up your Polygon wallet to receive USDC commission payouts'}
                 </CardDescription>
               </div>
-              {!connectLoading && connectStatus.onboarded && (
+              {data.payoutWalletAddress ? (
                 <Badge className="bg-green-500 text-white">
                   <CheckCircle2 className="h-3 w-3 mr-1" />
-                  Connected
+                  Configured
+                </Badge>
+              ) : (
+                <Badge className="bg-amber-500 text-white">
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  Not Set
                 </Badge>
               )}
             </div>
           </CardHeader>
           <CardContent>
-            {connectLoading ? (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Clock className="h-4 w-4 animate-pulse" />
-                Checking connection status...
-              </div>
-            ) : connectStatus.onboarded ? (
+            {data.payoutWalletAddress ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="p-3 rounded-lg bg-card">
-                    <p className="text-sm text-muted-foreground">Payouts Status</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      {connectStatus.payouts_enabled ? (
-                        <>
-                          <CheckCircle2 className="h-4 w-4 text-green-500" />
-                          <span className="text-sm font-medium">Enabled</span>
-                        </>
-                      ) : (
-                        <>
-                          <XCircle className="h-4 w-4 text-yellow-500" />
-                          <span className="text-sm font-medium">Pending Verification</span>
-                        </>
-                      )}
-                    </div>
+                    <p className="text-sm text-muted-foreground">Wallet Address</p>
+                    <p className="text-sm font-medium font-mono mt-1">
+                      {data.payoutWalletAddress.slice(0, 6)}...{data.payoutWalletAddress.slice(-4)}
+                    </p>
                   </div>
                   <div className="p-3 rounded-lg bg-card">
-                    <p className="text-sm text-muted-foreground">Next Payout</p>
-                    <p className="text-sm font-medium mt-1">1st of next month</p>
+                    <p className="text-sm text-muted-foreground">Network</p>
+                    <p className="text-sm font-medium mt-1">Polygon (MATIC)</p>
                   </div>
                   <div className="p-3 rounded-lg bg-card">
                     <p className="text-sm text-muted-foreground">Estimated Commission</p>
-                    <p className="text-sm font-medium mt-1 text-primary">{formatCurrency(data.monthlyCommission)}</p>
+                    <p className="text-sm font-medium mt-1 text-primary">{formatCurrency(data.monthlyCommission)} USDC</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 p-3 bg-green-500/10 rounded-lg">
                   <CheckCircle2 className="h-4 w-4 text-green-600" />
                   <p className="text-sm">
-                    Your bank account is connected. Commissions will be paid out automatically on the 15th of each month.
+                    Your wallet is ready to receive payouts. Commissions are paid in USDC on the Polygon network around the 15th of each month.
                   </p>
                 </div>
-                <Button variant="outline" onClick={handleConnectOnboarding}>
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Update Bank Details
-                </Button>
+                <NavigationLink href="/finance">
+                  <Button variant="outline">
+                    <Wallet className="h-4 w-4 mr-2" />
+                    Update Wallet
+                  </Button>
+                </NavigationLink>
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                   <div className="flex items-start gap-2">
-                    <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                    <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-foreground">Bank account not connected</p>
+                      <p className="text-sm font-medium text-foreground">Payout wallet not configured</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Connect your bank account to receive automatic monthly commission payouts. This only takes 2 minutes.
+                        Set up your Polygon wallet to receive your commission payouts in USDC. This only takes a minute.
                       </p>
                     </div>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">What happens next:</p>
+                  <p className="text-sm font-medium">How it works:</p>
                   <ul className="space-y-1 text-sm text-muted-foreground">
                     <li className="flex items-center gap-2">
                       <div className="w-1 h-1 rounded-full bg-muted-foreground" />
-                      Quick setup with Stripe (2 minutes)
+                      Enter your Polygon wallet address (MetaMask, Trust Wallet, etc.)
                     </li>
                     <li className="flex items-center gap-2">
                       <div className="w-1 h-1 rounded-full bg-muted-foreground" />
-                      Automatic monthly payouts on the 15th
+                      Receive USDC payouts directly to your wallet
                     </li>
                     <li className="flex items-center gap-2">
                       <div className="w-1 h-1 rounded-full bg-muted-foreground" />
-                      Direct deposit to your bank account
+                      Monthly payouts around the 15th
                     </li>
                   </ul>
                 </div>
-                <Button onClick={handleConnectOnboarding} className="w-full md:w-auto">
-                  <Wallet className="h-4 w-4 mr-2" />
-                  Connect Bank Account
-                </Button>
+                <NavigationLink href="/finance">
+                  <Button className="w-full md:w-auto bg-amber-600 hover:bg-amber-700">
+                    <Wallet className="h-4 w-4 mr-2" />
+                    Set Up Payout Wallet
+                  </Button>
+                </NavigationLink>
               </div>
             )}
           </CardContent>

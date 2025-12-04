@@ -4,6 +4,9 @@ import { createClient } from '@/lib/supabase/server';
 export const runtime = 'nodejs';
 export const maxDuration = 120; // Allow up to 2 minutes for processing
 
+// Active threshold: user is active if paid within 33 days (30 + 3 day grace)
+const ACTIVE_THRESHOLD_DAYS = 33;
+
 /**
  * POST /api/admin/process-monthly-volumes
  * Manually trigger monthly volume processing
@@ -68,29 +71,125 @@ export async function POST(req: NextRequest) {
     console.log(`[AdminProcessMonthlyVolumes] Processing for period: ${monthPeriod}, dryRun: ${dryRun}`);
 
     if (dryRun) {
-      // Dry run - just get stats without making changes
+      // Dry run - get detailed stats without making changes
+      const warnings: string[] = [];
+
+      // Check if this month was already processed
+      const { data: existingLogs } = await supabase
+        .from('monthly_processing_logs')
+        .select('execution_date, success')
+        .gte('execution_date', new Date(now.getFullYear(), now.getMonth(), 1).toISOString())
+        .eq('step_name', 'Full Process')
+        .eq('success', true)
+        .limit(1);
+
+      if (existingLogs && existingLogs.length > 0) {
+        warnings.push(`This month may have already been processed on ${new Date(existingLogs[0].execution_date).toLocaleDateString()}`);
+      }
+
+      // Get last successful processing
+      const { data: lastProcessing } = await supabase
+        .from('monthly_processing_logs')
+        .select('execution_date, details')
+        .eq('step_name', 'Full Process')
+        .eq('success', true)
+        .order('execution_date', { ascending: false })
+        .limit(1);
+
+      const lastProcessedMonth = lastProcessing?.[0]?.details?.month_period || 'Never';
+
+      // Calculate active threshold date
+      const activeThresholdDate = new Date();
+      activeThresholdDate.setDate(activeThresholdDate.getDate() - ACTIVE_THRESHOLD_DAYS);
+
+      // Get all users with volume including their details for commission calculation
       const { data: usersWithVolume } = await supabase
         .from('users')
-        .select('id, sniper_volume_current_month, active_network_count, is_active')
-        .gt('sniper_volume_current_month', 0);
+        .select('id, name, email, sniper_volume_current_month, current_commission_rate, last_payment_date, is_active')
+        .gt('sniper_volume_current_month', 0)
+        .order('sniper_volume_current_month', { ascending: false });
 
-      const totalVolume = (usersWithVolume || []).reduce(
+      const users = usersWithVolume || [];
+
+      // Calculate eligibility and commissions for each user
+      const eligibleUsers: Array<{
+        userId: string;
+        userName: string;
+        userEmail: string;
+        volume: number;
+        commissionRate: number;
+        commissionAmount: number;
+        isActive: boolean;
+      }> = [];
+
+      const ineligibleUsers: Array<{
+        userId: string;
+        userName: string;
+        reason: string;
+        volume: number;
+      }> = [];
+
+      for (const user of users) {
+        const volume = parseFloat(user.sniper_volume_current_month || '0');
+        const commissionRate = parseFloat(user.current_commission_rate || '0.10');
+        const lastPayment = user.last_payment_date ? new Date(user.last_payment_date) : null;
+        const isActive = lastPayment && lastPayment >= activeThresholdDate;
+
+        if (isActive) {
+          eligibleUsers.push({
+            userId: user.id,
+            userName: user.name || 'Unknown',
+            userEmail: user.email || '',
+            volume,
+            commissionRate: commissionRate * 100, // Convert to percentage
+            commissionAmount: volume * commissionRate,
+            isActive: true,
+          });
+        } else {
+          ineligibleUsers.push({
+            userId: user.id,
+            userName: user.name || 'Unknown',
+            reason: lastPayment ? 'Payment expired (inactive)' : 'Never paid',
+            volume,
+          });
+        }
+      }
+
+      const totalVolume = users.reduce(
         (sum, u) => sum + parseFloat(u.sniper_volume_current_month || '0'),
         0
       );
 
-      const activeUsersWithVolume = (usersWithVolume || []).filter(u => u.is_active);
+      const totalCommissionAmount = eligibleUsers.reduce(
+        (sum, u) => sum + u.commissionAmount,
+        0
+      );
+
+      // Add warning if no eligible users
+      if (eligibleUsers.length === 0 && users.length > 0) {
+        warnings.push('No active users are eligible for commissions this month');
+      }
 
       return NextResponse.json({
         success: true,
         dryRun: true,
-        message: 'Dry run completed - no changes made',
+        message: 'Preview generated - no changes made',
         preview: {
           monthPeriod,
-          usersWithVolume: usersWithVolume?.length || 0,
-          activeUsersWithVolume: activeUsersWithVolume.length,
-          totalVolume: totalVolume.toFixed(2),
-          estimatedCommissions: activeUsersWithVolume.length,
+          lastProcessedMonth,
+          usersWithVolume: users.length,
+          totalVolumeToArchive: parseFloat(totalVolume.toFixed(2)),
+          commissionsToCreate: {
+            count: eligibleUsers.length,
+            totalAmount: parseFloat(totalCommissionAmount.toFixed(2)),
+            breakdown: eligibleUsers.slice(0, 50), // Limit to top 50 for response size
+            hasMore: eligibleUsers.length > 50,
+          },
+          ineligibleUsers: {
+            count: ineligibleUsers.length,
+            samples: ineligibleUsers.slice(0, 10), // Show first 10 ineligible
+          },
+          warnings,
         },
       });
     }

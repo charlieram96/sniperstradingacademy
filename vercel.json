@@ -35,10 +35,6 @@
     {
       "path": "/api/cron/create-payout-batches",
       "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/process-monthly-volumes",
-      "schedule": "1 0 1 * *"
     }
   ],
   "headers": [
