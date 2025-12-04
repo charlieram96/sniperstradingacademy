@@ -155,6 +155,54 @@ export async function POST(req: NextRequest) {
       (wallets || []).map(w => [w.user_id, w.wallet_address])
     );
 
+    // Check payout wallet balance before processing
+    const payoutBalanceResult = await coinbaseWalletService.getPayoutWalletBalance();
+    if (!payoutBalanceResult.success || !payoutBalanceResult.data) {
+      await supabase
+        .from('payout_batches')
+        .update({
+          status: 'failed',
+          error_log: [{
+            commission_id: 'PRE_CHECK',
+            error: 'Could not verify payout wallet balance',
+            timestamp: new Date().toISOString(),
+          }],
+        })
+        .eq('id', batchId);
+
+      return NextResponse.json({
+        success: false,
+        error: 'Could not verify payout wallet balance',
+      }, { status: 500 });
+    }
+
+    const availableUSDC = parseFloat(payoutBalanceResult.data.usdc);
+    const requiredUSDC = Array.from(userPayouts.values()).reduce((sum, d) => sum + d.total, 0);
+
+    if (availableUSDC < requiredUSDC) {
+      await supabase
+        .from('payout_batches')
+        .update({
+          status: 'failed',
+          error_log: [{
+            commission_id: 'PRE_CHECK',
+            error: `Insufficient payout wallet balance. Have: ${availableUSDC.toFixed(2)}, Need: ${requiredUSDC.toFixed(2)}`,
+            timestamp: new Date().toISOString(),
+          }],
+        })
+        .eq('id', batchId);
+
+      return NextResponse.json({
+        success: false,
+        error: `Insufficient payout wallet balance. Have: ${availableUSDC.toFixed(2)} USDC, Need: ${requiredUSDC.toFixed(2)} USDC`,
+        details: {
+          available: availableUSDC.toFixed(2),
+          required: requiredUSDC.toFixed(2),
+          shortfall: (requiredUSDC - availableUSDC).toFixed(2),
+        },
+      }, { status: 400 });
+    }
+
     // Process payouts
     const results: PayoutResult[] = [];
     let successCount = 0;
@@ -186,8 +234,8 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      // Execute transfer from treasury
-      const transferResult = await coinbaseWalletService.transferFromTreasury(
+      // Execute transfer from payout wallet (falls back to treasury if not configured)
+      const transferResult = await coinbaseWalletService.transferFromPayoutWallet(
         walletAddress,
         data.total.toFixed(6)
       );
@@ -198,7 +246,7 @@ export async function POST(req: NextRequest) {
           .from('usdc_transactions')
           .insert({
             transaction_type: 'payout',
-            from_address: process.env.PLATFORM_TREASURY_WALLET_ADDRESS || '',
+            from_address: coinbaseWalletService.getPayoutWalletAddress(),
             to_address: walletAddress,
             amount: data.total.toFixed(6),
             polygon_tx_hash: transferResult.data.transactionHash,

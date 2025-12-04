@@ -63,11 +63,67 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    console.log(`[CheckGasTank] Balance: ${status.maticBalance} MATIC (~$${status.maticBalanceUSD})`);
+    console.log(`[CheckGasTank] Gas Tank Balance: ${status.maticBalance} MATIC (~$${status.maticBalanceUSD})`);
+
+    // Also check payout wallet USDC balance
+    const payoutStatusResponse = await gasManager.getPayoutWalletStatus();
+    let payoutWalletStatus = null;
+    const alerts: Array<{ type: string; urgency: string; message: string }> = [];
+
+    // Add gas tank alert if needed
+    if (status.lowBalanceWarning || status.criticalBalanceAlert) {
+      alerts.push({
+        type: 'gas_tank',
+        urgency: status.criticalBalanceAlert ? 'critical' : 'warning',
+        message: status.criticalBalanceAlert
+          ? 'CRITICAL: Gas tank balance critically low. Immediate refill required.'
+          : 'WARNING: Gas tank balance is low. Please refill soon.',
+      });
+    }
+
+    if (payoutStatusResponse.success && payoutStatusResponse.data) {
+      const payoutStatus = payoutStatusResponse.data;
+      payoutWalletStatus = {
+        address: payoutStatus.address,
+        usdcBalance: payoutStatus.usdcBalance,
+        maticBalance: payoutStatus.maticBalance,
+        lowBalanceWarning: payoutStatus.lowBalanceWarning,
+        criticalBalanceAlert: payoutStatus.criticalBalanceAlert,
+      };
+
+      // Send alert if low
+      if (payoutStatus.lowBalanceWarning || payoutStatus.criticalBalanceAlert) {
+        await gasManager.sendLowPayoutWalletAlert(supabase, payoutStatus);
+        alerts.push({
+          type: 'payout_wallet',
+          urgency: payoutStatus.criticalBalanceAlert ? 'critical' : 'warning',
+          message: payoutStatus.criticalBalanceAlert
+            ? 'CRITICAL: Payout wallet USDC balance critically low. Transfer funds from treasury.'
+            : 'WARNING: Payout wallet USDC balance is low. Please refill soon.',
+        });
+      }
+
+      // Log payout wallet status
+      await supabase.from('crypto_audit_log').insert({
+        event_type: 'admin_action',
+        admin_id: null,
+        entity_type: 'payout_wallet',
+        entity_id: null,
+        details: {
+          action: 'payout_wallet_check',
+          usdc_balance: payoutStatus.usdcBalance,
+          matic_balance: payoutStatus.maticBalance,
+          low_warning: payoutStatus.lowBalanceWarning,
+          critical_alert: payoutStatus.criticalBalanceAlert,
+        },
+      });
+
+      console.log(`[CheckGasTank] Payout Wallet USDC Balance: ${payoutStatus.usdcBalance}`);
+    }
 
     return NextResponse.json({
       success: true,
-      status: {
+      gasTank: {
         address: status.address,
         balance: status.maticBalance,
         balanceUSD: status.maticBalanceUSD,
@@ -75,14 +131,8 @@ export async function GET(req: NextRequest) {
         criticalBalanceAlert: status.criticalBalanceAlert,
         estimatedTransactionsRemaining: status.estimatedTransactionsRemaining,
       },
-      alert: status.lowBalanceWarning || status.criticalBalanceAlert
-        ? {
-          urgency: status.criticalBalanceAlert ? 'critical' : 'warning',
-          message: status.criticalBalanceAlert
-            ? 'CRITICAL: Gas tank balance critically low. Immediate refill required.'
-            : 'WARNING: Gas tank balance is low. Please refill soon.',
-        }
-        : null,
+      payoutWallet: payoutWalletStatus,
+      alerts: alerts.length > 0 ? alerts : null,
     });
   } catch (error: unknown) {
     console.error('[CheckGasTank] Unexpected error:', error);

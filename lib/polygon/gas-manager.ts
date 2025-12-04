@@ -35,12 +35,26 @@ export interface GasUsageStats {
   };
 }
 
+export interface PayoutWalletStatus {
+  address: string;
+  usdcBalance: string;
+  maticBalance: string;
+  lowBalanceWarning: boolean;
+  criticalBalanceAlert: boolean;
+  lastChecked: Date;
+}
+
 const GAS_THRESHOLDS = {
   LOW_BALANCE_WARNING: '100', // MATIC
   CRITICAL_BALANCE_ALERT: '50', // MATIC
   AUTO_REFILL_THRESHOLD: '25', // MATIC
   TARGET_BALANCE: '200', // MATIC
   ESTIMATED_GAS_PER_TX: '0.001', // MATIC per USDC transfer
+};
+
+const PAYOUT_WALLET_THRESHOLDS = {
+  LOW_BALANCE_WARNING: parseFloat(process.env.PAYOUT_WALLET_LOW_BALANCE_WARNING || '5000'), // USDC
+  CRITICAL_BALANCE_ALERT: parseFloat(process.env.PAYOUT_WALLET_CRITICAL_BALANCE || '1000'), // USDC
 };
 
 class GasManager {
@@ -408,6 +422,129 @@ class GasManager {
   }
 
   /**
+   * Check payout wallet status (USDC + MATIC for gas)
+   */
+  async getPayoutWalletStatus(): Promise<ServiceResponse<PayoutWalletStatus>> {
+    try {
+      const payoutAddress = process.env.PAYOUT_WALLET_ADDRESS;
+
+      if (!payoutAddress) {
+        // Fall back to treasury for backward compatibility
+        const treasuryAddress = process.env.PLATFORM_TREASURY_WALLET_ADDRESS;
+        if (!treasuryAddress) {
+          return {
+            success: false,
+            error: {
+              code: 'NOT_CONFIGURED',
+              message: 'Neither payout wallet nor treasury wallet address configured',
+            },
+          };
+        }
+        console.warn('[GasManager] Payout wallet not configured, checking treasury instead');
+      }
+
+      const addressToCheck = payoutAddress || process.env.PLATFORM_TREASURY_WALLET_ADDRESS!;
+
+      const [usdcResponse, maticResponse] = await Promise.all([
+        polygonUSDCClient.getBalance(addressToCheck),
+        polygonUSDCClient.getMATICBalance(addressToCheck),
+      ]);
+
+      if (!usdcResponse.success || !usdcResponse.data) {
+        return {
+          success: false,
+          error: usdcResponse.error || {
+            code: 'BALANCE_CHECK_FAILED',
+            message: 'Could not fetch USDC balance',
+          },
+        };
+      }
+
+      const usdcBalance = parseFloat(usdcResponse.data.balance);
+      const maticBalance = maticResponse.success ? maticResponse.data! : '0';
+
+      const lowBalanceWarning = usdcBalance < PAYOUT_WALLET_THRESHOLDS.LOW_BALANCE_WARNING;
+      const criticalBalanceAlert = usdcBalance < PAYOUT_WALLET_THRESHOLDS.CRITICAL_BALANCE_ALERT;
+
+      return {
+        success: true,
+        data: {
+          address: addressToCheck,
+          usdcBalance: usdcBalance.toFixed(6),
+          maticBalance,
+          lowBalanceWarning,
+          criticalBalanceAlert,
+          lastChecked: new Date(),
+        },
+      };
+    } catch (error: any) {
+      console.error('[GasManager] getPayoutWalletStatus error:', error);
+      return {
+        success: false,
+        error: {
+          code: 'STATUS_CHECK_FAILED',
+          message: error.message || 'Failed to check payout wallet status',
+          details: error,
+        },
+      };
+    }
+  }
+
+  /**
+   * Send low payout wallet balance alert
+   */
+  async sendLowPayoutWalletAlert(supabase: any, status: PayoutWalletStatus): Promise<void> {
+    try {
+      const { data: admins } = await supabase
+        .from('users')
+        .select('id, email, full_name')
+        .in('role', ['admin', 'superadmin']);
+
+      if (!admins || admins.length === 0) {
+        console.warn('[GasManager] No admins found to send payout wallet alert');
+        return;
+      }
+
+      const urgency = status.criticalBalanceAlert ? 'CRITICAL' : 'WARNING';
+      const message = `
+        ${urgency}: Payout Wallet Low USDC Balance
+
+        Address: ${status.address}
+        Current USDC Balance: ${status.usdcBalance}
+        Current MATIC Balance: ${status.maticBalance}
+
+        ${status.criticalBalanceAlert
+          ? 'IMMEDIATE ACTION REQUIRED: Transfer USDC from treasury to payout wallet.'
+          : 'Action needed soon: Please transfer USDC from treasury to payout wallet.'
+        }
+
+        Recommended minimum: ${PAYOUT_WALLET_THRESHOLDS.LOW_BALANCE_WARNING} USDC
+      `.trim();
+
+      console.log(`[GasManager] Payout Wallet ${urgency} Alert:`, message);
+
+      // Log to audit
+      await supabase.from('crypto_audit_log').insert({
+        event_type: 'payout_wallet_low_balance',
+        admin_id: null,
+        entity_type: 'payout_wallet',
+        entity_id: null,
+        details: {
+          urgency,
+          address: status.address,
+          usdc_balance: status.usdcBalance,
+          matic_balance: status.maticBalance,
+          threshold_warning: PAYOUT_WALLET_THRESHOLDS.LOW_BALANCE_WARNING,
+          threshold_critical: PAYOUT_WALLET_THRESHOLDS.CRITICAL_BALANCE_ALERT,
+        },
+      });
+
+    } catch (error) {
+      console.error('[GasManager] sendLowPayoutWalletAlert error:', error);
+    }
+  }
+
+  /**
    * Get current gas prices
    */
   async getCurrentGasPrices(): Promise<ServiceResponse<{
@@ -510,4 +647,4 @@ class GasManager {
 export const gasManager = new GasManager();
 
 // Export class for testing
-export { GasManager, GAS_THRESHOLDS };
+export { GasManager, GAS_THRESHOLDS, PAYOUT_WALLET_THRESHOLDS };

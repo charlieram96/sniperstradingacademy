@@ -324,6 +324,108 @@ class CoinbaseWalletService {
   }
 
   /**
+   * Transfer using platform's payout hot wallet (for commission payouts)
+   * Falls back to treasury wallet if payout wallet is not configured (backward compatibility)
+   */
+  async transferFromPayoutWallet(
+    toAddress: string,
+    amount: string
+  ): Promise<ServiceResponse<TransferResponse>> {
+    try {
+      const payoutPrivateKey = process.env.PAYOUT_WALLET_PRIVATE_KEY;
+      const payoutAddress = process.env.PAYOUT_WALLET_ADDRESS;
+
+      // Backward compatibility: fall back to treasury if payout wallet not configured
+      if (!payoutPrivateKey || !payoutAddress) {
+        console.warn('[CoinbaseWalletService] Payout wallet not configured, falling back to treasury');
+        return this.transferFromTreasury(toAddress, amount);
+      }
+
+      // Use polygon client for direct transfer from payout wallet
+      const transferResult = await polygonUSDCClient.transfer(
+        payoutPrivateKey,
+        toAddress,
+        amount
+      );
+
+      if (!transferResult.success || !transferResult.data) {
+        return {
+          success: false,
+          error: transferResult.error || {
+            code: 'TRANSFER_FAILED',
+            message: 'Payout wallet transfer failed',
+          },
+        };
+      }
+
+      // Wait for confirmation
+      const confirmation = await polygonUSDCClient.waitForConfirmation(
+        transferResult.data.txHash,
+        1
+      );
+
+      if (!confirmation.success || !confirmation.data) {
+        return {
+          success: false,
+          error: {
+            code: 'CONFIRMATION_FAILED',
+            message: 'Transfer confirmation failed',
+          },
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          transactionHash: confirmation.data.txHash,
+          status: confirmation.data.status,
+          from: confirmation.data.from,
+          to: confirmation.data.to,
+          amount: confirmation.data.amount,
+          gasUsed: confirmation.data.gasUsed,
+          blockNumber: confirmation.data.blockNumber,
+        },
+      };
+    } catch (error: any) {
+      console.error('[CoinbaseWalletService] transferFromPayoutWallet error:', error);
+      return this.handleError(error, 'TRANSFER_FAILED');
+    }
+  }
+
+  /**
+   * Get the payout wallet address (with fallback to treasury for backward compatibility)
+   */
+  getPayoutWalletAddress(): string {
+    return process.env.PAYOUT_WALLET_ADDRESS || process.env.PLATFORM_TREASURY_WALLET_ADDRESS || '';
+  }
+
+  /**
+   * Check if a dedicated payout wallet is configured (not using treasury fallback)
+   */
+  isPayoutWalletConfigured(): boolean {
+    return !!(process.env.PAYOUT_WALLET_ADDRESS && process.env.PAYOUT_WALLET_PRIVATE_KEY);
+  }
+
+  /**
+   * Get payout wallet balance (USDC + MATIC for gas)
+   */
+  async getPayoutWalletBalance(): Promise<ServiceResponse<WalletBalance>> {
+    const payoutAddress = this.getPayoutWalletAddress();
+
+    if (!payoutAddress) {
+      return {
+        success: false,
+        error: {
+          code: 'NOT_CONFIGURED',
+          message: 'Payout wallet not configured',
+        },
+      };
+    }
+
+    return this.getWalletBalance(payoutAddress);
+  }
+
+  /**
    * Get transaction status
    */
   async getTransactionStatus(txHash: string): Promise<ServiceResponse<TransferResponse>> {
