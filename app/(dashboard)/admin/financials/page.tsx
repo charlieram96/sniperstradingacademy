@@ -31,6 +31,10 @@ interface TreasurySettings {
   masterWalletXpubFull: string
   currentDerivationIndex: number
   isConfigured: boolean
+  // Payout wallet settings
+  payoutWalletAddress: string
+  isPayoutWalletConfigured: boolean
+  hasPayoutPrivateKey: boolean
 }
 
 interface Payment {
@@ -183,6 +187,19 @@ export default function AdminFinancialsPage() {
   const [editMasterXpub, setEditMasterXpub] = useState("")
   const [showXpubInput, setShowXpubInput] = useState(false)
 
+  // Treasury wallet balance state
+  const [treasuryWalletBalance, setTreasuryWalletBalance] = useState<{ usdc: string; matic: string } | null>(null)
+  const [treasuryBalanceLoading, setTreasuryBalanceLoading] = useState(false)
+
+  // Payout wallet state
+  const [editPayoutAddress, setEditPayoutAddress] = useState("")
+  const [editPayoutPrivateKey, setEditPayoutPrivateKey] = useState("")
+  const [payoutSaving, setPayoutSaving] = useState(false)
+  const [payoutError, setPayoutError] = useState<string | null>(null)
+  const [payoutSuccess, setPayoutSuccess] = useState(false)
+  const [payoutWalletBalance, setPayoutWalletBalance] = useState<{ usdc: string; matic: string } | null>(null)
+  const [payoutBalanceLoading, setPayoutBalanceLoading] = useState(false)
+
   // Review queue state
   const [reviewQueue, setReviewQueue] = useState<ReviewQueueItem[]>([])
   const [reviewQueueLoading, setReviewQueueLoading] = useState(false)
@@ -314,6 +331,8 @@ export default function AdminFinancialsPage() {
         setTreasurySettings(data.data)
         setEditTreasuryAddress(data.data.treasuryWalletAddress || "")
         setEditMasterXpub(data.data.masterWalletXpubFull || "")
+        setEditPayoutAddress(data.data.payoutWalletAddress || "")
+        // Don't set private key - it's never returned from API
       }
     } catch (error) {
       console.error("Failed to fetch treasury settings:", error)
@@ -321,6 +340,50 @@ export default function AdminFinancialsPage() {
       setTreasuryLoading(false)
     }
   }, [])
+
+  // Fetch treasury wallet balance
+  const fetchTreasuryWalletBalance = useCallback(async () => {
+    if (!treasurySettings?.treasuryWalletAddress) return
+
+    setTreasuryBalanceLoading(true)
+    try {
+      const response = await fetch("/api/crypto/admin/treasury-wallet")
+      const data = await response.json()
+
+      if (data.success && data.treasuryWallet) {
+        setTreasuryWalletBalance({
+          usdc: data.treasuryWallet.usdcBalance,
+          matic: data.treasuryWallet.maticBalance,
+        })
+      }
+    } catch (error) {
+      console.error("Failed to fetch treasury wallet balance:", error)
+    } finally {
+      setTreasuryBalanceLoading(false)
+    }
+  }, [treasurySettings?.treasuryWalletAddress])
+
+  // Fetch payout wallet balance
+  const fetchPayoutWalletBalance = useCallback(async () => {
+    if (!treasurySettings?.payoutWalletAddress) return
+
+    setPayoutBalanceLoading(true)
+    try {
+      const response = await fetch("/api/crypto/admin/payout-wallet")
+      const data = await response.json()
+
+      if (data.success && data.payoutWallet) {
+        setPayoutWalletBalance({
+          usdc: data.payoutWallet.usdcBalance,
+          matic: data.payoutWallet.maticBalance,
+        })
+      }
+    } catch (error) {
+      console.error("Failed to fetch payout wallet balance:", error)
+    } finally {
+      setPayoutBalanceLoading(false)
+    }
+  }, [treasurySettings?.payoutWalletAddress])
 
   // Save treasury settings
   const saveTreasurySettings = async () => {
@@ -352,6 +415,40 @@ export default function AdminFinancialsPage() {
       setTreasuryError("Failed to save treasury settings")
     } finally {
       setTreasurySaving(false)
+    }
+  }
+
+  // Save payout wallet settings
+  const savePayoutWalletSettings = async () => {
+    setPayoutSaving(true)
+    setPayoutError(null)
+    setPayoutSuccess(false)
+
+    try {
+      const response = await fetch("/api/crypto/treasury/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          payoutWalletAddress: editPayoutAddress,
+          payoutWalletPrivateKey: editPayoutPrivateKey || undefined, // Only send if provided
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!data.success) {
+        setPayoutError(data.error || "Failed to save payout wallet settings")
+      } else {
+        setPayoutSuccess(true)
+        setEditPayoutPrivateKey("") // Clear private key after save
+        await fetchTreasurySettings()
+        await fetchPayoutWalletBalance()
+        setTimeout(() => setPayoutSuccess(false), 3000)
+      }
+    } catch (error) {
+      setPayoutError("Failed to save payout wallet settings")
+    } finally {
+      setPayoutSaving(false)
     }
   }
 
@@ -511,6 +608,20 @@ export default function AdminFinancialsPage() {
     setLoading(false)
   }, [fetchFinancialData, fetchTreasurySettings, fetchReviewQueue, fetchMonthlyStatus])
 
+  // Fetch treasury wallet balance when address is available
+  useEffect(() => {
+    if (treasurySettings?.treasuryWalletAddress) {
+      fetchTreasuryWalletBalance()
+    }
+  }, [treasurySettings?.treasuryWalletAddress, fetchTreasuryWalletBalance])
+
+  // Fetch payout wallet balance when address is available
+  useEffect(() => {
+    if (treasurySettings?.payoutWalletAddress) {
+      fetchPayoutWalletBalance()
+    }
+  }, [treasurySettings?.payoutWalletAddress, fetchPayoutWalletBalance])
+
   useEffect(() => {
     checkSuperAdminStatus()
   }, [checkSuperAdminStatus])
@@ -599,6 +710,32 @@ export default function AdminFinancialsPage() {
                 )}
               </div>
 
+              {/* Wallet balance display */}
+              {treasurySettings?.treasuryWalletAddress && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-xs text-muted-foreground">USDC Balance</p>
+                    {treasuryBalanceLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin mt-1" />
+                    ) : (
+                      <p className="text-lg font-semibold text-green-600">
+                        {treasuryWalletBalance ? `$${parseFloat(treasuryWalletBalance.usdc).toFixed(2)}` : '-'}
+                      </p>
+                    )}
+                  </div>
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-xs text-muted-foreground">MATIC (Gas)</p>
+                    {treasuryBalanceLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin mt-1" />
+                    ) : (
+                      <p className="text-lg font-semibold">
+                        {treasuryWalletBalance ? `${parseFloat(treasuryWalletBalance.matic).toFixed(4)} MATIC` : '-'}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Treasury wallet address */}
               <div className="space-y-2">
                 <Label htmlFor="treasuryAddress">Treasury Wallet Address</Label>
@@ -684,6 +821,141 @@ export default function AdminFinancialsPage() {
                   </>
                 ) : (
                   "Save Treasury Settings"
+                )}
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Payout Wallet Configuration */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ArrowDownCircle className="h-5 w-5 text-red-600" />
+            Payout Wallet Configuration
+          </CardTitle>
+          <CardDescription>
+            Configure the hot wallet used to send commission payouts to users. This wallet should hold USDC and MATIC for gas.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {treasuryLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Status indicator */}
+              <div className="flex items-center gap-2">
+                {treasurySettings?.isPayoutWalletConfigured ? (
+                  <>
+                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    <span className="text-sm text-green-600 font-medium">Payout wallet configured and ready</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="h-5 w-5 text-amber-500" />
+                    <span className="text-sm text-amber-600 font-medium">Payout wallet not configured - payouts disabled</span>
+                  </>
+                )}
+              </div>
+
+              {/* Wallet balance display */}
+              {treasurySettings?.payoutWalletAddress && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-xs text-muted-foreground">USDC Balance</p>
+                    {payoutBalanceLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin mt-1" />
+                    ) : (
+                      <p className="text-lg font-semibold text-green-600">
+                        {payoutWalletBalance ? `$${parseFloat(payoutWalletBalance.usdc).toFixed(2)}` : '-'}
+                      </p>
+                    )}
+                  </div>
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-xs text-muted-foreground">MATIC (Gas)</p>
+                    {payoutBalanceLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin mt-1" />
+                    ) : (
+                      <p className="text-lg font-semibold">
+                        {payoutWalletBalance ? `${parseFloat(payoutWalletBalance.matic).toFixed(4)} MATIC` : '-'}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Payout wallet address */}
+              <div className="space-y-2">
+                <Label htmlFor="payoutAddress">Payout Wallet Address</Label>
+                <Input
+                  id="payoutAddress"
+                  placeholder="0x..."
+                  value={editPayoutAddress}
+                  onChange={(e) => setEditPayoutAddress(e.target.value)}
+                  className="font-mono"
+                />
+                <p className="text-xs text-muted-foreground">
+                  The wallet address that will send USDC payouts to users.
+                </p>
+              </div>
+
+              {/* Private key input */}
+              <div className="space-y-2">
+                <Label htmlFor="payoutPrivateKey">Private Key</Label>
+                <Input
+                  id="payoutPrivateKey"
+                  type="password"
+                  placeholder={treasurySettings?.hasPayoutPrivateKey ? "••••••••••••••••••••••••••••" : "Enter private key (0x...)"}
+                  value={editPayoutPrivateKey}
+                  onChange={(e) => setEditPayoutPrivateKey(e.target.value)}
+                  className="font-mono"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {treasurySettings?.hasPayoutPrivateKey
+                    ? "Private key is set. Enter a new value to update it."
+                    : "Required for signing payout transactions. Get this from MetaMask."}
+                </p>
+              </div>
+
+              {/* Security warning */}
+              <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
+                <div className="text-sm text-amber-700">
+                  <p className="font-medium">Security Notice</p>
+                  <p>The private key is stored encrypted in the database. Only keep sufficient funds for payouts in this hot wallet.</p>
+                </div>
+              </div>
+
+              {/* Error/Success messages */}
+              {payoutError && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <AlertCircle className="h-4 w-4 text-red-500" />
+                  <span className="text-sm text-red-600">{payoutError}</span>
+                </div>
+              )}
+
+              {payoutSuccess && (
+                <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <span className="text-sm text-green-600">Payout wallet settings saved successfully</span>
+                </div>
+              )}
+
+              {/* Save button */}
+              <Button
+                onClick={savePayoutWalletSettings}
+                disabled={payoutSaving}
+              >
+                {payoutSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Payout Wallet Settings"
                 )}
               </Button>
             </div>

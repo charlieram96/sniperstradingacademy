@@ -18,6 +18,11 @@ import {
   POLYGON_CONFIG,
 } from './wallet-types';
 import { polygonUSDCClient } from '../polygon/usdc-client';
+import {
+  getPayoutWalletAddress as getPayoutWalletAddressFromDb,
+  getPayoutWalletPrivateKey,
+  isPayoutWalletConfiguredInDb,
+} from '../treasury/treasury-service';
 
 /**
  * Coinbase CDP SDK Client
@@ -325,15 +330,16 @@ class CoinbaseWalletService {
 
   /**
    * Transfer using platform's payout hot wallet (for commission payouts)
-   * Falls back to treasury wallet if payout wallet is not configured (backward compatibility)
+   * Reads from database first, falls back to env vars, then treasury wallet
    */
   async transferFromPayoutWallet(
     toAddress: string,
     amount: string
   ): Promise<ServiceResponse<TransferResponse>> {
     try {
-      const payoutPrivateKey = process.env.PAYOUT_WALLET_PRIVATE_KEY;
-      const payoutAddress = process.env.PAYOUT_WALLET_ADDRESS;
+      // Try to get payout wallet from database first
+      const payoutPrivateKey = await getPayoutWalletPrivateKey();
+      const payoutAddress = await getPayoutWalletAddressFromDb();
 
       // Backward compatibility: fall back to treasury if payout wallet not configured
       if (!payoutPrivateKey || !payoutAddress) {
@@ -393,16 +399,38 @@ class CoinbaseWalletService {
   }
 
   /**
-   * Get the payout wallet address (with fallback to treasury for backward compatibility)
+   * Get the payout wallet address (from DB first, with fallback to env vars)
+   * Note: This is async now - use getPayoutWalletAddressAsync for the async version
    */
   getPayoutWalletAddress(): string {
+    // Sync version still uses env vars for backward compatibility
     return process.env.PAYOUT_WALLET_ADDRESS || process.env.PLATFORM_TREASURY_WALLET_ADDRESS || '';
   }
 
   /**
+   * Get the payout wallet address asynchronously (checks DB first)
+   */
+  async getPayoutWalletAddressAsync(): Promise<string> {
+    return getPayoutWalletAddressFromDb();
+  }
+
+  /**
    * Check if a dedicated payout wallet is configured (not using treasury fallback)
+   * Sync version checks env vars only - use isPayoutWalletConfiguredAsync for DB check
    */
   isPayoutWalletConfigured(): boolean {
+    return !!(process.env.PAYOUT_WALLET_ADDRESS && process.env.PAYOUT_WALLET_PRIVATE_KEY);
+  }
+
+  /**
+   * Check if payout wallet is configured (checks DB first, then env vars)
+   */
+  async isPayoutWalletConfiguredAsync(): Promise<boolean> {
+    // Check database first
+    const dbConfigured = await isPayoutWalletConfiguredInDb();
+    if (dbConfigured) return true;
+
+    // Fall back to env vars
     return !!(process.env.PAYOUT_WALLET_ADDRESS && process.env.PAYOUT_WALLET_PRIVATE_KEY);
   }
 
@@ -410,7 +438,7 @@ class CoinbaseWalletService {
    * Get payout wallet balance (USDC + MATIC for gas)
    */
   async getPayoutWalletBalance(): Promise<ServiceResponse<WalletBalance>> {
-    const payoutAddress = this.getPayoutWalletAddress();
+    const payoutAddress = await this.getPayoutWalletAddressAsync();
 
     if (!payoutAddress) {
       return {

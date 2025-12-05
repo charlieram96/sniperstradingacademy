@@ -7,6 +7,7 @@
 import { ethers } from 'ethers';
 import { POLYGON_CONFIG, ServiceResponse } from '../coinbase/wallet-types';
 import { polygonUSDCClient } from './usdc-client';
+import { getPayoutWalletAddress } from '../treasury/treasury-service';
 
 export interface GasTankStatus {
   address: string;
@@ -426,24 +427,20 @@ class GasManager {
    */
   async getPayoutWalletStatus(): Promise<ServiceResponse<PayoutWalletStatus>> {
     try {
-      const payoutAddress = process.env.PAYOUT_WALLET_ADDRESS;
+      // Get payout address from database first, then fall back to env vars
+      const payoutAddress = await getPayoutWalletAddress();
 
       if (!payoutAddress) {
-        // Fall back to treasury for backward compatibility
-        const treasuryAddress = process.env.PLATFORM_TREASURY_WALLET_ADDRESS;
-        if (!treasuryAddress) {
-          return {
-            success: false,
-            error: {
-              code: 'NOT_CONFIGURED',
-              message: 'Neither payout wallet nor treasury wallet address configured',
-            },
-          };
-        }
-        console.warn('[GasManager] Payout wallet not configured, checking treasury instead');
+        return {
+          success: false,
+          error: {
+            code: 'NOT_CONFIGURED',
+            message: 'Payout wallet address not configured',
+          },
+        };
       }
 
-      const addressToCheck = payoutAddress || process.env.PLATFORM_TREASURY_WALLET_ADDRESS!;
+      const addressToCheck = payoutAddress;
 
       const [usdcResponse, maticResponse] = await Promise.all([
         polygonUSDCClient.getBalance(addressToCheck),

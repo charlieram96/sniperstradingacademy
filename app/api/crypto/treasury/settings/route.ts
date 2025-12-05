@@ -9,6 +9,9 @@ import {
   getTreasurySettings,
   updateTreasurySettings,
   isTreasuryConfigured,
+  getPayoutWalletSettings,
+  updatePayoutWalletSettings,
+  isPayoutWalletConfiguredInDb,
 } from '@/lib/treasury/treasury-service';
 
 /**
@@ -47,9 +50,14 @@ export async function GET() {
     const settings = await getTreasurySettings();
     const isConfigured = await isTreasuryConfigured();
 
+    // Get payout wallet settings
+    const payoutSettings = await getPayoutWalletSettings();
+    const isPayoutConfigured = await isPayoutWalletConfiguredInDb();
+
     return NextResponse.json({
       success: true,
       data: {
+        // Treasury settings
         ...settings,
         isConfigured,
         // Mask the xpub for security (show only first/last chars)
@@ -57,6 +65,10 @@ export async function GET() {
           ? `${settings.masterWalletXpub.slice(0, 8)}...${settings.masterWalletXpub.slice(-8)}`
           : '',
         masterWalletXpubFull: settings?.masterWalletXpub || '',
+        // Payout wallet settings (never expose private key)
+        payoutWalletAddress: payoutSettings?.payoutWalletAddress || '',
+        isPayoutWalletConfigured: isPayoutConfigured,
+        hasPayoutPrivateKey: !!(payoutSettings?.payoutWalletPrivateKey),
       },
     });
   } catch (error) {
@@ -102,45 +114,75 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-    const { treasuryWalletAddress, masterWalletXpub } = body;
+    const { treasuryWalletAddress, masterWalletXpub, payoutWalletAddress, payoutWalletPrivateKey } = body;
 
     // Validate at least one field is provided
-    if (treasuryWalletAddress === undefined && masterWalletXpub === undefined) {
+    if (
+      treasuryWalletAddress === undefined &&
+      masterWalletXpub === undefined &&
+      payoutWalletAddress === undefined &&
+      payoutWalletPrivateKey === undefined
+    ) {
       return NextResponse.json(
         { success: false, error: 'At least one setting must be provided' },
         { status: 400 }
       );
     }
 
-    // Update settings
-    const result = await updateTreasurySettings(
-      {
-        treasuryWalletAddress,
-        masterWalletXpub,
-      },
-      user.id
-    );
-
-    if (!result.success) {
-      return NextResponse.json(
-        { success: false, error: result.error },
-        { status: 400 }
+    // Update treasury settings if provided
+    if (treasuryWalletAddress !== undefined || masterWalletXpub !== undefined) {
+      const result = await updateTreasurySettings(
+        {
+          treasuryWalletAddress,
+          masterWalletXpub,
+        },
+        user.id
       );
+
+      if (!result.success) {
+        return NextResponse.json(
+          { success: false, error: result.error },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Update payout wallet settings if provided
+    if (payoutWalletAddress !== undefined || payoutWalletPrivateKey !== undefined) {
+      const payoutResult = await updatePayoutWalletSettings(
+        {
+          payoutWalletAddress,
+          payoutWalletPrivateKey,
+        },
+        user.id
+      );
+
+      if (!payoutResult.success) {
+        return NextResponse.json(
+          { success: false, error: payoutResult.error },
+          { status: 400 }
+        );
+      }
     }
 
     // Get updated settings
     const settings = await getTreasurySettings();
     const isConfigured = await isTreasuryConfigured();
+    const payoutSettings = await getPayoutWalletSettings();
+    const isPayoutConfigured = await isPayoutWalletConfiguredInDb();
 
     return NextResponse.json({
       success: true,
-      message: 'Treasury settings updated successfully',
+      message: 'Settings updated successfully',
       data: {
         ...settings,
         isConfigured,
         masterWalletXpub: settings?.masterWalletXpub
           ? `${settings.masterWalletXpub.slice(0, 8)}...${settings.masterWalletXpub.slice(-8)}`
           : '',
+        payoutWalletAddress: payoutSettings?.payoutWalletAddress || '',
+        isPayoutWalletConfigured: isPayoutConfigured,
+        hasPayoutPrivateKey: !!(payoutSettings?.payoutWalletPrivateKey),
       },
     });
   } catch (error) {

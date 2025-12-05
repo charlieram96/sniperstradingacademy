@@ -127,29 +127,67 @@ export async function POST(req: NextRequest) {
     // Get treasury wallet address for reference
     const treasuryWalletAddress = await getTreasurySetting('treasury_wallet_address');
 
-    // Check for existing active intent
-    const { data: existingIntent } = await serviceSupabase
+    const now = new Date();
+    const nowISO = now.toISOString();
+
+    // Check for ANY existing intent with active status (regardless of expiry)
+    // This is more defensive to prevent unique constraint violations
+    const { data: existingIntents, error: existingError } = await serviceSupabase
       .from('payment_intents')
-      .select('*, deposit_addresses(*)')
+      .select('*')
       .eq('user_id', user.id)
       .eq('intent_type', intentType)
       .in('status', ['created', 'awaiting_funds', 'processing'])
-      .gte('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+      .limit(1);
+
+    console.log('[CreateIntent] Existing intent check:', {
+      userId: user.id,
+      intentType,
+      found: existingIntents?.length || 0,
+      error: existingError?.message,
+      existingId: existingIntents?.[0]?.id,
+      existingStatus: existingIntents?.[0]?.status,
+      existingExpiresAt: existingIntents?.[0]?.expires_at,
+      now: nowISO,
+    });
+
+    const existingIntent = existingIntents?.[0];
 
     if (existingIntent) {
-      // Return existing intent with its deposit address
-      const depositAddress = existingIntent.deposit_addresses?.deposit_address || existingIntent.user_wallet_address;
+      const expiresAt = new Date(existingIntent.expires_at);
+      const isExpired = expiresAt < now;
 
-      return NextResponse.json({
-        success: true,
-        intent: existingIntent,
-        depositAddress,
-        qrCodeData: depositAddress,
-        expiresIn: Math.floor((new Date(existingIntent.expires_at).getTime() - Date.now()) / 1000),
-      });
+      if (isExpired) {
+        // Expire this intent first, then we can create a new one
+        console.log('[CreateIntent] Expiring stale intent:', existingIntent.id);
+        await serviceSupabase
+          .from('payment_intents')
+          .update({
+            status: 'expired',
+            updated_at: nowISO
+          })
+          .eq('id', existingIntent.id);
+        // Continue to create a new intent below
+      } else {
+        // Intent is still valid, return it
+        const { data: depositAddressData } = await serviceSupabase
+          .from('deposit_addresses')
+          .select('deposit_address')
+          .eq('payment_intent_id', existingIntent.id)
+          .single();
+
+        const depositAddress = depositAddressData?.deposit_address || existingIntent.user_wallet_address;
+
+        console.log('[CreateIntent] Returning existing valid intent:', existingIntent.id);
+        return NextResponse.json({
+          success: true,
+          intent: existingIntent,
+          depositAddress,
+          qrCodeData: depositAddress,
+          expiresIn: Math.floor((expiresAt.getTime() - now.getTime()) / 1000),
+        });
+      }
     }
 
     // Create payment intent first (to get the ID for deposit address)

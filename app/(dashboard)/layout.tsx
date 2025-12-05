@@ -239,11 +239,11 @@ export default async function DashboardLayout({
               {isSuperAdmin && (
                 <>
                   <NavigationLink
-                    href="/admin/sniper-logs"
+                    href="/admin/transaction-logs"
                     className="flex items-center gap-[10px] px-4 py-[10px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
                   >
                     <Activity className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                    <span className="text-sm font-medium">Sniper Logs</span>
+                    <span className="text-sm font-medium">Transaction Logs</span>
                   </NavigationLink>
                   <NavigationLink
                     href="/admin/academy-manager"
