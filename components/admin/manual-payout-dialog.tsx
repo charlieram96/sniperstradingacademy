@@ -25,7 +25,6 @@ interface ManualPayoutDialogProps {
 }
 
 const MAX_AMOUNT = 2000
-const STRIPE_FEE_PERCENT = 0.035 // 3.5%
 
 export function ManualPayoutDialog({
   open,
@@ -40,8 +39,7 @@ export function ManualPayoutDialog({
   const [error, setError] = useState<string>("")
 
   const amountNumber = parseFloat(amount) || 0
-  const stripeFee = amountNumber * STRIPE_FEE_PERCENT
-  const netAmount = amountNumber - stripeFee
+  const selectedUser = users.find(u => u.id === selectedUserId)
 
   const isValidAmount = amountNumber > 0 && amountNumber <= MAX_AMOUNT
   const canSubmit = selectedUserId && isValidAmount && description.trim().length > 0
@@ -96,13 +94,19 @@ export function ManualPayoutDialog({
     }
   }
 
+  // Truncate wallet address for display
+  const truncateAddress = (address: string | null) => {
+    if (!address) return "Not set"
+    return `${address.slice(0, 6)}...${address.slice(-4)}`
+  }
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Create Manual Payout</DialogTitle>
           <DialogDescription>
-            Create an immediate payout to a user. The transfer will be processed instantly.
+            Create an immediate USDC payout to a user on Polygon network.
           </DialogDescription>
         </DialogHeader>
 
@@ -117,14 +121,14 @@ export function ManualPayoutDialog({
               disabled={loading}
             />
             <p className="text-xs text-muted-foreground">
-              Only users with connected Stripe accounts are shown
+              Only users with payout wallet addresses are shown
             </p>
           </div>
 
           {/* Amount Input */}
           <div className="space-y-2">
             <Label htmlFor="amount">
-              Amount (USD)
+              Amount (USDC)
               <span className="text-muted-foreground ml-2 font-normal">
                 Max: ${MAX_AMOUNT.toLocaleString()}
               </span>
@@ -169,21 +173,23 @@ export function ManualPayoutDialog({
           </div>
 
           {/* Preview */}
-          {isValidAmount && (
+          {isValidAmount && selectedUser && (
             <Card className="p-4 bg-muted/50">
               <p className="text-sm font-medium mb-2">Transfer Preview</p>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Gross Amount:</span>
-                  <span className="font-medium">${amountNumber.toFixed(2)}</span>
+                  <span className="text-muted-foreground">Recipient:</span>
+                  <span className="font-medium">{selectedUser.name || selectedUser.email}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Stripe Fee (3.5%):</span>
-                  <span className="text-destructive">-${stripeFee.toFixed(2)}</span>
+                  <span className="text-muted-foreground">Wallet:</span>
+                  <code className="text-xs bg-background px-1.5 py-0.5 rounded">
+                    {truncateAddress(selectedUser.payout_wallet_address)}
+                  </code>
                 </div>
                 <div className="border-t pt-1 mt-1 flex justify-between">
-                  <span className="font-medium">Net Transfer:</span>
-                  <span className="font-bold text-green-600">${netAmount.toFixed(2)}</span>
+                  <span className="font-medium">Amount:</span>
+                  <span className="font-bold text-green-600">${amountNumber.toFixed(2)} USDC</span>
                 </div>
               </div>
             </Card>

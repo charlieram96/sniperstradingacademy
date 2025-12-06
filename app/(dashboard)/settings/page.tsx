@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
-import { User, Lock, CheckCircle, Mail, Calendar, Hash, Eye, EyeOff, Heart, LifeBuoy, Copy, Shield } from "lucide-react"
+import { User, Lock, CheckCircle, Mail, Calendar, Hash, Eye, EyeOff, Heart, LifeBuoy, Copy, Shield, Plus, Pencil, Trash2, Star, X } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { MFAEnrollment } from "@/components/mfa/mfa-enrollment"
 import { MFAFactorsList } from "@/components/mfa/mfa-factors-list"
@@ -46,15 +46,30 @@ export default function SettingsPage() {
   const [passwordError, setPasswordError] = useState("")
 
   // Beneficiary states
-  const [beneficiaryEnabled, setBeneficiaryEnabled] = useState(false)
+  interface Beneficiary {
+    id: string
+    user_id: string
+    full_name: string
+    email: string | null
+    phone: string | null
+    address: string | null
+    relationship: string
+    is_primary: boolean
+    created_at: string
+    updated_at: string
+  }
+  const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([])
+  const [beneficiarySuccess, setBeneficiarySuccess] = useState("")
+  const [beneficiaryError, setBeneficiaryError] = useState("")
+  const [beneficiaryUpdating, setBeneficiaryUpdating] = useState(false)
+  const [showBeneficiaryForm, setShowBeneficiaryForm] = useState(false)
+  const [editingBeneficiary, setEditingBeneficiary] = useState<Beneficiary | null>(null)
+  // Form fields for add/edit
   const [beneficiaryFullName, setBeneficiaryFullName] = useState("")
   const [beneficiaryEmail, setBeneficiaryEmail] = useState("")
   const [beneficiaryPhone, setBeneficiaryPhone] = useState("")
   const [beneficiaryAddress, setBeneficiaryAddress] = useState("")
   const [beneficiaryRelationship, setBeneficiaryRelationship] = useState("")
-  const [beneficiarySuccess, setBeneficiarySuccess] = useState("")
-  const [beneficiaryError, setBeneficiaryError] = useState("")
-  const [beneficiaryUpdating, setBeneficiaryUpdating] = useState(false)
 
   // Support states
   const [supportCopied, setSupportCopied] = useState(false)
@@ -85,15 +100,16 @@ export default function SettingsPage() {
     setUserData(userData)
     setName(user.user_metadata?.name || "")
 
-    // Load beneficiary details if they exist
-    if (userData?.beneficiary_details) {
-      const details = userData.beneficiary_details
-      setBeneficiaryEnabled(details.enabled || false)
-      setBeneficiaryFullName(details.fullName || "")
-      setBeneficiaryEmail(details.email || "")
-      setBeneficiaryPhone(details.phone || "")
-      setBeneficiaryAddress(details.address || "")
-      setBeneficiaryRelationship(details.relationship || "")
+    // Load beneficiaries from new table
+    const { data: beneficiariesData } = await supabase
+      .from("beneficiaries")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("is_primary", { ascending: false })
+      .order("created_at", { ascending: true })
+
+    if (beneficiariesData) {
+      setBeneficiaries(beneficiariesData)
     }
 
     // Load MFA factors count
@@ -195,38 +211,149 @@ export default function SettingsPage() {
     }
   }
 
-  async function updateBeneficiary(e: React.FormEvent) {
+  function resetBeneficiaryForm() {
+    setBeneficiaryFullName("")
+    setBeneficiaryEmail("")
+    setBeneficiaryPhone("")
+    setBeneficiaryAddress("")
+    setBeneficiaryRelationship("")
+    setEditingBeneficiary(null)
+    setShowBeneficiaryForm(false)
+  }
+
+  function startEditBeneficiary(beneficiary: Beneficiary) {
+    setEditingBeneficiary(beneficiary)
+    setBeneficiaryFullName(beneficiary.full_name)
+    setBeneficiaryEmail(beneficiary.email || "")
+    setBeneficiaryPhone(beneficiary.phone || "")
+    setBeneficiaryAddress(beneficiary.address || "")
+    setBeneficiaryRelationship(beneficiary.relationship)
+    setShowBeneficiaryForm(true)
+  }
+
+  async function saveBeneficiary(e: React.FormEvent) {
     e.preventDefault()
     setBeneficiaryUpdating(true)
     setBeneficiaryError("")
     setBeneficiarySuccess("")
 
+    if (!beneficiaryFullName.trim() || !beneficiaryRelationship.trim()) {
+      setBeneficiaryError("Full name and relationship are required")
+      setBeneficiaryUpdating(false)
+      return
+    }
+
     try {
       const supabase = createClient()
 
-      const beneficiaryDetails = {
-        enabled: beneficiaryEnabled,
-        fullName: beneficiaryFullName,
-        email: beneficiaryEmail,
-        phone: beneficiaryPhone,
-        address: beneficiaryAddress,
-        relationship: beneficiaryRelationship
-      }
+      if (editingBeneficiary) {
+        // Update existing beneficiary
+        const { error } = await supabase
+          .from("beneficiaries")
+          .update({
+            full_name: beneficiaryFullName.trim(),
+            email: beneficiaryEmail.trim() || null,
+            phone: beneficiaryPhone.trim() || null,
+            address: beneficiaryAddress.trim() || null,
+            relationship: beneficiaryRelationship.trim(),
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", editingBeneficiary.id)
 
+        if (error) {
+          setBeneficiaryError(error.message)
+        } else {
+          setBeneficiarySuccess("Beneficiary updated successfully!")
+          setTimeout(() => setBeneficiarySuccess(""), 3000)
+          resetBeneficiaryForm()
+          await fetchUserData()
+        }
+      } else {
+        // Add new beneficiary
+        const isPrimary = beneficiaries.length === 0 // First one is primary
+        const { error } = await supabase
+          .from("beneficiaries")
+          .insert({
+            user_id: user?.id,
+            full_name: beneficiaryFullName.trim(),
+            email: beneficiaryEmail.trim() || null,
+            phone: beneficiaryPhone.trim() || null,
+            address: beneficiaryAddress.trim() || null,
+            relationship: beneficiaryRelationship.trim(),
+            is_primary: isPrimary
+          })
+
+        if (error) {
+          setBeneficiaryError(error.message)
+        } else {
+          setBeneficiarySuccess("Beneficiary added successfully!")
+          setTimeout(() => setBeneficiarySuccess(""), 3000)
+          resetBeneficiaryForm()
+          await fetchUserData()
+        }
+      }
+    } catch {
+      setBeneficiaryError("Failed to save beneficiary. Please try again.")
+    } finally {
+      setBeneficiaryUpdating(false)
+    }
+  }
+
+  async function deleteBeneficiary(id: string) {
+    if (!confirm("Are you sure you want to remove this beneficiary?")) return
+
+    setBeneficiaryUpdating(true)
+    setBeneficiaryError("")
+
+    try {
+      const supabase = createClient()
       const { error } = await supabase
-        .from("users")
-        .update({ beneficiary_details: beneficiaryDetails })
-        .eq("id", user?.id)
+        .from("beneficiaries")
+        .delete()
+        .eq("id", id)
 
       if (error) {
         setBeneficiaryError(error.message)
       } else {
-        setBeneficiarySuccess("Beneficiary information updated successfully!")
+        setBeneficiarySuccess("Beneficiary removed successfully!")
         setTimeout(() => setBeneficiarySuccess(""), 3000)
         await fetchUserData()
       }
     } catch {
-      setBeneficiaryError("Failed to update beneficiary information. Please try again.")
+      setBeneficiaryError("Failed to remove beneficiary. Please try again.")
+    } finally {
+      setBeneficiaryUpdating(false)
+    }
+  }
+
+  async function setPrimaryBeneficiary(id: string) {
+    setBeneficiaryUpdating(true)
+    setBeneficiaryError("")
+
+    try {
+      const supabase = createClient()
+
+      // First, set all beneficiaries to non-primary
+      await supabase
+        .from("beneficiaries")
+        .update({ is_primary: false })
+        .eq("user_id", user?.id)
+
+      // Then set the selected one as primary
+      const { error } = await supabase
+        .from("beneficiaries")
+        .update({ is_primary: true, updated_at: new Date().toISOString() })
+        .eq("id", id)
+
+      if (error) {
+        setBeneficiaryError(error.message)
+      } else {
+        setBeneficiarySuccess("Primary beneficiary updated!")
+        setTimeout(() => setBeneficiarySuccess(""), 3000)
+        await fetchUserData()
+      }
+    } catch {
+      setBeneficiaryError("Failed to update primary beneficiary. Please try again.")
     } finally {
       setBeneficiaryUpdating(false)
     }
@@ -588,113 +715,201 @@ export default function SettingsPage() {
               Beneficiary Information
             </CardTitle>
             <CardDescription>
-              Set up beneficiary details in case of account member passing away
+              Set up beneficiary details in case of account member passing away. You can add multiple beneficiaries.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={updateBeneficiary} className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="beneficiary-toggle">Add Beneficiary</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Enable to add beneficiary details to your account
-                  </p>
-                </div>
-                <Switch
-                  id="beneficiary-toggle"
-                  checked={beneficiaryEnabled}
-                  onCheckedChange={setBeneficiaryEnabled}
-                />
+          <CardContent className="space-y-4">
+            {/* Success/Error messages */}
+            {beneficiarySuccess && (
+              <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                <p className="text-sm text-green-600 flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4" />
+                  {beneficiarySuccess}
+                </p>
               </div>
+            )}
 
-              {beneficiaryEnabled && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="beneficiary-name">Full Name</Label>
-                    <Input
-                      id="beneficiary-name"
-                      type="text"
-                      value={beneficiaryFullName}
-                      onChange={(e) => setBeneficiaryFullName(e.target.value)}
-                      placeholder="Beneficiary's full name"
-                      disabled={beneficiaryUpdating}
-                      className="max-w-md"
-                    />
+            {beneficiaryError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-600">{beneficiaryError}</p>
+              </div>
+            )}
+
+            {/* List of existing beneficiaries */}
+            {beneficiaries.length > 0 && (
+              <div className="space-y-3">
+                {beneficiaries.map((beneficiary) => (
+                  <div
+                    key={beneficiary.id}
+                    className={`p-4 border rounded-lg ${beneficiary.is_primary ? 'border-primary bg-primary/5' : 'border-border'}`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-sm">{beneficiary.full_name}</p>
+                          {beneficiary.is_primary && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-primary-foreground">
+                              <Star className="h-3 w-3" />
+                              Primary
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{beneficiary.relationship}</p>
+                        {beneficiary.email && (
+                          <p className="text-xs text-muted-foreground mt-1">{beneficiary.email}</p>
+                        )}
+                        {beneficiary.phone && (
+                          <p className="text-xs text-muted-foreground">{beneficiary.phone}</p>
+                        )}
+                        {beneficiary.address && (
+                          <p className="text-xs text-muted-foreground mt-1">{beneficiary.address}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {!beneficiary.is_primary && beneficiaries.length > 1 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setPrimaryBeneficiary(beneficiary.id)}
+                            disabled={beneficiaryUpdating}
+                            title="Set as primary"
+                          >
+                            <Star className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startEditBeneficiary(beneficiary)}
+                          disabled={beneficiaryUpdating}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteBeneficiary(beneficiary.id)}
+                          disabled={beneficiaryUpdating}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
+                ))}
+              </div>
+            )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="beneficiary-email">Email Address</Label>
-                    <Input
-                      id="beneficiary-email"
-                      type="email"
-                      value={beneficiaryEmail}
-                      onChange={(e) => setBeneficiaryEmail(e.target.value)}
-                      placeholder="beneficiary@example.com"
-                      disabled={beneficiaryUpdating}
-                      className="max-w-md"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="beneficiary-phone">Telephone Number</Label>
-                    <Input
-                      id="beneficiary-phone"
-                      type="tel"
-                      value={beneficiaryPhone}
-                      onChange={(e) => setBeneficiaryPhone(e.target.value)}
-                      placeholder="+1 (555) 123-4567"
-                      disabled={beneficiaryUpdating}
-                      className="max-w-md"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="beneficiary-address">Address</Label>
-                    <Textarea
-                      id="beneficiary-address"
-                      value={beneficiaryAddress}
-                      onChange={(e) => setBeneficiaryAddress(e.target.value)}
-                      placeholder="Street address, City, State, ZIP"
-                      disabled={beneficiaryUpdating}
-                      className="max-w-md"
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="beneficiary-relationship">Relationship to You</Label>
-                    <Input
-                      id="beneficiary-relationship"
-                      type="text"
-                      value={beneficiaryRelationship}
-                      onChange={(e) => setBeneficiaryRelationship(e.target.value)}
-                      placeholder="e.g., Spouse, Child, Sibling, Parent"
-                      disabled={beneficiaryUpdating}
-                      className="max-w-md"
-                    />
-                  </div>
-                </>
-              )}
-
-              {beneficiarySuccess && (
-                <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-                  <p className="text-sm text-green-600 flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4" />
-                    {beneficiarySuccess}
-                  </p>
+            {/* Add/Edit Form */}
+            {showBeneficiaryForm ? (
+              <form onSubmit={saveBeneficiary} className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">
+                    {editingBeneficiary ? "Edit Beneficiary" : "Add New Beneficiary"}
+                  </h4>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={resetBeneficiaryForm}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
-              )}
 
-              {beneficiaryError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                  <p className="text-sm text-red-600">{beneficiaryError}</p>
+                <div className="space-y-2">
+                  <Label htmlFor="beneficiary-name">Full Name *</Label>
+                  <Input
+                    id="beneficiary-name"
+                    type="text"
+                    value={beneficiaryFullName}
+                    onChange={(e) => setBeneficiaryFullName(e.target.value)}
+                    placeholder="Beneficiary's full name"
+                    disabled={beneficiaryUpdating}
+                    className="max-w-md"
+                    required
+                  />
                 </div>
-              )}
 
-              <Button type="submit" disabled={beneficiaryUpdating}>
-                {beneficiaryUpdating ? "Saving..." : "Save Beneficiary Information"}
+                <div className="space-y-2">
+                  <Label htmlFor="beneficiary-relationship">Relationship to You *</Label>
+                  <Input
+                    id="beneficiary-relationship"
+                    type="text"
+                    value={beneficiaryRelationship}
+                    onChange={(e) => setBeneficiaryRelationship(e.target.value)}
+                    placeholder="e.g., Spouse, Child, Sibling, Parent"
+                    disabled={beneficiaryUpdating}
+                    className="max-w-md"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="beneficiary-email">Email Address</Label>
+                  <Input
+                    id="beneficiary-email"
+                    type="email"
+                    value={beneficiaryEmail}
+                    onChange={(e) => setBeneficiaryEmail(e.target.value)}
+                    placeholder="beneficiary@example.com"
+                    disabled={beneficiaryUpdating}
+                    className="max-w-md"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="beneficiary-phone">Telephone Number</Label>
+                  <Input
+                    id="beneficiary-phone"
+                    type="tel"
+                    value={beneficiaryPhone}
+                    onChange={(e) => setBeneficiaryPhone(e.target.value)}
+                    placeholder="+1 (555) 123-4567"
+                    disabled={beneficiaryUpdating}
+                    className="max-w-md"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="beneficiary-address">Address</Label>
+                  <Textarea
+                    id="beneficiary-address"
+                    value={beneficiaryAddress}
+                    onChange={(e) => setBeneficiaryAddress(e.target.value)}
+                    placeholder="Street address, City, State, ZIP"
+                    disabled={beneficiaryUpdating}
+                    className="max-w-md"
+                    rows={2}
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={beneficiaryUpdating}>
+                    {beneficiaryUpdating ? "Saving..." : editingBeneficiary ? "Update Beneficiary" : "Add Beneficiary"}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={resetBeneficiaryForm}>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => setShowBeneficiaryForm(true)}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Beneficiary
               </Button>
-            </form>
+            )}
+
+            {beneficiaries.length === 0 && !showBeneficiaryForm && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No beneficiaries added yet. Add a beneficiary to ensure your account details are handled properly.
+              </p>
+            )}
           </CardContent>
         </Card>
 

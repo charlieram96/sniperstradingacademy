@@ -351,7 +351,7 @@ export default function HomePage() {
                         <span className="font-semibold text-gray-500">+</span>
                       </div>
                       <div>
-                        <span className="text-6xl font-bold bg-gradient-to-r from-amber-300 to-amber-400 bg-clip-text text-transparent">$199</span>
+                        <span className="text-6xl font-bold bg-gradient-to-r from-amber-300 to-amber-400 bg-clip-text text-transparent">$3</span>
                         <span className="text-gray-400 text-lg">/month</span>
                       </div>
                     </div>
@@ -422,7 +422,7 @@ export default function HomePage() {
             </Link>
           </div>
           <p className="text-sm text-gray-500 mt-8">
-            $499 activation + $199/month - Cancel anytime
+            $499 activation + $3/month - Cancel anytime
           </p>
         </div>
       </section>

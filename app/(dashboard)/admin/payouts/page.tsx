@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { DollarSign, AlertCircle, CheckCircle, XCircle, Loader2, RefreshCw, Wallet, Plus } from "lucide-react"
+import { DollarSign, AlertCircle, CheckCircle, XCircle, Loader2, RefreshCw, Wallet, Plus, ExternalLink } from "lucide-react"
 import { ManualPayoutDialog } from "@/components/admin/manual-payout-dialog"
 import { PayoutUser } from "@/components/admin/user-search-combobox"
 
@@ -36,12 +36,15 @@ interface Commission {
   id: string
   referrerId: string
   amount: number
+  netAmountUsdc: number | null
   status: string
   commissionType: string
   userName: string
   userEmail: string
-  stripeConnectAccountId: string | null
-  stripeTransferId: string | null
+  payoutWalletAddress: string | null
+  qualified: boolean
+  usdcTransactionId: string | null
+  payoutBatchId: string | null
   errorMessage: string | null
   processedAt: string | null
   retryCount: number
@@ -64,7 +67,7 @@ interface ProcessResult {
   success: boolean
   error?: string
   skipped?: boolean
-  transferId?: string
+  txHash?: string
 }
 
 export default function AdminPayoutsPage() {
@@ -72,7 +75,7 @@ export default function AdminPayoutsPage() {
   const [loading, setLoading] = useState(true)
   const [commissions, setCommissions] = useState<Commission[]>([])
   const [summary, setSummary] = useState<Summary>({ total: 0, pending: 0, failed: 0, totalAmount: 0 })
-  const [stripeBalance, setStripeBalance] = useState<number | null>(null)
+  const [payoutWalletBalance, setPayoutWalletBalance] = useState<number | null>(null)
   const [filter, setFilter] = useState<string>("all")
   const [processing, setProcessing] = useState(false)
   const [processingId, setProcessingId] = useState<string | null>(null)
@@ -96,16 +99,16 @@ export default function AdminPayoutsPage() {
     }
   }, [])
 
-  const fetchStripeBalance = useCallback(async () => {
+  const fetchPayoutWalletBalance = useCallback(async () => {
     try {
-      const response = await fetch("/api/admin/payouts/balance")
+      const response = await fetch("/api/crypto/admin/payout-wallet")
       const data = await response.json()
 
-      if (response.ok) {
-        setStripeBalance(data.available)
+      if (response.ok && data.balance) {
+        setPayoutWalletBalance(parseFloat(data.balance.usdc || "0"))
       }
     } catch (error) {
-      console.error("Error fetching balance:", error)
+      console.error("Error fetching payout wallet balance:", error)
     }
   }, [])
 
@@ -114,7 +117,7 @@ export default function AdminPayoutsPage() {
       const supabase = createClient()
       const { data, error } = await supabase
         .from("users")
-        .select("id, name, email, stripe_connect_account_id")
+        .select("id, name, email, payout_wallet_address")
         .order("name", { ascending: true })
 
       if (!error && data) {
@@ -126,8 +129,8 @@ export default function AdminPayoutsPage() {
   }, [])
 
   const fetchData = useCallback(async () => {
-    await Promise.all([fetchCommissions(), fetchStripeBalance(), fetchUsers()])
-  }, [fetchCommissions, fetchStripeBalance, fetchUsers])
+    await Promise.all([fetchCommissions(), fetchPayoutWalletBalance(), fetchUsers()])
+  }, [fetchCommissions, fetchPayoutWalletBalance, fetchUsers])
 
   const checkSuperAdminStatus = useCallback(async () => {
     const supabase = createClient()
@@ -243,7 +246,13 @@ export default function AdminPayoutsPage() {
     return true
   })
 
-  const balanceWarning = stripeBalance !== null && stripeBalance < summary.totalAmount
+  const balanceWarning = payoutWalletBalance !== null && payoutWalletBalance < summary.totalAmount
+
+  // Truncate wallet address for display
+  const truncateAddress = (address: string | null) => {
+    if (!address) return "Not set"
+    return `${address.slice(0, 6)}...${address.slice(-4)}`
+  }
 
   if (loading) {
     return (
@@ -270,40 +279,20 @@ export default function AdminPayoutsPage() {
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-2">
           <DollarSign className="h-6 w-6 text-primary" />
-          <h1 className="text-3xl font-bold text-foreground">Monthly Commission Payouts</h1>
+          <h1 className="text-3xl font-bold text-foreground">Commission Payouts (USDC)</h1>
         </div>
-        <p className="text-muted-foreground">Process residual commissions and direct bonuses (~15th of each month)</p>
+        <p className="text-muted-foreground">Process residual commissions and direct bonuses via Polygon USDC</p>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Gross Total</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Amount</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${summary.totalAmount.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">Before fees</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Fees</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-500">-${(summary.totalAmount * 0.035).toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">Stripe 3.5%</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Net Transfer</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">${(summary.totalAmount * 0.965).toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">Actual payout</p>
+            <p className="text-xs text-muted-foreground">USDC to pay out</p>
           </CardContent>
         </Card>
 
@@ -332,17 +321,18 @@ export default function AdminPayoutsPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Wallet className="h-4 w-4" />
-                Stripe Balance
+                Payout Wallet Balance
               </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${balanceWarning ? 'text-red-500' : 'text-primary'}`}>
-              ${stripeBalance?.toFixed(2) || "0.00"}
+              ${payoutWalletBalance?.toFixed(2) || "0.00"}
             </div>
             {balanceWarning && (
               <p className="text-xs text-red-500 mt-1">⚠️ Insufficient balance</p>
             )}
+            <p className="text-xs text-muted-foreground">USDC on Polygon</p>
           </CardContent>
         </Card>
       </div>
@@ -419,19 +409,18 @@ export default function AdminPayoutsPage() {
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>Gross Amount</TableHead>
-                  <TableHead>Fee (3.5%)</TableHead>
-                  <TableHead>Net Transfer</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Wallet</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Tx Hash</TableHead>
                   <TableHead>Error</TableHead>
-                  <TableHead>Retries</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredCommissions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       No commissions to display
                     </TableCell>
                   </TableRow>
@@ -442,6 +431,11 @@ export default function AdminPayoutsPage() {
                         <div>
                           <p className="font-medium">{commission.userName}</p>
                           <p className="text-sm text-muted-foreground">{commission.userEmail}</p>
+                          {!commission.qualified && (
+                            <Badge variant="outline" className="text-xs text-amber-600 border-amber-600 mt-1">
+                              Not Qualified
+                            </Badge>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -455,14 +449,17 @@ export default function AdminPayoutsPage() {
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell className="font-mono">
+                      <TableCell className="font-mono font-semibold">
                         ${commission.amount.toFixed(2)}
                       </TableCell>
-                      <TableCell className="font-mono text-red-500">
-                        -${(commission.amount * 0.035).toFixed(2)}
-                      </TableCell>
-                      <TableCell className="font-mono font-semibold text-primary">
-                        ${(commission.amount * 0.965).toFixed(2)}
+                      <TableCell>
+                        {commission.payoutWalletAddress ? (
+                          <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                            {truncateAddress(commission.payoutWalletAddress)}
+                          </code>
+                        ) : (
+                          <span className="text-xs text-amber-600">Not set</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {commission.status === "pending" ? (
@@ -484,17 +481,25 @@ export default function AdminPayoutsPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {commission.errorMessage ? (
-                          <div className="max-w-xs truncate text-xs text-red-500" title={commission.errorMessage}>
-                            {commission.errorMessage}
-                          </div>
+                        {commission.usdcTransactionId ? (
+                          <a
+                            href={`https://polygonscan.com/tx/${commission.usdcTransactionId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                          >
+                            {commission.usdcTransactionId.slice(0, 8)}...
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
                       <TableCell>
-                        {commission.retryCount > 0 ? (
-                          <Badge variant="outline">{commission.retryCount}</Badge>
+                        {commission.errorMessage ? (
+                          <div className="max-w-xs truncate text-xs text-red-500" title={commission.errorMessage}>
+                            {commission.errorMessage}
+                          </div>
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
@@ -506,7 +511,8 @@ export default function AdminPayoutsPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => handleProcessSingle(commission.id)}
-                              disabled={processing || processingId === commission.id}
+                              disabled={processing || processingId === commission.id || !commission.payoutWalletAddress}
+                              title={!commission.payoutWalletAddress ? "User has no payout wallet" : ""}
                             >
                               {processingId === commission.id ? (
                                 <>
@@ -551,7 +557,7 @@ export default function AdminPayoutsPage() {
           <DialogHeader>
             <DialogTitle>Confirm Bulk Payout</DialogTitle>
             <DialogDescription>
-              You are about to process payouts for all pending commissions.
+              You are about to process USDC payouts for all pending commissions.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -561,19 +567,19 @@ export default function AdminPayoutsPage() {
             </div>
             <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
               <span className="text-sm font-medium">Total Amount:</span>
-              <span className="text-lg font-bold text-primary">${summary.totalAmount.toFixed(2)}</span>
+              <span className="text-lg font-bold text-primary">${summary.totalAmount.toFixed(2)} USDC</span>
             </div>
             <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-              <span className="text-sm font-medium">Your Stripe Balance:</span>
+              <span className="text-sm font-medium">Payout Wallet Balance:</span>
               <span className={`text-lg font-bold ${balanceWarning ? 'text-red-500' : 'text-green-600'}`}>
-                ${stripeBalance?.toFixed(2) || "0.00"}
+                ${payoutWalletBalance?.toFixed(2) || "0.00"} USDC
               </span>
             </div>
             {balanceWarning && (
               <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
                 <AlertCircle className="h-5 w-5 text-red-500" />
                 <p className="text-sm text-red-500">
-                  Warning: Insufficient Stripe balance. Some transfers may fail.
+                  Warning: Insufficient payout wallet balance. Some transfers may fail.
                 </p>
               </div>
             )}
@@ -610,9 +616,20 @@ export default function AdminPayoutsPage() {
               >
                 <div className="flex-1">
                   <p className="font-medium">{result.userName}</p>
-                  <p className="text-sm text-muted-foreground">${result.amount.toFixed(2)}</p>
+                  <p className="text-sm text-muted-foreground">${result.amount.toFixed(2)} USDC</p>
                   {result.error && (
                     <p className="text-xs text-red-500 mt-1">{result.error}</p>
+                  )}
+                  {result.txHash && (
+                    <a
+                      href={`https://polygonscan.com/tx/${result.txHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1"
+                    >
+                      View on PolygonScan
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
                   )}
                 </div>
                 <div>

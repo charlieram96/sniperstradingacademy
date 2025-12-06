@@ -17,7 +17,7 @@ export interface PayoutUser {
   id: string
   name: string | null
   email: string
-  stripe_connect_account_id: string | null
+  payout_wallet_address: string | null
 }
 
 interface UserSearchComboboxProps {
@@ -46,9 +46,9 @@ export function UserSearchCombobox({
     return name.includes(searchLower) || email.includes(searchLower)
   })
 
-  // Only show users with Stripe Connect accounts
+  // Only show users with payout wallet addresses configured
   const eligibleUsers = filteredUsers.filter(
-    (user) => user.stripe_connect_account_id !== null
+    (user) => user.payout_wallet_address !== null
   )
 
   return (
@@ -89,7 +89,7 @@ export function UserSearchCombobox({
               <div className="py-6 text-center text-sm text-muted-foreground">
                 {searchQuery
                   ? "No users found."
-                  : "No users with Stripe Connect accounts."}
+                  : "No users with payout wallets configured."}
               </div>
             ) : (
               eligibleUsers.map((user) => (
@@ -117,7 +117,7 @@ export function UserSearchCombobox({
                         {user.name || "No name"}
                       </p>
                       <Badge variant="outline" className="text-xs shrink-0">
-                        Connected
+                        Wallet Set
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground truncate">

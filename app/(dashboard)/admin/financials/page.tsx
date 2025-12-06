@@ -98,6 +98,9 @@ interface MonthlyProcessingPreview {
       volume: number
       commissionRate: number
       commissionAmount: number
+      isQualified: boolean
+      directReferrals: number
+      hasWallet: boolean
     }>
     hasMore: boolean
   }
@@ -108,6 +111,7 @@ interface MonthlyProcessingPreview {
       userName: string
       reason: string
       volume: number
+      isQualified: boolean
     }>
   }
   warnings: string[]
@@ -216,6 +220,17 @@ export default function AdminFinancialsPage() {
     message: string
     details?: Record<string, unknown>
   } | null>(null)
+
+  // Users without wallets state
+  const [usersWithoutWallets, setUsersWithoutWallets] = useState<Array<{
+    id: string
+    name: string | null
+    email: string
+    created_at: string
+    is_active: boolean
+    direct_referrals_count: number
+    sniper_volume_current_month: string | null
+  }>>([])
 
   const fetchFinancialData = useCallback(async () => {
     const supabase = createClient()
@@ -342,10 +357,13 @@ export default function AdminFinancialsPage() {
   }, [])
 
   // Fetch treasury wallet balance
-  const fetchTreasuryWalletBalance = useCallback(async () => {
+  const fetchTreasuryWalletBalance = useCallback(async (showLoading = true) => {
     if (!treasurySettings?.treasuryWalletAddress) return
 
-    setTreasuryBalanceLoading(true)
+    // Only show loading spinner on initial load, not during polling
+    if (showLoading && !treasuryWalletBalance) {
+      setTreasuryBalanceLoading(true)
+    }
     try {
       const response = await fetch("/api/crypto/admin/treasury-wallet")
       const data = await response.json()
@@ -361,13 +379,16 @@ export default function AdminFinancialsPage() {
     } finally {
       setTreasuryBalanceLoading(false)
     }
-  }, [treasurySettings?.treasuryWalletAddress])
+  }, [treasurySettings?.treasuryWalletAddress, treasuryWalletBalance])
 
   // Fetch payout wallet balance
-  const fetchPayoutWalletBalance = useCallback(async () => {
+  const fetchPayoutWalletBalance = useCallback(async (showLoading = true) => {
     if (!treasurySettings?.payoutWalletAddress) return
 
-    setPayoutBalanceLoading(true)
+    // Only show loading spinner on initial load, not during polling
+    if (showLoading && !payoutWalletBalance) {
+      setPayoutBalanceLoading(true)
+    }
     try {
       const response = await fetch("/api/crypto/admin/payout-wallet")
       const data = await response.json()
@@ -383,7 +404,7 @@ export default function AdminFinancialsPage() {
     } finally {
       setPayoutBalanceLoading(false)
     }
-  }, [treasurySettings?.payoutWalletAddress])
+  }, [treasurySettings?.payoutWalletAddress, payoutWalletBalance])
 
   // Save treasury settings
   const saveTreasurySettings = async () => {
@@ -586,6 +607,21 @@ export default function AdminFinancialsPage() {
     setMonthlyProcessResult(null)
   }
 
+  // Fetch users without payout wallets
+  const fetchUsersWithoutWallets = useCallback(async () => {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('users')
+      .select('id, name, email, created_at, is_active, direct_referrals_count, sniper_volume_current_month')
+      .is('payout_wallet_address', null)
+      .order('created_at', { ascending: false })
+      .limit(100)
+
+    if (data) {
+      setUsersWithoutWallets(data)
+    }
+  }, [])
+
   const checkSuperAdminStatus = useCallback(async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -603,10 +639,11 @@ export default function AdminFinancialsPage() {
         await fetchTreasurySettings()
         await fetchReviewQueue()
         await fetchMonthlyStatus()
+        await fetchUsersWithoutWallets()
       }
     }
     setLoading(false)
-  }, [fetchFinancialData, fetchTreasurySettings, fetchReviewQueue, fetchMonthlyStatus])
+  }, [fetchFinancialData, fetchTreasurySettings, fetchReviewQueue, fetchMonthlyStatus, fetchUsersWithoutWallets])
 
   // Fetch treasury wallet balance when address is available
   useEffect(() => {
@@ -625,6 +662,22 @@ export default function AdminFinancialsPage() {
   useEffect(() => {
     checkSuperAdminStatus()
   }, [checkSuperAdminStatus])
+
+  // Poll wallet balances every 3 seconds
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+
+    const interval = setInterval(() => {
+      if (treasurySettings?.treasuryWalletAddress) {
+        fetchTreasuryWalletBalance();
+      }
+      if (treasurySettings?.payoutWalletAddress) {
+        fetchPayoutWalletBalance();
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [isSuperAdmin, treasurySettings?.treasuryWalletAddress, treasurySettings?.payoutWalletAddress, fetchTreasuryWalletBalance, fetchPayoutWalletBalance])
 
   const filteredPayments = payments.filter((payment) => {
     const matchesSearch =
@@ -1104,6 +1157,7 @@ export default function AdminFinancialsPage() {
                           <TableHeader>
                             <TableRow>
                               <TableHead>User</TableHead>
+                              <TableHead className="text-center">Qualified</TableHead>
                               <TableHead className="text-right">Volume</TableHead>
                               <TableHead className="text-right">Rate</TableHead>
                               <TableHead className="text-right">Commission</TableHead>
@@ -1117,6 +1171,19 @@ export default function AdminFinancialsPage() {
                                     <p className="font-medium text-sm">{user.userName}</p>
                                     <p className="text-xs text-muted-foreground">{user.userEmail}</p>
                                   </div>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  {user.isQualified ? (
+                                    <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                                      Yes
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="destructive" className="cursor-help" title={`Missing: ${!user.hasWallet ? 'wallet' : ''}${!user.hasWallet && user.directReferrals < 3 ? ', ' : ''}${user.directReferrals < 3 ? `${user.directReferrals}/3 referrals` : ''}`}>
+                                      <AlertCircle className="h-3 w-3 mr-1" />
+                                      No
+                                    </Badge>
+                                  )}
                                 </TableCell>
                                 <TableCell className="text-right font-mono">
                                   {formatDollars(user.volume)}
@@ -1411,6 +1478,76 @@ export default function AdminFinancialsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Users Without Payout Wallets */}
+      {usersWithoutWallets.length > 0 && (
+        <Card className="mb-6 border-amber-500/50">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-amber-500" />
+                  Users Without Payout Wallets
+                </CardTitle>
+                <CardDescription>
+                  These users cannot receive commission payouts until they configure a wallet address
+                </CardDescription>
+              </div>
+              <Badge variant="outline" className="text-amber-600 border-amber-600">
+                {usersWithoutWallets.length} users
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Joined</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-center">Referrals</TableHead>
+                    <TableHead className="text-right">Volume</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {usersWithoutWallets.slice(0, 50).map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{user.name || "No name"}</p>
+                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(user.created_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        {user.is_active ? (
+                          <Badge className="bg-green-500">Active</Badge>
+                        ) : (
+                          <Badge variant="secondary">Inactive</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {user.direct_referrals_count || 0}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {formatDollars(parseFloat(user.sniper_volume_current_month || "0"))}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            {usersWithoutWallets.length > 50 && (
+              <p className="text-sm text-muted-foreground mt-2 text-center">
+                Showing 50 of {usersWithoutWallets.length} users
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Incoming Payments */}
       <Card className="mb-6">

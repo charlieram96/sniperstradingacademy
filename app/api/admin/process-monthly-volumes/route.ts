@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
       // Get all users with volume including their details for commission calculation
       const { data: usersWithVolume } = await supabase
         .from('users')
-        .select('id, name, email, sniper_volume_current_month, current_commission_rate, last_payment_date, is_active')
+        .select('id, name, email, sniper_volume_current_month, current_commission_rate, last_payment_date, is_active, qualified, payout_wallet_address, direct_referrals_count')
         .gt('sniper_volume_current_month', 0)
         .order('sniper_volume_current_month', { ascending: false });
 
@@ -120,6 +120,9 @@ export async function POST(req: NextRequest) {
         commissionRate: number;
         commissionAmount: number;
         isActive: boolean;
+        isQualified: boolean;
+        directReferrals: number;
+        hasWallet: boolean;
       }> = [];
 
       const ineligibleUsers: Array<{
@@ -127,6 +130,7 @@ export async function POST(req: NextRequest) {
         userName: string;
         reason: string;
         volume: number;
+        isQualified: boolean;
       }> = [];
 
       for (const user of users) {
@@ -134,6 +138,9 @@ export async function POST(req: NextRequest) {
         const commissionRate = parseFloat(user.current_commission_rate || '0.10');
         const lastPayment = user.last_payment_date ? new Date(user.last_payment_date) : null;
         const isActive = lastPayment && lastPayment >= activeThresholdDate;
+        const isQualified = user.qualified === true;
+        const directReferrals = user.direct_referrals_count || 0;
+        const hasWallet = !!user.payout_wallet_address;
 
         if (isActive) {
           eligibleUsers.push({
@@ -144,13 +151,25 @@ export async function POST(req: NextRequest) {
             commissionRate: commissionRate * 100, // Convert to percentage
             commissionAmount: volume * commissionRate,
             isActive: true,
+            isQualified,
+            directReferrals,
+            hasWallet,
           });
         } else {
+          // Determine the reason for ineligibility
+          let reason = 'Unknown';
+          if (!lastPayment) {
+            reason = 'Never paid';
+          } else if (!isActive) {
+            reason = 'Payment expired (inactive)';
+          }
+
           ineligibleUsers.push({
             userId: user.id,
             userName: user.name || 'Unknown',
-            reason: lastPayment ? 'Payment expired (inactive)' : 'Never paid',
+            reason,
             volume,
+            isQualified,
           });
         }
       }

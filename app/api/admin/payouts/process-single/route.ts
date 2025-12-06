@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getStripe } from "@/lib/stripe/server"
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server"
+import { coinbaseWalletService } from "@/lib/coinbase/wallet-service"
+
+export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
   try {
@@ -41,20 +43,22 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Get commission details
+    // Get commission details with user's payout wallet
     const { data: commission, error: commissionError } = await supabase
       .from("commissions")
       .select(`
         id,
         referrer_id,
         amount,
+        net_amount_usdc,
         status,
         retry_count,
         commission_type,
         users!commissions_referrer_id_fkey (
           name,
           email,
-          stripe_connect_account_id
+          payout_wallet_address,
+          qualified
         )
       `)
       .eq("id", commissionId)
@@ -79,9 +83,9 @@ export async function POST(req: NextRequest) {
 
     const user = Array.isArray(commission.users) ? commission.users[0] : commission.users
 
-    // Validate user has Stripe Connect account
-    if (!user?.stripe_connect_account_id) {
-      const errorMsg = "User does not have a Stripe Connect account"
+    // Validate user has payout wallet address
+    if (!user?.payout_wallet_address) {
+      const errorMsg = "User does not have a payout wallet address configured"
 
       // Update commission with error
       await supabase
@@ -115,14 +119,36 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    const stripe = getStripe()
+    // Check payout wallet balance before processing
+    const payoutBalanceResult = await coinbaseWalletService.getPayoutWalletBalance()
+    if (!payoutBalanceResult.success || !payoutBalanceResult.data) {
+      return NextResponse.json({
+        success: false,
+        error: 'Could not verify payout wallet balance',
+        commissionId: commission.id,
+      })
+    }
 
-    // Verify the connected account is ready
+    const amount = parseFloat(commission.net_amount_usdc || commission.amount)
+    const availableUSDC = parseFloat(payoutBalanceResult.data.usdc)
+
+    if (availableUSDC < amount) {
+      return NextResponse.json({
+        success: false,
+        error: `Insufficient payout wallet balance. Have: ${availableUSDC.toFixed(2)} USDC, Need: ${amount.toFixed(2)} USDC`,
+        commissionId: commission.id,
+      })
+    }
+
+    // Execute USDC transfer from payout wallet
     try {
-      const account = await stripe.accounts.retrieve(user.stripe_connect_account_id)
+      const transferResult = await coinbaseWalletService.transferFromPayoutWallet(
+        user.payout_wallet_address,
+        amount.toFixed(6)
+      )
 
-      if (!account.payouts_enabled) {
-        const errorMsg = "User's bank account is not verified - payouts disabled"
+      if (!transferResult.success || !transferResult.data) {
+        const errorMsg = transferResult.error?.message || 'USDC transfer failed'
 
         await supabase
           .from("commissions")
@@ -138,7 +164,7 @@ export async function POST(req: NextRequest) {
           const { notifyPayoutFailed } = await import('@/lib/notifications/notification-service')
           await notifyPayoutFailed({
             userId: commission.referrer_id,
-            amount: parseFloat(commission.amount),
+            amount: amount,
             reason: errorMsg,
             dashboardUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://tradinghub.com'}/settings`,
             payoutId: commission.id
@@ -151,63 +177,28 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
           success: false,
           error: errorMsg,
-          payoutId: commission.id,
+          commissionId: commission.id,
         })
       }
-    } catch (stripeError) {
-      const errorMsg = `Stripe account error: ${stripeError instanceof Error ? stripeError.message : 'Unknown error'}`
 
-      await supabase
-        .from("commissions")
-        .update({
-          error_message: errorMsg,
-          processed_at: new Date().toISOString(),
-          retry_count: (commission.retry_count || 0) + 1,
+      // Create transaction record
+      const { data: transaction } = await supabase
+        .from('usdc_transactions')
+        .insert({
+          transaction_type: 'payout',
+          from_address: coinbaseWalletService.getPayoutWalletAddress(),
+          to_address: user.payout_wallet_address,
+          amount: amount.toFixed(6),
+          polygon_tx_hash: transferResult.data.transactionHash,
+          block_number: transferResult.data.blockNumber || null,
+          status: transferResult.data.status,
+          gas_fee_matic: transferResult.data.gasUsed || null,
+          user_id: commission.referrer_id,
+          related_commission_id: commissionId,
+          confirmed_at: transferResult.data.status === 'confirmed' ? new Date().toISOString() : null,
         })
-        .eq("id", commissionId)
-
-      // Send payout failure notification
-      try {
-        const { notifyPayoutFailed } = await import('@/lib/notifications/notification-service')
-        await notifyPayoutFailed({
-          userId: commission.referrer_id,
-          amount: parseFloat(commission.amount),
-          reason: errorMsg,
-          dashboardUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://tradinghub.com'}/settings`,
-          payoutId: commission.id
-        })
-        console.log(`✅ Sent payout failed notification to user ${commission.referrer_id}`)
-      } catch (notifError) {
-        console.error('❌ Error sending payout failed notification:', notifError)
-      }
-
-      return NextResponse.json({
-        success: false,
-        error: errorMsg,
-        commissionId: commission.id,
-      })
-    }
-
-    // Create Stripe transfer
-    // Apply 3.5% Stripe transaction fee (pass-through cost, not markup)
-    const FEE_PERCENTAGE = 0.035
-    const grossAmount = parseFloat(commission.amount)
-    const feeAmount = grossAmount * FEE_PERCENTAGE
-    const netAmount = grossAmount - feeAmount
-    const amountInCents = Math.round(netAmount * 100)
-
-    try {
-      const transfer = await stripe.transfers.create({
-        amount: amountInCents,
-        currency: "usd",
-        destination: user.stripe_connect_account_id,
-        transfer_group: `residual_${commissionId}`,
-        metadata: {
-          userId: commission.referrer_id,
-          commissionId: commissionId,
-          type: "residual_monthly",
-        },
-      })
+        .select()
+        .single()
 
       // Update commission as paid
       const { error: updateError } = await supabase
@@ -216,7 +207,7 @@ export async function POST(req: NextRequest) {
           status: "paid",
           paid_at: new Date().toISOString(),
           processed_at: new Date().toISOString(),
-          stripe_transfer_id: transfer.id,
+          usdc_transaction_id: transaction?.id || null,
           error_message: null, // Clear any previous error
         })
         .eq("id", commissionId)
@@ -227,17 +218,34 @@ export async function POST(req: NextRequest) {
           success: false,
           error: "Transfer completed but database update failed. Please check logs.",
           details: updateError.message,
-          transferId: transfer.id,
-          payoutId: commission.id,
+          txHash: transferResult.data.transactionHash,
+          commissionId: commission.id,
         }, { status: 500 })
       }
+
+      // Log audit event
+      await supabase.from('crypto_audit_log').insert({
+        event_type: 'payout_executed',
+        user_id: commission.referrer_id,
+        admin_id: authUser.id,
+        entity_type: 'commission',
+        entity_id: commissionId,
+        details: {
+          amount: amount.toFixed(6),
+          tx_hash: transferResult.data.transactionHash,
+          wallet_address: user.payout_wallet_address,
+          commission_type: commission.commission_type,
+        },
+        ip_address: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
+        user_agent: req.headers.get('user-agent'),
+      })
 
       // Send payout success notification
       try {
         const { notifyPayoutProcessed } = await import('@/lib/notifications/notification-service')
         await notifyPayoutProcessed({
           userId: commission.referrer_id,
-          amount: netAmount,
+          amount: amount,
           commissionType: commission.commission_type,
           payoutId: commission.id
         })
@@ -248,16 +256,13 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        transferId: transfer.id,
+        txHash: transferResult.data.transactionHash,
         commissionId: commission.id,
-        grossAmount: grossAmount,
-        netAmount: netAmount,
-        feeAmount: feeAmount,
-        amount: netAmount, // For backward compatibility
+        amount: amount,
         userName: user.name,
       })
-    } catch (stripeError) {
-      const errorMsg = `Stripe transfer failed: ${stripeError instanceof Error ? stripeError.message : 'Unknown error'}`
+    } catch (transferError) {
+      const errorMsg = `USDC transfer failed: ${transferError instanceof Error ? transferError.message : 'Unknown error'}`
 
       await supabase
         .from("commissions")

@@ -416,6 +416,38 @@ async function processDetectedPayment(supabase: any, paymentIntentId: string) {
         break;
     }
 
+    // Check for overpayment and create credit commission
+    const depositAddress = intent.deposit_addresses;
+    if (depositAddress?.is_overpaid && depositAddress?.overpayment_amount) {
+      const overpaymentUsdc = weiToUsdc(Number(depositAddress.overpayment_amount));
+
+      await supabase
+        .from('commissions')
+        .insert({
+          referrer_id: intent.user_id,
+          referred_id: intent.user_id,
+          commission_type: 'overpayment_credit',
+          amount: overpaymentUsdc,
+          net_amount_usdc: overpaymentUsdc,
+          status: 'pending',
+          description: `Overpayment credit from ${intent.intent_type} payment`,
+        });
+
+      // Log audit event for overpayment credit
+      await supabase.from('crypto_audit_log').insert({
+        event_type: 'overpayment_credited',
+        user_id: intent.user_id,
+        entity_type: 'commission',
+        details: {
+          overpayment_amount_usdc: overpaymentUsdc,
+          intent_type: intent.intent_type,
+          payment_intent_id: intent.id,
+        },
+      });
+
+      console.log(`[MonitorDeposits] Created overpayment credit of $${overpaymentUsdc} for user ${intent.user_id}`);
+    }
+
     // Mark payment intent as completed
     await supabase
       .from('payment_intents')

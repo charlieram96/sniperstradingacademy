@@ -80,6 +80,8 @@ export function AccountStatusCard({
   }, [monthlyPaymentDueDate])
 
   const getStatusColor = () => {
+    // Bypassed users always show green/active status
+    if (bypassSubscription) return "bg-green-500/10 text-green-500 border-green-500/20"
     if (!accountActive) return "bg-red-500/10 text-red-500 border-red-500/20"
     if (isOverdue) return "bg-red-500/10 text-red-500 border-red-500/20"
     if (daysUntilDue <= 3) return "bg-amber-500/10 text-amber-500 border-amber-500/20"
@@ -88,6 +90,8 @@ export function AccountStatusCard({
   }
 
   const getStatusIcon = () => {
+    // Bypassed users always show checkmark
+    if (bypassSubscription) return <CheckCircle className="h-5 w-5 text-green-500" />
     if (!accountActive) return <XCircle className="h-5 w-5 text-red-500" />
     if (isOverdue) return <AlertTriangle className="h-5 w-5 text-red-500" />
     if (daysUntilDue <= 7) return <AlertTriangle className="h-5 w-5 text-amber-500" />
@@ -95,6 +99,8 @@ export function AccountStatusCard({
   }
 
   const getStatusText = () => {
+    // Bypassed users always show active
+    if (bypassSubscription) return "Account Active"
     if (!accountActive) return "Account Inactive"
     if (isOverdue) return "Payment Overdue"
     if (daysUntilDue <= 3) return "Payment Due Soon"
@@ -134,6 +140,10 @@ export function AccountStatusCard({
   const inactivityDetails = getInactivityDetails()
 
   const getStatusDescription = () => {
+    // Bypassed users see a simple active message
+    if (bypassSubscription) {
+      return "Your account has administrative subscription bypass. No subscription payments required."
+    }
     if (!accountActive && inactivityDetails.reason === "no_payment") {
       return "Your account is inactive because you haven't completed any subscription payments yet. Make your first payment to activate your account."
     }
@@ -148,7 +158,7 @@ export function AccountStatusCard({
       return "Your account is inactive. Activate it to start earning and receiving payouts."
     }
     if (isOverdue) {
-      const amount = paymentSchedule === 'weekly' ? '$49.75 weekly' : '$199 monthly'
+      const amount = paymentSchedule === 'weekly' ? '$49.75 weekly' : '$3 monthly'
       return `Your ${amount} payment is overdue. Your account will be deactivated if not paid.`
     }
     if (daysUntilDue <= 3) {
@@ -185,7 +195,7 @@ export function AccountStatusCard({
                 <CreditCard className="h-4 w-4" />
                 <span>{paymentSchedule === 'weekly' ? 'Weekly' : 'Monthly'} Subscription</span>
               </div>
-              <p className="text-2xl font-bold">${paymentSchedule === 'weekly' ? '49.75' : '199'}</p>
+              <p className="text-2xl font-bold">${paymentSchedule === 'weekly' ? '49.75' : '3'}</p>
               <p className="text-xs text-muted-foreground">Due {paymentSchedule === 'weekly' ? 'weekly' : 'monthly'}</p>
             </div>
           )}
@@ -278,9 +288,9 @@ export function AccountStatusCard({
           </div>
         </div>
 
-        {(!accountActive || isOverdue || daysUntilDue <= 7) && (
+        {!bypassSubscription && (!accountActive || isOverdue || daysUntilDue <= 7) && (
           <div className="pt-2">
-            <Button 
+            <Button
               onClick={onPayNow}
               className="w-full"
               variant={!accountActive || isOverdue ? "destructive" : "default"}
@@ -291,7 +301,7 @@ export function AccountStatusCard({
           </div>
         )}
 
-        {!accountActive && (
+        {!bypassSubscription && !accountActive && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 space-y-3">
             {/* Reason for inactivity */}
             <div>
@@ -331,7 +341,7 @@ export function AccountStatusCard({
             {/* How to fix */}
             <div className="pt-1 border-t border-red-500/20">
               <p className="text-xs text-red-500">
-                <strong>To reactivate:</strong> Make your subscription payment of ${paymentSchedule === 'weekly' ? '49.75' : '199'} {paymentSchedule === 'weekly' ? 'weekly' : 'monthly'}.
+                <strong>To reactivate:</strong> Make your subscription payment of ${paymentSchedule === 'weekly' ? '49.75' : '3'} {paymentSchedule === 'weekly' ? 'weekly' : 'monthly'}.
               </p>
             </div>
           </div>

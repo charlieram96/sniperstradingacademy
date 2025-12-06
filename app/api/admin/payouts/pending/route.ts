@@ -39,18 +39,21 @@ export async function GET() {
         id,
         referrer_id,
         amount,
+        net_amount_usdc,
         status,
         commission_type,
         paid_at,
         created_at,
-        stripe_transfer_id,
+        usdc_transaction_id,
+        payout_batch_id,
         error_message,
         processed_at,
         retry_count,
         users!commissions_referrer_id_fkey (
           name,
           email,
-          stripe_connect_account_id
+          payout_wallet_address,
+          qualified
         )
       `)
       .or(`commission_type.eq.residual_monthly,and(commission_type.eq.direct_bonus,created_at.gte.${previousMonthStart.toISOString()},created_at.lt.${currentMonthStart.toISOString()})`)
@@ -72,12 +75,15 @@ export async function GET() {
         id: commission.id,
         referrerId: commission.referrer_id,
         amount: parseFloat(commission.amount),
+        netAmountUsdc: commission.net_amount_usdc ? parseFloat(commission.net_amount_usdc) : null,
         status: commission.status,
-        commissionType: commission.commission_type, // Add this for display
+        commissionType: commission.commission_type,
         userName: user?.name || "Unknown",
         userEmail: user?.email || "No email",
-        stripeConnectAccountId: user?.stripe_connect_account_id || null,
-        stripeTransferId: commission.stripe_transfer_id,
+        payoutWalletAddress: user?.payout_wallet_address || null,
+        qualified: user?.qualified || false,
+        usdcTransactionId: commission.usdc_transaction_id,
+        payoutBatchId: commission.payout_batch_id,
         errorMessage: commission.error_message,
         processedAt: commission.processed_at,
         retryCount: commission.retry_count || 0,

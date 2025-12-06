@@ -17,7 +17,7 @@ export function PaymentScheduleSelector({ value, onChange }: PaymentScheduleSele
       <CardHeader>
         <CardTitle>Choose Your Payment Schedule</CardTitle>
         <CardDescription>
-          Select how often you&apos;d like to be billed. Both options total $199/month.
+          Select how often you&apos;d like to be billed.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -54,7 +54,7 @@ export function PaymentScheduleSelector({ value, onChange }: PaymentScheduleSele
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-muted-foreground">Total: ~$199/month</span>
+                        <span className="text-muted-foreground">Total: ~$199/month (4 weeks)</span>
                       </li>
                     </ul>
                   </Label>
@@ -79,7 +79,7 @@ export function PaymentScheduleSelector({ value, onChange }: PaymentScheduleSele
                     </div>
                     <div className="flex items-baseline gap-1 mb-3">
                       <DollarSign className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-3xl font-bold text-primary">199</span>
+                      <span className="text-3xl font-bold text-primary">3</span>
                       <span className="text-sm text-muted-foreground">/month</span>
                     </div>
                     <ul className="space-y-2 text-sm">
@@ -109,7 +109,7 @@ export function PaymentScheduleSelector({ value, onChange }: PaymentScheduleSele
             <div className="text-sm">
               <p className="font-medium mb-1">Total Cost</p>
               <p className="text-muted-foreground">
-                Both payment schedules cost the same amount: <strong>$199 per month</strong>.
+                Monthly is <strong>$3/month</strong>. Weekly is <strong>$49.75/week</strong>.
                 Choose the schedule that works best for your budget.
               </p>
             </div>

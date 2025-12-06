@@ -65,7 +65,10 @@ export async function GET(req: NextRequest) {
 
     // Separate by commission type
     const directBonuses = pendingCommissions.filter(c => c.commission_type === 'direct_bonus');
-    const residuals = pendingCommissions.filter(c => c.commission_type !== 'direct_bonus');
+    const overpaymentCredits = pendingCommissions.filter(c => c.commission_type === 'overpayment_credit');
+    const residuals = pendingCommissions.filter(c =>
+      c.commission_type !== 'direct_bonus' && c.commission_type !== 'overpayment_credit'
+    );
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const batches: any[] = [];
@@ -73,6 +76,12 @@ export async function GET(req: NextRequest) {
     // Create direct bonus batch if any
     if (directBonuses.length > 0) {
       const batch = await createBatch(supabase, directBonuses, 'direct_bonuses');
+      if (batch) batches.push(batch);
+    }
+
+    // Create overpayment credits batch if any
+    if (overpaymentCredits.length > 0) {
+      const batch = await createBatch(supabase, overpaymentCredits, 'overpayment_credits');
       if (batch) batches.push(batch);
     }
 
@@ -128,8 +137,27 @@ async function createBatch(
       entry.commissionIds.push(commission.id);
     }
 
-    // Get wallets for validation
+    // Get user qualification status and wallets for validation
     const userIds = Array.from(userTotals.keys());
+
+    // Check user qualification status
+    const { data: users } = await supabase
+      .from('users')
+      .select('id, qualified, payout_wallet_address')
+      .in('id', userIds);
+
+    const qualifiedUsers = new Set(
+      (users || [])
+        .filter((u: { qualified: boolean }) => u.qualified === true)
+        .map((u: { id: string }) => u.id)
+    );
+
+    // Filter out unqualified users from the batch
+    const unqualifiedCount = userIds.filter(id => !qualifiedUsers.has(id)).length;
+    if (unqualifiedCount > 0) {
+      console.log(`[CreatePayoutBatches] Excluding ${unqualifiedCount} unqualified users from batch`);
+    }
+
     const { data: wallets } = await supabase
       .from('crypto_wallets')
       .select('user_id, wallet_address')
@@ -166,12 +194,13 @@ async function createBatch(
       console.log(`[CreatePayoutBatches] Wallet creation complete. ${walletMap.size} users now have wallets`);
     }
 
-    // Filter to users with wallets
+    // Filter to qualified users with wallets
     let totalAmount = 0;
     let validPayouts = 0;
 
     for (const [userId, data] of userTotals.entries()) {
-      if (walletMap.has(userId) && data.total >= 10) {
+      // User must be qualified AND have a wallet AND meet minimum payout threshold
+      if (qualifiedUsers.has(userId) && walletMap.has(userId) && data.total >= 10) {
         totalAmount += data.total;
         validPayouts++;
       }
@@ -224,6 +253,7 @@ async function createBatch(
         total_amount: totalAmount.toFixed(6),
         commission_count: commissions.length,
         valid_payouts: validPayouts,
+        unqualified_users_excluded: unqualifiedCount,
       },
     });
 
