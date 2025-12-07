@@ -622,12 +622,228 @@ async function processSubscriptionPayment(supabase: any, intent: any, usdcTxId?:
 
 /**
  * GET /api/cron/monitor-deposits
- * Health check endpoint
+ * Vercel cron jobs use GET requests, so this is the main cron entry point
  */
-export async function GET() {
-  return NextResponse.json({
-    success: true,
-    status: 'healthy',
-    message: 'Deposit monitoring cron endpoint ready',
-  });
+export async function GET(req: NextRequest) {
+  try {
+    // Verify cron secret (Vercel sends it as Bearer token)
+    const authHeader = req.headers.get('authorization');
+    const cronSecret = process.env.CRON_SECRET;
+
+    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+      console.warn('[MonitorDeposits] Unauthorized cron attempt');
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const supabase = createServiceRoleClient();
+    const results: {
+      processed: number;
+      detected: number;
+      underpaid: number;
+      overpaid: number;
+      latePayments: number;
+      expired: number;
+      errors: string[];
+    } = {
+      processed: 0,
+      detected: 0,
+      underpaid: 0,
+      overpaid: 0,
+      latePayments: 0,
+      expired: 0,
+      errors: [],
+    };
+
+    console.log('[MonitorDeposits] Starting deposit monitoring run...');
+
+    // Get active deposit addresses (with limit for scaling)
+    const activeAddresses = await getActiveDepositAddresses(MAX_ADDRESSES_PER_RUN);
+
+    if (activeAddresses.length === 0) {
+      console.log('[MonitorDeposits] No active deposit addresses to monitor');
+      // Still check for late payments on expired addresses
+      await checkLatePayments(supabase, results);
+      return NextResponse.json({
+        success: true,
+        message: 'No active deposit addresses',
+        results,
+      });
+    }
+
+    console.log(`[MonitorDeposits] Monitoring ${activeAddresses.length} active addresses (limit: ${MAX_ADDRESSES_PER_RUN})`);
+
+    // First, expire old deposit addresses
+    const { data: expiredCount } = await supabase.rpc('expire_old_deposit_addresses');
+    results.expired = expiredCount || 0;
+
+    // Also expire related payment intents
+    await supabase.rpc('expire_old_payment_intents');
+
+    // Process each active address
+    for (const depositRecord of activeAddresses) {
+      results.processed++;
+
+      try {
+        // Check if already expired
+        if (new Date(depositRecord.expires_at) < new Date()) {
+          // Mark as expired if not already
+          await supabase
+            .from('deposit_addresses')
+            .update({ status: 'expired', updated_at: new Date().toISOString() })
+            .eq('id', depositRecord.id)
+            .eq('status', 'active');
+          continue;
+        }
+
+        // Get current balance using event scanner (in smallest units)
+        const currentBalanceWei = await getUsdcBalance(depositRecord.deposit_address);
+        const currentBalanceNumber = Number(currentBalanceWei);
+
+        // Expected amount is already in smallest units (BIGINT)
+        const expectedAmountWei = Number(depositRecord.expected_amount);
+
+        // Skip if no funds received yet
+        if (currentBalanceNumber === 0) {
+          continue;
+        }
+
+        // 1% tolerance for small rounding/gas differences
+        const tolerance = Math.floor(expectedAmountWei * 0.01);
+
+        // CASE 1: UNDERPAYMENT - Partial funds received but not enough
+        if (currentBalanceNumber > 0 && currentBalanceNumber < (expectedAmountWei - tolerance)) {
+          const shortfall = expectedAmountWei - currentBalanceNumber;
+
+          console.log(`[MonitorDeposits] Underpayment detected for ${depositRecord.deposit_address}: ${weiToUsdc(currentBalanceNumber)} USDC (expected: ${weiToUsdc(expectedAmountWei)}, shortfall: ${weiToUsdc(shortfall)})`);
+
+          results.underpaid++;
+
+          // Mark as underpaid - keep status='active' so user can send more
+          await markAsUnderpaid(depositRecord.id, currentBalanceNumber, shortfall);
+
+          // Log audit event for partial payment
+          await supabase.from('crypto_audit_log').insert({
+            event_type: 'deposit_underpaid',
+            user_id: depositRecord.user_id,
+            entity_type: 'deposit_address',
+            entity_id: depositRecord.id,
+            details: {
+              deposit_address: depositRecord.deposit_address,
+              expected_amount_wei: expectedAmountWei,
+              received_amount_wei: currentBalanceNumber,
+              shortfall_wei: shortfall,
+            },
+          });
+
+          continue;
+        }
+
+        // CASE 2: SUFFICIENT FUNDS (possibly overpaid)
+        if (currentBalanceNumber >= (expectedAmountWei - tolerance)) {
+          console.log(`[MonitorDeposits] Payment detected for address ${depositRecord.deposit_address}: ${weiToUsdc(currentBalanceNumber)} USDC (expected: ${weiToUsdc(expectedAmountWei)})`);
+
+          results.detected++;
+
+          // Check for overpayment
+          const isOverpaid = currentBalanceNumber > (expectedAmountWei + tolerance);
+          const overpaymentAmount = isOverpaid ? currentBalanceNumber - expectedAmountWei : 0;
+
+          if (isOverpaid) {
+            console.log(`[MonitorDeposits] Overpayment detected: ${weiToUsdc(overpaymentAmount)} USDC extra`);
+            results.overpaid++;
+          }
+
+          // Find transaction hash from blockchain events
+          let txHash = '';
+          try {
+            const txEvent = await findDepositTransactionHash(depositRecord.deposit_address);
+            if (txEvent) {
+              txHash = txEvent.txHash;
+              console.log(`[MonitorDeposits] Found tx hash: ${txHash}`);
+            }
+          } catch (err) {
+            console.error(`[MonitorDeposits] Failed to find tx hash:`, err);
+          }
+
+          // Mark deposit address as received
+          const markResult = await markDepositAddressReceived(
+            depositRecord.id,
+            currentBalanceNumber,
+            txHash,
+            {
+              isOverpaid,
+              overpaymentAmount,
+            }
+          );
+
+          if (!markResult.success) {
+            results.errors.push(`Failed to mark deposit ${depositRecord.id} as received`);
+            continue;
+          }
+
+          // Update the associated payment intent
+          if (depositRecord.payment_intent_id) {
+            await supabase
+              .from('payment_intents')
+              .update({
+                status: 'processing',
+                funds_detected_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                metadata: {
+                  ...(typeof depositRecord.metadata === 'object' ? depositRecord.metadata : {}),
+                  deposit_detected_at: new Date().toISOString(),
+                  deposit_amount_wei: currentBalanceNumber,
+                  is_overpaid: isOverpaid,
+                  overpayment_wei: overpaymentAmount,
+                  tx_hash: txHash,
+                },
+              })
+              .eq('id', depositRecord.payment_intent_id);
+
+            // Log audit event
+            await supabase.from('crypto_audit_log').insert({
+              event_type: isOverpaid ? 'deposit_overpaid' : 'deposit_detected',
+              user_id: depositRecord.user_id,
+              entity_type: 'deposit_address',
+              entity_id: depositRecord.id,
+              details: {
+                deposit_address: depositRecord.deposit_address,
+                expected_amount_wei: expectedAmountWei,
+                received_amount_wei: currentBalanceNumber,
+                overpayment_wei: overpaymentAmount,
+                payment_intent_id: depositRecord.payment_intent_id,
+                tx_hash: txHash,
+              },
+            });
+
+            // Trigger payment processing (complete the payment)
+            await processDetectedPayment(supabase, depositRecord.payment_intent_id);
+          }
+        }
+      } catch (error: any) {
+        console.error(`[MonitorDeposits] Error processing address ${depositRecord.deposit_address}:`, error);
+        results.errors.push(`Error processing ${depositRecord.deposit_address}: ${error.message}`);
+      }
+    }
+
+    // Check for late payments on recently expired addresses
+    await checkLatePayments(supabase, results);
+
+    console.log(`[MonitorDeposits] Run complete. Processed: ${results.processed}, Detected: ${results.detected}, Underpaid: ${results.underpaid}, Overpaid: ${results.overpaid}, Late: ${results.latePayments}, Expired: ${results.expired}`);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Deposit monitoring complete',
+      results,
+    });
+  } catch (error: any) {
+    console.error('[MonitorDeposits] Unexpected error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error', details: error.message },
+      { status: 500 }
+    );
+  }
 }
