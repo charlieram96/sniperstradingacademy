@@ -31,6 +31,8 @@ interface TreasurySettings {
   masterWalletXpubFull: string
   currentDerivationIndex: number
   isConfigured: boolean
+  // Sweep settings
+  hasMasterXprv: boolean
   // Payout wallet settings
   payoutWalletAddress: string
   isPayoutWalletConfigured: boolean
@@ -189,6 +191,7 @@ export default function AdminFinancialsPage() {
   const [treasurySuccess, setTreasurySuccess] = useState(false)
   const [editTreasuryAddress, setEditTreasuryAddress] = useState("")
   const [editMasterXpub, setEditMasterXpub] = useState("")
+  const [editMasterXprv, setEditMasterXprv] = useState("")
   const [showXpubInput, setShowXpubInput] = useState(false)
 
   // Treasury wallet balance state
@@ -434,6 +437,7 @@ export default function AdminFinancialsPage() {
         body: JSON.stringify({
           treasuryWalletAddress: editTreasuryAddress,
           masterWalletXpub: editMasterXpub,
+          masterWalletXprv: editMasterXprv || undefined, // Only send if provided
         }),
       })
 
@@ -443,6 +447,7 @@ export default function AdminFinancialsPage() {
         setTreasuryError(data.error || "Failed to save settings")
       } else {
         setTreasurySuccess(true)
+        setEditMasterXprv("") // Clear xprv after save
         await fetchTreasurySettings()
         setShowXpubInput(false)
         setTimeout(() => setTreasurySuccess(false), 3000)
@@ -910,6 +915,41 @@ export default function AdminFinancialsPage() {
                 <p className="text-xs text-muted-foreground">
                   Used to derive unique deposit addresses for each payment. Get this from your HD wallet.
                 </p>
+              </div>
+
+              {/* Master wallet xprv (for sweeping) */}
+              <div className="space-y-2">
+                <Label htmlFor="masterXprv">Master Wallet Extended Private Key (xprv)</Label>
+                <div className="flex items-center gap-2">
+                  {treasurySettings?.hasMasterXprv && (
+                    <Badge variant="outline" className="text-green-600 border-green-300">
+                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                      Configured
+                    </Badge>
+                  )}
+                </div>
+                <Input
+                  id="masterXprv"
+                  type="password"
+                  placeholder={treasurySettings?.hasMasterXprv ? "••••••••••••••••••••••••••••" : "xprv..."}
+                  value={editMasterXprv}
+                  onChange={(e) => setEditMasterXprv(e.target.value)}
+                  className="font-mono text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {treasurySettings?.hasMasterXprv
+                    ? "Private key is set. Enter a new value to update it."
+                    : "Required for sweeping funds from deposit addresses to treasury. This is the private version of your xpub."}
+                </p>
+                {!treasurySettings?.hasMasterXprv && (
+                  <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
+                    <div className="text-sm text-amber-700">
+                      <p className="font-medium">Sweep Disabled</p>
+                      <p>Without the xprv, funds cannot be swept from deposit addresses to treasury.</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Current derivation index */}

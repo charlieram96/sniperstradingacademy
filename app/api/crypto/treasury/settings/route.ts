@@ -12,6 +12,8 @@ import {
   getPayoutWalletSettings,
   updatePayoutWalletSettings,
   isPayoutWalletConfiguredInDb,
+  getTreasurySetting,
+  setTreasurySetting,
 } from '@/lib/treasury/treasury-service';
 
 /**
@@ -50,6 +52,10 @@ export async function GET() {
     const settings = await getTreasurySettings();
     const isConfigured = await isTreasuryConfigured();
 
+    // Check if xprv is configured (for sweeping)
+    const masterXprv = await getTreasurySetting('master_wallet_xprv');
+    const hasMasterXprv = !!masterXprv;
+
     // Get payout wallet settings
     const payoutSettings = await getPayoutWalletSettings();
     const isPayoutConfigured = await isPayoutWalletConfiguredInDb();
@@ -65,6 +71,8 @@ export async function GET() {
           ? `${settings.masterWalletXpub.slice(0, 8)}...${settings.masterWalletXpub.slice(-8)}`
           : '',
         masterWalletXpubFull: settings?.masterWalletXpub || '',
+        // Sweep settings (never expose private key)
+        hasMasterXprv,
         // Payout wallet settings (never expose private key)
         payoutWalletAddress: payoutSettings?.payoutWalletAddress || '',
         isPayoutWalletConfigured: isPayoutConfigured,
@@ -114,12 +122,13 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-    const { treasuryWalletAddress, masterWalletXpub, payoutWalletAddress, payoutWalletPrivateKey } = body;
+    const { treasuryWalletAddress, masterWalletXpub, masterWalletXprv, payoutWalletAddress, payoutWalletPrivateKey } = body;
 
     // Validate at least one field is provided
     if (
       treasuryWalletAddress === undefined &&
       masterWalletXpub === undefined &&
+      masterWalletXprv === undefined &&
       payoutWalletAddress === undefined &&
       payoutWalletPrivateKey === undefined
     ) {
@@ -147,6 +156,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Update master xprv if provided (for sweeping)
+    if (masterWalletXprv !== undefined && masterWalletXprv !== '') {
+      // Validate xprv format
+      if (!masterWalletXprv.startsWith('xprv')) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid xprv format. Must start with "xprv"' },
+          { status: 400 }
+        );
+      }
+      await setTreasurySetting('master_wallet_xprv', masterWalletXprv);
+    }
+
     // Update payout wallet settings if provided
     if (payoutWalletAddress !== undefined || payoutWalletPrivateKey !== undefined) {
       const payoutResult = await updatePayoutWalletSettings(
@@ -168,6 +189,7 @@ export async function POST(request: NextRequest) {
     // Get updated settings
     const settings = await getTreasurySettings();
     const isConfigured = await isTreasuryConfigured();
+    const updatedMasterXprv = await getTreasurySetting('master_wallet_xprv');
     const payoutSettings = await getPayoutWalletSettings();
     const isPayoutConfigured = await isPayoutWalletConfiguredInDb();
 
@@ -180,6 +202,7 @@ export async function POST(request: NextRequest) {
         masterWalletXpub: settings?.masterWalletXpub
           ? `${settings.masterWalletXpub.slice(0, 8)}...${settings.masterWalletXpub.slice(-8)}`
           : '',
+        hasMasterXprv: !!updatedMasterXprv,
         payoutWalletAddress: payoutSettings?.payoutWalletAddress || '',
         isPayoutWalletConfigured: isPayoutConfigured,
         hasPayoutPrivateKey: !!(payoutSettings?.payoutWalletPrivateKey),

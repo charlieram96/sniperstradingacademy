@@ -97,6 +97,23 @@ export async function getTreasurySetting(key: string): Promise<string | null> {
 }
 
 /**
+ * Set a single treasury setting
+ */
+export async function setTreasurySetting(key: string, value: string): Promise<void> {
+  const supabase = createServiceRoleClient();
+
+  await supabase
+    .from('treasury_settings')
+    .upsert({
+      setting_key: key,
+      setting_value: value,
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'setting_key',
+    });
+}
+
+/**
  * Update treasury settings
  */
 export async function updateTreasurySettings(
