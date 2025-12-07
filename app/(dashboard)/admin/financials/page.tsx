@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { TrendingUp, DollarSign, ArrowDownCircle, ArrowUpCircle, Users, Search, Wallet, Settings, CheckCircle2, AlertCircle, Loader2, AlertTriangle, RefreshCw, Calendar, Play, Eye } from "lucide-react"
+import { TrendingUp, DollarSign, ArrowDownCircle, ArrowUpCircle, Users, Search, Wallet, Settings, CheckCircle2, AlertCircle, Loader2, AlertTriangle, RefreshCw, Calendar, Play, Eye, ArrowRightLeft } from "lucide-react"
 import { formatDollars } from "@/lib/utils"
 import {
   Select,
@@ -208,6 +208,21 @@ export default function AdminFinancialsPage() {
   const [reviewQueue, setReviewQueue] = useState<ReviewQueueItem[]>([])
   const [reviewQueueLoading, setReviewQueueLoading] = useState(false)
   const [resolvingId, setResolvingId] = useState<string | null>(null)
+
+  // Sweep state
+  const [sweepStatus, setSweepStatus] = useState<{
+    configured: boolean
+    pendingCount: number
+    pendingUsdc: number
+    lastSweep: { date: string; sweptCount: number; totalUsdc: number } | null
+  } | null>(null)
+  const [sweepLoading, setSweepLoading] = useState(false)
+  const [sweeping, setSweeping] = useState(false)
+  const [sweepResult, setSweepResult] = useState<{
+    success: boolean
+    message: string
+    details?: { successful: number; failed: number; totalSweptUsdc: number }
+  } | null>(null)
 
   // Monthly processing state
   const [monthlyStatus, setMonthlyStatus] = useState<MonthlyProcessingStatus | null>(null)
@@ -607,6 +622,68 @@ export default function AdminFinancialsPage() {
     setMonthlyProcessResult(null)
   }
 
+  // Fetch sweep status
+  const fetchSweepStatus = useCallback(async () => {
+    setSweepLoading(true)
+    try {
+      const response = await fetch("/api/cron/sweep-deposits?status=true")
+      const data = await response.json()
+
+      if (data.success) {
+        setSweepStatus({
+          configured: data.configured,
+          pendingCount: data.pendingDeposits?.length || 0,
+          pendingUsdc: data.pendingDeposits?.reduce((sum: number, d: { usdcBalance: number }) => sum + d.usdcBalance, 0) || 0,
+          lastSweep: data.lastSweep,
+        })
+      }
+    } catch (error) {
+      console.error("Failed to fetch sweep status:", error)
+    } finally {
+      setSweepLoading(false)
+    }
+  }, [])
+
+  // Execute manual sweep
+  const executeSweep = async () => {
+    setSweeping(true)
+    setSweepResult(null)
+    try {
+      const response = await fetch("/api/cron/sweep-deposits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ autoFund: true }),
+      })
+      const data = await response.json()
+
+      if (data.success) {
+        setSweepResult({
+          success: true,
+          message: `Sweep completed successfully`,
+          details: {
+            successful: data.results?.successful || 0,
+            failed: data.results?.failed || 0,
+            totalSweptUsdc: data.results?.totalSweptUsdc || 0,
+          },
+        })
+        await fetchSweepStatus() // Refresh status
+      } else {
+        setSweepResult({
+          success: false,
+          message: data.error || "Sweep failed",
+        })
+      }
+    } catch (error) {
+      console.error("Failed to execute sweep:", error)
+      setSweepResult({
+        success: false,
+        message: "Failed to execute sweep",
+      })
+    } finally {
+      setSweeping(false)
+    }
+  }
+
   // Fetch users without payout wallets
   const fetchUsersWithoutWallets = useCallback(async () => {
     const supabase = createClient()
@@ -639,11 +716,12 @@ export default function AdminFinancialsPage() {
         await fetchTreasurySettings()
         await fetchReviewQueue()
         await fetchMonthlyStatus()
+        await fetchSweepStatus()
         await fetchUsersWithoutWallets()
       }
     }
     setLoading(false)
-  }, [fetchFinancialData, fetchTreasurySettings, fetchReviewQueue, fetchMonthlyStatus, fetchUsersWithoutWallets])
+  }, [fetchFinancialData, fetchTreasurySettings, fetchReviewQueue, fetchMonthlyStatus, fetchSweepStatus, fetchUsersWithoutWallets])
 
   // Fetch treasury wallet balance when address is available
   useEffect(() => {
@@ -1011,6 +1089,150 @@ export default function AdminFinancialsPage() {
                   "Save Payout Wallet Settings"
                 )}
               </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Treasury Sweep */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ArrowRightLeft className="h-5 w-5 text-primary" />
+              <span>Treasury Sweep</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={fetchSweepStatus}
+              disabled={sweepLoading}
+            >
+              <RefreshCw className={`h-4 w-4 ${sweepLoading ? "animate-spin" : ""}`} />
+            </Button>
+          </CardTitle>
+          <CardDescription>
+            Consolidate USDC from user deposit addresses to the treasury wallet
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {sweepLoading && !sweepStatus ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Configuration Status */}
+              <div className="flex items-center gap-2">
+                {sweepStatus?.configured ? (
+                  <>
+                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    <span className="text-sm text-green-600 font-medium">Sweep configured and ready</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="h-5 w-5 text-amber-500" />
+                    <span className="text-sm text-amber-600 font-medium">Sweep not configured - set master_wallet_xprv in treasury settings</span>
+                  </>
+                )}
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">Pending Deposits</p>
+                  <p className="text-2xl font-semibold">{sweepStatus?.pendingCount || 0}</p>
+                  <p className="text-xs text-muted-foreground">addresses to sweep</p>
+                </div>
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">Pending USDC</p>
+                  <p className="text-2xl font-semibold text-green-600">
+                    ${(sweepStatus?.pendingUsdc || 0).toFixed(2)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">waiting to sweep</p>
+                </div>
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">Last Sweep</p>
+                  {sweepStatus?.lastSweep ? (
+                    <>
+                      <p className="text-lg font-semibold">
+                        {new Date(sweepStatus.lastSweep.date).toLocaleDateString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {sweepStatus.lastSweep.sweptCount} deposits, ${sweepStatus.lastSweep.totalUsdc.toFixed(2)}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-lg font-semibold">Never</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Sweep Result */}
+              {sweepResult && (
+                <div className={`p-4 rounded-lg border ${
+                  sweepResult.success
+                    ? "bg-green-50 border-green-200"
+                    : "bg-red-50 border-red-200"
+                }`}>
+                  <div className="flex items-start gap-3">
+                    {sweepResult.success ? (
+                      <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                    )}
+                    <div className="flex-1">
+                      <p className={`font-medium ${
+                        sweepResult.success ? "text-green-700" : "text-red-700"
+                      }`}>
+                        {sweepResult.message}
+                      </p>
+                      {sweepResult.details && sweepResult.success && (
+                        <div className="mt-2 text-sm text-green-600 space-y-1">
+                          <p>Successful: {sweepResult.details.successful} deposits</p>
+                          <p>Failed: {sweepResult.details.failed} deposits</p>
+                          <p>Total swept: ${sweepResult.details.totalSweptUsdc.toFixed(2)} USDC</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSweepResult(null)}
+                    className="mt-3"
+                  >
+                    Close
+                  </Button>
+                </div>
+              )}
+
+              {/* Sweep Button */}
+              {!sweepResult && (
+                <Button
+                  onClick={executeSweep}
+                  disabled={sweeping || !sweepStatus?.configured || sweepStatus?.pendingCount === 0}
+                  className="w-full"
+                >
+                  {sweeping ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sweeping...
+                    </>
+                  ) : (
+                    <>
+                      <ArrowRightLeft className="mr-2 h-4 w-4" />
+                      Sweep {sweepStatus?.pendingCount || 0} Deposits to Treasury
+                    </>
+                  )}
+                </Button>
+              )}
+
+              {/* Info Note */}
+              <div className="text-xs text-muted-foreground">
+                <p>Sweep runs automatically daily at 3 AM UTC. Use this for manual sweeps.</p>
+                <p className="mt-1">Deposits with less than $1 USDC are skipped. POL gas is auto-funded from the gas tank.</p>
+              </div>
             </div>
           )}
         </CardContent>

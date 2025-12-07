@@ -19,12 +19,90 @@ export const runtime = 'nodejs';
 export const maxDuration = 300; // 5 minutes for batch processing
 
 /**
+ * Handle status request for admin UI
+ * Returns sweep configuration status, pending deposits, and last sweep info
+ */
+async function handleStatusRequest() {
+  const supabase = createServiceRoleClient();
+
+  // Check if sweep is configured
+  const masterXprv = await getMasterXprv();
+  const treasuryAddress = await getTreasurySetting('treasury_wallet_address');
+  const configured = !!(masterXprv && treasuryAddress);
+
+  // Get pending deposits
+  const depositsToSweep = await getDepositsToSweep(100);
+
+  // Get USDC balances for pending deposits
+  const pendingDeposits = await Promise.all(
+    depositsToSweep.slice(0, 20).map(async (deposit) => {
+      try {
+        const balanceResult = await polygonUSDCClient.getBalance(deposit.deposit_address);
+        return {
+          id: deposit.id,
+          address: deposit.deposit_address,
+          usdcBalance: balanceResult.success ? parseFloat(balanceResult.data?.balance || '0') : 0,
+        };
+      } catch {
+        return {
+          id: deposit.id,
+          address: deposit.deposit_address,
+          usdcBalance: 0,
+        };
+      }
+    })
+  );
+
+  // Get last sweep from audit log
+  const { data: lastSweepLog } = await supabase
+    .from('crypto_audit_log')
+    .select('created_at, details')
+    .eq('event_type', 'deposit_swept')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  // Get sweep summary from recent sweeps
+  const { data: recentSweeps } = await supabase
+    .from('deposit_addresses')
+    .select('swept_at')
+    .not('swept_at', 'is', null)
+    .order('swept_at', { ascending: false })
+    .limit(100);
+
+  const lastSweep = lastSweepLog ? {
+    date: lastSweepLog.created_at,
+    sweptCount: recentSweeps?.filter(s =>
+      new Date(s.swept_at).toDateString() === new Date(lastSweepLog.created_at).toDateString()
+    ).length || 1,
+    totalUsdc: (lastSweepLog.details as { amount_usdc?: number })?.amount_usdc || 0,
+  } : null;
+
+  return NextResponse.json({
+    success: true,
+    configured,
+    pendingDeposits,
+    totalPending: depositsToSweep.length,
+    lastSweep,
+  });
+}
+
+/**
  * GET /api/cron/sweep-deposits
- * Automated sweep via Vercel cron
+ * - With ?status=true: Returns sweep status for admin UI (requires admin auth)
+ * - Without: Automated sweep via Vercel cron (requires CRON_SECRET)
  */
 export async function GET(req: NextRequest) {
   try {
-    // Verify cron secret
+    const url = new URL(req.url);
+    const isStatusRequest = url.searchParams.get('status') === 'true';
+
+    // Status request for admin UI
+    if (isStatusRequest) {
+      return await handleStatusRequest();
+    }
+
+    // Verify cron secret for automated sweep
     const authHeader = req.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
 
