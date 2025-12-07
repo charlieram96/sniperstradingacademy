@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { gasManager } from '@/lib/polygon/gas-manager';
-import { coinbaseWalletService } from '@/lib/coinbase/wallet-service';
 
 export const runtime = 'nodejs';
 
@@ -152,55 +151,27 @@ async function createBatch(
         .map((u: { id: string }) => u.id)
     );
 
+    // Build wallet map from payout_wallet_address (qualified already ensures wallet is set)
+    const walletMap = new Map(
+      (users || [])
+        .filter((u: { payout_wallet_address: string | null }) => u.payout_wallet_address)
+        .map((u: { id: string; payout_wallet_address: string }) => [u.id, u.payout_wallet_address])
+    );
+
     // Filter out unqualified users from the batch
     const unqualifiedCount = userIds.filter(id => !qualifiedUsers.has(id)).length;
     if (unqualifiedCount > 0) {
       console.log(`[CreatePayoutBatches] Excluding ${unqualifiedCount} unqualified users from batch`);
     }
 
-    const { data: wallets } = await supabase
-      .from('crypto_wallets')
-      .select('user_id, wallet_address')
-      .in('user_id', userIds)
-      .eq('status', 'active');
-
-    const walletMap = new Map(
-      (wallets || []).map((w: { user_id: string; wallet_address: string }) => [w.user_id, w.wallet_address])
-    );
-
-    // Auto-create wallets for users who don't have one
-    const usersWithoutWallets = userIds.filter(id => !walletMap.has(id));
-
-    if (usersWithoutWallets.length > 0) {
-      console.log(`[CreatePayoutBatches] Creating wallets for ${usersWithoutWallets.length} users without wallets`);
-
-      const serviceSupabase = createServiceRoleClient();
-
-      for (const userId of usersWithoutWallets) {
-        try {
-          const walletResult = await coinbaseWalletService.ensureWalletForUser(userId, serviceSupabase);
-          if (walletResult.success && walletResult.data) {
-            walletMap.set(userId, walletResult.data.wallet_address);
-            console.log(`[CreatePayoutBatches] Created wallet for user ${userId}: ${walletResult.data.wallet_address}`);
-          }
-          // Small delay to respect rate limits
-          await new Promise(resolve => setTimeout(resolve, 100));
-        } catch (walletError) {
-          console.warn(`[CreatePayoutBatches] Failed to create wallet for user ${userId}:`, walletError);
-          // Continue with other users
-        }
-      }
-
-      console.log(`[CreatePayoutBatches] Wallet creation complete. ${walletMap.size} users now have wallets`);
-    }
-
-    // Filter to qualified users with wallets
+    // Filter to qualified users (qualified includes wallet check)
     let totalAmount = 0;
     let validPayouts = 0;
 
     for (const [userId, data] of userTotals.entries()) {
-      // User must be qualified AND have a wallet AND meet minimum payout threshold
-      if (qualifiedUsers.has(userId) && walletMap.has(userId) && data.total >= 10) {
+      // User must be qualified AND meet minimum payout threshold
+      // (qualified already ensures wallet is set)
+      if (qualifiedUsers.has(userId) && data.total >= 10) {
         totalAmount += data.total;
         validPayouts++;
       }

@@ -145,6 +145,20 @@ export async function POST(req: NextRequest) {
         continue
       }
 
+      // Skip if user is not qualified
+      if (!user?.qualified) {
+        skippedCount++
+        results.push({
+          commissionId: commission.id,
+          userName: user?.name || "Unknown",
+          amount: amount,
+          success: false,
+          skipped: true,
+          error: "User is not qualified"
+        })
+        continue
+      }
+
       // Validate user has payout wallet address
       if (!user?.payout_wallet_address) {
         failedCount++

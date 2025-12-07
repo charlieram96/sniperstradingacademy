@@ -69,7 +69,7 @@ export async function GET() {
     }
 
     // Format the response
-    const formattedCommissions = commissions.map(commission => {
+    const allCommissions = commissions.map(commission => {
       const user = Array.isArray(commission.users) ? commission.users[0] : commission.users
       return {
         id: commission.id,
@@ -91,10 +91,17 @@ export async function GET() {
       }
     })
 
-    // Calculate totals
+    // Filter to only qualified users - unqualified users should not be paid
+    const formattedCommissions = allCommissions.filter(c => c.qualified === true)
+    const excludedUnqualified = allCommissions.filter(c => c.qualified === false)
+
+    // Calculate totals for qualified commissions only
     const totalAmount = formattedCommissions.reduce((sum, c) => sum + c.amount, 0)
     const pendingCount = formattedCommissions.filter(c => c.status === 'pending').length
     const failedCount = formattedCommissions.filter(c => c.status === 'failed').length
+
+    // Calculate excluded amounts
+    const excludedAmount = excludedUnqualified.reduce((sum, c) => sum + c.amount, 0)
 
     return NextResponse.json({
       commissions: formattedCommissions,
@@ -103,6 +110,8 @@ export async function GET() {
         pending: pendingCount,
         failed: failedCount,
         totalAmount: totalAmount,
+        excludedUnqualified: excludedUnqualified.length,
+        excludedAmount: excludedAmount,
       }
     })
   } catch (error) {

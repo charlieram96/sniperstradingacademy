@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     // Get recipient user details
     const { data: recipientUser, error: userError } = await supabase
       .from("users")
-      .select("id, name, email, payout_wallet_address")
+      .select("id, name, email, payout_wallet_address, qualified")
       .eq("id", userId)
       .single()
 
@@ -83,6 +83,9 @@ export async function POST(req: NextRequest) {
         { status: 404 }
       )
     }
+
+    // Manual payouts only require a wallet - they're an admin override
+    // so qualification is not enforced here
 
     // Validate user has payout wallet address
     if (!recipientUser.payout_wallet_address) {

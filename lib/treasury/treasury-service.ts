@@ -5,6 +5,7 @@
 
 import { ethers } from 'ethers';
 import { createServiceRoleClient } from '@/lib/supabase/server';
+import { registerAddressWithAlchemy } from '@/lib/alchemy/notify-service';
 
 export interface TreasurySettings {
   treasuryWalletAddress: string;
@@ -237,8 +238,216 @@ export async function generateDepositAddress(
   }
 }
 
+// =============================================
+// Permanent Deposit Address Functions
+// =============================================
+
 /**
- * Get deposit address by address string
+ * Get or create a permanent deposit address for a user
+ * Each user gets ONE address that never changes
+ */
+export async function getOrCreateUserDepositAddress(
+  userId: string
+): Promise<{ success: boolean; data?: DepositAddressResult; error?: string }> {
+  const supabase = createServiceRoleClient();
+
+  // Check if user already has a deposit address
+  const { data: user, error: userError } = await supabase
+    .from('users')
+    .select('crypto_deposit_address, crypto_derivation_index')
+    .eq('id', userId)
+    .single();
+
+  if (userError) {
+    console.error('[TreasuryService] Failed to fetch user:', userError);
+    return { success: false, error: 'Failed to fetch user' };
+  }
+
+  // If user already has a deposit address, return it
+  if (user.crypto_deposit_address && user.crypto_derivation_index !== null) {
+    return {
+      success: true,
+      data: {
+        address: user.crypto_deposit_address,
+        derivationIndex: user.crypto_derivation_index,
+        derivationPath: `m/44'/60'/0'/0/${user.crypto_derivation_index}`,
+      },
+    };
+  }
+
+  // Generate a new permanent deposit address
+  const xpub = await getTreasurySetting('master_wallet_xpub');
+
+  if (!xpub) {
+    return { success: false, error: 'Treasury wallet not configured. Please contact admin.' };
+  }
+
+  try {
+    // Get next derivation index atomically
+    const { data: indexResult, error: indexError } = await supabase.rpc('get_next_derivation_index');
+
+    if (indexError || indexResult === null) {
+      console.error('[TreasuryService] Failed to get derivation index:', indexError);
+      return { success: false, error: 'Failed to generate deposit address' };
+    }
+
+    const derivationIndex = indexResult as number;
+    const derivationPath = `m/44'/60'/0'/0/${derivationIndex}`;
+
+    // Derive address from xpub
+    const hdNode = ethers.HDNodeWallet.fromExtendedKey(xpub);
+    const childNode = hdNode.derivePath(derivationIndex.toString());
+    const address = childNode.address;
+
+    // Update user with permanent deposit address
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({
+        crypto_deposit_address: address,
+        crypto_derivation_index: derivationIndex,
+        crypto_deposit_created_at: new Date().toISOString(),
+      })
+      .eq('id', userId);
+
+    if (updateError) {
+      console.error('[TreasuryService] Failed to update user with deposit address:', updateError);
+      return { success: false, error: 'Failed to save deposit address' };
+    }
+
+    // Also create a record in deposit_addresses for sweep tracking
+    await supabase
+      .from('deposit_addresses')
+      .insert({
+        user_id: userId,
+        deposit_address: address,
+        derivation_index: derivationIndex,
+        derivation_path: derivationPath,
+        purpose: 'permanent',
+        status: 'active',
+        expected_amount: 0, // Not used for permanent addresses
+      });
+
+    // Log audit event
+    await supabase.from('crypto_audit_log').insert({
+      event_type: 'permanent_deposit_address_created',
+      user_id: userId,
+      entity_type: 'user',
+      entity_id: userId,
+      details: {
+        address,
+        derivation_index: derivationIndex,
+      },
+    });
+
+    // Register address with Alchemy for real-time webhook notifications
+    // This is non-blocking - if it fails, the cron job will still detect payments
+    const alchemyResult = await registerAddressWithAlchemy(address);
+    if (!alchemyResult.success) {
+      console.warn(`[TreasuryService] Failed to register with Alchemy (non-fatal): ${alchemyResult.error}`);
+      // Log the failure for admin review
+      await supabase.from('crypto_audit_log').insert({
+        event_type: 'alchemy_registration_failed',
+        user_id: userId,
+        entity_type: 'user',
+        entity_id: userId,
+        details: {
+          address,
+          error: alchemyResult.error,
+        },
+      });
+    }
+
+    return {
+      success: true,
+      data: {
+        address,
+        derivationIndex,
+        derivationPath,
+      },
+    };
+  } catch (error: unknown) {
+    console.error('[TreasuryService] Address derivation error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: `Address derivation failed: ${errorMessage}` };
+  }
+}
+
+/**
+ * Get user by their deposit address
+ * Used by webhook/cron to identify who sent funds
+ */
+export async function getUserByDepositAddress(address: string): Promise<{
+  id: string;
+  name: string;
+  email: string;
+  initial_payment_completed: boolean;
+  bypass_initial_payment: boolean;
+  is_active: boolean;
+  crypto_deposit_address: string;
+  crypto_derivation_index: number;
+} | null> {
+  const supabase = createServiceRoleClient();
+
+  const { data, error } = await supabase
+    .from('users')
+    .select(`
+      id,
+      name,
+      email,
+      initial_payment_completed,
+      bypass_initial_payment,
+      is_active,
+      crypto_deposit_address,
+      crypto_derivation_index
+    `)
+    .eq('crypto_deposit_address', address.toLowerCase())
+    .single();
+
+  if (error) {
+    // Try case-insensitive match
+    const { data: data2, error: error2 } = await supabase
+      .from('users')
+      .select(`
+        id,
+        name,
+        email,
+        initial_payment_completed,
+        bypass_initial_payment,
+        is_active,
+        crypto_deposit_address,
+        crypto_derivation_index
+      `)
+      .ilike('crypto_deposit_address', address)
+      .single();
+
+    if (error2) {
+      return null;
+    }
+    return data2;
+  }
+
+  return data;
+}
+
+/**
+ * Get user's subscription schedule (monthly or weekly)
+ */
+export async function getUserPaymentSchedule(userId: string): Promise<'monthly' | 'weekly'> {
+  const supabase = createServiceRoleClient();
+
+  const { data } = await supabase
+    .from('subscriptions')
+    .select('payment_schedule')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .single();
+
+  // Default to monthly if no subscription found
+  return (data?.payment_schedule as 'monthly' | 'weekly') || 'monthly';
+}
+
+/**
+ * Get deposit address by address string (legacy - for sweep tracking)
  */
 export async function getDepositAddressByAddress(address: string) {
   const supabase = createServiceRoleClient();

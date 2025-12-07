@@ -83,6 +83,15 @@ export async function POST(req: NextRequest) {
 
     const user = Array.isArray(commission.users) ? commission.users[0] : commission.users
 
+    // Validate user is qualified for payouts
+    if (!user?.qualified) {
+      return NextResponse.json({
+        success: false,
+        error: "Cannot process payout: User is not qualified",
+        commissionId: commission.id,
+      }, { status: 400 })
+    }
+
     // Validate user has payout wallet address
     if (!user?.payout_wallet_address) {
       const errorMsg = "User does not have a payout wallet address configured"

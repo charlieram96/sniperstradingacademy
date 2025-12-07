@@ -14,8 +14,9 @@ import {
   Wallet,
   Copy,
   Loader2,
-  QrCode,
+  RefreshCw,
   AlertTriangle,
+  Bookmark,
 } from "lucide-react"
 import { PaymentScheduleSelector } from "@/components/payment-schedule-selector"
 import {
@@ -29,45 +30,48 @@ import { UnifiedTransactionHistory } from "@/components/crypto/UnifiedTransactio
 import PayoutWalletSetup from "@/components/crypto/PayoutWalletSetup"
 import QRCode from "qrcode"
 
-interface PaymentIntent {
-  id: string
-  intent_type: string
-  amount_usdc: string
+interface PaymentInfo {
+  depositAddress: string
+  amountUSDC: string
+  paymentType: 'initial_unlock' | 'subscription'
+}
+
+interface PaymentStatus {
   status: string
-  user_wallet_address: string
-  expires_at: string
-  deposit_addresses?: {
-    is_underpaid?: boolean
-    shortfall_amount?: number
-    received_amount?: number
-    expected_amount?: number
-    is_late?: boolean
-  }
+  depositAddress: string | null
+  walletBalance: string
+  requiredAmount: string | null
+  fundsDetected: boolean
+  paymentType: 'initial_unlock' | 'subscription' | 'none'
+  partialAmount: string | null
+  shortfall: string | null
 }
 
 function PaymentsContent() {
   const [userId, setUserId] = useState<string | null>(null)
-  const [userEmail, setUserEmail] = useState<string | null>(null)
   const searchParams = useSearchParams()
   const [initialPaymentCompleted, setInitialPaymentCompleted] = useState(false)
+  const [bypassInitialPayment, setBypassInitialPayment] = useState(false)
   const [bypassSubscription, setBypassSubscription] = useState(false)
+  const [isActive, setIsActive] = useState(false)
   const [processingInitial, setProcessingInitial] = useState(false)
   const [paymentSchedule, setPaymentSchedule] = useState<"weekly" | "monthly">("monthly")
   const [subscription, setSubscription] = useState<{
     id: string
     status: string
-    current_period_end: string
+    next_billing_date: string
     created_at: string
+    payment_schedule: string
   } | null>(null)
   const [loading, setLoading] = useState(true)
   const [subscribing, setSubscribing] = useState(false)
 
   // Payment modal state
   const [paymentModalOpen, setPaymentModalOpen] = useState(false)
-  const [currentIntent, setCurrentIntent] = useState<PaymentIntent | null>(null)
+  const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null)
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | null>(null)
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
-  const [expiryCountdown, setExpiryCountdown] = useState<number>(0)
   const [checkingPayment, setCheckingPayment] = useState(false)
 
   // Payout wallet state
@@ -77,7 +81,6 @@ function PaymentsContent() {
 
   const success = searchParams.get("success")
   const canceled = searchParams.get("canceled")
-  const intentId = searchParams.get("intentId")
 
   // Fetch user on mount
   useEffect(() => {
@@ -86,7 +89,6 @@ function PaymentsContent() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUserId(user.id)
-        setUserEmail(user.email || null)
       }
     }
     getUser()
@@ -102,14 +104,16 @@ function PaymentsContent() {
       // Get user data including payout wallet
       const { data: userData } = await supabase
         .from("users")
-        .select("initial_payment_completed, bypass_subscription, payout_wallet_address")
+        .select("initial_payment_completed, bypass_initial_payment, bypass_subscription, payout_wallet_address, is_active")
         .eq("id", userId)
         .single()
 
       if (userData) {
         setInitialPaymentCompleted(userData.initial_payment_completed || false)
+        setBypassInitialPayment(userData.bypass_initial_payment || false)
         setBypassSubscription(userData.bypass_subscription || false)
         setHasPayoutWallet(!!userData.payout_wallet_address)
+        setIsActive(userData.is_active || false)
       }
 
       // Get subscription
@@ -120,7 +124,10 @@ function PaymentsContent() {
         .eq("status", "active")
         .single()
 
-      setSubscription(sub)
+      if (sub) {
+        setSubscription(sub)
+        setPaymentSchedule(sub.payment_schedule === 'weekly' ? 'weekly' : 'monthly')
+      }
 
       setLoading(false)
     }
@@ -128,12 +135,13 @@ function PaymentsContent() {
     fetchPaymentData()
   }, [userId])
 
-  // Generate QR code when wallet address changes
+  // Generate QR code when deposit address changes
   useEffect(() => {
     async function generateQR() {
-      if (currentIntent?.user_wallet_address) {
+      const address = paymentInfo?.depositAddress || paymentStatus?.depositAddress
+      if (address) {
         try {
-          const url = await QRCode.toDataURL(currentIntent.user_wallet_address, {
+          const url = await QRCode.toDataURL(address, {
             width: 200,
             margin: 2,
             color: {
@@ -148,45 +156,23 @@ function PaymentsContent() {
       }
     }
     generateQR()
-  }, [currentIntent?.user_wallet_address])
+  }, [paymentInfo?.depositAddress, paymentStatus?.depositAddress])
 
-  // Countdown timer for payment expiry
-  useEffect(() => {
-    if (!currentIntent?.expires_at) return
-
-    const updateCountdown = () => {
-      const remaining = Math.max(0, Math.floor((new Date(currentIntent.expires_at).getTime() - Date.now()) / 1000))
-      setExpiryCountdown(remaining)
-
-      if (remaining === 0) {
-        setPaymentModalOpen(false)
-        setCurrentIntent(null)
-      }
-    }
-
-    updateCountdown()
-    const interval = setInterval(updateCountdown, 1000)
-    return () => clearInterval(interval)
-  }, [currentIntent?.expires_at])
-
-  // Poll for payment status
+  // Check payment status
   const checkPaymentStatus = useCallback(async () => {
-    if (!currentIntent?.id) return
-
     setCheckingPayment(true)
     try {
-      const response = await fetch(`/api/crypto/payments/check-status?intentId=${currentIntent.id}`)
+      const response = await fetch('/api/crypto/payments/check-status')
       const data = await response.json()
 
-      if (data.success && data.intent) {
-        if (data.intent.status === 'completed') {
+      if (data.success) {
+        setPaymentStatus(data)
+
+        // If payment was detected and processed, close modal and refresh
+        if (data.status === 'paid' || (data.fundsDetected && data.paymentType !== 'none')) {
           setPaymentModalOpen(false)
-          setCurrentIntent(null)
-          // Refresh page data
+          setPaymentInfo(null)
           window.location.reload()
-        } else if (data.intent.status === 'processing') {
-          // Keep modal open, show processing state
-          setCurrentIntent(prev => prev ? { ...prev, status: 'processing' } : null)
         }
       }
     } catch (error) {
@@ -194,47 +180,33 @@ function PaymentsContent() {
     } finally {
       setCheckingPayment(false)
     }
-  }, [currentIntent?.id])
+  }, [])
 
   // Auto-poll when modal is open
   useEffect(() => {
-    if (!paymentModalOpen || !currentIntent) return
+    if (!paymentModalOpen) return
 
-    const interval = setInterval(checkPaymentStatus, 10000) // Every 10 seconds
+    // Initial check
+    checkPaymentStatus()
+
+    const interval = setInterval(checkPaymentStatus, 15000) // Every 15 seconds
     return () => clearInterval(interval)
-  }, [paymentModalOpen, currentIntent, checkPaymentStatus])
+  }, [paymentModalOpen, checkPaymentStatus])
 
-  // Check for pending intent on page load (from redirect)
-  useEffect(() => {
-    async function checkPendingIntent() {
-      if (!intentId || !userId) return
-
-      try {
-        const response = await fetch(`/api/crypto/payments/check-status?intentId=${intentId}`)
-        const data = await response.json()
-
-        if (data.success && data.intent && data.intent.status !== 'completed') {
-          setCurrentIntent(data.intent)
-          setPaymentModalOpen(true)
-        }
-      } catch (error) {
-        console.error('Error checking intent:', error)
-      }
-    }
-
-    checkPendingIntent()
-  }, [intentId, userId])
-
-  // Create payment intent for initial unlock
-  async function handleInitialPayment() {
+  // Get user's deposit address for payment
+  async function initiatePayment(paymentType: 'initial_unlock' | 'subscription') {
     // Check if user has payout wallet set
     if (!hasPayoutWallet) {
-      setPendingPaymentType("initial_unlock")
+      setPendingPaymentType(paymentType)
       setWalletSetupOpen(true)
       return
     }
 
-    setProcessingInitial(true)
+    if (paymentType === 'initial_unlock') {
+      setProcessingInitial(true)
+    } else {
+      setSubscribing(true)
+    }
 
     try {
       const response = await fetch("/api/crypto/payments/create-intent", {
@@ -242,32 +214,35 @@ function PaymentsContent() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ intentType: "initial_unlock" }),
       })
 
       const data = await response.json()
 
       if (!response.ok) {
         console.error("Payment intent error:", data)
-        // Check if it's a payout wallet required error
         if (data.code === "PAYOUT_WALLET_REQUIRED") {
-          setPendingPaymentType("initial_unlock")
+          setPendingPaymentType(paymentType)
           setWalletSetupOpen(true)
           return
         }
-        alert(data.error || "Failed to create payment intent")
+        alert(data.error || "Failed to get deposit address")
         return
       }
 
-      if (data.success && data.intent) {
-        setCurrentIntent(data.intent)
+      if (data.success && data.depositAddress) {
+        setPaymentInfo({
+          depositAddress: data.depositAddress,
+          amountUSDC: data.amountUSDC,
+          paymentType: data.paymentType,
+        })
         setPaymentModalOpen(true)
       }
     } catch (error) {
-      console.error("Initial payment error:", error)
+      console.error("Payment error:", error)
       alert("Failed to start payment. Please try again.")
     } finally {
       setProcessingInitial(false)
+      setSubscribing(false)
     }
   }
 
@@ -277,86 +252,33 @@ function PaymentsContent() {
     setWalletSetupOpen(false)
 
     // If there was a pending payment, start it now
-    if (pendingPaymentType === "initial_unlock") {
+    if (pendingPaymentType) {
+      const type = pendingPaymentType as 'initial_unlock' | 'subscription'
       setPendingPaymentType(null)
-      setTimeout(() => handleInitialPayment(), 500)
-    } else if (pendingPaymentType) {
-      setPendingPaymentType(null)
-      setTimeout(() => handleSubscribe(), 500)
+      setTimeout(() => initiatePayment(type), 500)
     }
   }
 
-  // Create payment intent for subscription
-  async function handleSubscribe() {
-    const intentType = paymentSchedule === 'weekly' ? 'weekly_subscription' : 'monthly_subscription'
-
-    // Check if user has payout wallet set
-    if (!hasPayoutWallet) {
-      setPendingPaymentType(intentType)
-      setWalletSetupOpen(true)
-      return
-    }
-
-    setSubscribing(true)
-
-    try {
-      const response = await fetch("/api/crypto/payments/create-intent", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ intentType }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        console.error("Payment intent error:", data)
-        // Check if it's a payout wallet required error
-        if (data.code === "PAYOUT_WALLET_REQUIRED") {
-          setPendingPaymentType(intentType)
-          setWalletSetupOpen(true)
-          return
-        }
-        alert(data.error || "Failed to create payment intent")
-        return
-      }
-
-      if (data.success && data.intent) {
-        setCurrentIntent(data.intent)
-        setPaymentModalOpen(true)
-      }
-    } catch (error) {
-      console.error("Subscribe error:", error)
-      alert("Failed to start payment. Please try again.")
-    } finally {
-      setSubscribing(false)
-    }
-  }
-
-  // Copy wallet address
+  // Copy deposit address
   function handleCopyAddress() {
-    if (currentIntent?.user_wallet_address) {
-      navigator.clipboard.writeText(currentIntent.user_wallet_address)
+    const address = paymentInfo?.depositAddress || paymentStatus?.depositAddress
+    if (address) {
+      navigator.clipboard.writeText(address)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     }
-  }
-
-  // Format countdown time
-  function formatCountdown(seconds: number): string {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
   async function handleCancelSubscription() {
     if (!confirm("Are you sure you want to cancel your subscription?")) {
       return
     }
-    // TODO: Implement subscription cancellation
     alert("Subscription cancellation will be implemented soon")
   }
+
+  // Determine if user needs to pay
+  const needsInitialPayment = !initialPaymentCompleted && !bypassInitialPayment
+  const needsSubscription = (initialPaymentCompleted || bypassInitialPayment) && !isActive && !bypassSubscription
 
   if (loading) {
     return (
@@ -366,6 +288,10 @@ function PaymentsContent() {
     )
   }
 
+  const currentAmount = paymentInfo?.amountUSDC || paymentStatus?.requiredAmount
+  const currentAddress = paymentInfo?.depositAddress || paymentStatus?.depositAddress
+  const currentPaymentType = paymentInfo?.paymentType || paymentStatus?.paymentType
+
   return (
     <div>
       <div className="mb-8">
@@ -374,7 +300,7 @@ function PaymentsContent() {
       </div>
 
       {/* Activation Required Banner */}
-      {!initialPaymentCompleted && (
+      {needsInitialPayment && (
         <Card className="mb-6 border-red-500 bg-red-50 dark:bg-red-950/20">
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -432,7 +358,7 @@ function PaymentsContent() {
       )}
 
       {/* Initial Membership Payment */}
-      {!initialPaymentCompleted && (
+      {needsInitialPayment && (
         <Card className="mb-8 border-primary/20 bg-primary/5">
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -449,14 +375,14 @@ function PaymentsContent() {
               <p className="text-sm text-muted-foreground">One-time membership fee (USDC)</p>
             </div>
             <Button
-              onClick={handleInitialPayment}
+              onClick={() => initiatePayment('initial_unlock')}
               disabled={processingInitial}
               size="lg"
             >
               {processingInitial ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Creating Payment...
+                  Getting Deposit Address...
                 </>
               ) : (
                 <>
@@ -478,11 +404,13 @@ function PaymentsContent() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {subscription ? (
+          {subscription && isActive ? (
             <div>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-2xl font-bold">{formatCurrency(19900)}/month</p>
+                  <p className="text-2xl font-bold">
+                    {subscription.payment_schedule === 'weekly' ? '$49.75/week' : '$199/month'}
+                  </p>
                   <p className="text-sm text-muted-foreground">Trading Hub Premium</p>
                 </div>
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
@@ -490,10 +418,10 @@ function PaymentsContent() {
                 </span>
               </div>
               <div className="space-y-2 text-sm">
-                {!bypassSubscription && (
+                {!bypassSubscription && subscription.next_billing_date && (
                   <p>
                     <span className="text-muted-foreground">Next billing date:</span>{" "}
-                    {new Date(subscription.current_period_end).toLocaleDateString()}
+                    {new Date(subscription.next_billing_date).toLocaleDateString()}
                   </p>
                 )}
                 <p>
@@ -521,7 +449,7 @@ function PaymentsContent() {
             </div>
           ) : (
             <div>
-              {!initialPaymentCompleted ? (
+              {needsInitialPayment ? (
                 <div>
                   <p className="text-yellow-600 mb-4">
                     Complete the initial membership payment first before subscribing
@@ -531,14 +459,14 @@ function PaymentsContent() {
                     Subscription Locked
                   </Button>
                 </div>
-              ) : (
+              ) : needsSubscription ? (
                 <div className="space-y-6">
                   <PaymentScheduleSelector
                     value={paymentSchedule}
                     onChange={setPaymentSchedule}
                   />
                   <Button
-                    onClick={handleSubscribe}
+                    onClick={() => initiatePayment('subscription')}
                     disabled={subscribing}
                     size="lg"
                     className="w-full"
@@ -546,7 +474,7 @@ function PaymentsContent() {
                     {subscribing ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Creating Payment...
+                        Getting Deposit Address...
                       </>
                     ) : (
                       <>
@@ -555,6 +483,13 @@ function PaymentsContent() {
                       </>
                     )}
                   </Button>
+                </div>
+              ) : (
+                <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <p className="font-medium text-green-900 dark:text-green-300">All payments up to date</p>
+                  </div>
                 </div>
               )}
             </div>
@@ -567,7 +502,7 @@ function PaymentsContent() {
         <UnifiedTransactionHistory limit={50} showFilters={true} showTitle={true} />
       </div>
 
-      {/* Payment Modal */}
+      {/* Payment Modal - Simplified for Permanent Addresses */}
       <Dialog open={paymentModalOpen} onOpenChange={setPaymentModalOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -576,67 +511,51 @@ function PaymentsContent() {
               Complete Your Payment
             </DialogTitle>
             <DialogDescription>
-              Pay ${currentIntent?.amount_usdc} USDC to complete your {currentIntent?.intent_type === 'initial_unlock' ? 'membership activation' : 'subscription'}
+              Pay ${currentAmount} USDC to complete your {currentPaymentType === 'initial_unlock' ? 'membership activation' : 'subscription'}
             </DialogDescription>
           </DialogHeader>
 
-          {currentIntent && (
+          {currentAddress && (
             <div className="space-y-6">
-              {/* Countdown Timer */}
-              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                <span className="text-sm text-muted-foreground">Time remaining</span>
-                <span className={`font-mono font-bold ${expiryCountdown < 300 ? 'text-red-500' : 'text-foreground'}`}>
-                  {formatCountdown(expiryCountdown)}
-                </span>
+              {/* Permanent Address Notice */}
+              <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-900">
+                <Bookmark className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  This is your permanent deposit address. Save it for future payments.
+                </p>
               </div>
 
-              {/* Status */}
-              {currentIntent.status === 'processing' && (
-                <div className="flex items-center gap-3 p-4 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border border-yellow-200 dark:border-yellow-900">
-                  <Loader2 className="h-5 w-5 text-yellow-600 animate-spin" />
+              {/* Funds Detected Status */}
+              {paymentStatus?.fundsDetected && (
+                <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-900">
+                  <Loader2 className="h-5 w-5 text-green-600 animate-spin" />
                   <div>
-                    <p className="font-medium text-yellow-900 dark:text-yellow-200">Payment Processing</p>
-                    <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                      We detected your payment and are confirming it...
+                    <p className="font-medium text-green-900 dark:text-green-200">Payment Detected!</p>
+                    <p className="text-sm text-green-700 dark:text-green-300">
+                      Processing your payment now...
                     </p>
                   </div>
                 </div>
               )}
 
-              {/* Underpaid Status */}
-              {currentIntent.deposit_addresses?.is_underpaid && (
+              {/* Partial Payment Status */}
+              {paymentStatus?.status === 'partial_payment' && paymentStatus.partialAmount && (
                 <div className="flex items-start gap-3 p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-900">
                   <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <p className="font-medium text-orange-900 dark:text-orange-200">Partial Payment Received</p>
                     <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
-                      We received ${((currentIntent.deposit_addresses.received_amount || 0) / 1000000).toFixed(2)} USDC,
-                      but you still need to send an additional{' '}
-                      <strong>${((currentIntent.deposit_addresses.shortfall_amount || 0) / 1000000).toFixed(2)} USDC</strong>{' '}
-                      to the same address below.
-                    </p>
-                    <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">
-                      Please send the remaining amount to complete your payment.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Late Payment Notice */}
-              {currentIntent.deposit_addresses?.is_late && (
-                <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-900">
-                  <CheckCircle className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <p className="font-medium text-blue-900 dark:text-blue-200">Late Payment Accepted</p>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
-                      Your payment arrived after the deadline but has been accepted and is being processed.
+                      We received ${paymentStatus.partialAmount} USDC.
+                      Please send an additional{' '}
+                      <strong>${paymentStatus.shortfall} USDC</strong>{' '}
+                      to complete your payment.
                     </p>
                   </div>
                 </div>
               )}
 
               {/* QR Code and Address */}
-              {currentIntent.status !== 'processing' && (
+              {!paymentStatus?.fundsDetected && (
                 <>
                   <div className="flex flex-col items-center gap-4">
                     {qrCodeUrl && (
@@ -645,13 +564,13 @@ function PaymentsContent() {
                       </div>
                     )}
 
-                    <div className="text-center">
+                    <div className="text-center w-full">
                       <p className="text-sm text-muted-foreground mb-2">
                         Send USDC (Polygon) to this address:
                       </p>
                       <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
                         <code className="text-xs font-mono break-all flex-1">
-                          {currentIntent.user_wallet_address}
+                          {currentAddress}
                         </code>
                         <Button
                           variant="ghost"
@@ -673,12 +592,22 @@ function PaymentsContent() {
                   <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Amount</span>
-                      <span className="text-xl font-bold">${currentIntent.amount_usdc} USDC</span>
+                      <span className="text-xl font-bold">${currentAmount} USDC</span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
-                      Send exactly this amount on the Polygon network
+                      Send this amount on the Polygon network
                     </p>
                   </div>
+
+                  {/* Balance Info */}
+                  {paymentStatus && paymentStatus.walletBalance !== '0' && (
+                    <div className="p-3 bg-muted rounded-lg">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Current Balance</span>
+                        <span className="font-medium">${paymentStatus.walletBalance} USDC</span>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Important note */}
                   <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-900">
@@ -704,8 +633,8 @@ function PaymentsContent() {
                   </>
                 ) : (
                   <>
-                    <QrCode className="h-4 w-4 mr-2" />
-                    I&apos;ve Sent the Payment
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Check Payment Status
                   </>
                 )}
               </Button>

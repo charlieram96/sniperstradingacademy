@@ -4,9 +4,6 @@ import { createClient } from '@/lib/supabase/server';
 export const runtime = 'nodejs';
 export const maxDuration = 120; // Allow up to 2 minutes for processing
 
-// Active threshold: user is active if paid within 33 days (30 + 3 day grace)
-const ACTIVE_THRESHOLD_DAYS = 33;
-
 /**
  * POST /api/admin/process-monthly-volumes
  * Manually trigger monthly volume processing
@@ -98,14 +95,10 @@ export async function POST(req: NextRequest) {
 
       const lastProcessedMonth = lastProcessing?.[0]?.details?.month_period || 'Never';
 
-      // Calculate active threshold date
-      const activeThresholdDate = new Date();
-      activeThresholdDate.setDate(activeThresholdDate.getDate() - ACTIVE_THRESHOLD_DAYS);
-
       // Get all users with volume including their details for commission calculation
       const { data: usersWithVolume } = await supabase
         .from('users')
-        .select('id, name, email, sniper_volume_current_month, current_commission_rate, last_payment_date, is_active, qualified, payout_wallet_address, direct_referrals_count')
+        .select('id, name, email, sniper_volume_current_month, current_commission_rate, last_payment_date, is_active, bypass_subscription, qualified, payout_wallet_address, active_direct_referrals_count, bypass_direct_referrals')
         .gt('sniper_volume_current_month', 0)
         .order('sniper_volume_current_month', { ascending: false });
 
@@ -136,10 +129,11 @@ export async function POST(req: NextRequest) {
       for (const user of users) {
         const volume = parseFloat(user.sniper_volume_current_month || '0');
         const commissionRate = parseFloat(user.current_commission_rate || '0.10');
-        const lastPayment = user.last_payment_date ? new Date(user.last_payment_date) : null;
-        const isActive = lastPayment && lastPayment >= activeThresholdDate;
+        // Account for subscription bypass when checking active status
+        const isActive = user.is_active || user.bypass_subscription;
         const isQualified = user.qualified === true;
-        const directReferrals = user.direct_referrals_count || 0;
+        // Use effective referral count (actual or bypass, whichever is higher)
+        const directReferrals = Math.max(user.active_direct_referrals_count || 0, user.bypass_direct_referrals || 0);
         const hasWallet = !!user.payout_wallet_address;
 
         if (isActive) {
@@ -156,18 +150,11 @@ export async function POST(req: NextRequest) {
             hasWallet,
           });
         } else {
-          // Determine the reason for ineligibility
-          let reason = 'Unknown';
-          if (!lastPayment) {
-            reason = 'Never paid';
-          } else if (!isActive) {
-            reason = 'Payment expired (inactive)';
-          }
-
+          // User not active (no active subscription and no bypass)
           ineligibleUsers.push({
             userId: user.id,
             userName: user.name || 'Unknown',
-            reason,
+            reason: 'Not active (no subscription or bypass)',
             volume,
             isQualified,
           });
