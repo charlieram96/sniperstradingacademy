@@ -80,12 +80,13 @@ export async function GET(req: NextRequest) {
     let fundedCount = 0;
 
     for (const deposit of depositsToSweep) {
-      const maticResult = await polygonUSDCClient.getMATICBalance(deposit.deposit_address);
-      const maticBalance = parseFloat(maticResult.data || '0');
+      // Check POL balance (Polygon's native token, formerly MATIC)
+      const polResult = await polygonUSDCClient.getMATICBalance(deposit.deposit_address);
+      const polBalance = parseFloat(polResult.data || '0');
 
-      // Fund if less than 0.02 MATIC (need ~0.01 for transfer)
-      if (maticBalance < 0.02) {
-        console.log(`[SweepDeposits] Funding ${deposit.deposit_address} (has ${maticBalance} MATIC)`);
+      // Fund if less than 0.02 POL (need ~0.01 for transfer)
+      if (polBalance < 0.02) {
+        console.log(`[SweepDeposits] Funding ${deposit.deposit_address} (has ${polBalance} POL)`);
         const fundResult = await fundDepositForSweep(deposit.deposit_address, '0.05');
         if (fundResult.success) {
           fundedCount++;
@@ -98,7 +99,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (fundedCount > 0) {
-      console.log(`[SweepDeposits] Funded ${fundedCount} addresses with MATIC for gas`);
+      console.log(`[SweepDeposits] Funded ${fundedCount} addresses with POL for gas`);
     }
 
     // Execute sweeps
@@ -241,10 +242,11 @@ export async function POST(req: NextRequest) {
     let fundedCount = 0;
     if (autoFund) {
       for (const deposit of depositsToSweep) {
-        const maticResult = await polygonUSDCClient.getMATICBalance(deposit.deposit_address);
-        const maticBalance = parseFloat(maticResult.data || '0');
+        // Check POL balance (Polygon's native token, formerly MATIC)
+        const polResult = await polygonUSDCClient.getMATICBalance(deposit.deposit_address);
+        const polBalance = parseFloat(polResult.data || '0');
 
-        if (maticBalance < 0.02) {
+        if (polBalance < 0.02) {
           const fundResult = await fundDepositForSweep(deposit.deposit_address, '0.05');
           if (fundResult.success) {
             fundedCount++;

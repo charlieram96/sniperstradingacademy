@@ -2,6 +2,7 @@
  * Treasury Sweep Service
  * Consolidates USDC from deposit addresses to the central treasury wallet
  * Uses HD wallet derivation to sign transactions from deposit addresses
+ * Note: Polygon's native gas token is POL (formerly MATIC)
  */
 
 import { ethers } from 'ethers';
@@ -142,10 +143,10 @@ export async function sweepDeposit(
 
     console.log(`[SweepService] Sweeping ${balanceUsdc} USDC from ${depositAddress} to treasury`);
 
-    // Check MATIC balance for gas
-    const maticResult = await polygonUSDCClient.getMATICBalance(depositAddress);
-    if (!maticResult.success || parseFloat(maticResult.data || '0') < 0.01) {
-      throw new Error(`Insufficient MATIC for gas. Have: ${maticResult.data || '0'} MATIC`);
+    // Check POL balance for gas (POL is Polygon's native token, formerly MATIC)
+    const polResult = await polygonUSDCClient.getMATICBalance(depositAddress);
+    if (!polResult.success || parseFloat(polResult.data || '0') < 0.01) {
+      throw new Error(`Insufficient POL for gas. Have: ${polResult.data || '0'} POL`);
     }
 
     // Transfer USDC to treasury
@@ -343,7 +344,7 @@ export async function sweepDepositById(depositAddressId: string): Promise<SweepR
 }
 
 /**
- * Estimate gas for sweeping (for pre-funding deposit addresses with MATIC)
+ * Estimate gas for sweeping (for pre-funding deposit addresses with POL)
  */
 export async function estimateSweepGas(): Promise<{
   gasLimit: string;
@@ -368,11 +369,12 @@ export async function estimateSweepGas(): Promise<{
 }
 
 /**
- * Fund a deposit address with MATIC for gas (from gas tank)
+ * Fund a deposit address with POL for gas (from gas tank)
+ * POL is Polygon's native token (formerly MATIC)
  */
 export async function fundDepositForSweep(
   depositAddress: string,
-  amountMatic: string = '0.05'
+  amountPol: string = '0.05'
 ): Promise<{ success: boolean; txHash?: string; error?: string }> {
   // Get gas tank private key
   const gasTankPrivateKey = process.env.GAS_TANK_PRIVATE_KEY;
@@ -385,15 +387,15 @@ export async function fundDepositForSweep(
     const provider = new ethers.JsonRpcProvider(rpcUrl);
     const wallet = new ethers.Wallet(gasTankPrivateKey, provider);
 
-    // Send MATIC
+    // Send POL for gas
     const tx = await wallet.sendTransaction({
       to: depositAddress,
-      value: ethers.parseEther(amountMatic),
+      value: ethers.parseEther(amountPol),
     });
 
     const receipt = await tx.wait();
 
-    console.log(`[SweepService] Funded ${depositAddress} with ${amountMatic} MATIC, tx: ${receipt?.hash}`);
+    console.log(`[SweepService] Funded ${depositAddress} with ${amountPol} POL, tx: ${receipt?.hash}`);
 
     return {
       success: true,
