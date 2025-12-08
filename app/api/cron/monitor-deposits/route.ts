@@ -71,9 +71,10 @@ async function runMonitor(req: NextRequest) {
 
     console.log('[MonitorDeposits] Starting deposit monitoring run...');
 
-    // Get users who have deposit addresses and need to make a payment
-    // Either: needs initial payment OR is not active (needs subscription)
-    const { data: usersNeedingPayment, error: queryError } = await supabase
+    // Get ALL users who have deposit addresses
+    // We check for unprocessed funds regardless of active status
+    // Users can (and should) pay BEFORE becoming inactive
+    const { data: usersWithAddresses, error: queryError } = await supabase
       .from('users')
       .select(`
         id,
@@ -86,7 +87,6 @@ async function runMonitor(req: NextRequest) {
         is_active
       `)
       .not('crypto_deposit_address', 'is', null)
-      .or('initial_payment_completed.eq.false,is_active.eq.false')
       .limit(MAX_USERS_PER_RUN);
 
     if (queryError) {
@@ -97,25 +97,18 @@ async function runMonitor(req: NextRequest) {
       );
     }
 
-    // Filter out users with bypass_initial_payment who have completed initial
-    const usersToCheck = usersNeedingPayment.filter(user => {
-      // Needs initial payment
-      const needsInitial = !user.initial_payment_completed && !user.bypass_initial_payment;
-      // Or needs subscription (completed initial but not active)
-      const needsSubscription = (user.initial_payment_completed || user.bypass_initial_payment) && !user.is_active;
-      return needsInitial || needsSubscription;
-    });
+    const usersToCheck = usersWithAddresses || [];
 
     if (usersToCheck.length === 0) {
-      console.log('[MonitorDeposits] No users with pending payments');
+      console.log('[MonitorDeposits] No users with deposit addresses');
       return NextResponse.json({
         success: true,
-        message: 'No users with pending payments',
+        message: 'No users with deposit addresses',
         results,
       });
     }
 
-    console.log(`[MonitorDeposits] Checking ${usersToCheck.length} user(s) with pending payments`);
+    console.log(`[MonitorDeposits] Checking ${usersToCheck.length} user(s) with deposit addresses`);
 
     // Process each user
     for (const user of usersToCheck) {
