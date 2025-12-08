@@ -87,16 +87,16 @@ export async function POST(req: NextRequest) {
       entry.commissionIds.push(commission.id);
     }
 
-    // Get wallet addresses for all users
+    // Get wallet addresses for all users (from users.payout_wallet_address)
     const userIds = Array.from(userTotals.keys());
-    const { data: wallets } = await supabase
-      .from('crypto_wallets')
-      .select('user_id, wallet_address')
-      .in('user_id', userIds)
-      .eq('status', 'active');
+    const { data: usersWithWallets } = await supabase
+      .from('users')
+      .select('id, payout_wallet_address')
+      .in('id', userIds)
+      .not('payout_wallet_address', 'is', null);
 
     const walletMap = new Map(
-      (wallets || []).map(w => [w.user_id, w.wallet_address])
+      (usersWithWallets || []).map(u => [u.id, u.payout_wallet_address])
     );
 
     // Filter out users without wallets
