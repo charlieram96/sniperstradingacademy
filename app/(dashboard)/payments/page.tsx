@@ -453,38 +453,7 @@ function PaymentsContent() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {subscription && isActive ? (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-2xl font-bold">
-                    {subscription.payment_schedule === 'weekly' ? '$49.75/week' : '$199/month'}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Trading Hub Premium</p>
-                </div>
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                  Active
-                </span>
-              </div>
-              <div className="space-y-2 text-sm">
-                {!bypassSubscription && subscription.next_billing_date && (
-                  <p>
-                    <span className="text-muted-foreground">Next billing date:</span>{" "}
-                    {new Date(subscription.next_billing_date).toLocaleDateString()}
-                  </p>
-                )}
-                <p>
-                  <span className="text-muted-foreground">Member since:</span>{" "}
-                  {new Date(subscription.created_at).toLocaleDateString()}
-                </p>
-              </div>
-              <div className="mt-4">
-                <Button variant="outline" onClick={handleCancelSubscription}>
-                  Cancel Subscription
-                </Button>
-              </div>
-            </div>
-          ) : bypassSubscription ? (
+          {bypassSubscription ? (
             <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border-2 border-green-200 dark:border-green-900">
               <div className="flex items-center gap-2 mb-2">
                 <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -562,6 +531,18 @@ function PaymentsContent() {
                 </div>
               ) : needsSubscription ? (
                 <div className="space-y-6">
+                  {/* Show active status with next due date if applicable */}
+                  {isActive && periodStatus?.nextDueDate && (
+                    <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Next payment due</p>
+                        <p className="font-medium">{new Date(periodStatus.nextDueDate).toLocaleDateString()}</p>
+                      </div>
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                        Active
+                      </span>
+                    </div>
+                  )}
                   <PaymentScheduleSelector
                     value={paymentSchedule}
                     onChange={setPaymentSchedule}
@@ -580,7 +561,7 @@ function PaymentsContent() {
                     ) : (
                       <>
                         <Wallet className="h-4 w-4 mr-2" />
-                        Subscribe {paymentSchedule === 'weekly' ? '$49.75/week' : '$199/month'}
+                        Pay Subscription {paymentSchedule === 'weekly' ? '$49.75/week' : '$199/month'}
                       </>
                     )}
                   </Button>

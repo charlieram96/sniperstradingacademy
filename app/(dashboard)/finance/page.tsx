@@ -111,30 +111,24 @@ export default function FinancePage() {
         // Fetch user account data
         const { data: userData } = await supabase
           .from('users')
-          .select('is_active, last_payment_date, initial_payment_date, qualified_at, direct_referrals_count, active_network_count, current_commission_rate, bypass_direct_referrals, bypass_subscription, bypass_initial_payment, stripe_connect_account_id, payment_schedule, payout_wallet_address')
+          .select('is_active, previous_payment_due_date, next_payment_due_date, initial_payment_date, qualified_at, direct_referrals_count, active_network_count, current_commission_rate, bypass_direct_referrals, bypass_subscription, bypass_initial_payment, stripe_connect_account_id, payment_schedule, payout_wallet_address')
           .eq('id', userId)
           .single()
 
         // Check if user has completed Stripe Connect onboarding
         setStripeConnected(!!userData?.stripe_connect_account_id)
 
-        // Calculate next payment due date based on payment schedule
-        let monthlyPaymentDueDate = null
+        // Get payment schedule and next payment due date directly from database
         const paymentSchedule = userData?.payment_schedule || 'monthly'
-        const daysToAdd = paymentSchedule === 'weekly' ? 7 : 30
-
-        // Use last_payment_date if available, otherwise fall back to initial_payment_date
-        const referenceDate = userData?.last_payment_date || userData?.initial_payment_date
-        if (referenceDate) {
-          const dateObj = new Date(referenceDate)
-          monthlyPaymentDueDate = new Date(dateObj.getTime() + daysToAdd * 24 * 60 * 60 * 1000)
-        }
+        const monthlyPaymentDueDate = userData?.next_payment_due_date
+          ? new Date(userData.next_payment_due_date)
+          : null
 
         setAccountStatus({
           accountActive: userData?.is_active || false,
           activatedAt: userData?.initial_payment_date ? new Date(userData.initial_payment_date) : null,
           monthlyPaymentDueDate,
-          lastPaymentDate: userData?.last_payment_date ? new Date(userData.last_payment_date) : null,
+          lastPaymentDate: userData?.previous_payment_due_date ? new Date(userData.previous_payment_due_date) : null,
           qualificationDeadline: null,
           qualifiedAt: userData?.qualified_at ? new Date(userData.qualified_at) : null,
           directReferralsCount: userData?.direct_referrals_count || 0,
@@ -225,28 +219,10 @@ export default function FinancePage() {
 
         setDirectBonuses(formattedBonuses)
 
-        // Get real next payment date from user's last payment + schedule
-        const { data: paymentData } = await supabase
-          .from('users')
-          .select('last_payment_date, payment_schedule')
-          .eq('id', userId)
-          .single()
-
-        let nextPayoutDate = ''
-        if (paymentData?.last_payment_date) {
-          const lastPayment = new Date(paymentData.last_payment_date)
-          const daysToAdd = paymentData.payment_schedule === 'weekly' ? 7 : 30
-          const nextPayment = new Date(lastPayment)
-          nextPayment.setDate(nextPayment.getDate() + daysToAdd)
-          nextPayoutDate = nextPayment.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-        } else if (monthlyPaymentDueDate) {
-          nextPayoutDate = monthlyPaymentDueDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-        } else {
-          // Fallback to 1st of next month
-          const now = new Date()
-          const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
-          nextPayoutDate = nextMonth.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-        }
+        // Get next payment date directly from userData (already fetched above)
+        const nextPayoutDate = userData?.next_payment_due_date
+          ? new Date(userData.next_payment_due_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+          : 'Not scheduled'
 
         const totalResidual = monthlyEarnings.reduce((sum, m) => sum + m.residualIncome, 0)
         const totalPayments = payments?.reduce((sum, p) => sum + (p.status === 'succeeded' ? parseFloat(p.amount) : 0), 0) || 0
