@@ -17,7 +17,6 @@ import {
 import {
   getUserByDepositAddress,
   getUserPaymentSchedule,
-  usdcToWei,
 } from '@/lib/treasury/treasury-service';
 import { PAYMENT_AMOUNTS } from '@/lib/coinbase/wallet-types';
 
@@ -136,7 +135,7 @@ async function processTransfer(
   const { data: existingTx } = await supabase
     .from('usdc_transactions')
     .select('id')
-    .eq('tx_hash', transfer.txHash)
+    .eq('polygon_tx_hash', transfer.txHash)
     .single();
 
   if (existingTx) {
@@ -194,13 +193,8 @@ async function processTransfer(
       amount: receivedAmountUsdc.toFixed(2),
       user_id: user.id,
       status: 'partial',
-      tx_hash: transfer.txHash,
+      polygon_tx_hash: transfer.txHash,
       confirmed_at: new Date().toISOString(),
-      metadata: {
-        payment_type: paymentType,
-        expected_amount: expectedAmountUsdc,
-        is_underpayment: true,
-      },
     });
 
     return;
@@ -222,14 +216,8 @@ async function processTransfer(
       amount: receivedAmountUsdc.toFixed(2),
       user_id: user.id,
       status: 'confirmed',
-      tx_hash: transfer.txHash,
+      polygon_tx_hash: transfer.txHash,
       confirmed_at: new Date().toISOString(),
-      metadata: {
-        payment_type: paymentType,
-        expected_amount: expectedAmountUsdc,
-        is_overpaid: isOverpaid,
-        overpayment_amount: overpaymentAmount,
-      },
     })
     .select()
     .single();
@@ -252,19 +240,7 @@ async function processTransfer(
     },
   });
 
-  // Update deposit_addresses record if exists (for sweep tracking)
-  await supabase
-    .from('deposit_addresses')
-    .update({
-      status: 'used',
-      received_amount: Number(usdcToWei(receivedAmountUsdc)),
-      received_tx_hash: transfer.txHash,
-      received_at: new Date().toISOString(),
-      is_overpaid: isOverpaid,
-      overpayment_amount: isOverpaid ? Number(usdcToWei(overpaymentAmount)) : null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('deposit_address', transfer.to);
+  // Note: We no longer use deposit_addresses table - permanent addresses are stored on users table
 
   // Process the payment based on type
   if (paymentType === 'initial_unlock') {
@@ -383,30 +359,35 @@ async function processSubscriptionPayment(
   isMonthly: boolean,
   usdcTxId?: string
 ) {
-  // Update user active status
+  // Calculate next period end
+  const daysToAdd = isMonthly ? 30 : 7;
+  const nextPeriodEnd = new Date();
+  nextPeriodEnd.setDate(nextPeriodEnd.getDate() + daysToAdd);
+
+  // Update user active status and last payment date
   await supabase
     .from('users')
-    .update({ is_active: true })
+    .update({
+      is_active: true,
+      last_payment_date: new Date().toISOString(),
+      payment_schedule: isMonthly ? 'monthly' : 'weekly',
+    })
     .eq('id', userId);
 
-  // Calculate next billing date
-  const daysToAdd = isMonthly ? 30 : 7;
-  const nextBillingDate = new Date();
-  nextBillingDate.setDate(nextBillingDate.getDate() + daysToAdd);
-
-  // Update subscription
+  // Update or create subscription
   const { data: existingSub } = await supabase
     .from('subscriptions')
     .select('id')
     .eq('user_id', userId)
     .eq('status', 'active')
-    .single();
+    .maybeSingle();
 
   if (existingSub) {
     await supabase
       .from('subscriptions')
       .update({
-        next_billing_date: nextBillingDate.toISOString(),
+        current_period_end: nextPeriodEnd.toISOString(),
+        amount: parseFloat(amountUsdc),
         updated_at: new Date().toISOString(),
       })
       .eq('id', existingSub.id);
@@ -415,9 +396,9 @@ async function processSubscriptionPayment(
       .from('subscriptions')
       .insert({
         user_id: userId,
-        payment_schedule: isMonthly ? 'monthly' : 'weekly',
         status: 'active',
-        next_billing_date: nextBillingDate.toISOString(),
+        amount: parseFloat(amountUsdc),
+        current_period_end: nextPeriodEnd.toISOString(),
       });
   }
 

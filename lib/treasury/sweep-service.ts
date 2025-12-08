@@ -1,6 +1,6 @@
 /**
  * Treasury Sweep Service
- * Consolidates USDC from deposit addresses to the central treasury wallet
+ * Consolidates USDC from user deposit addresses to the central treasury wallet
  * Uses HD wallet derivation to sign transactions from deposit addresses
  * Note: Polygon's native gas token is POL (formerly MATIC)
  */
@@ -14,7 +14,7 @@ import { polygonUSDCClient } from '@/lib/polygon/usdc-client';
 const MIN_SWEEP_AMOUNT_USDC = 1; // $1 minimum
 
 export interface SweepResult {
-  depositAddressId: string;
+  userId: string;
   depositAddress: string;
   amount: number;
   success: boolean;
@@ -67,49 +67,51 @@ export function verifyDerivedAddress(privateKey: string, expectedAddress: string
 }
 
 /**
- * Get deposit addresses ready to be swept
- * Conditions: status='used', received_at IS NOT NULL, swept_at IS NULL
+ * Get users with deposit addresses that may have funds to sweep
+ * Returns users who have a permanent deposit address set
  */
-export async function getDepositsToSweep(limit: number = 50): Promise<
+export async function getUsersToSweep(limit: number = 50): Promise<
   Array<{
     id: string;
-    deposit_address: string;
-    derivation_index: number;
-    user_id: string;
-    received_amount: number;
+    email: string;
+    crypto_deposit_address: string;
+    crypto_derivation_index: number;
   }>
 > {
   const supabase = createServiceRoleClient();
 
   const { data, error } = await supabase
-    .from('deposit_addresses')
-    .select('id, deposit_address, derivation_index, user_id, received_amount')
-    .eq('status', 'used')
-    .not('received_at', 'is', null)
-    .is('swept_at', null)
-    .order('received_at', { ascending: true })
+    .from('users')
+    .select('id, email, crypto_deposit_address, crypto_derivation_index')
+    .not('crypto_deposit_address', 'is', null)
+    .not('crypto_derivation_index', 'is', null)
     .limit(limit);
 
   if (error) {
-    console.error('[SweepService] Error fetching deposits to sweep:', error);
+    console.error('[SweepService] Error fetching users to sweep:', error);
     return [];
   }
 
   return data || [];
 }
 
+// Legacy function for backwards compatibility
+export async function getDepositsToSweep(limit: number = 50) {
+  return getUsersToSweep(limit);
+}
+
 /**
- * Sweep a single deposit address to treasury
+ * Sweep a single user's deposit address to treasury
  */
-export async function sweepDeposit(
-  depositAddressId: string,
+export async function sweepUserDeposit(
+  userId: string,
   depositAddress: string,
   derivationIndex: number,
   treasuryAddress: string,
   masterXprv: string
 ): Promise<SweepResult> {
   const result: SweepResult = {
-    depositAddressId,
+    userId,
     depositAddress,
     amount: 0,
     success: false,
@@ -175,16 +177,6 @@ export async function sweepDeposit(
 
     console.log(`[SweepService] Swept ${balanceUsdc} USDC, tx: ${result.txHash}`);
 
-    // Update database
-    const supabase = createServiceRoleClient();
-    await supabase
-      .from('deposit_addresses')
-      .update({
-        swept_at: new Date().toISOString(),
-        sweep_tx_hash: result.txHash,
-      })
-      .eq('id', depositAddressId);
-
     return result;
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
@@ -195,7 +187,7 @@ export async function sweepDeposit(
 }
 
 /**
- * Sweep all pending deposits to treasury
+ * Sweep all user deposit addresses with funds to treasury
  */
 export async function sweepAllPendingDeposits(limit: number = 50): Promise<SweepSummary> {
   const summary: SweepSummary = {
@@ -220,25 +212,25 @@ export async function sweepAllPendingDeposits(limit: number = 50): Promise<Sweep
     return summary;
   }
 
-  // Get deposits to sweep
-  const deposits = await getDepositsToSweep(limit);
-  if (deposits.length === 0) {
-    console.log('[SweepService] No deposits to sweep');
+  // Get users with deposit addresses
+  const users = await getUsersToSweep(limit);
+  if (users.length === 0) {
+    console.log('[SweepService] No users with deposit addresses to sweep');
     return summary;
   }
 
-  console.log(`[SweepService] Processing ${deposits.length} deposit(s) for sweep`);
+  console.log(`[SweepService] Checking ${users.length} user(s) for sweep`);
 
   const supabase = createServiceRoleClient();
 
-  // Process each deposit
-  for (const deposit of deposits) {
+  // Process each user
+  for (const user of users) {
     summary.totalProcessed++;
 
-    const result = await sweepDeposit(
-      deposit.id,
-      deposit.deposit_address,
-      deposit.derivation_index,
+    const result = await sweepUserDeposit(
+      user.id,
+      user.crypto_deposit_address,
+      user.crypto_derivation_index,
       treasuryAddress,
       masterXprv
     );
@@ -252,11 +244,11 @@ export async function sweepAllPendingDeposits(limit: number = 50): Promise<Sweep
       // Log audit event
       await supabase.from('crypto_audit_log').insert({
         event_type: 'deposit_swept',
-        user_id: deposit.user_id,
-        entity_type: 'deposit_address',
-        entity_id: deposit.id,
+        user_id: user.id,
+        entity_type: 'user',
+        entity_id: user.id,
         details: {
-          deposit_address: deposit.deposit_address,
+          deposit_address: user.crypto_deposit_address,
           treasury_address: treasuryAddress,
           amount_usdc: result.amount,
           tx_hash: result.txHash,
@@ -270,11 +262,11 @@ export async function sweepAllPendingDeposits(limit: number = 50): Promise<Sweep
         // Log failure
         await supabase.from('crypto_audit_log').insert({
           event_type: 'deposit_sweep_failed',
-          user_id: deposit.user_id,
-          entity_type: 'deposit_address',
-          entity_id: deposit.id,
+          user_id: user.id,
+          entity_type: 'user',
+          entity_id: user.id,
           details: {
-            deposit_address: deposit.deposit_address,
+            deposit_address: user.crypto_deposit_address,
             error: result.error,
           },
         });
@@ -288,25 +280,25 @@ export async function sweepAllPendingDeposits(limit: number = 50): Promise<Sweep
 }
 
 /**
- * Sweep a specific deposit by ID (for admin manual trigger)
+ * Sweep a specific user's deposit by user ID (for admin manual trigger)
  */
-export async function sweepDepositById(depositAddressId: string): Promise<SweepResult> {
+export async function sweepDepositById(userId: string): Promise<SweepResult> {
   const supabase = createServiceRoleClient();
 
-  // Get deposit details
-  const { data: deposit, error } = await supabase
-    .from('deposit_addresses')
-    .select('id, deposit_address, derivation_index, user_id')
-    .eq('id', depositAddressId)
+  // Get user's deposit details
+  const { data: user, error } = await supabase
+    .from('users')
+    .select('id, crypto_deposit_address, crypto_derivation_index')
+    .eq('id', userId)
     .single();
 
-  if (error || !deposit) {
+  if (error || !user || !user.crypto_deposit_address || user.crypto_derivation_index === null) {
     return {
-      depositAddressId,
+      userId,
       depositAddress: '',
       amount: 0,
       success: false,
-      error: 'Deposit address not found',
+      error: 'User deposit address not found',
     };
   }
 
@@ -314,8 +306,8 @@ export async function sweepDepositById(depositAddressId: string): Promise<SweepR
   const masterXprv = await getMasterXprv();
   if (!masterXprv) {
     return {
-      depositAddressId,
-      depositAddress: deposit.deposit_address,
+      userId,
+      depositAddress: user.crypto_deposit_address,
       amount: 0,
       success: false,
       error: 'Master wallet xprv not configured',
@@ -326,18 +318,18 @@ export async function sweepDepositById(depositAddressId: string): Promise<SweepR
   const treasuryAddress = await getTreasurySetting('treasury_wallet_address');
   if (!treasuryAddress) {
     return {
-      depositAddressId,
-      depositAddress: deposit.deposit_address,
+      userId,
+      depositAddress: user.crypto_deposit_address,
       amount: 0,
       success: false,
       error: 'Treasury wallet address not configured',
     };
   }
 
-  return sweepDeposit(
-    deposit.id,
-    deposit.deposit_address,
-    deposit.derivation_index,
+  return sweepUserDeposit(
+    user.id,
+    user.crypto_deposit_address,
+    user.crypto_derivation_index,
     treasuryAddress,
     masterXprv
   );

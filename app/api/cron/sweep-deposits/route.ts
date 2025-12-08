@@ -1,6 +1,6 @@
 /**
  * Sweep Deposits Cron Job
- * Consolidates USDC from deposit addresses to treasury wallet
+ * Consolidates USDC from user deposit addresses to treasury wallet
  * Run frequency: Daily or on-demand via admin trigger
  */
 
@@ -10,7 +10,7 @@ import {
   sweepAllPendingDeposits,
   getMasterXprv,
   fundDepositForSweep,
-  getDepositsToSweep,
+  getUsersToSweep,
 } from '@/lib/treasury/sweep-service';
 import { getTreasurySetting } from '@/lib/treasury/treasury-service';
 import { polygonUSDCClient } from '@/lib/polygon/usdc-client';
@@ -20,7 +20,7 @@ export const maxDuration = 300; // 5 minutes for batch processing
 
 /**
  * Handle status request for admin UI
- * Returns sweep configuration status, pending deposits, and last sweep info
+ * Returns sweep configuration status, users with deposit addresses, and last sweep info
  */
 async function handleStatusRequest() {
   const supabase = createServiceRoleClient();
@@ -30,23 +30,23 @@ async function handleStatusRequest() {
   const treasuryAddress = await getTreasurySetting('treasury_wallet_address');
   const configured = !!(masterXprv && treasuryAddress);
 
-  // Get pending deposits
-  const depositsToSweep = await getDepositsToSweep(100);
+  // Get users with deposit addresses
+  const usersToSweep = await getUsersToSweep(100);
 
-  // Get USDC balances for pending deposits
+  // Get USDC balances for users
   const pendingDeposits = await Promise.all(
-    depositsToSweep.slice(0, 20).map(async (deposit) => {
+    usersToSweep.slice(0, 20).map(async (user) => {
       try {
-        const balanceResult = await polygonUSDCClient.getBalance(deposit.deposit_address);
+        const balanceResult = await polygonUSDCClient.getBalance(user.crypto_deposit_address);
         return {
-          id: deposit.id,
-          address: deposit.deposit_address,
+          id: user.id,
+          address: user.crypto_deposit_address,
           usdcBalance: balanceResult.success ? parseFloat(balanceResult.data?.balance || '0') : 0,
         };
       } catch {
         return {
-          id: deposit.id,
-          address: deposit.deposit_address,
+          id: user.id,
+          address: user.crypto_deposit_address,
           usdcBalance: 0,
         };
       }
@@ -60,21 +60,10 @@ async function handleStatusRequest() {
     .eq('event_type', 'deposit_swept')
     .order('created_at', { ascending: false })
     .limit(1)
-    .single();
-
-  // Get sweep summary from recent sweeps
-  const { data: recentSweeps } = await supabase
-    .from('deposit_addresses')
-    .select('swept_at')
-    .not('swept_at', 'is', null)
-    .order('swept_at', { ascending: false })
-    .limit(100);
+    .maybeSingle();
 
   const lastSweep = lastSweepLog ? {
     date: lastSweepLog.created_at,
-    sweptCount: recentSweeps?.filter(s =>
-      new Date(s.swept_at).toDateString() === new Date(lastSweepLog.created_at).toDateString()
-    ).length || 1,
     totalUsdc: (lastSweepLog.details as { amount_usdc?: number })?.amount_usdc || 0,
   } : null;
 
@@ -82,7 +71,7 @@ async function handleStatusRequest() {
     success: true,
     configured,
     pendingDeposits,
-    totalPending: depositsToSweep.length,
+    totalPending: usersToSweep.length,
     lastSweep,
   });
 }
@@ -137,13 +126,13 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Check for deposits to sweep first
-    const depositsToSweep = await getDepositsToSweep(100);
-    if (depositsToSweep.length === 0) {
-      console.log('[SweepDeposits] No deposits pending sweep');
+    // Check for users with deposit addresses
+    const usersToSweep = await getUsersToSweep(100);
+    if (usersToSweep.length === 0) {
+      console.log('[SweepDeposits] No users with deposit addresses');
       return NextResponse.json({
         success: true,
-        message: 'No deposits to sweep',
+        message: 'No users to sweep',
         results: {
           totalProcessed: 0,
           successful: 0,
@@ -154,24 +143,24 @@ export async function GET(req: NextRequest) {
     }
 
     // Pre-fund addresses that need gas
-    console.log(`[SweepDeposits] Checking gas for ${depositsToSweep.length} addresses`);
+    console.log(`[SweepDeposits] Checking gas for ${usersToSweep.length} addresses`);
     let fundedCount = 0;
 
-    for (const deposit of depositsToSweep) {
+    for (const user of usersToSweep) {
       // Check POL balance (Polygon's native token, formerly MATIC)
-      const polResult = await polygonUSDCClient.getMATICBalance(deposit.deposit_address);
+      const polResult = await polygonUSDCClient.getMATICBalance(user.crypto_deposit_address);
       const polBalance = parseFloat(polResult.data || '0');
 
       // Fund if less than 0.02 POL (need ~0.01 for transfer)
       if (polBalance < 0.02) {
-        console.log(`[SweepDeposits] Funding ${deposit.deposit_address} (has ${polBalance} POL)`);
-        const fundResult = await fundDepositForSweep(deposit.deposit_address, '0.05');
+        console.log(`[SweepDeposits] Funding ${user.crypto_deposit_address} (has ${polBalance} POL)`);
+        const fundResult = await fundDepositForSweep(user.crypto_deposit_address, '0.05');
         if (fundResult.success) {
           fundedCount++;
           // Wait a bit for the funding to confirm
           await new Promise((resolve) => setTimeout(resolve, 2000));
         } else {
-          console.error(`[SweepDeposits] Failed to fund ${deposit.deposit_address}:`, fundResult.error);
+          console.error(`[SweepDeposits] Failed to fund ${user.crypto_deposit_address}:`, fundResult.error);
         }
       }
     }
@@ -255,20 +244,21 @@ export async function POST(req: NextRequest) {
 
     // Parse optional parameters
     const body = await req.json().catch(() => ({}));
-    const { depositAddressId, limit = 50, autoFund = true } = body;
+    const { userId, limit = 50, autoFund = true } = body;
 
-    // If specific deposit ID provided, sweep just that one
-    if (depositAddressId) {
+    // If specific user ID provided, sweep just that user
+    if (userId) {
       const { sweepDepositById } = await import('@/lib/treasury/sweep-service');
-      const result = await sweepDepositById(depositAddressId);
+      const result = await sweepDepositById(userId);
 
       // Log audit event
       const supabase = createServiceRoleClient();
       await supabase.from('crypto_audit_log').insert({
         event_type: result.success ? 'manual_sweep_success' : 'manual_sweep_failed',
         admin_id: authUser.id,
-        entity_type: 'deposit_address',
-        entity_id: depositAddressId,
+        user_id: userId,
+        entity_type: 'user',
+        entity_id: userId,
         details: {
           trigger: 'admin_manual',
           amount_usdc: result.amount,
@@ -283,7 +273,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Otherwise sweep all pending
+    // Otherwise sweep all users with deposit addresses
     // Check configuration first
     const masterXprv = await getMasterXprv();
     if (!masterXprv) {
@@ -301,12 +291,12 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Get deposits to sweep
-    const depositsToSweep = await getDepositsToSweep(limit);
-    if (depositsToSweep.length === 0) {
+    // Get users to sweep
+    const usersToSweep = await getUsersToSweep(limit);
+    if (usersToSweep.length === 0) {
       return NextResponse.json({
         success: true,
-        message: 'No deposits pending sweep',
+        message: 'No users with deposit addresses to sweep',
         results: {
           totalProcessed: 0,
           successful: 0,
@@ -319,13 +309,13 @@ export async function POST(req: NextRequest) {
     // Pre-fund addresses if requested
     let fundedCount = 0;
     if (autoFund) {
-      for (const deposit of depositsToSweep) {
+      for (const user of usersToSweep) {
         // Check POL balance (Polygon's native token, formerly MATIC)
-        const polResult = await polygonUSDCClient.getMATICBalance(deposit.deposit_address);
+        const polResult = await polygonUSDCClient.getMATICBalance(user.crypto_deposit_address);
         const polBalance = parseFloat(polResult.data || '0');
 
         if (polBalance < 0.02) {
-          const fundResult = await fundDepositForSweep(deposit.deposit_address, '0.05');
+          const fundResult = await fundDepositForSweep(user.crypto_deposit_address, '0.05');
           if (fundResult.success) {
             fundedCount++;
             await new Promise((resolve) => setTimeout(resolve, 2000));

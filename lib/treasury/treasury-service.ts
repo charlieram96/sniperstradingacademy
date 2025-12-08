@@ -331,18 +331,8 @@ export async function getOrCreateUserDepositAddress(
       return { success: false, error: 'Failed to save deposit address' };
     }
 
-    // Also create a record in deposit_addresses for sweep tracking
-    await supabase
-      .from('deposit_addresses')
-      .insert({
-        user_id: userId,
-        deposit_address: address,
-        derivation_index: derivationIndex,
-        derivation_path: derivationPath,
-        purpose: 'permanent',
-        status: 'active',
-        expected_amount: 0, // Not used for permanent addresses
-      });
+    // Note: We no longer use deposit_addresses table - permanent addresses are stored on users table
+    // The sweep service reads directly from users.crypto_deposit_address
 
     // Log audit event
     await supabase.from('crypto_audit_log').insert({

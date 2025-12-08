@@ -104,7 +104,7 @@ export async function GET(req: NextRequest) {
               status: p.status === 'succeeded' ? 'completed' : p.status,
               userName: userData?.name || null,
               userEmail: userData?.email || '',
-              txHash: null, // TODO: Link to deposit_addresses if available
+              txHash: null, // TODO: Link to usdc_transactions.polygon_tx_hash if available
               createdAt: p.created_at,
               paidAt: null,
             });

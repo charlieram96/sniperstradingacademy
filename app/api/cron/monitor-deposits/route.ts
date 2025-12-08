@@ -11,7 +11,6 @@ import { createServiceRoleClient } from '@/lib/supabase/server';
 import {
   getUserPaymentSchedule,
   weiToUsdc,
-  usdcToWei,
 } from '@/lib/treasury/treasury-service';
 import { getUsdcBalance, findDepositTransactionHash } from '@/lib/polygon/event-scanner';
 import { PAYMENT_AMOUNTS } from '@/lib/coinbase/wallet-types';
@@ -300,20 +299,6 @@ async function checkUserDeposit(
         payment_type: paymentType,
       },
     });
-
-    // Update deposit_addresses record if exists (for sweep tracking)
-    await supabase
-      .from('deposit_addresses')
-      .update({
-        status: 'used',
-        received_amount: Number(usdcToWei(currentBalanceUsdc)),
-        received_tx_hash: txHash,
-        received_at: new Date().toISOString(),
-        is_overpaid: isOverpaid,
-        overpayment_amount: isOverpaid ? Number(usdcToWei(overpaymentAmount)) : null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('deposit_address', depositAddress);
 
     // Process the payment
     if (paymentType === 'initial_unlock') {
