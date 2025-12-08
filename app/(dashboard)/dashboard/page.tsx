@@ -40,7 +40,7 @@ async function getDashboardData(userId: string) {
 
   // Determine subscription status from user's is_active field
   // (subscriptions table is deprecated - using users.is_active instead)
-  const subscription = user?.is_active ? { id: 'active', status: 'active' } : null
+  const subscription = user?.is_active ? { id: 'active', status: 'active' } : undefined
 
   // Get network stats from new API
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
