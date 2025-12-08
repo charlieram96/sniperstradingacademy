@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       errors: [] as string[],
     };
 
-    // Process each transfer
+    // Process each transfer 
     for (const transfer of transfers) {
       results.processed++;
 
