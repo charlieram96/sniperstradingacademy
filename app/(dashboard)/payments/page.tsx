@@ -30,6 +30,105 @@ import { UnifiedTransactionHistory } from "@/components/crypto/UnifiedTransactio
 import PayoutWalletSetup from "@/components/crypto/PayoutWalletSetup"
 import QRCode from "qrcode"
 
+// Animated Checkmark Component for payment success
+function AnimatedCheckmark() {
+  return (
+    <div className="relative w-24 h-24">
+      <svg className="w-24 h-24" viewBox="0 0 100 100">
+        {/* Circle */}
+        <circle
+          cx="50"
+          cy="50"
+          r="45"
+          fill="none"
+          stroke="#22c55e"
+          strokeWidth="4"
+          strokeLinecap="round"
+          className="animate-[drawCircle_0.6s_ease-out_forwards]"
+          style={{
+            strokeDasharray: 283,
+            strokeDashoffset: 283,
+          }}
+        />
+        {/* Checkmark */}
+        <path
+          d="M30 50 L45 65 L70 35"
+          fill="none"
+          stroke="#22c55e"
+          strokeWidth="5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="animate-[drawCheck_0.4s_ease-out_0.5s_forwards]"
+          style={{
+            strokeDasharray: 60,
+            strokeDashoffset: 60,
+          }}
+        />
+      </svg>
+    </div>
+  )
+}
+
+// CSS for flip card and checkmark animations (injected via style tag)
+const flipCardStyles = `
+  @keyframes drawCircle {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes drawCheck {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .flip-card {
+    perspective: 1000px;
+  }
+
+  .flip-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+  }
+
+  .flip-card-inner.flipped {
+    transform: rotateY(180deg);
+  }
+
+  .flip-card-front,
+  .flip-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  .flip-card-back {
+    transform: rotateY(180deg);
+  }
+
+  .thank-you-text {
+    animation: fadeInUp 0.5s ease-out 0.8s forwards;
+    opacity: 0;
+  }
+`
+
 interface PaymentInfo {
   depositAddress: string
   amountUSDC: string
@@ -607,21 +706,11 @@ function PaymentsContent() {
                 </p>
               </div>
 
-              {/* Funds Detected Status */}
-              {paymentStatus?.fundsDetected && (
-                <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-900">
-                  <Loader2 className="h-5 w-5 text-green-600 animate-spin" />
-                  <div>
-                    <p className="font-medium text-green-900 dark:text-green-200">Payment Detected!</p>
-                    <p className="text-sm text-green-700 dark:text-green-300">
-                      Processing your payment now...
-                    </p>
-                  </div>
-                </div>
-              )}
+              {/* Inject flip card styles */}
+              <style dangerouslySetInnerHTML={{ __html: flipCardStyles }} />
 
               {/* Partial Payment Status */}
-              {paymentStatus?.status === 'partial_payment' && paymentStatus.partialAmount && (
+              {!paymentStatus?.fundsDetected && paymentStatus?.status === 'partial_payment' && paymentStatus.partialAmount && (
                 <div className="flex items-start gap-3 p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-900">
                   <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
@@ -636,16 +725,39 @@ function PaymentsContent() {
                 </div>
               )}
 
-              {/* QR Code and Address */}
-              {!paymentStatus?.fundsDetected && (
-                <>
-                  <div className="flex flex-col items-center gap-4">
-                    {qrCodeUrl && (
-                      <div className="p-4 bg-white rounded-lg border">
-                        <img src={qrCodeUrl} alt="Payment QR Code" className="w-48 h-48" />
+              {/* 3D Flip Card - QR Code / Thank You */}
+              <div className="flex flex-col items-center gap-4">
+                <div className="flip-card w-56 h-56">
+                  <div className={`flip-card-inner w-full h-full ${paymentStatus?.fundsDetected ? 'flipped' : ''}`}>
+                    {/* Front - QR Code */}
+                    <div className="flip-card-front">
+                      <div className="w-full h-full p-4 bg-white rounded-xl border-2 border-gray-100 shadow-lg flex items-center justify-center">
+                        {qrCodeUrl ? (
+                          <img src={qrCodeUrl} alt="Payment QR Code" className="w-48 h-48" />
+                        ) : (
+                          <div className="w-48 h-48 bg-gray-100 rounded animate-pulse" />
+                        )}
                       </div>
-                    )}
+                    </div>
 
+                    {/* Back - Thank You */}
+                    <div className="flip-card-back">
+                      <div className="w-full h-full p-6 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950 dark:to-emerald-900 rounded-xl border-2 border-green-200 dark:border-green-800 shadow-lg flex flex-col items-center justify-center">
+                        <AnimatedCheckmark />
+                        <div className="thank-you-text text-center mt-4">
+                          <p className="text-xl font-bold text-green-700 dark:text-green-300">Thank you!</p>
+                          <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                            Your payment has been received
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Address and Amount - Only show when not detected */}
+                {!paymentStatus?.fundsDetected && (
+                  <>
                     <div className="text-center w-full">
                       <p className="text-sm text-muted-foreground mb-2">
                         Send USDC (Polygon) to this address:
@@ -668,38 +780,46 @@ function PaymentsContent() {
                         </Button>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Amount Info */}
-                  <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Amount</span>
-                      <span className="text-xl font-bold">${currentAmount} USDC</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Send this amount on the Polygon network
-                    </p>
-                  </div>
-
-                  {/* Balance Info */}
-                  {paymentStatus && paymentStatus.walletBalance !== '0' && (
-                    <div className="p-3 bg-muted rounded-lg">
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground">Current Balance</span>
-                        <span className="font-medium">${paymentStatus.walletBalance} USDC</span>
+                    {/* Amount Info */}
+                    <div className="w-full p-4 bg-primary/5 rounded-lg border border-primary/20">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Amount</span>
+                        <span className="text-xl font-bold">${currentAmount} USDC</span>
                       </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Send this amount on the Polygon network
+                      </p>
                     </div>
-                  )}
 
-                  {/* Important note */}
-                  <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-900">
-                    <p className="text-xs text-amber-800 dark:text-amber-200">
-                      <strong>Important:</strong> Make sure you are sending USDC on the Polygon network.
-                      Sending on other networks (Ethereum, etc.) may result in loss of funds.
-                    </p>
+                    {/* Balance Info */}
+                    {paymentStatus && paymentStatus.walletBalance !== '0' && (
+                      <div className="w-full p-3 bg-muted rounded-lg">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-muted-foreground">Current Balance</span>
+                          <span className="font-medium">${paymentStatus.walletBalance} USDC</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Important note */}
+                    <div className="w-full p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-900">
+                      <p className="text-xs text-amber-800 dark:text-amber-200">
+                        <strong>Important:</strong> Make sure you are sending USDC on the Polygon network.
+                        Sending on other networks (Ethereum, etc.) may result in loss of funds.
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {/* Processing message when payment detected */}
+                {paymentStatus?.fundsDetected && (
+                  <div className="thank-you-text flex items-center gap-2 text-green-600 dark:text-green-400">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">Processing your payment...</span>
                   </div>
-                </>
-              )}
+                )}
+              </div>
 
               {/* Manual Check Button */}
               <Button

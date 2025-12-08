@@ -335,7 +335,7 @@ export interface WalletServiceError {
 
 export const PAYMENT_AMOUNTS = {
   INITIAL_UNLOCK: '499.00',
-  MONTHLY_SUBSCRIPTION: '3.00',
+  MONTHLY_SUBSCRIPTION: '199.00',
   WEEKLY_SUBSCRIPTION: '49.75',
   DIRECT_BONUS: '249.50', // 50% of initial unlock
 } as const;
