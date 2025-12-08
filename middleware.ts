@@ -47,7 +47,8 @@ export async function middleware(req: NextRequest) {
                       req.nextUrl.pathname.startsWith("/group") ||
                       req.nextUrl.pathname.startsWith("/payments") ||
                       req.nextUrl.pathname.startsWith("/referrals") ||
-                      req.nextUrl.pathname.startsWith("/settings")
+                      req.nextUrl.pathname.startsWith("/settings") ||
+                      req.nextUrl.pathname.startsWith("/notifications")
 
   // Redirect to login if not authenticated
   if (isDashboard && !isLoggedIn) {
@@ -59,19 +60,24 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/mfa-verify", req.url))
   }
 
-  // Check if user is active (paid initial fee or has bypass)
+  // Check if user is active (paid initial fee, has bypass, AND is_active=true)
   if (isLoggedIn && isDashboard && !isMFAPage) {
     const { data: userData } = await supabase
       .from("users")
-      .select("initial_payment_completed, bypass_initial_payment, role")
+      .select("initial_payment_completed, bypass_initial_payment, bypass_subscription, is_active, role")
       .eq("id", user.id)
       .single()
 
-    const isActive = userData?.initial_payment_completed || userData?.bypass_initial_payment
+    // User is active if:
+    // 1. Has completed initial payment OR has bypass_initial_payment
+    // 2. AND (is_active is true OR has bypass_subscription)
+    const hasInitialAccess = userData?.initial_payment_completed || userData?.bypass_initial_payment
+    const hasSubscriptionAccess = userData?.is_active !== false || userData?.bypass_subscription
+    const isActive = hasInitialAccess && hasSubscriptionAccess
     const isAdmin = userData?.role === "admin" || userData?.role === "superadmin"
 
     // Admins bypass activation check
-    // Inactive users can only access /payments, /settings, and /mfa-verify
+    // Inactive users can only access /payments and /settings
     if (!isActive && !isAdmin && !isPaymentsPage && !isSettingsPage) {
       return NextResponse.redirect(new URL("/payments", req.url))
     }

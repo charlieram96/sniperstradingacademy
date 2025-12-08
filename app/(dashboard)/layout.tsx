@@ -45,14 +45,21 @@ export default async function DashboardLayout({
   // Get user role and activation status from database
   const { data: userData } = await supabase
     .from("users")
-    .select("role, initial_payment_completed, bypass_initial_payment, bypass_subscription, last_payment_date, payout_wallet_address")
+    .select("role, initial_payment_completed, bypass_initial_payment, bypass_subscription, is_active, last_payment_date, payout_wallet_address")
     .eq("id", user.id)
     .single()
 
   const userRole = userData?.role
   const isAdminOrSuper = userRole === "admin" || userRole === "superadmin"
   const isSuperAdmin = userRole === "superadmin"
-  const isActive = userData?.initial_payment_completed || userData?.bypass_initial_payment || isAdminOrSuper
+
+  // User is active if:
+  // 1. Has completed initial payment OR has bypass_initial_payment
+  // 2. AND (is_active is true OR has bypass_subscription)
+  // 3. OR is admin/superadmin
+  const hasInitialAccess = userData?.initial_payment_completed || userData?.bypass_initial_payment
+  const hasSubscriptionAccess = userData?.is_active !== false || userData?.bypass_subscription
+  const isActive = (hasInitialAccess && hasSubscriptionAccess) || isAdminOrSuper
 
   return (
     <div className="min-h-screen bg-background">
@@ -128,6 +135,7 @@ export default async function DashboardLayout({
           <div className="mx-4 my-3 border-t border-sidebar-border"></div>
           <NavigationLink
             href="/notifications"
+            isLocked={!isActive}
             className="flex items-center gap-[10px] px-4 py-[10px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
           >
             <Bell className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
