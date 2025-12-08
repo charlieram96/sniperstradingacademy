@@ -278,7 +278,7 @@ function PaymentsContent() {
 
   // Determine if user needs to pay
   const needsInitialPayment = !initialPaymentCompleted && !bypassInitialPayment
-  const needsSubscription = (initialPaymentCompleted || bypassInitialPayment) && !isActive && !bypassSubscription
+  const needsSubscription = (initialPaymentCompleted || bypassInitialPayment) && !bypassSubscription
 
   if (loading) {
     return (
