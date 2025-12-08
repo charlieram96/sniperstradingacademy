@@ -277,15 +277,8 @@ async function checkUserDeposit(
         amount: currentBalanceUsdc.toFixed(2),
         user_id: user.id,
         status: 'confirmed',
-        tx_hash: txHash,
+        polygon_tx_hash: txHash,
         confirmed_at: new Date().toISOString(),
-        metadata: {
-          source: 'monitor_cron',
-          payment_type: paymentType,
-          expected_amount: expectedAmountUsdc,
-          is_overpaid: isOverpaid,
-          overpayment_amount: overpaymentAmount,
-        },
       })
       .select()
       .single();
@@ -440,30 +433,35 @@ async function processSubscriptionPayment(
   isMonthly: boolean,
   usdcTxId?: string
 ) {
-  // Update user active status
+  // Calculate next period end
+  const daysToAdd = isMonthly ? 30 : 7;
+  const nextPeriodEnd = new Date();
+  nextPeriodEnd.setDate(nextPeriodEnd.getDate() + daysToAdd);
+
+  // Update user active status and last payment date
   await supabase
     .from('users')
-    .update({ is_active: true })
+    .update({
+      is_active: true,
+      last_payment_date: new Date().toISOString(),
+      payment_schedule: isMonthly ? 'monthly' : 'weekly',
+    })
     .eq('id', userId);
 
-  // Calculate next billing date
-  const daysToAdd = isMonthly ? 30 : 7;
-  const nextBillingDate = new Date();
-  nextBillingDate.setDate(nextBillingDate.getDate() + daysToAdd);
-
-  // Update subscription
+  // Update or create subscription record
   const { data: existingSub } = await supabase
     .from('subscriptions')
     .select('id')
     .eq('user_id', userId)
     .eq('status', 'active')
-    .single();
+    .maybeSingle();
 
   if (existingSub) {
     await supabase
       .from('subscriptions')
       .update({
-        next_billing_date: nextBillingDate.toISOString(),
+        current_period_end: nextPeriodEnd.toISOString(),
+        amount: parseFloat(amountUsdc),
         updated_at: new Date().toISOString(),
       })
       .eq('id', existingSub.id);
@@ -472,9 +470,9 @@ async function processSubscriptionPayment(
       .from('subscriptions')
       .insert({
         user_id: userId,
-        payment_schedule: isMonthly ? 'monthly' : 'weekly',
         status: 'active',
-        next_billing_date: nextBillingDate.toISOString(),
+        amount: parseFloat(amountUsdc),
+        current_period_end: nextPeriodEnd.toISOString(),
       });
   }
 
