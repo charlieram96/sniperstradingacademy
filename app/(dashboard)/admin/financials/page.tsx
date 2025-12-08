@@ -562,10 +562,12 @@ export default function AdminFinancialsPage() {
     setMonthlyPreview(null)
     setMonthlyProcessResult(null)
     try {
+      const requestBody = { dryRun: true }
+      console.log('[MonthlyProcessing] PREVIEW - Sending request with body:', JSON.stringify(requestBody))
       const response = await fetch("/api/admin/process-monthly-volumes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dryRun: true }),
+        body: JSON.stringify(requestBody),
       })
       const data = await response.json()
 
@@ -584,11 +586,14 @@ export default function AdminFinancialsPage() {
     setMonthlyProcessing(true)
     setMonthlyProcessResult(null)
     try {
+      const requestBody = { dryRun: false }
+      console.log('[MonthlyProcessing] Sending request with body:', JSON.stringify(requestBody))
       const response = await fetch("/api/admin/process-monthly-volumes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dryRun: false }),
+        body: JSON.stringify(requestBody),
       })
+      console.log('[MonthlyProcessing] Response status:', response.status)
       const data = await response.json()
 
       if (data.success) {

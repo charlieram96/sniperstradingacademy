@@ -50,14 +50,18 @@ export async function POST(req: NextRequest) {
 
     // Parse request body for options
     let options: { dryRun?: boolean; monthPeriod?: string } = {};
+    let rawBody: unknown = null;
     try {
-      const body = await req.json();
-      options = body || {};
-    } catch {
+      rawBody = await req.json();
+      console.log('[AdminProcessMonthlyVolumes] Raw body received:', JSON.stringify(rawBody));
+      options = (rawBody as typeof options) || {};
+    } catch (parseError) {
       // No body or invalid JSON - use defaults
+      console.log('[AdminProcessMonthlyVolumes] Body parse error or empty:', parseError);
     }
 
     const { dryRun = false } = options;
+    console.log('[AdminProcessMonthlyVolumes] Final dryRun value:', dryRun, '| type:', typeof dryRun, '| options:', JSON.stringify(options));
 
     // Get the month period for logging (previous month since we're processing at start of new month)
     const now = new Date();
