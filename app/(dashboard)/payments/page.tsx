@@ -116,13 +116,13 @@ function PaymentsContent() {
         setIsActive(userData.is_active || false)
       }
 
-      // Get subscription
+      // Get subscription (use maybeSingle to avoid 406 when no subscription exists)
       const { data: sub } = await supabase
         .from("subscriptions")
         .select("*")
         .eq("user_id", userId)
         .eq("status", "active")
-        .single()
+        .maybeSingle()
 
       if (sub) {
         setSubscription(sub)

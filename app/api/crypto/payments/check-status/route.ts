@@ -64,20 +64,19 @@ export async function GET() {
     // Determine what the user needs to pay
     const needsInitialPayment = !userData.initial_payment_completed && !userData.bypass_initial_payment;
 
-    let paymentType: 'initial_unlock' | 'subscription' | 'none';
-    let requiredAmount: string | null = null;
+    let paymentType: 'initial_unlock' | 'subscription';
+    let requiredAmount: string;
 
     if (needsInitialPayment) {
       paymentType = 'initial_unlock';
       requiredAmount = PAYMENT_AMOUNTS.INITIAL_UNLOCK;
-    } else if (!userData.is_active) {
+    } else {
+      // Users can always pay subscription regardless of active status
       paymentType = 'subscription';
       const schedule = await getUserPaymentSchedule(user.id);
       requiredAmount = schedule === 'weekly'
         ? PAYMENT_AMOUNTS.WEEKLY_SUBSCRIPTION
         : PAYMENT_AMOUNTS.MONTHLY_SUBSCRIPTION;
-    } else {
-      paymentType = 'none';
     }
 
     // Check wallet balance
@@ -87,7 +86,7 @@ export async function GET() {
       console.error('[CheckStatus] Failed to check balance:', balanceResponse.error);
       return NextResponse.json({
         success: true,
-        status: paymentType === 'none' ? 'paid' : 'awaiting_payment',
+        status: 'awaiting_payment',
         depositAddress: userData.crypto_deposit_address,
         walletBalance: '0',
         requiredAmount,
@@ -98,16 +97,14 @@ export async function GET() {
     }
 
     const currentBalance = parseFloat(balanceResponse.data.balance);
-    const requiredAmountNum = requiredAmount ? parseFloat(requiredAmount) : 0;
+    const requiredAmountNum = parseFloat(requiredAmount);
 
     // Check if sufficient funds detected (with 1% tolerance)
     const fundsDetected = requiredAmountNum > 0 && currentBalance >= (requiredAmountNum * 0.99);
 
     // Determine status
     let status: string;
-    if (paymentType === 'none') {
-      status = 'paid';
-    } else if (fundsDetected) {
+    if (fundsDetected) {
       status = 'funds_detected';
     } else if (currentBalance > 0 && currentBalance < requiredAmountNum) {
       status = 'partial_payment';
