@@ -9,8 +9,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import {
-  getUserPaymentSchedule,
   weiToUsdc,
+  calculateNextDueDate,
+  getInitialAnchorDate,
 } from '@/lib/treasury/treasury-service';
 import { getUsdcBalance, findDepositTransactionHash } from '@/lib/polygon/event-scanner';
 import { PAYMENT_AMOUNTS } from '@/lib/coinbase/wallet-types';
@@ -84,7 +85,10 @@ async function runMonitor(req: NextRequest) {
         crypto_derivation_index,
         initial_payment_completed,
         bypass_initial_payment,
-        is_active
+        is_active,
+        payment_schedule,
+        previous_payment_due_date,
+        next_payment_due_date
       `)
       .not('crypto_deposit_address', 'is', null)
       .limit(MAX_USERS_PER_RUN);
@@ -141,6 +145,7 @@ async function runMonitor(req: NextRequest) {
 
 /**
  * Check a single user's deposit address for payments
+ * Uses period-based logic: sum transactions since previous_payment_due_date
  */
 async function checkUserDeposit(
   supabase: ReturnType<typeof createServiceRoleClient>,
@@ -152,6 +157,9 @@ async function checkUserDeposit(
     initial_payment_completed: boolean;
     bypass_initial_payment: boolean;
     is_active: boolean;
+    payment_schedule: string | null;
+    previous_payment_due_date: string | null;
+    next_payment_due_date: string | null;
   },
   results: MonitorResults
 ) {
@@ -162,93 +170,52 @@ async function checkUserDeposit(
 
   let paymentType: 'initial_unlock' | 'subscription';
   let expectedAmountUsdc: number;
+  const isWeekly = user.payment_schedule === 'weekly';
 
   if (needsInitialPayment) {
     paymentType = 'initial_unlock';
     expectedAmountUsdc = parseFloat(PAYMENT_AMOUNTS.INITIAL_UNLOCK);
   } else {
     paymentType = 'subscription';
-    const schedule = await getUserPaymentSchedule(user.id);
-    expectedAmountUsdc = schedule === 'weekly'
+    expectedAmountUsdc = isWeekly
       ? parseFloat(PAYMENT_AMOUNTS.WEEKLY_SUBSCRIPTION)
       : parseFloat(PAYMENT_AMOUNTS.MONTHLY_SUBSCRIPTION);
   }
 
-  // Get current balance
-  const currentBalanceWei = await getUsdcBalance(depositAddress);
-  const currentBalanceUsdc = weiToUsdc(Number(currentBalanceWei));
+  // PERIOD-BASED LOGIC: Sum transactions since previous_payment_due_date
+  const periodStart = user.previous_payment_due_date || '1970-01-01';
 
-  // Skip if no funds received yet
-  if (currentBalanceUsdc === 0) {
-    return;
-  }
-
-  // Check for duplicate - see if we already processed this
-  const { data: existingTx } = await supabase
+  const { data: periodTxs } = await supabase
     .from('usdc_transactions')
-    .select('id')
-    .eq('to_address', depositAddress)
+    .select('amount, created_at')
     .eq('user_id', user.id)
     .eq('status', 'confirmed')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
+    .eq('transaction_type', 'deposit')
+    .gt('created_at', periodStart);
 
-  if (existingTx) {
-    // Check if balance changed since last transaction
-    const { data: lastTx } = await supabase
-      .from('usdc_transactions')
-      .select('amount')
-      .eq('id', existingTx.id)
-      .single();
+  const paidThisPeriod = periodTxs?.reduce(
+    (sum, tx) => sum + parseFloat(tx.amount),
+    0
+  ) || 0;
 
-    if (lastTx && parseFloat(lastTx.amount) >= currentBalanceUsdc * 0.99) {
-      // Balance hasn't increased significantly, already processed
-      return;
-    }
-  }
-
+  const remaining = expectedAmountUsdc - paidThisPeriod;
   const tolerance = expectedAmountUsdc * 0.01; // 1% tolerance
 
-  console.log(`[MonitorDeposits] User ${user.id}: balance ${currentBalanceUsdc} USDC, expects ${expectedAmountUsdc} USDC (${paymentType})`);
+  console.log(`[MonitorDeposits] User ${user.email}: paid ${paidThisPeriod.toFixed(2)} this period, needs ${expectedAmountUsdc}, remaining ${remaining.toFixed(2)} (${paymentType})`);
 
-  // CASE 1: UNDERPAYMENT - Partial funds but not enough
-  if (currentBalanceUsdc > 0 && currentBalanceUsdc < (expectedAmountUsdc - tolerance)) {
-    console.log(`[MonitorDeposits] Underpayment for ${user.id}: ${currentBalanceUsdc} USDC (expected: ${expectedAmountUsdc})`);
-    results.underpaid++;
-
-    // Log audit event
-    await supabase.from('crypto_audit_log').insert({
-      event_type: 'deposit_underpaid_cron',
-      user_id: user.id,
-      entity_type: 'user',
-      entity_id: user.id,
-      details: {
-        source: 'monitor_cron',
-        deposit_address: depositAddress,
-        expected_usdc: expectedAmountUsdc,
-        received_usdc: currentBalanceUsdc,
-        shortfall_usdc: expectedAmountUsdc - currentBalanceUsdc,
-        payment_type: paymentType,
-      },
-    });
-
-    return;
-  }
-
-  // CASE 2: SUFFICIENT FUNDS (possibly overpaid)
-  if (currentBalanceUsdc >= (expectedAmountUsdc - tolerance)) {
-    console.log(`[MonitorDeposits] Payment detected for user ${user.id}: ${currentBalanceUsdc} USDC`);
-    results.detected++;
-
-    const isOverpaid = currentBalanceUsdc > (expectedAmountUsdc + tolerance);
-    const overpaymentAmount = isOverpaid ? currentBalanceUsdc - expectedAmountUsdc : 0;
-
-    if (isOverpaid) {
-      results.overpaid++;
+  // Skip if already paid for this period
+  if (remaining <= tolerance) {
+    // Check if we already updated their due dates
+    if (user.next_payment_due_date && new Date(user.next_payment_due_date) > new Date()) {
+      // Already processed for this period
+      return;
     }
 
-    // Find transaction hash
+    // Period is paid but due dates not updated - this is a completed payment!
+    console.log(`[MonitorDeposits] Payment complete for ${user.email}, updating due dates`);
+    results.detected++;
+
+    // Find the most recent transaction hash for logging
     let txHash = '';
     try {
       const txEvent = await findDepositTransactionHash(depositAddress);
@@ -258,22 +225,6 @@ async function checkUserDeposit(
     } catch (err) {
       console.error('[MonitorDeposits] Failed to find tx hash:', err);
     }
-
-    // Create USDC transaction record
-    const { data: txRecord } = await supabase
-      .from('usdc_transactions')
-      .insert({
-        transaction_type: 'deposit',
-        from_address: 'external',
-        to_address: depositAddress,
-        amount: currentBalanceUsdc.toFixed(2),
-        user_id: user.id,
-        status: 'confirmed',
-        polygon_tx_hash: txHash,
-        confirmed_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
 
     // Log audit event
     await supabase.from('crypto_audit_log').insert({
@@ -286,45 +237,142 @@ async function checkUserDeposit(
         deposit_address: depositAddress,
         tx_hash: txHash,
         expected_usdc: expectedAmountUsdc,
-        received_usdc: currentBalanceUsdc,
-        is_overpaid: isOverpaid,
-        overpayment_amount: overpaymentAmount,
+        paid_this_period: paidThisPeriod,
         payment_type: paymentType,
       },
     });
 
     // Process the payment
     if (paymentType === 'initial_unlock') {
-      await processInitialUnlock(supabase, user.id, currentBalanceUsdc.toFixed(2), txRecord?.id);
+      await processInitialUnlock(supabase, user.id, paidThisPeriod.toFixed(2));
     } else {
-      const schedule = await getUserPaymentSchedule(user.id);
-      const isMonthly = schedule === 'monthly';
-      await processSubscriptionPayment(supabase, user.id, currentBalanceUsdc.toFixed(2), isMonthly, txRecord?.id);
+      // Roll forward from current next_payment_due_date
+      const currentNextDueDate = user.next_payment_due_date
+        ? new Date(user.next_payment_due_date)
+        : new Date(); // Fallback if not set
+      await processSubscriptionPayment(supabase, user.id, paidThisPeriod.toFixed(2), !isWeekly, currentNextDueDate);
     }
 
-    // Handle overpayment credit
-    if (isOverpaid && overpaymentAmount > 0) {
-      await supabase
-        .from('commissions')
-        .insert({
-          referrer_id: user.id,
-          referred_id: user.id,
-          commission_type: 'overpayment_credit',
-          amount: overpaymentAmount,
-          net_amount_usdc: overpaymentAmount,
-          status: 'pending',
-          description: `Overpayment credit from ${paymentType} payment (via cron)`,
-        });
+    return;
+  }
 
-      console.log(`[MonitorDeposits] Created overpayment credit of $${overpaymentAmount.toFixed(2)}`);
+  // Check if there are any NEW unrecorded transactions on-chain
+  // This catches new deposits that haven't been recorded in usdc_transactions yet
+  const currentBalanceWei = await getUsdcBalance(depositAddress);
+  const currentBalanceUsdc = weiToUsdc(Number(currentBalanceWei));
+
+  if (currentBalanceUsdc === 0) {
+    return;
+  }
+
+  // Sum all recorded deposits for this address (lifetime, for balance comparison)
+  const { data: allRecordedTxs } = await supabase
+    .from('usdc_transactions')
+    .select('amount')
+    .eq('to_address', depositAddress)
+    .eq('user_id', user.id)
+    .eq('status', 'confirmed')
+    .eq('transaction_type', 'deposit');
+
+  const totalRecorded = allRecordedTxs?.reduce(
+    (sum, tx) => sum + parseFloat(tx.amount),
+    0
+  ) || 0;
+
+  const unrecordedFunds = currentBalanceUsdc - totalRecorded;
+
+  // If there are unrecorded funds, record them as a new transaction
+  if (unrecordedFunds >= 1) { // At least $1 unrecorded
+    console.log(`[MonitorDeposits] Found ${unrecordedFunds.toFixed(2)} unrecorded USDC for ${user.email}`);
+
+    // Find transaction hash
+    let txHash = '';
+    try {
+      const txEvent = await findDepositTransactionHash(depositAddress);
+      if (txEvent) {
+        txHash = txEvent.txHash;
+      }
+    } catch (err) {
+      console.error('[MonitorDeposits] Failed to find tx hash:', err);
     }
 
-    console.log(`[MonitorDeposits] Payment processed for user ${user.id}, type: ${paymentType}`);
+    // Record the new deposit
+    await supabase
+      .from('usdc_transactions')
+      .insert({
+        transaction_type: 'deposit',
+        from_address: 'external',
+        to_address: depositAddress,
+        amount: unrecordedFunds.toFixed(2),
+        user_id: user.id,
+        status: 'confirmed',
+        polygon_tx_hash: txHash,
+        confirmed_at: new Date().toISOString(),
+      });
+
+    // Re-calculate period payment with new transaction
+    const newPaidThisPeriod = paidThisPeriod + unrecordedFunds;
+    const newRemaining = expectedAmountUsdc - newPaidThisPeriod;
+
+    if (newRemaining <= tolerance) {
+      // Now the period is paid!
+      console.log(`[MonitorDeposits] Payment now complete for ${user.email} after recording new deposit`);
+      results.detected++;
+
+      await supabase.from('crypto_audit_log').insert({
+        event_type: 'deposit_detected_cron',
+        user_id: user.id,
+        entity_type: 'user',
+        entity_id: user.id,
+        details: {
+          source: 'monitor_cron',
+          deposit_address: depositAddress,
+          tx_hash: txHash,
+          expected_usdc: expectedAmountUsdc,
+          paid_this_period: newPaidThisPeriod,
+          payment_type: paymentType,
+        },
+      });
+
+      if (paymentType === 'initial_unlock') {
+        await processInitialUnlock(supabase, user.id, newPaidThisPeriod.toFixed(2));
+      } else {
+        // Roll forward from current next_payment_due_date
+        const currentNextDueDate = user.next_payment_due_date
+          ? new Date(user.next_payment_due_date)
+          : new Date(); // Fallback if not set
+        await processSubscriptionPayment(supabase, user.id, newPaidThisPeriod.toFixed(2), !isWeekly, currentNextDueDate);
+      }
+    } else {
+      // Still underpaid
+      console.log(`[MonitorDeposits] Partial payment for ${user.email}: ${newPaidThisPeriod.toFixed(2)} of ${expectedAmountUsdc} (need ${newRemaining.toFixed(2)} more)`);
+      results.underpaid++;
+
+      await supabase.from('crypto_audit_log').insert({
+        event_type: 'deposit_underpaid_cron',
+        user_id: user.id,
+        entity_type: 'user',
+        entity_id: user.id,
+        details: {
+          source: 'monitor_cron',
+          deposit_address: depositAddress,
+          expected_usdc: expectedAmountUsdc,
+          paid_this_period: newPaidThisPeriod,
+          remaining_usdc: newRemaining,
+          payment_type: paymentType,
+        },
+      });
+    }
+  } else if (paidThisPeriod > 0 && remaining > tolerance) {
+    // Partial payment already recorded, still waiting for more
+    console.log(`[MonitorDeposits] Waiting for more funds from ${user.email}: ${paidThisPeriod.toFixed(2)} of ${expectedAmountUsdc}`);
+    results.underpaid++;
   }
 }
 
 /**
  * Process initial unlock payment
+ * Sets initial payment due dates with anchor date (capped at day 28)
  */
 async function processInitialUnlock(
   supabase: ReturnType<typeof createServiceRoleClient>,
@@ -335,14 +383,32 @@ async function processInitialUnlock(
   // Assign network position
   await supabase.rpc('assign_network_position', { p_user_id: userId });
 
-  // Update user membership
+  // Get user's payment schedule preference (default to monthly)
+  const { data: userData } = await supabase
+    .from('users')
+    .select('payment_schedule')
+    .eq('id', userId)
+    .single();
+
+  const isWeekly = userData?.payment_schedule === 'weekly';
+  const now = new Date();
+
+  // Get anchor date with day capped at 28 (e.g., Jan 31 → Jan 28)
+  const anchorDate = getInitialAnchorDate(now);
+  // Next due date is one period from the anchor
+  const nextDueDate = calculateNextDueDate(isWeekly, anchorDate);
+
+  // Update user membership with initial due dates
   await supabase
     .from('users')
     .update({
       membership_status: 'unlocked',
       is_active: true,
       initial_payment_completed: true,
-      initial_payment_at: new Date().toISOString(),
+      initial_payment_at: now.toISOString(),
+      last_payment_date: now.toISOString(),
+      previous_payment_due_date: anchorDate.toISOString(),
+      next_payment_due_date: nextDueDate.toISOString(),
     })
     .eq('id', userId);
 
@@ -403,21 +469,34 @@ async function processInitialUnlock(
 
 /**
  * Process subscription payment
+ * Rolls forward due dates from the current next_payment_due_date (not NOW)
+ * @param currentNextDueDate - The user's current next_payment_due_date to roll forward from
  */
 async function processSubscriptionPayment(
   supabase: ReturnType<typeof createServiceRoleClient>,
   userId: string,
   amountUsdc: string,
   isMonthly: boolean,
+  currentNextDueDate: Date,
   usdcTxId?: string
 ) {
-  // Update user active status and last payment date
+  const now = new Date();
+  const isWeekly = !isMonthly;
+
+  // Roll forward from the CURRENT next_payment_due_date, not NOW
+  // previous becomes current next, next becomes one period after current next
+  const newPreviousDueDate = currentNextDueDate;
+  const newNextDueDate = calculateNextDueDate(isWeekly, currentNextDueDate);
+
+  // Update user active status, payment dates, and due dates
   await supabase
     .from('users')
     .update({
       is_active: true,
-      last_payment_date: new Date().toISOString(),
+      last_payment_date: now.toISOString(),
       payment_schedule: isMonthly ? 'monthly' : 'weekly',
+      previous_payment_due_date: newPreviousDueDate.toISOString(),
+      next_payment_due_date: newNextDueDate.toISOString(),
     })
     .eq('id', userId);
 

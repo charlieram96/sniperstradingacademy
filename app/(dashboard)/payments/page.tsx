@@ -45,6 +45,14 @@ interface PaymentStatus {
   paymentType: 'initial_unlock' | 'subscription' | 'none'
   partialAmount: string | null
   shortfall: string | null
+  // Period-based fields
+  paymentAvailable?: boolean  // true if user can make a payment (not paid ahead)
+  periodPaid?: boolean        // true if NOW < previous_payment_due_date (paid ahead)
+  paidAhead?: boolean         // alias for periodPaid
+  paidThisPeriod?: string
+  remaining?: string
+  nextDueDate?: string | null
+  previousPaymentDueDate?: string | null
 }
 
 function PaymentsContent() {
@@ -82,6 +90,9 @@ function PaymentsContent() {
   const success = searchParams.get("success")
   const canceled = searchParams.get("canceled")
 
+  // Period-based payment state
+  const [periodStatus, setPeriodStatus] = useState<PaymentStatus | null>(null)
+
   // Fetch user on mount
   useEffect(() => {
     async function getUser() {
@@ -116,10 +127,10 @@ function PaymentsContent() {
         setIsActive(userData.is_active || false)
       }
 
-      // Get payment schedule from user data
+      // Get payment schedule and period dates from user data
       const { data: paymentData } = await supabase
         .from("users")
-        .select("payment_schedule, last_payment_date, created_at")
+        .select("payment_schedule, last_payment_date, created_at, next_payment_due_date")
         .eq("id", userId)
         .single()
 
@@ -127,21 +138,41 @@ function PaymentsContent() {
         const schedule = paymentData.payment_schedule === 'weekly' ? 'weekly' : 'monthly'
         setPaymentSchedule(schedule)
 
-        // Calculate next billing date from last payment + schedule period
-        if (paymentData.last_payment_date) {
-          const lastPayment = new Date(paymentData.last_payment_date)
-          const daysToAdd = schedule === 'weekly' ? 7 : 30
-          const nextBilling = new Date(lastPayment)
-          nextBilling.setDate(nextBilling.getDate() + daysToAdd)
+        // Use next_payment_due_date if available (period-based system)
+        const nextBillingDate = paymentData.next_payment_due_date || (
+          paymentData.last_payment_date
+            ? (() => {
+                const lastPayment = new Date(paymentData.last_payment_date)
+                const daysToAdd = schedule === 'weekly' ? 7 : 30
+                const nextBilling = new Date(lastPayment)
+                nextBilling.setDate(nextBilling.getDate() + daysToAdd)
+                return nextBilling.toISOString()
+              })()
+            : null
+        )
 
+        if (nextBillingDate) {
           setSubscription({
             id: 'user-schedule',
             status: 'active',
-            next_billing_date: nextBilling.toISOString(),
-            created_at: paymentData.last_payment_date,
+            next_billing_date: nextBillingDate,
+            created_at: paymentData.last_payment_date || paymentData.created_at,
             payment_schedule: schedule
           })
         }
+      }
+
+      // Fetch period status from check-status API
+      try {
+        const statusResponse = await fetch('/api/crypto/payments/check-status')
+        if (statusResponse.ok) {
+          const statusData = await statusResponse.json()
+          if (statusData.success) {
+            setPeriodStatus(statusData)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch period status:', err)
       }
 
       setLoading(false)
@@ -182,10 +213,11 @@ function PaymentsContent() {
 
       if (data.success) {
         setPaymentStatus(data)
+        setPeriodStatus(data)
 
         // If payment was processed by backend, close modal and refresh
-        // Only close on 'paid' status - don't close just because funds are detected
-        if (data.status === 'paid') {
+        // Close on 'paid' or 'period_paid' status - payment is complete
+        if (data.status === 'paid' || data.status === 'period_paid') {
           setPaymentModalOpen(false)
           setPaymentInfo(null)
           window.location.reload()
@@ -202,11 +234,12 @@ function PaymentsContent() {
   useEffect(() => {
     if (!paymentModalOpen) return
 
-    // Initial check
+    // Initial check only
     checkPaymentStatus()
 
-    const interval = setInterval(checkPaymentStatus, 15000) // Every 15 seconds
-    return () => clearInterval(interval)
+    // DISABLED FOR WEBHOOK TESTING - re-enable if needed
+    // const interval = setInterval(checkPaymentStatus, 15000) // Every 15 seconds
+    // return () => clearInterval(interval)
   }, [paymentModalOpen, checkPaymentStatus])
 
   // Get user's deposit address for payment
@@ -473,6 +506,58 @@ function PaymentsContent() {
                   <Button disabled className="opacity-50">
                     <Lock className="h-4 w-4 mr-2" />
                     Subscription Locked
+                  </Button>
+                </div>
+              ) : periodStatus?.periodPaid ? (
+                // Period is already paid - show success message with next due date
+                <div className="space-y-4">
+                  <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-900">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <p className="font-semibold text-green-900 dark:text-green-300">
+                        Current Period Paid
+                      </p>
+                    </div>
+                    <p className="text-sm text-green-700 dark:text-green-400">
+                      Your subscription is up to date.
+                      {periodStatus.nextDueDate && (
+                        <> Next payment due: <strong>{new Date(periodStatus.nextDueDate).toLocaleDateString()}</strong></>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              ) : periodStatus?.status === 'partial_payment' ? (
+                // Partial payment - show remaining amount needed
+                <div className="space-y-4">
+                  <div className="p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-900">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertTriangle className="h-5 w-5 text-orange-600" />
+                      <p className="font-semibold text-orange-900 dark:text-orange-300">
+                        Partial Payment Received
+                      </p>
+                    </div>
+                    <p className="text-sm text-orange-700 dark:text-orange-400">
+                      You&apos;ve paid <strong>${periodStatus.paidThisPeriod}</strong> this period.
+                      Please send <strong>${periodStatus.remaining}</strong> more to complete your payment.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => initiatePayment('subscription')}
+                    disabled={subscribing}
+                    size="lg"
+                    className="w-full"
+                  >
+                    {subscribing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Getting Deposit Address...
+                      </>
+                    ) : (
+                      <>
+                        <Wallet className="h-4 w-4 mr-2" />
+                        Complete Payment (${periodStatus.remaining} remaining)
+                      </>
+                    )}
                   </Button>
                 </div>
               ) : needsSubscription ? (

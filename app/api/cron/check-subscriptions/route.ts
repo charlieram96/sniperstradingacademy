@@ -3,9 +3,8 @@
  * Deactivates users who have missed their subscription payments
  * Respects bypass flags (bypass_subscription, superadmin role)
  *
- * Grace Periods:
- * - Monthly subscribers: 30 days + 3 day grace = 33 days
- * - Weekly subscribers: 7 days + 3 day grace = 10 days
+ * Uses period-based logic:
+ * - Deactivates users where NOW > next_payment_due_date + 3 days
  *
  * Vercel Cron: "0 4 * * *" (4:00 AM UTC daily)
  */
@@ -16,14 +15,13 @@ import { createServiceRoleClient } from '@/lib/supabase/server';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
-// Grace periods in days
-const MONTHLY_GRACE_DAYS = 33; // 30 + 3 day grace
-const WEEKLY_GRACE_DAYS = 10; // 7 + 3 day grace
+// Grace period: 3 days after next_payment_due_date
+const GRACE_PERIOD_DAYS = 3;
 
 interface DeactivationResult {
   userId: string;
   email: string;
-  daysSincePayment: number;
+  daysOverdue: number;
   paymentSchedule: string;
   success: boolean;
   error?: string;
@@ -48,27 +46,25 @@ export async function GET(req: NextRequest) {
     const supabase = createServiceRoleClient();
     const now = new Date();
 
-    // Calculate cutoff dates
-    const monthlyCutoff = new Date(now);
-    monthlyCutoff.setDate(monthlyCutoff.getDate() - MONTHLY_GRACE_DAYS);
+    // Calculate cutoff: NOW - 3 days grace period
+    // Users with next_payment_due_date before this are overdue
+    const cutoffDate = new Date(now);
+    cutoffDate.setDate(cutoffDate.getDate() - GRACE_PERIOD_DAYS);
 
-    const weeklyCutoff = new Date(now);
-    weeklyCutoff.setDate(weeklyCutoff.getDate() - WEEKLY_GRACE_DAYS);
-
-    // Query users who are overdue
+    // Query users who might be overdue
     // Conditions:
     // - initial_payment_completed = true (has unlocked platform)
     // - is_active = true (currently active)
     // - NOT bypassed (bypass_subscription or superadmin)
-    // - last_payment_date is overdue based on payment_schedule
-    const { data: overdueUsers, error: queryError } = await supabase
+    // - has next_payment_due_date set
+    const { data: activeUsers, error: queryError } = await supabase
       .from('users')
       .select(`
         id,
         email,
         name,
-        last_payment_date,
         payment_schedule,
+        next_payment_due_date,
         network_position_id,
         bypass_subscription,
         role
@@ -76,7 +72,8 @@ export async function GET(req: NextRequest) {
       .eq('initial_payment_completed', true)
       .eq('is_active', true)
       .or('bypass_subscription.is.null,bypass_subscription.eq.false')
-      .neq('role', 'superadmin');
+      .neq('role', 'superadmin')
+      .not('next_payment_due_date', 'is', null);
 
     if (queryError) {
       console.error('[CheckSubscriptions] Query error:', queryError);
@@ -87,7 +84,7 @@ export async function GET(req: NextRequest) {
       }, { status: 500 });
     }
 
-    if (!overdueUsers || overdueUsers.length === 0) {
+    if (!activeUsers || activeUsers.length === 0) {
       console.log('[CheckSubscriptions] No users to check');
       return NextResponse.json({
         success: true,
@@ -100,30 +97,26 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    console.log(`[CheckSubscriptions] Checking ${overdueUsers.length} active users...`);
+    console.log(`[CheckSubscriptions] Checking ${activeUsers.length} active users...`);
 
-    // Filter users who are actually overdue based on their payment schedule
-    const usersToDeactivate = overdueUsers.filter((user) => {
+    // Filter users who are overdue: NOW > next_payment_due_date + 3 days
+    const usersToDeactivate = activeUsers.filter((user) => {
       // Skip if bypassed (double-check in case query didn't filter perfectly)
       if (user.bypass_subscription || user.role === 'superadmin') {
         return false;
       }
 
-      // If no last_payment_date, they should be deactivated
-      // (initial payment should have set this)
-      if (!user.last_payment_date) {
-        return true;
+      // If no next_payment_due_date, skip (shouldn't happen with our query)
+      if (!user.next_payment_due_date) {
+        return false;
       }
 
-      const lastPayment = new Date(user.last_payment_date);
-      const daysSincePayment = Math.floor(
-        (now.getTime() - lastPayment.getTime()) / (1000 * 60 * 60 * 24)
-      );
+      const nextDueDate = new Date(user.next_payment_due_date);
+      const gracePeriodEnd = new Date(nextDueDate);
+      gracePeriodEnd.setDate(gracePeriodEnd.getDate() + GRACE_PERIOD_DAYS);
 
-      const isWeekly = user.payment_schedule === 'weekly';
-      const threshold = isWeekly ? WEEKLY_GRACE_DAYS : MONTHLY_GRACE_DAYS;
-
-      return daysSincePayment > threshold;
+      // User is overdue if NOW > next_payment_due_date + 3 days
+      return now > gracePeriodEnd;
     });
 
     console.log(`[CheckSubscriptions] Found ${usersToDeactivate.length} overdue users`);
@@ -133,7 +126,7 @@ export async function GET(req: NextRequest) {
         success: true,
         message: 'No overdue users found',
         stats: {
-          checked: overdueUsers.length,
+          checked: activeUsers.length,
           deactivated: 0,
           duration: Date.now() - startTime,
         },
@@ -144,10 +137,10 @@ export async function GET(req: NextRequest) {
     const results: DeactivationResult[] = [];
 
     for (const user of usersToDeactivate) {
-      const lastPayment = user.last_payment_date ? new Date(user.last_payment_date) : null;
-      const daysSincePayment = lastPayment
-        ? Math.floor((now.getTime() - lastPayment.getTime()) / (1000 * 60 * 60 * 24))
-        : 999;
+      const nextDueDate = new Date(user.next_payment_due_date!);
+      const daysOverdue = Math.floor(
+        (now.getTime() - nextDueDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
 
       try {
         // Deactivate user
@@ -181,28 +174,28 @@ export async function GET(req: NextRequest) {
           entity_type: 'user',
           entity_id: user.id,
           details: {
-            days_since_payment: daysSincePayment,
+            days_overdue: daysOverdue,
             payment_schedule: user.payment_schedule || 'monthly',
-            last_payment_date: user.last_payment_date,
-            threshold_days: user.payment_schedule === 'weekly' ? WEEKLY_GRACE_DAYS : MONTHLY_GRACE_DAYS,
+            next_payment_due_date: user.next_payment_due_date,
+            grace_period_days: GRACE_PERIOD_DAYS,
           },
         });
 
         results.push({
           userId: user.id,
           email: user.email,
-          daysSincePayment,
+          daysOverdue,
           paymentSchedule: user.payment_schedule || 'monthly',
           success: true,
         });
 
-        console.log(`[CheckSubscriptions] Deactivated user ${user.email} (${daysSincePayment} days overdue)`);
+        console.log(`[CheckSubscriptions] Deactivated user ${user.email} (${daysOverdue} days past due date)`);
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Unknown error';
         results.push({
           userId: user.id,
           email: user.email,
-          daysSincePayment,
+          daysOverdue,
           paymentSchedule: user.payment_schedule || 'monthly',
           success: false,
           error: errorMsg,
@@ -224,7 +217,7 @@ export async function GET(req: NextRequest) {
       entity_type: 'system',
       details: {
         trigger: isVercelCron ? 'vercel_cron' : 'manual',
-        users_checked: overdueUsers.length,
+        users_checked: activeUsers.length,
         users_deactivated: successCount,
         users_failed: failCount,
         duration_ms: duration,
@@ -234,7 +227,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       stats: {
-        checked: overdueUsers.length,
+        checked: activeUsers.length,
         deactivated: successCount,
         failed: failCount,
         duration,

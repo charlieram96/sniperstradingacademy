@@ -51,6 +51,45 @@ export function formatUsdcFromWei(wei: bigint | number): string {
 }
 
 /**
+ * Get the initial anchor date for a user's payment cycle
+ * Caps the day at 28 to avoid month-end edge cases
+ * @param paymentDate - The date the user made their initial payment
+ * @returns The anchor date with day capped at 28
+ */
+export function getInitialAnchorDate(paymentDate: Date = new Date()): Date {
+  const day = Math.min(paymentDate.getDate(), 28);
+  return new Date(paymentDate.getFullYear(), paymentDate.getMonth(), day);
+}
+
+/**
+ * Calculate the next payment due date by rolling forward from a base date
+ * Weekly: adds 7 days from baseDate
+ * Monthly: same day next month from baseDate
+ *
+ * @param isWeekly - Whether user is on weekly schedule
+ * @param baseDate - The date to roll forward FROM (current next_payment_due_date)
+ * @returns The new next payment due date
+ */
+export function calculateNextDueDate(isWeekly: boolean, baseDate: Date): Date {
+  if (isWeekly) {
+    // Simply add 7 days from the base date
+    return new Date(baseDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+  } else {
+    // Same day next month from the base date
+    const day = baseDate.getDate();
+    const nextMonth = baseDate.getMonth() + 1;
+    const year = baseDate.getFullYear() + (nextMonth > 11 ? 1 : 0);
+    const month = nextMonth % 12;
+
+    // Day should already be capped at 28 from initial anchor, but handle edge cases
+    const lastDayOfNextMonth = new Date(year, month + 1, 0).getDate();
+    const targetDay = Math.min(day, lastDayOfNextMonth);
+
+    return new Date(year, month, targetDay);
+  }
+}
+
+/**
  * Get all treasury settings
  */
 export async function getTreasurySettings(): Promise<TreasurySettings | null> {
@@ -392,6 +431,9 @@ export async function getUserByDepositAddress(address: string): Promise<{
   is_active: boolean;
   crypto_deposit_address: string;
   crypto_derivation_index: number;
+  payment_schedule: string | null;
+  previous_payment_due_date: string | null;
+  next_payment_due_date: string | null;
 } | null> {
   const supabase = createServiceRoleClient();
 
@@ -405,7 +447,10 @@ export async function getUserByDepositAddress(address: string): Promise<{
       bypass_initial_payment,
       is_active,
       crypto_deposit_address,
-      crypto_derivation_index
+      crypto_derivation_index,
+      payment_schedule,
+      previous_payment_due_date,
+      next_payment_due_date
     `)
     .eq('crypto_deposit_address', address.toLowerCase())
     .single();
@@ -422,7 +467,10 @@ export async function getUserByDepositAddress(address: string): Promise<{
         bypass_initial_payment,
         is_active,
         crypto_deposit_address,
-        crypto_derivation_index
+        crypto_derivation_index,
+        payment_schedule,
+        previous_payment_due_date,
+        next_payment_due_date
       `)
       .ilike('crypto_deposit_address', address)
       .single();

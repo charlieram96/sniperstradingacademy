@@ -16,7 +16,8 @@ import {
 } from '@/lib/alchemy/webhook-service';
 import {
   getUserByDepositAddress,
-  getUserPaymentSchedule,
+  calculateNextDueDate,
+  getInitialAnchorDate,
 } from '@/lib/treasury/treasury-service';
 import { PAYMENT_AMOUNTS } from '@/lib/coinbase/wallet-types';
 
@@ -145,6 +146,7 @@ async function processTransfer(
 
   // Determine what payment this user owes
   const needsInitialPayment = !user.initial_payment_completed && !user.bypass_initial_payment;
+  const isWeekly = user.payment_schedule === 'weekly';
 
   let paymentType: 'initial_unlock' | 'subscription';
   let expectedAmountUsdc: number;
@@ -154,8 +156,7 @@ async function processTransfer(
     expectedAmountUsdc = parseFloat(PAYMENT_AMOUNTS.INITIAL_UNLOCK);
   } else {
     paymentType = 'subscription';
-    const schedule = await getUserPaymentSchedule(user.id);
-    expectedAmountUsdc = schedule === 'weekly'
+    expectedAmountUsdc = isWeekly
       ? parseFloat(PAYMENT_AMOUNTS.WEEKLY_SUBSCRIPTION)
       : parseFloat(PAYMENT_AMOUNTS.MONTHLY_SUBSCRIPTION);
   }
@@ -163,15 +164,46 @@ async function processTransfer(
   const receivedAmountUsdc = transfer.amountUsdc;
   const tolerance = expectedAmountUsdc * 0.01; // 1% tolerance
 
-  console.log(`[AlchemyWebhook] User ${user.id}: expects ${paymentType}, ${expectedAmountUsdc} USDC, received ${receivedAmountUsdc} USDC`);
+  // PERIOD-BASED LOGIC: Record this transaction first, then check period total
+  await supabase.from('usdc_transactions').insert({
+    transaction_type: 'deposit',
+    from_address: transfer.from,
+    to_address: transfer.to,
+    amount: receivedAmountUsdc.toFixed(2),
+    user_id: user.id,
+    status: 'confirmed',
+    polygon_tx_hash: transfer.txHash,
+    confirmed_at: new Date().toISOString(),
+  });
 
-  // Check if this is an underpayment
-  if (receivedAmountUsdc < (expectedAmountUsdc - tolerance)) {
-    console.log(`[AlchemyWebhook] Underpayment: received ${receivedAmountUsdc} USDC, expected ${expectedAmountUsdc} USDC`);
+  // Now get period total (including the transaction we just recorded)
+  const periodStart = user.previous_payment_due_date || '1970-01-01';
 
-    // Log audit event for underpayment
+  const { data: periodTxs } = await supabase
+    .from('usdc_transactions')
+    .select('amount')
+    .eq('user_id', user.id)
+    .eq('status', 'confirmed')
+    .eq('transaction_type', 'deposit')
+    .gt('created_at', periodStart);
+
+  const paidThisPeriod = periodTxs?.reduce(
+    (sum, tx) => sum + parseFloat(tx.amount || '0'),
+    0
+  ) || 0;
+
+  const remaining = expectedAmountUsdc - paidThisPeriod;
+
+  console.log(`[AlchemyWebhook] User ${user.id}: expects ${paymentType}, ${expectedAmountUsdc} USDC. Received ${receivedAmountUsdc} USDC this tx, total paid this period: ${paidThisPeriod} USDC, remaining: ${remaining}`);
+
+  // Check if period is now fully paid
+  if (remaining > tolerance) {
+    // Still underpaid for this period
+    console.log(`[AlchemyWebhook] Partial payment: ${paidThisPeriod} USDC paid, need ${remaining.toFixed(2)} more`);
+
+    // Log audit event for partial payment
     await supabase.from('crypto_audit_log').insert({
-      event_type: 'deposit_underpaid_webhook',
+      event_type: 'deposit_partial_webhook',
       user_id: user.id,
       entity_type: 'user',
       entity_id: user.id,
@@ -180,47 +212,20 @@ async function processTransfer(
         tx_hash: transfer.txHash,
         expected_usdc: expectedAmountUsdc,
         received_usdc: receivedAmountUsdc,
-        shortfall_usdc: expectedAmountUsdc - receivedAmountUsdc,
+        paid_this_period: paidThisPeriod,
+        remaining_usdc: remaining,
         payment_type: paymentType,
       },
-    });
-
-    // Still record the transaction but don't process as complete payment
-    await supabase.from('usdc_transactions').insert({
-      transaction_type: 'deposit',
-      from_address: transfer.from,
-      to_address: transfer.to,
-      amount: receivedAmountUsdc.toFixed(2),
-      user_id: user.id,
-      status: 'partial',
-      polygon_tx_hash: transfer.txHash,
-      confirmed_at: new Date().toISOString(),
     });
 
     return;
   }
 
-  // Sufficient funds received
-  const isOverpaid = receivedAmountUsdc > (expectedAmountUsdc + tolerance);
-  const overpaymentAmount = isOverpaid ? receivedAmountUsdc - expectedAmountUsdc : 0;
+  // Period is fully paid!
+  const overpayment = paidThisPeriod - expectedAmountUsdc;
+  const isOverpaid = overpayment > tolerance;
 
-  console.log(`[AlchemyWebhook] Payment received: ${receivedAmountUsdc} USDC (overpaid: ${isOverpaid})`);
-
-  // Create USDC transaction record
-  const { data: txRecord } = await supabase
-    .from('usdc_transactions')
-    .insert({
-      transaction_type: 'deposit',
-      from_address: transfer.from,
-      to_address: transfer.to,
-      amount: receivedAmountUsdc.toFixed(2),
-      user_id: user.id,
-      status: 'confirmed',
-      polygon_tx_hash: transfer.txHash,
-      confirmed_at: new Date().toISOString(),
-    })
-    .select()
-    .single();
+  console.log(`[AlchemyWebhook] Payment complete for period: ${paidThisPeriod} USDC (overpaid: ${isOverpaid})`);
 
   // Log audit event
   await supabase.from('crypto_audit_log').insert({
@@ -233,39 +238,39 @@ async function processTransfer(
       tx_hash: transfer.txHash,
       block_number: transfer.blockNumber,
       expected_usdc: expectedAmountUsdc,
-      received_usdc: receivedAmountUsdc,
+      paid_this_period: paidThisPeriod,
       is_overpaid: isOverpaid,
-      overpayment_amount: overpaymentAmount,
+      overpayment_amount: isOverpaid ? overpayment : 0,
       payment_type: paymentType,
     },
   });
 
-  // Note: We no longer use deposit_addresses table - permanent addresses are stored on users table
-
   // Process the payment based on type
   if (paymentType === 'initial_unlock') {
-    await processInitialUnlock(supabase, user.id, receivedAmountUsdc.toFixed(2), txRecord?.id);
+    await processInitialUnlock(supabase, user.id, paidThisPeriod.toFixed(2));
   } else {
-    const schedule = await getUserPaymentSchedule(user.id);
-    const isMonthly = schedule === 'monthly';
-    await processSubscriptionPayment(supabase, user.id, receivedAmountUsdc.toFixed(2), isMonthly, txRecord?.id);
+    // Roll forward from current next_payment_due_date
+    const currentNextDueDate = user.next_payment_due_date
+      ? new Date(user.next_payment_due_date)
+      : new Date(); // Fallback if not set
+    await processSubscriptionPayment(supabase, user.id, paidThisPeriod.toFixed(2), !isWeekly, currentNextDueDate);
   }
 
   // Handle overpayment credit
-  if (isOverpaid && overpaymentAmount > 0) {
+  if (isOverpaid && overpayment > 0) {
     await supabase
       .from('commissions')
       .insert({
         referrer_id: user.id,
         referred_id: user.id,
         commission_type: 'overpayment_credit',
-        amount: overpaymentAmount,
-        net_amount_usdc: overpaymentAmount,
+        amount: overpayment,
+        net_amount_usdc: overpayment,
         status: 'pending',
         description: `Overpayment credit from ${paymentType} payment (via webhook)`,
       });
 
-    console.log(`[AlchemyWebhook] Created overpayment credit of $${overpaymentAmount.toFixed(2)}`);
+    console.log(`[AlchemyWebhook] Created overpayment credit of $${overpayment.toFixed(2)}`);
   }
 
   console.log(`[AlchemyWebhook] Payment processed for user ${user.id}, type: ${paymentType}`);
@@ -273,24 +278,42 @@ async function processTransfer(
 
 /**
  * Process initial unlock payment
+ * Sets initial payment due dates with anchor date (capped at day 28)
  */
 async function processInitialUnlock(
   supabase: ReturnType<typeof createServiceRoleClient>,
   userId: string,
-  amountUsdc: string,
-  usdcTxId?: string
+  amountUsdc: string
 ) {
   // Assign network position
   await supabase.rpc('assign_network_position', { p_user_id: userId });
 
-  // Update user membership
+  // Get user's payment schedule preference (default to monthly)
+  const { data: userData } = await supabase
+    .from('users')
+    .select('payment_schedule')
+    .eq('id', userId)
+    .single();
+
+  const isWeekly = userData?.payment_schedule === 'weekly';
+  const now = new Date();
+
+  // Get anchor date with day capped at 28 (e.g., Jan 31 → Jan 28)
+  const anchorDate = getInitialAnchorDate(now);
+  // Next due date is one period from the anchor
+  const nextDueDate = calculateNextDueDate(isWeekly, anchorDate);
+
+  // Update user membership with initial due dates
   await supabase
     .from('users')
     .update({
       membership_status: 'unlocked',
       is_active: true,
       initial_payment_completed: true,
-      initial_payment_at: new Date().toISOString(),
+      initial_payment_at: now.toISOString(),
+      last_payment_date: now.toISOString(),
+      previous_payment_due_date: anchorDate.toISOString(),
+      next_payment_due_date: nextDueDate.toISOString(),
     })
     .eq('id', userId);
 
@@ -298,24 +321,14 @@ async function processInitialUnlock(
   await supabase.rpc('increment_upchain_active_count', { p_user_id: userId });
 
   // Create payment record
-  const { data: paymentRecord } = await supabase
+  await supabase
     .from('payments')
     .insert({
       user_id: userId,
       amount: amountUsdc,
       payment_type: 'initial',
       status: 'succeeded',
-      usdc_transaction_id: usdcTxId,
-    })
-    .select()
-    .single();
-
-  if (paymentRecord && usdcTxId) {
-    await supabase
-      .from('usdc_transactions')
-      .update({ related_payment_id: paymentRecord.id })
-      .eq('id', usdcTxId);
-  }
+    });
 
   // Update referral status
   await supabase
@@ -351,43 +364,45 @@ async function processInitialUnlock(
 
 /**
  * Process subscription payment
+ * Rolls forward due dates from the current next_payment_due_date (not NOW)
+ * @param currentNextDueDate - The user's current next_payment_due_date to roll forward from
  */
 async function processSubscriptionPayment(
   supabase: ReturnType<typeof createServiceRoleClient>,
   userId: string,
   amountUsdc: string,
   isMonthly: boolean,
-  usdcTxId?: string
+  currentNextDueDate: Date
 ) {
-  // Update user active status and last payment date
+  const now = new Date();
+  const isWeekly = !isMonthly;
+
+  // Roll forward from the CURRENT next_payment_due_date, not NOW
+  // previous becomes current next, next becomes one period after current next
+  const newPreviousDueDate = currentNextDueDate;
+  const newNextDueDate = calculateNextDueDate(isWeekly, currentNextDueDate);
+
+  // Update user active status, payment dates, and due dates
   await supabase
     .from('users')
     .update({
       is_active: true,
-      last_payment_date: new Date().toISOString(),
+      last_payment_date: now.toISOString(),
       payment_schedule: isMonthly ? 'monthly' : 'weekly',
+      previous_payment_due_date: newPreviousDueDate.toISOString(),
+      next_payment_due_date: newNextDueDate.toISOString(),
     })
     .eq('id', userId);
 
   // Create payment record
-  const { data: paymentRecord } = await supabase
+  await supabase
     .from('payments')
     .insert({
       user_id: userId,
       amount: amountUsdc,
       payment_type: isMonthly ? 'monthly' : 'weekly',
       status: 'succeeded',
-      usdc_transaction_id: usdcTxId,
-    })
-    .select()
-    .single();
-
-  if (paymentRecord && usdcTxId) {
-    await supabase
-      .from('usdc_transactions')
-      .update({ related_payment_id: paymentRecord.id })
-      .eq('id', usdcTxId);
-  }
+    });
 
   // Distribute to upline
   await supabase.rpc('distribute_to_upline_batch', {
@@ -395,5 +410,5 @@ async function processSubscriptionPayment(
     p_payment_amount: amountUsdc,
   });
 
-  console.log(`[AlchemyWebhook] Subscription payment completed for user ${userId}`);
+  console.log(`[AlchemyWebhook] Subscription payment completed for user ${userId}, next due: ${newNextDueDate.toISOString()}`);
 }
