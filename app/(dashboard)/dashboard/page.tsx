@@ -38,13 +38,9 @@ async function getDashboardData(userId: string) {
     .eq("id", userId)
     .single()
 
-  // Get subscription status
-  const { data: subscription } = await supabase
-    .from("subscriptions")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("status", "active")
-    .single()
+  // Determine subscription status from user's is_active field
+  // (subscriptions table is deprecated - using users.is_active instead)
+  const subscription = user?.is_active ? { id: 'active', status: 'active' } : null
 
   // Get network stats from new API
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'

@@ -437,19 +437,18 @@ export async function getUserByDepositAddress(address: string): Promise<{
 }
 
 /**
- * Get user's subscription schedule (monthly or weekly)
+ * Get user's payment schedule (monthly or weekly)
  */
 export async function getUserPaymentSchedule(userId: string): Promise<'monthly' | 'weekly'> {
   const supabase = createServiceRoleClient();
 
   const { data } = await supabase
-    .from('subscriptions')
+    .from('users')
     .select('payment_schedule')
-    .eq('user_id', userId)
-    .eq('status', 'active')
+    .eq('id', userId)
     .single();
 
-  // Default to monthly if no subscription found
+  // Default to monthly if no schedule found
   return (data?.payment_schedule as 'monthly' | 'weekly') || 'monthly';
 }
 

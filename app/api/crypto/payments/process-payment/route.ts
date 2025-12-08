@@ -523,44 +523,15 @@ async function processInitialUnlock(supabase: any, intent: any, transaction: any
  */
 async function processSubscriptionPayment(supabase: any, intent: any, transaction: any) {
   try {
-    // Update user's subscription status
-    const periodDays = intent.intent_type === 'monthly_subscription' ? 30 : 7;
-    const newPeriodEnd = new Date();
-    newPeriodEnd.setDate(newPeriodEnd.getDate() + periodDays);
-
+    // Update user's active status and last payment date
     await supabase
       .from('users')
       .update({
         is_active: true,
         last_payment_date: new Date().toISOString(),
+        payment_schedule: intent.intent_type === 'monthly_subscription' ? 'monthly' : 'weekly',
       })
       .eq('id', intent.user_id);
-
-    // Create or update subscription record
-    const { data: existingSubscription } = await supabase
-      .from('subscriptions')
-      .select('*')
-      .eq('user_id', intent.user_id)
-      .single();
-
-    if (existingSubscription) {
-      await supabase
-        .from('subscriptions')
-        .update({
-          status: 'active',
-          current_period_end: newPeriodEnd.toISOString(),
-        })
-        .eq('id', existingSubscription.id);
-    } else {
-      await supabase
-        .from('subscriptions')
-        .insert({
-          user_id: intent.user_id,
-          status: 'active',
-          amount: intent.amount_usdc,
-          current_period_end: newPeriodEnd.toISOString(),
-        });
-    }
 
     // Create payment record
     const paymentType = intent.intent_type === 'monthly_subscription' ? 'monthly' : 'weekly';

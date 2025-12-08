@@ -418,11 +418,6 @@ async function processSubscriptionPayment(
   isMonthly: boolean,
   usdcTxId?: string
 ) {
-  // Calculate next period end
-  const daysToAdd = isMonthly ? 30 : 7;
-  const nextPeriodEnd = new Date();
-  nextPeriodEnd.setDate(nextPeriodEnd.getDate() + daysToAdd);
-
   // Update user active status and last payment date
   await supabase
     .from('users')
@@ -432,34 +427,6 @@ async function processSubscriptionPayment(
       payment_schedule: isMonthly ? 'monthly' : 'weekly',
     })
     .eq('id', userId);
-
-  // Update or create subscription record
-  const { data: existingSub } = await supabase
-    .from('subscriptions')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('status', 'active')
-    .maybeSingle();
-
-  if (existingSub) {
-    await supabase
-      .from('subscriptions')
-      .update({
-        current_period_end: nextPeriodEnd.toISOString(),
-        amount: parseFloat(amountUsdc),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', existingSub.id);
-  } else {
-    await supabase
-      .from('subscriptions')
-      .insert({
-        user_id: userId,
-        status: 'active',
-        amount: parseFloat(amountUsdc),
-        current_period_end: nextPeriodEnd.toISOString(),
-      });
-  }
 
   // Create payment record
   const { data: paymentRecord } = await supabase

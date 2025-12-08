@@ -330,11 +330,11 @@ export default function AdminFinancialsPage() {
       setCommissions(formattedCommissions)
     }
 
-    // Fetch active subscriptions count
-    const { data: subscriptionsData } = await supabase
-      .from("subscriptions")
-      .select("id", { count: "exact" })
-      .eq("status", "active")
+    // Fetch active users count
+    const { count: activeUsersCount } = await supabase
+      .from("users")
+      .select("id", { count: "exact", head: true })
+      .eq("is_active", true)
 
     // Calculate stats
     const totalRevenue = paymentsData
@@ -349,7 +349,7 @@ export default function AdminFinancialsPage() {
       totalRevenue,
       totalPayouts,
       netProfit: totalRevenue - totalPayouts,
-      activeSubscriptions: subscriptionsData?.length || 0
+      activeSubscriptions: activeUsersCount || 0
     })
   }, [])
 

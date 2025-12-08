@@ -116,17 +116,32 @@ function PaymentsContent() {
         setIsActive(userData.is_active || false)
       }
 
-      // Get subscription (use maybeSingle to avoid 406 when no subscription exists)
-      const { data: sub } = await supabase
-        .from("subscriptions")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("status", "active")
-        .maybeSingle()
+      // Get payment schedule from user data
+      const { data: paymentData } = await supabase
+        .from("users")
+        .select("payment_schedule, last_payment_date, created_at")
+        .eq("id", userId)
+        .single()
 
-      if (sub) {
-        setSubscription(sub)
-        setPaymentSchedule(sub.payment_schedule === 'weekly' ? 'weekly' : 'monthly')
+      if (paymentData) {
+        const schedule = paymentData.payment_schedule === 'weekly' ? 'weekly' : 'monthly'
+        setPaymentSchedule(schedule)
+
+        // Calculate next billing date from last payment + schedule period
+        if (paymentData.last_payment_date) {
+          const lastPayment = new Date(paymentData.last_payment_date)
+          const daysToAdd = schedule === 'weekly' ? 7 : 30
+          const nextBilling = new Date(lastPayment)
+          nextBilling.setDate(nextBilling.getDate() + daysToAdd)
+
+          setSubscription({
+            id: 'user-schedule',
+            status: 'active',
+            next_billing_date: nextBilling.toISOString(),
+            created_at: paymentData.last_payment_date,
+            payment_schedule: schedule
+          })
+        }
       }
 
       setLoading(false)

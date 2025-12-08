@@ -225,17 +225,20 @@ export default function FinancePage() {
 
         setDirectBonuses(formattedBonuses)
 
-        // Get real next payment date from subscription
-        const { data: subscription } = await supabase
-          .from('subscriptions')
-          .select('current_period_end')
-          .eq('user_id', userId)
-          .eq('status', 'active')
+        // Get real next payment date from user's last payment + schedule
+        const { data: paymentData } = await supabase
+          .from('users')
+          .select('last_payment_date, payment_schedule')
+          .eq('id', userId)
           .single()
 
         let nextPayoutDate = ''
-        if (subscription?.current_period_end) {
-          nextPayoutDate = new Date(subscription.current_period_end).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+        if (paymentData?.last_payment_date) {
+          const lastPayment = new Date(paymentData.last_payment_date)
+          const daysToAdd = paymentData.payment_schedule === 'weekly' ? 7 : 30
+          const nextPayment = new Date(lastPayment)
+          nextPayment.setDate(nextPayment.getDate() + daysToAdd)
+          nextPayoutDate = nextPayment.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
         } else if (monthlyPaymentDueDate) {
           nextPayoutDate = monthlyPaymentDueDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
         } else {
