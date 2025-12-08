@@ -339,8 +339,8 @@ class PolygonUSDCClient {
     try {
       const amountRaw = ethers.parseUnits(amountUSDC, 6);
 
-      // Estimate gas limit
-      const gasLimitEstimate = await this.usdcContract.transfer.estimateGas(toAddress, amountRaw);
+      // Estimate gas limit - must specify 'from' address or ethers uses zero address
+      const gasLimitEstimate = await this.usdcContract.transfer.estimateGas(toAddress, amountRaw, { from: fromAddress });
 
       // Add buffer for safety
       const gasLimit = (gasLimitEstimate * BigInt(Math.floor(GAS_LIMITS.BUFFER_MULTIPLIER * 100))) / BigInt(100);
