@@ -168,8 +168,9 @@ function PaymentsContent() {
       if (data.success) {
         setPaymentStatus(data)
 
-        // If payment was detected and processed, close modal and refresh
-        if (data.status === 'paid' || (data.fundsDetected && data.paymentType !== 'none')) {
+        // If payment was processed by backend, close modal and refresh
+        // Only close on 'paid' status - don't close just because funds are detected
+        if (data.status === 'paid') {
           setPaymentModalOpen(false)
           setPaymentInfo(null)
           window.location.reload()

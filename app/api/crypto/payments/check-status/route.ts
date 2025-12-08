@@ -99,14 +99,32 @@ export async function GET() {
     const currentBalance = parseFloat(balanceResponse.data.balance);
     const requiredAmountNum = parseFloat(requiredAmount);
 
-    // Check if sufficient funds detected (with 1% tolerance)
-    const fundsDetected = requiredAmountNum > 0 && currentBalance >= (requiredAmountNum * 0.99);
+    // Get total already-processed deposits to avoid counting old payments as new
+    // This prevents the issue where stale funds trigger "funds detected" for new billing periods
+    const { data: processedDeposits } = await serviceSupabase
+      .from('usdc_transactions')
+      .select('amount')
+      .eq('to_address', userData.crypto_deposit_address)
+      .eq('user_id', user.id)
+      .eq('status', 'confirmed')
+      .eq('transaction_type', 'deposit');
 
-    // Determine status
+    const totalProcessed = processedDeposits?.reduce(
+      (sum, tx) => sum + parseFloat(tx.amount || '0'),
+      0
+    ) || 0;
+
+    // Calculate unprocessed funds (new deposits not yet credited)
+    const unprocessedFunds = Math.max(0, currentBalance - totalProcessed);
+
+    // Check if sufficient NEW funds detected (with 1% tolerance)
+    const fundsDetected = requiredAmountNum > 0 && unprocessedFunds >= (requiredAmountNum * 0.99);
+
+    // Determine status based on unprocessed funds
     let status: string;
     if (fundsDetected) {
       status = 'funds_detected';
-    } else if (currentBalance > 0 && currentBalance < requiredAmountNum) {
+    } else if (unprocessedFunds > 0 && unprocessedFunds < requiredAmountNum) {
       status = 'partial_payment';
     } else {
       status = 'awaiting_payment';
@@ -120,10 +138,16 @@ export async function GET() {
       requiredAmount,
       fundsDetected,
       paymentType,
-      partialAmount: currentBalance > 0 && currentBalance < requiredAmountNum ? balanceResponse.data.balance : null,
-      shortfall: currentBalance > 0 && currentBalance < requiredAmountNum
-        ? (requiredAmountNum - currentBalance).toFixed(2)
+      // Show unprocessed amount for partial payments, not total balance
+      partialAmount: unprocessedFunds > 0 && unprocessedFunds < requiredAmountNum
+        ? unprocessedFunds.toFixed(2)
         : null,
+      shortfall: unprocessedFunds > 0 && unprocessedFunds < requiredAmountNum
+        ? (requiredAmountNum - unprocessedFunds).toFixed(2)
+        : null,
+      // Include debug info
+      totalProcessed: totalProcessed.toFixed(2),
+      unprocessedFunds: unprocessedFunds.toFixed(2),
     });
   } catch (error: unknown) {
     console.error('[CheckStatus] Unexpected error:', error);
