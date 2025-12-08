@@ -158,7 +158,7 @@ export function AccountStatusCard({
       return "Your account is inactive. Activate it to start earning and receiving payouts."
     }
     if (isOverdue) {
-      const amount = paymentSchedule === 'weekly' ? '$49.75 weekly' : '$3 monthly'
+      const amount = paymentSchedule === 'weekly' ? '$49.75 weekly' : '$199 monthly'
       return `Your ${amount} payment is overdue. Your account will be deactivated if not paid.`
     }
     if (daysUntilDue <= 3) {

@@ -109,7 +109,7 @@ export function PaymentScheduleSelector({ value, onChange }: PaymentScheduleSele
             <div className="text-sm">
               <p className="font-medium mb-1">Total Cost</p>
               <p className="text-muted-foreground">
-                Monthly is <strong>$3/month</strong>. Weekly is <strong>$49.75/week</strong>.
+                Monthly is <strong>$199/month</strong>. Weekly is <strong>$49.75/week</strong>.
                 Choose the schedule that works best for your budget.
               </p>
             </div>
