@@ -243,14 +243,15 @@ async function checkUserDeposit(
     });
 
     // Process the payment
+    // Use expectedAmountUsdc for distribution (not overpayment)
     if (paymentType === 'initial_unlock') {
-      await processInitialUnlock(supabase, user.id, paidThisPeriod.toFixed(2));
+      await processInitialUnlock(supabase, user.id, expectedAmountUsdc.toFixed(2));
     } else {
       // Roll forward from current next_payment_due_date
       const currentNextDueDate = user.next_payment_due_date
         ? new Date(user.next_payment_due_date)
         : new Date(); // Fallback if not set
-      await processSubscriptionPayment(supabase, user.id, paidThisPeriod.toFixed(2), !isWeekly, currentNextDueDate);
+      await processSubscriptionPayment(supabase, user.id, expectedAmountUsdc.toFixed(2), !isWeekly, currentNextDueDate);
     }
 
     return;
@@ -296,8 +297,8 @@ async function checkUserDeposit(
       console.error('[MonitorDeposits] Failed to find tx hash:', err);
     }
 
-    // Record the new deposit
-    await supabase
+    // Record the new deposit - MUST succeed before processing payment
+    const { error: txInsertError } = await supabase
       .from('usdc_transactions')
       .insert({
         transaction_type: 'deposit',
@@ -306,9 +307,19 @@ async function checkUserDeposit(
         amount: unrecordedFunds.toFixed(2),
         user_id: user.id,
         status: 'confirmed',
-        polygon_tx_hash: txHash,
+        polygon_tx_hash: txHash || `cron-${Date.now()}-${user.id.slice(0, 8)}`,
         confirmed_at: new Date().toISOString(),
       });
+
+    // If transaction recording fails, don't process the payment
+    // This prevents duplicate payments on retry
+    if (txInsertError) {
+      console.error(`[MonitorDeposits] Failed to record transaction for ${user.email}:`, txInsertError);
+      results.errors.push(`Failed to record tx for ${user.email}: ${txInsertError.message}`);
+      return;
+    }
+
+    console.log(`[MonitorDeposits] Successfully recorded ${unrecordedFunds.toFixed(2)} USDC deposit for ${user.email}`);
 
     // Re-calculate period payment with new transaction
     const newPaidThisPeriod = paidThisPeriod + unrecordedFunds;
@@ -334,14 +345,15 @@ async function checkUserDeposit(
         },
       });
 
+      // Use expectedAmountUsdc for distribution (not overpayment)
       if (paymentType === 'initial_unlock') {
-        await processInitialUnlock(supabase, user.id, newPaidThisPeriod.toFixed(2));
+        await processInitialUnlock(supabase, user.id, expectedAmountUsdc.toFixed(2));
       } else {
         // Roll forward from current next_payment_due_date
         const currentNextDueDate = user.next_payment_due_date
           ? new Date(user.next_payment_due_date)
           : new Date(); // Fallback if not set
-        await processSubscriptionPayment(supabase, user.id, newPaidThisPeriod.toFixed(2), !isWeekly, currentNextDueDate);
+        await processSubscriptionPayment(supabase, user.id, expectedAmountUsdc.toFixed(2), !isWeekly, currentNextDueDate);
       }
     } else {
       // Still underpaid
@@ -523,7 +535,7 @@ async function processSubscriptionPayment(
   // Distribute to upline
   await supabase.rpc('distribute_to_upline_batch', {
     p_user_id: userId,
-    p_payment_amount: amountUsdc,
+    p_amount: amountUsdc,
   });
 
   console.log(`[MonitorDeposits] Subscription payment completed for user ${userId}`);

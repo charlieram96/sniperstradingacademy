@@ -165,7 +165,7 @@ async function processTransfer(
   const tolerance = expectedAmountUsdc * 0.01; // 1% tolerance
 
   // PERIOD-BASED LOGIC: Record this transaction first, then check period total
-  await supabase.from('usdc_transactions').insert({
+  const { error: txInsertError } = await supabase.from('usdc_transactions').insert({
     transaction_type: 'deposit',
     from_address: transfer.from,
     to_address: transfer.to,
@@ -175,6 +175,16 @@ async function processTransfer(
     polygon_tx_hash: transfer.txHash,
     confirmed_at: new Date().toISOString(),
   });
+
+  // If transaction recording fails, don't process the payment
+  // This prevents duplicate payments on retry/race conditions
+  if (txInsertError) {
+    console.error(`[AlchemyWebhook] Failed to record transaction for ${user.email}:`, txInsertError);
+    results.errors.push(`${transfer.txHash}: ${txInsertError.message}`);
+    return;
+  }
+
+  console.log(`[AlchemyWebhook] Recorded ${receivedAmountUsdc.toFixed(2)} USDC deposit for ${user.email}`);
 
   // Now get period total (including the transaction we just recorded)
   const periodStart = user.previous_payment_due_date || '1970-01-01';
@@ -246,14 +256,15 @@ async function processTransfer(
   });
 
   // Process the payment based on type
+  // Use expectedAmountUsdc for distribution (not overpayment)
   if (paymentType === 'initial_unlock') {
-    await processInitialUnlock(supabase, user.id, paidThisPeriod.toFixed(2));
+    await processInitialUnlock(supabase, user.id, expectedAmountUsdc.toFixed(2));
   } else {
     // Roll forward from current next_payment_due_date
     const currentNextDueDate = user.next_payment_due_date
       ? new Date(user.next_payment_due_date)
       : new Date(); // Fallback if not set
-    await processSubscriptionPayment(supabase, user.id, paidThisPeriod.toFixed(2), !isWeekly, currentNextDueDate);
+    await processSubscriptionPayment(supabase, user.id, expectedAmountUsdc.toFixed(2), !isWeekly, currentNextDueDate);
   }
 
   // Handle overpayment credit
@@ -407,7 +418,7 @@ async function processSubscriptionPayment(
   // Distribute to upline
   await supabase.rpc('distribute_to_upline_batch', {
     p_user_id: userId,
-    p_payment_amount: amountUsdc,
+    p_amount: amountUsdc,
   });
 
   console.log(`[AlchemyWebhook] Subscription payment completed for user ${userId}, next due: ${newNextDueDate.toISOString()}`);

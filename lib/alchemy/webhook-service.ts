@@ -98,8 +98,8 @@ export function parseUSDCTransfers(payload: AlchemyWebhookPayload): ParsedUSDCTr
   }
 
   for (const activity of payload.event.activity) {
-    // Only process ERC-20 transfers
-    if (activity.category !== 'erc20') {
+    // Only process ERC-20 transfers (Alchemy may send 'erc20' or 'token' depending on version)
+    if (activity.category !== 'erc20' && activity.category !== 'token') {
       continue;
     }
 
@@ -131,7 +131,7 @@ export function parseUSDCTransfers(payload: AlchemyWebhookPayload): ParsedUSDCTr
  * Check if a transfer event matches our USDC contract
  */
 export function isUSDCTransfer(activity: AlchemyActivity): boolean {
-  if (activity.category !== 'erc20') {
+  if (activity.category !== 'erc20' && activity.category !== 'token') {
     return false;
   }
 
