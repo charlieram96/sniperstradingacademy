@@ -296,7 +296,7 @@ export function AccountStatusCard({
               variant={!accountActive || isOverdue ? "destructive" : "default"}
             >
               <CreditCard className="h-4 w-4 mr-2" />
-              {!accountActive || isOverdue ? "Pay Now to Reactivate" : "Update Payment Method"}
+              {!accountActive || isOverdue ? "Pay Now to Reactivate" : "View Payment Page"}
             </Button>
           </div>
         )}

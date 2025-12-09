@@ -79,6 +79,9 @@ function PaymentsContent() {
   const [hasPayoutWallet, setHasPayoutWallet] = useState(false)
   const [pendingPaymentType, setPendingPaymentType] = useState<string | null>(null)
 
+  // Payment due date state
+  const [nextPaymentDueDate, setNextPaymentDueDate] = useState<Date | null>(null)
+
   const success = searchParams.get("success")
   const canceled = searchParams.get("canceled")
 
@@ -104,7 +107,7 @@ function PaymentsContent() {
       // Get user data including payout wallet
       const { data: userData } = await supabase
         .from("users")
-        .select("initial_payment_completed, bypass_initial_payment, bypass_subscription, payout_wallet_address, is_active")
+        .select("initial_payment_completed, bypass_initial_payment, bypass_subscription, payout_wallet_address, is_active, payment_schedule, next_payment_due_date")
         .eq("id", userId)
         .single()
 
@@ -114,6 +117,9 @@ function PaymentsContent() {
         setBypassSubscription(userData.bypass_subscription || false)
         setHasPayoutWallet(!!userData.payout_wallet_address)
         setIsActive(userData.is_active || false)
+        // Set payment schedule from users table (not subscriptions)
+        setPaymentSchedule(userData.payment_schedule === 'weekly' ? 'weekly' : 'monthly')
+        setNextPaymentDueDate(userData.next_payment_due_date ? new Date(userData.next_payment_due_date) : null)
       }
 
       // Get subscription (use maybeSingle to avoid 406 when no subscription exists)
@@ -126,7 +132,7 @@ function PaymentsContent() {
 
       if (sub) {
         setSubscription(sub)
-        setPaymentSchedule(sub.payment_schedule === 'weekly' ? 'weekly' : 'monthly')
+        // Note: payment_schedule is set from users table above, not subscriptions
       }
 
       setLoading(false)
@@ -401,16 +407,16 @@ function PaymentsContent() {
         <CardHeader>
           <CardTitle>Subscription Status</CardTitle>
           <CardDescription>
-            Monthly subscription for Trading Hub network access
+            {paymentSchedule === 'weekly' ? 'Weekly' : 'Monthly'} subscription for Trading Hub network access
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {subscription && isActive ? (
+          {isActive && initialPaymentCompleted ? (
             <div>
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-2xl font-bold">
-                    {subscription.payment_schedule === 'weekly' ? '$49.75/week' : '$199/month'}
+                    {paymentSchedule === 'weekly' ? '$49.75/week' : '$199/month'}
                   </p>
                   <p className="text-sm text-muted-foreground">Trading Hub Premium</p>
                 </div>
@@ -419,22 +425,50 @@ function PaymentsContent() {
                 </span>
               </div>
               <div className="space-y-2 text-sm">
-                {!bypassSubscription && subscription.next_billing_date && (
+                {!bypassSubscription && nextPaymentDueDate && (
                   <p>
-                    <span className="text-muted-foreground">Next billing date:</span>{" "}
-                    {new Date(subscription.next_billing_date).toLocaleDateString()}
+                    <span className="text-muted-foreground">Next payment due:</span>{" "}
+                    {nextPaymentDueDate.toLocaleDateString()}
                   </p>
                 )}
-                <p>
-                  <span className="text-muted-foreground">Member since:</span>{" "}
-                  {new Date(subscription.created_at).toLocaleDateString()}
-                </p>
+                {subscription && (
+                  <p>
+                    <span className="text-muted-foreground">Member since:</span>{" "}
+                    {new Date(subscription.created_at).toLocaleDateString()}
+                  </p>
+                )}
               </div>
-              <div className="mt-4">
-                <Button variant="outline" onClick={handleCancelSubscription}>
-                  Cancel Subscription
-                </Button>
-              </div>
+              {/* Show payment button if payment is approaching or due */}
+              {!bypassSubscription && nextPaymentDueDate && (
+                <div className="mt-4 space-y-2">
+                  {new Date() >= new Date(nextPaymentDueDate.getTime() - 7 * 24 * 60 * 60 * 1000) ? (
+                    <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800 mb-3">
+                      <p className="text-sm text-amber-700 dark:text-amber-400">
+                        {new Date() >= nextPaymentDueDate
+                          ? "Your payment is overdue. Please make a payment to maintain your active status."
+                          : "Your next payment is due soon. Make a payment to stay active."}
+                      </p>
+                    </div>
+                  ) : null}
+                  <Button
+                    onClick={() => initiatePayment('subscription')}
+                    disabled={subscribing}
+                    variant={new Date() >= nextPaymentDueDate ? "destructive" : "default"}
+                  >
+                    {subscribing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Getting Deposit Address...
+                      </>
+                    ) : (
+                      <>
+                        <Wallet className="h-4 w-4 mr-2" />
+                        Pay {paymentSchedule === 'weekly' ? '$49.75' : '$199'} Now
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           ) : bypassSubscription ? (
             <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border-2 border-green-200 dark:border-green-900">
