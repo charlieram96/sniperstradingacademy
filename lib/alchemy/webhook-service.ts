@@ -27,7 +27,7 @@ export interface AlchemyActivity {
   hash: string;
   value: number;
   asset: string;
-  category: 'external' | 'internal' | 'erc20' | 'erc721' | 'erc1155' | 'specialnft';
+  category: 'external' | 'internal' | 'erc20' | 'erc721' | 'erc1155' | 'specialnft' | 'token';
   rawContract: {
     rawValue: string;
     address: string;
