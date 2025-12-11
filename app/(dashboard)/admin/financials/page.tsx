@@ -375,13 +375,10 @@ export default function AdminFinancialsPage() {
   }, [])
 
   // Fetch treasury wallet balance
-  const fetchTreasuryWalletBalance = useCallback(async (showLoading = true) => {
+  const fetchTreasuryWalletBalance = useCallback(async () => {
     if (!treasurySettings?.treasuryWalletAddress) return
 
-    // Only show loading spinner on initial load, not during polling
-    if (showLoading && !treasuryWalletBalance) {
-      setTreasuryBalanceLoading(true)
-    }
+    setTreasuryBalanceLoading(true)
     try {
       const response = await fetch("/api/crypto/admin/treasury-wallet")
       const data = await response.json()
@@ -397,16 +394,13 @@ export default function AdminFinancialsPage() {
     } finally {
       setTreasuryBalanceLoading(false)
     }
-  }, [treasurySettings?.treasuryWalletAddress, treasuryWalletBalance])
+  }, [treasurySettings?.treasuryWalletAddress])
 
   // Fetch payout wallet balance
-  const fetchPayoutWalletBalance = useCallback(async (showLoading = true) => {
+  const fetchPayoutWalletBalance = useCallback(async () => {
     if (!treasurySettings?.payoutWalletAddress) return
 
-    // Only show loading spinner on initial load, not during polling
-    if (showLoading && !payoutWalletBalance) {
-      setPayoutBalanceLoading(true)
-    }
+    setPayoutBalanceLoading(true)
     try {
       const response = await fetch("/api/crypto/admin/payout-wallet")
       const data = await response.json()
@@ -422,7 +416,7 @@ export default function AdminFinancialsPage() {
     } finally {
       setPayoutBalanceLoading(false)
     }
-  }, [treasurySettings?.payoutWalletAddress, payoutWalletBalance])
+  }, [treasurySettings?.payoutWalletAddress])
 
   // Save treasury settings
   const saveTreasurySettings = async () => {
