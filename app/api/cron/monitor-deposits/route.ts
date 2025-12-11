@@ -394,8 +394,30 @@ async function processInitialUnlock(
   amountUsdc: string,
   usdcTxId?: string
 ) {
-  // Assign network position
-  await supabase.rpc('assign_network_position', { p_user_id: userId });
+  // Get referrer_id from referrals table FIRST
+  const { data: referralData, error: referralError } = await supabase
+    .from('referrals')
+    .select('referrer_id')
+    .eq('referred_id', userId)
+    .single();
+
+  if (referralError || !referralData?.referrer_id) {
+    console.error(`[MonitorDeposits] No referrer found for user ${userId}:`, referralError);
+    throw new Error(`No referrer found for user ${userId} - cannot assign network position`);
+  }
+
+  const referrerId = referralData.referrer_id;
+
+  // Assign network position WITH referrer_id (required for non-root users)
+  const { error: positionError } = await supabase.rpc('assign_network_position', {
+    p_user_id: userId,
+    p_referrer_id: referrerId,
+  });
+
+  if (positionError) {
+    console.error(`[MonitorDeposits] Failed to assign network position for ${userId}:`, positionError);
+    throw new Error(`Failed to assign network position: ${positionError.message}`);
+  }
 
   // Get user's payment schedule preference (default to monthly)
   const { data: userData } = await supabase
@@ -418,6 +440,7 @@ async function processInitialUnlock(
     .update({
       membership_status: 'unlocked',
       is_active: true,
+      paid_for_period: true,
       initial_payment_completed: true,
       initial_payment_at: now.toISOString(),
       last_payment_date: now.toISOString(),
@@ -455,28 +478,20 @@ async function processInitialUnlock(
     .update({ status: 'active' })
     .eq('referred_id', userId);
 
-  // Create direct bonus commission
-  const { data: referral } = await supabase
-    .from('referrals')
-    .select('referrer_id')
-    .eq('referred_id', userId)
-    .single();
+  // Create direct bonus commission (using referrerId from earlier lookup)
+  const directBonusAmount = parseFloat(PAYMENT_AMOUNTS.DIRECT_BONUS);
 
-  if (referral?.referrer_id) {
-    const directBonusAmount = parseFloat(PAYMENT_AMOUNTS.DIRECT_BONUS);
+  await supabase
+    .from('commissions')
+    .insert({
+      referrer_id: referrerId,
+      referred_id: userId,
+      commission_type: 'direct_bonus',
+      amount: directBonusAmount,
+      status: 'pending',
+    });
 
-    await supabase
-      .from('commissions')
-      .insert({
-        referrer_id: referral.referrer_id,
-        referred_id: userId,
-        commission_type: 'direct_bonus',
-        amount: directBonusAmount,
-        status: 'pending',
-      });
-
-    console.log(`[MonitorDeposits] Created direct bonus of $${directBonusAmount} for referrer ${referral.referrer_id}`);
-  }
+  console.log(`[MonitorDeposits] Created direct bonus of $${directBonusAmount} for referrer ${referrerId}`);
 
   console.log(`[MonitorDeposits] Initial unlock completed for user ${userId}`);
 }
@@ -507,6 +522,7 @@ async function processSubscriptionPayment(
     .from('users')
     .update({
       is_active: true,
+      paid_for_period: true,
       last_payment_date: now.toISOString(),
       payment_schedule: isMonthly ? 'monthly' : 'weekly',
       previous_payment_due_date: newPreviousDueDate.toISOString(),

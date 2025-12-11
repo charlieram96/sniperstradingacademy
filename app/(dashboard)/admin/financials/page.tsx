@@ -751,21 +751,15 @@ export default function AdminFinancialsPage() {
     checkSuperAdminStatus()
   }, [checkSuperAdminStatus])
 
-  // Poll wallet balances every 3 seconds
-  useEffect(() => {
-    if (!isSuperAdmin) return;
-
-    const interval = setInterval(() => {
-      if (treasurySettings?.treasuryWalletAddress) {
-        fetchTreasuryWalletBalance();
-      }
-      if (treasurySettings?.payoutWalletAddress) {
-        fetchPayoutWalletBalance();
-      }
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [isSuperAdmin, treasurySettings?.treasuryWalletAddress, treasurySettings?.payoutWalletAddress, fetchTreasuryWalletBalance, fetchPayoutWalletBalance])
+  // Manual refresh function for wallet balances
+  const refreshWalletBalances = useCallback(async () => {
+    if (treasurySettings?.treasuryWalletAddress) {
+      fetchTreasuryWalletBalance();
+    }
+    if (treasurySettings?.payoutWalletAddress) {
+      fetchPayoutWalletBalance();
+    }
+  }, [treasurySettings?.treasuryWalletAddress, treasurySettings?.payoutWalletAddress, fetchTreasuryWalletBalance, fetchPayoutWalletBalance])
 
   const filteredPayments = payments.filter((payment) => {
     const matchesSearch =
@@ -853,26 +847,39 @@ export default function AdminFinancialsPage() {
 
               {/* Wallet balance display */}
               {treasurySettings?.treasuryWalletAddress && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-muted rounded-lg">
-                    <p className="text-xs text-muted-foreground">USDC Balance</p>
-                    {treasuryBalanceLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin mt-1" />
-                    ) : (
-                      <p className="text-lg font-semibold text-green-600">
-                        {treasuryWalletBalance ? `$${parseFloat(treasuryWalletBalance.usdc).toFixed(2)}` : '-'}
-                      </p>
-                    )}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">Wallet Balances</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={refreshWalletBalances}
+                      disabled={treasuryBalanceLoading || payoutBalanceLoading}
+                    >
+                      <RefreshCw className={`h-4 w-4 ${(treasuryBalanceLoading || payoutBalanceLoading) ? "animate-spin" : ""}`} />
+                    </Button>
                   </div>
-                  <div className="p-3 bg-muted rounded-lg">
-                    <p className="text-xs text-muted-foreground">MATIC (Gas)</p>
-                    {treasuryBalanceLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin mt-1" />
-                    ) : (
-                      <p className="text-lg font-semibold">
-                        {treasuryWalletBalance ? `${parseFloat(treasuryWalletBalance.matic).toFixed(4)} MATIC` : '-'}
-                      </p>
-                    )}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-xs text-muted-foreground">USDC Balance</p>
+                      {treasuryBalanceLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin mt-1" />
+                      ) : (
+                        <p className="text-lg font-semibold text-green-600">
+                          {treasuryWalletBalance ? `$${parseFloat(treasuryWalletBalance.usdc).toFixed(2)}` : '-'}
+                        </p>
+                      )}
+                    </div>
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-xs text-muted-foreground">MATIC (Gas)</p>
+                      {treasuryBalanceLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin mt-1" />
+                      ) : (
+                        <p className="text-lg font-semibold">
+                          {treasuryWalletBalance ? `${parseFloat(treasuryWalletBalance.matic).toFixed(4)} MATIC` : '-'}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}

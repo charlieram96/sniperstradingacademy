@@ -319,7 +319,8 @@ export const NETWORK_CONSTANTS = {
   BASE_COMMISSION_RATE: 0.10,
   MAX_COMMISSION_RATE: 0.16,
   DIRECT_REFERRALS_PER_STRUCTURE: 3,
-  ACTIVE_THRESHOLD_DAYS: 33, // Paid within 33 days = active (30 + 3 grace)
-  INACTIVE_GRACE_PERIOD_DAYS: 90, // Haven't paid in 90 days = disabled
-  DISABLED_THRESHOLD_DAYS: 90
+  // DEPRECATED: Use is_active column instead. These don't account for weekly payments.
+  ACTIVE_THRESHOLD_DAYS: 33, // DEPRECATED - was for monthly only
+  INACTIVE_GRACE_PERIOD_DAYS: 90, // DEPRECATED
+  DISABLED_THRESHOLD_DAYS: 90 // DEPRECATED
 } as const

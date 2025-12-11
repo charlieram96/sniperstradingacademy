@@ -116,11 +116,8 @@ export async function GET(request: Request) {
     // Check granular bypass settings
     let withdrawalMessage: string
 
-    // Check if user is active (paid within 33 days OR has subscription bypass)
-    const isActive = user.bypass_subscription
-      ? true
-      : !!(user.last_payment_date &&
-        new Date(user.last_payment_date) >= new Date(Date.now() - 33 * 24 * 60 * 60 * 1000))
+    // Check if user is active (using is_active column as source of truth)
+    const isActive = user.is_active || user.bypass_subscription
 
     // Check referral requirement (can be bypassed with count)
     // User is treated as having whichever is greater: actual count or bypass count
@@ -145,7 +142,7 @@ export async function GET(request: Request) {
       withdrawalMessage = `Qualified via Bypass Access (${user.bypass_direct_referrals} referrals & subscription)`
     } else if (hasReferralBypass) {
       if (!isActive) {
-        withdrawalMessage = 'Account not active (must pay within 33 days)'
+        withdrawalMessage = 'Account not active (subscription payment required)'
       } else {
         withdrawalMessage = `Qualified with ${user.bypass_direct_referrals} bypassed referral${user.bypass_direct_referrals !== 1 ? 's' : ''}`
       }
@@ -158,7 +155,7 @@ export async function GET(request: Request) {
     } else {
       // No bypasses - regular user
       if (!isActive) {
-        withdrawalMessage = 'Account not active (must pay within 33 days)'
+        withdrawalMessage = 'Account not active (subscription payment required)'
       } else if (referralDeficit > 0) {
         withdrawalMessage = `Need ${referralDeficit} more direct referral${referralDeficit !== 1 ? 's' : ''} to withdraw`
       } else {

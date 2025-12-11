@@ -21,10 +21,6 @@
       "schedule": "0 2 * * 0"
     },
     {
-      "path": "/api/cron/monitor-payment-intents",
-      "schedule": "* * * * *"
-    },
-    {
       "path": "/api/cron/expire-intents",
       "schedule": "*/5 * * * *"
     },
@@ -38,7 +34,7 @@
     },
     {
       "path": "/api/cron/monitor-deposits",
-      "schedule": "* * * * *"
+      "schedule": "0 * * * *"
     },
     {
       "path": "/api/cron/sweep-deposits",

@@ -46,6 +46,21 @@ export async function GET(req: NextRequest) {
     const supabase = createServiceRoleClient();
     const now = new Date();
 
+    // Reset paid_for_period = false for users whose period has ended
+    // (NOW > next_payment_due_date means new period started, need to pay again)
+    const { data: resetUsers, error: resetError } = await supabase
+      .from('users')
+      .update({ paid_for_period: false })
+      .eq('paid_for_period', true)
+      .lt('next_payment_due_date', now.toISOString())
+      .select('id');
+
+    if (resetError) {
+      console.error('[CheckSubscriptions] Failed to reset paid_for_period:', resetError);
+    } else {
+      console.log(`[CheckSubscriptions] Reset paid_for_period for ${resetUsers?.length || 0} users`);
+    }
+
     // Calculate cutoff: NOW - 3 days grace period
     // Users with next_payment_due_date before this are overdue
     const cutoffDate = new Date(now);
