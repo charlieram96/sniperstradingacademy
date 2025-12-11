@@ -727,19 +727,23 @@ export default function AdminFinancialsPage() {
     setLoading(false)
   }, [fetchFinancialData, fetchTreasurySettings, fetchReviewQueue, fetchMonthlyStatus, fetchSweepStatus, fetchUsersWithoutWallets])
 
-  // Fetch treasury wallet balance when address is available
+  // Fetch treasury wallet balance when address is available (once)
+  const treasuryAddress = treasurySettings?.treasuryWalletAddress
   useEffect(() => {
-    if (treasurySettings?.treasuryWalletAddress) {
+    if (treasuryAddress) {
       fetchTreasuryWalletBalance()
     }
-  }, [treasurySettings?.treasuryWalletAddress, fetchTreasuryWalletBalance])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [treasuryAddress])
 
-  // Fetch payout wallet balance when address is available
+  // Fetch payout wallet balance when address is available (once)
+  const payoutAddress = treasurySettings?.payoutWalletAddress
   useEffect(() => {
-    if (treasurySettings?.payoutWalletAddress) {
+    if (payoutAddress) {
       fetchPayoutWalletBalance()
     }
-  }, [treasurySettings?.payoutWalletAddress, fetchPayoutWalletBalance])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payoutAddress])
 
   useEffect(() => {
     checkSuperAdminStatus()
