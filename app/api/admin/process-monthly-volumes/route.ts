@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (!['admin', 'superadmin'].includes(userData?.role || '')) {
+    if (!['admin', 'superadmin', 'superadmin+'].includes(userData?.role || '')) {
       return NextResponse.json(
         { error: 'Access denied. Admin or superadmin role required.' },
         { status: 403 }
@@ -337,7 +337,7 @@ export async function GET(req: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (!['admin', 'superadmin'].includes(userData?.role || '')) {
+    if (!['admin', 'superadmin', 'superadmin+'].includes(userData?.role || '')) {
       return NextResponse.json(
         { error: 'Access denied. Admin or superadmin role required.' },
         { status: 403 }

@@ -104,8 +104,8 @@ export default function AdminPayoutsPage() {
       const response = await fetch("/api/crypto/admin/payout-wallet")
       const data = await response.json()
 
-      if (response.ok && data.balance) {
-        setPayoutWalletBalance(parseFloat(data.balance.usdc || "0"))
+      if (response.ok && data.success && data.payoutWallet) {
+        setPayoutWalletBalance(parseFloat(data.payoutWallet.usdcBalance || "0"))
       }
     } catch (error) {
       console.error("Error fetching payout wallet balance:", error)
@@ -143,7 +143,7 @@ export default function AdminPayoutsPage() {
         .eq("id", user.id)
         .single()
 
-      if (userData?.role === "superadmin+") {
+      if (['superadmin', 'superadmin+'].includes(userData?.role || '')) {
         setIsSuperAdmin(true)
         await fetchData()
       }

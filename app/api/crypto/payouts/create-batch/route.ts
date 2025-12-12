@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (!['admin', 'superadmin'].includes(userData?.role || '')) {
+    if (!['admin', 'superadmin', 'superadmin+'].includes(userData?.role || '')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -240,7 +240,7 @@ export async function GET(req: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (!['admin', 'superadmin'].includes(userData?.role || '')) {
+    if (!['admin', 'superadmin', 'superadmin+'].includes(userData?.role || '')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

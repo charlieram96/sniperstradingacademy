@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (userError || !['admin', 'superadmin'].includes(userData?.role || '')) {
+    if (userError || !['admin', 'superadmin', 'superadmin+'].includes(userData?.role || '')) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
@@ -137,7 +137,7 @@ export async function GET(req: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (!['admin', 'superadmin'].includes(userData?.role || '')) {
+    if (!['admin', 'superadmin', 'superadmin+'].includes(userData?.role || '')) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
