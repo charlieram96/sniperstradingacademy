@@ -221,6 +221,9 @@ function PaymentsContent() {
         headers: {
           "Content-Type": "application/json",
         },
+        body: JSON.stringify({
+          paymentSchedule: paymentType === 'subscription' ? paymentSchedule : undefined,
+        }),
       })
 
       const data = await response.json()
@@ -438,11 +441,11 @@ function PaymentsContent() {
                   </p>
                 )}
               </div>
-              {/* Show payment button if payment is approaching or due */}
+              {/* Show payment options if payment is approaching or due */}
               {!bypassSubscription && nextPaymentDueDate && (
-                <div className="mt-4 space-y-2">
+                <div className="mt-4 space-y-4">
                   {new Date() >= new Date(nextPaymentDueDate.getTime() - 7 * 24 * 60 * 60 * 1000) ? (
-                    <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800 mb-3">
+                    <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
                       <p className="text-sm text-amber-700 dark:text-amber-400">
                         {new Date() >= nextPaymentDueDate
                           ? "Your payment is overdue. Please make a payment to maintain your active status."
@@ -450,6 +453,10 @@ function PaymentsContent() {
                       </p>
                     </div>
                   ) : null}
+                  <PaymentScheduleSelector
+                    value={paymentSchedule}
+                    onChange={setPaymentSchedule}
+                  />
                   <Button
                     onClick={() => initiatePayment('subscription')}
                     disabled={subscribing}

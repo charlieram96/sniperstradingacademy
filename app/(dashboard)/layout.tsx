@@ -50,8 +50,9 @@ export default async function DashboardLayout({
     .single()
 
   const userRole = userData?.role
-  const isAdminOrSuper = userRole === "admin" || userRole === "superadmin"
-  const isSuperAdmin = userRole === "superadmin"
+  const isAdminOrSuper = userRole === "admin" || userRole === "superadmin" || userRole === "superadmin+"
+  const isSuperAdmin = userRole === "superadmin" || userRole === "superadmin+"
+  const isSuperAdminPlus = userRole === "superadmin+"
 
   // User is active if:
   // 1. Has completed initial payment OR has bypass_initial_payment
@@ -214,8 +215,8 @@ export default async function DashboardLayout({
                   </AccordionContent>
                 </AccordionItem>
 
-                {/* Payments Group */}
-                {isSuperAdmin && (
+                {/* Payments Group - superadmin+ only */}
+                {isSuperAdminPlus && (
                   <AccordionItem value="payments" className="border-b-0">
                     <AccordionTrigger className="flex items-center gap-[10px] px-4 py-[10px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 hover:no-underline">
                       <div className="flex items-center gap-[10px] flex-1">

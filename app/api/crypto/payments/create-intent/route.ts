@@ -24,6 +24,17 @@ export async function POST(req: NextRequest) {
       return rateLimitResponse;
     }
 
+    // Parse request body for payment schedule selection
+    let requestedSchedule: 'weekly' | 'monthly' | null = null;
+    try {
+      const body = await req.json();
+      if (body.paymentSchedule === 'weekly' || body.paymentSchedule === 'monthly') {
+        requestedSchedule = body.paymentSchedule;
+      }
+    } catch {
+      // No body or invalid JSON - will use default/existing schedule
+    }
+
     const supabase = await createClient();
 
     // Get authenticated user
@@ -50,7 +61,8 @@ export async function POST(req: NextRequest) {
         bypass_initial_payment,
         payout_wallet_address,
         crypto_deposit_address,
-        is_active
+        is_active,
+        payment_schedule
       `)
       .eq('id', user.id)
       .single();
@@ -89,15 +101,16 @@ export async function POST(req: NextRequest) {
 
     let paymentType: 'initial_unlock' | 'subscription';
     let amountUSDC: string;
+    let selectedSchedule: 'weekly' | 'monthly' = 'monthly';
 
     if (needsInitialPayment) {
       paymentType = 'initial_unlock';
       amountUSDC = PAYMENT_AMOUNTS.INITIAL_UNLOCK;
     } else {
       paymentType = 'subscription';
-      // Get user's subscription schedule to determine amount
-      const schedule = await getUserPaymentSchedule(user.id);
-      amountUSDC = schedule === 'weekly'
+      // Use requested schedule from UI, or fall back to user's current schedule
+      selectedSchedule = requestedSchedule || (userData.payment_schedule as 'weekly' | 'monthly') || 'monthly';
+      amountUSDC = selectedSchedule === 'weekly'
         ? PAYMENT_AMOUNTS.WEEKLY_SUBSCRIPTION
         : PAYMENT_AMOUNTS.MONTHLY_SUBSCRIPTION;
     }
@@ -114,7 +127,7 @@ export async function POST(req: NextRequest) {
 
     const { address: depositAddress } = depositResult.data;
 
-    console.log(`[GetDepositAddress] User ${user.id}: ${paymentType}, ${amountUSDC} USDC, address: ${depositAddress}`);
+    console.log(`[GetDepositAddress] User ${user.id}: ${paymentType}, ${amountUSDC} USDC (${selectedSchedule}), address: ${depositAddress}`);
 
     // Return deposit address and payment info
     return NextResponse.json({
@@ -122,12 +135,13 @@ export async function POST(req: NextRequest) {
       depositAddress,
       amountUSDC,
       paymentType,
+      paymentSchedule: paymentType === 'subscription' ? selectedSchedule : null,
       qrCodeData: depositAddress,
       // No expiration for permanent addresses
       instructions: {
         title: paymentType === 'initial_unlock'
           ? `Unlock Membership - Pay ${amountUSDC} USDC`
-          : `Subscription Payment - Pay ${amountUSDC} USDC`,
+          : `${selectedSchedule === 'weekly' ? 'Weekly' : 'Monthly'} Subscription - Pay ${amountUSDC} USDC`,
         steps: [
           {
             step: 1,

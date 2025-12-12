@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       .eq("id", user.id)
       .single()
 
-    if (userData?.role !== "superadmin") {
+    if (userData?.role !== "superadmin" && userData?.role !== "superadmin+") {
       return NextResponse.json({ error: "Access denied. Superadmin only." }, { status: 403 })
     }
 
@@ -136,7 +136,7 @@ export async function PATCH(req: NextRequest) {
       .eq("id", user.id)
       .single()
 
-    if (userData?.role !== "superadmin") {
+    if (userData?.role !== "superadmin" && userData?.role !== "superadmin+") {
       return NextResponse.json({ error: "Access denied. Superadmin only." }, { status: 403 })
     }
 
@@ -187,7 +187,7 @@ export async function DELETE(req: NextRequest) {
       .eq("id", user.id)
       .single()
 
-    if (userData?.role !== "superadmin") {
+    if (userData?.role !== "superadmin" && userData?.role !== "superadmin+") {
       return NextResponse.json({ error: "Access denied. Superadmin only." }, { status: 403 })
     }
 

@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Network, Search, Shield, ShieldCheck, Users, CheckCircle2, XCircle, AlertTriangle, Crown, Sparkles, Trash2, UserPlus, Loader2 } from "lucide-react"
+import { Network, Search, Shield, ShieldCheck, Users, CheckCircle2, XCircle, AlertTriangle, Crown, Sparkles, Trash2, UserPlus, Loader2, Power, DollarSign, CreditCard, Copy } from "lucide-react"
+import QRCode from "qrcode"
 import { formatCurrency } from "@/lib/utils"
 import {
   Select,
@@ -52,6 +53,7 @@ interface NetworkUser {
     name: string | null
     network_position_id: string | null
   }> | null
+  payout_wallet_address: string | null
 }
 
 type SortField = "name" | "email" | "created_at" | "total_network_count" | "monthly_commission" | "active_direct_referrals_count"
@@ -80,7 +82,8 @@ export default function AdminNetworkPage() {
       directReferralsCount: number;
       subscription: boolean;
       initialPayment: boolean;
-    }
+    };
+    initialPaymentCompleted: boolean;
   } | null>(null)
   const [bypassSelections, setBypassSelections] = useState({
     directReferralsCount: 0,
@@ -111,6 +114,35 @@ export default function AdminNetworkPage() {
   } | null>(null)
   const [emailConfirmation, setEmailConfirmation] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
+
+  // New action states
+  const [showManualPayoutDialog, setShowManualPayoutDialog] = useState(false)
+  const [userForPayout, setUserForPayout] = useState<NetworkUser | null>(null)
+  const [payoutAmount, setPayoutAmount] = useState("")
+
+  const [showDeletionRequestDialog, setShowDeletionRequestDialog] = useState(false)
+  const [userForDeletion, setUserForDeletion] = useState<NetworkUser | null>(null)
+
+  const [pendingDeletions, setPendingDeletions] = useState<Array<{
+    id: string
+    user_id: string
+    user_email: string
+    user_name: string | null
+    requested_at: string
+    requested_by: string
+    requester: { name: string | null; email: string } | null
+  }>>([])
+  const [pendingDeletionsCount, setPendingDeletionsCount] = useState(0)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false)
+  const [userForPayment, setUserForPayment] = useState<NetworkUser | null>(null)
+  const [paymentType, setPaymentType] = useState<"weekly" | "monthly" | "initial">("weekly")
+  const [paymentAddress, setPaymentAddress] = useState<string | null>(null)
+  const [paymentQrCode, setPaymentQrCode] = useState<string | null>(null)
+  const [expectedPaymentAmount, setExpectedPaymentAmount] = useState(0)
+  const [loadingPaymentAddress, setLoadingPaymentAddress] = useState(false)
+  const [copiedAddress, setCopiedAddress] = useState(false)
 
   const filterAndSortUsers = useCallback(() => {
     let result = [...users]
@@ -165,6 +197,7 @@ export default function AdminNetworkPage() {
     checkAdminStatus()
     fetchAllUsers()
     fetchOrphanedUsers()
+    fetchPendingDeletions()
   }, [])
 
   useEffect(() => {
@@ -176,14 +209,15 @@ export default function AdminNetworkPage() {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (user) {
+      setCurrentUserId(user.id)
       const { data: userData } = await supabase
         .from("users")
         .select("role")
         .eq("id", user.id)
         .single()
 
-      setIsAdmin(userData?.role === "admin" || userData?.role === "superadmin")
-      setIsSuperAdmin(userData?.role === "superadmin")
+      setIsAdmin(userData?.role === "admin" || userData?.role === "superadmin" || userData?.role === "superadmin+")
+      setIsSuperAdmin(userData?.role === "superadmin" || userData?.role === "superadmin+")
     }
   }
 
@@ -212,6 +246,7 @@ export default function AdminNetworkPage() {
         bypass_subscription,
         bypass_initial_payment,
         referred_by,
+        payout_wallet_address,
         referrer:users!referred_by(name, network_position_id)
       `)
       .order("created_at", { ascending: false })
@@ -336,7 +371,8 @@ export default function AdminNetworkPage() {
         directReferralsCount: user.bypass_direct_referrals,
         subscription: user.bypass_subscription,
         initialPayment: user.bypass_initial_payment
-      }
+      },
+      initialPaymentCompleted: user.initial_payment_completed
     })
     // Initialize states with current values
     setBypassSelections({
@@ -437,6 +473,245 @@ export default function AdminNetworkPage() {
     }
   }
 
+  // Toggle user active/inactive
+  async function handleToggleActive(user: NetworkUser) {
+    setIsProcessing(true)
+    try {
+      const response = await fetch("/api/admin/users/toggle-active", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          isActive: !user.is_active
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        alert(`Failed to toggle status: ${errorData.error || 'Unknown error'}`)
+        return
+      }
+
+      await fetchAllUsers()
+      if (selectedUser?.id === user.id) {
+        setSelectedUser({ ...selectedUser, is_active: !user.is_active })
+      }
+    } catch (error) {
+      console.error("Error toggling user status:", error)
+      alert("Failed to toggle user status. Please try again.")
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  // Manual payout functions
+  function openManualPayoutDialog(user: NetworkUser) {
+    setUserForPayout(user)
+    setPayoutAmount("")
+    setShowManualPayoutDialog(true)
+  }
+
+  async function handleManualPayout() {
+    if (!userForPayout || !payoutAmount) return
+
+    const amount = parseFloat(payoutAmount)
+    if (isNaN(amount) || amount <= 0 || amount > 2000) {
+      alert("Amount must be between 0.01 and 2,000 USDC")
+      return
+    }
+
+    setIsProcessing(true)
+    try {
+      const response = await fetch("/api/admin/payouts/create-manual", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: userForPayout.id,
+          amount,
+          description: `Manual payout for ${userForPayout.name || userForPayout.email}`
+        })
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        alert(`Failed to create payout: ${data.error || 'Unknown error'}`)
+        return
+      }
+
+      alert(`Payout of ${amount.toFixed(2)} USDC sent successfully!`)
+      setShowManualPayoutDialog(false)
+      setUserForPayout(null)
+    } catch (error) {
+      console.error("Error creating manual payout:", error)
+      alert("Failed to create payout. Please try again.")
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  // Deletion request functions
+  async function fetchPendingDeletions() {
+    try {
+      const response = await fetch("/api/admin/users/deletion-requests?status=pending")
+      if (response.ok) {
+        const data = await response.json()
+        setPendingDeletions(data.requests || [])
+        setPendingDeletionsCount(data.pendingCount || 0)
+      }
+    } catch (error) {
+      console.error("Error fetching pending deletions:", error)
+    }
+  }
+
+  function openDeletionRequestDialog(user: NetworkUser) {
+    setUserForDeletion(user)
+    setShowDeletionRequestDialog(true)
+  }
+
+  async function handleRequestDeletion() {
+    if (!userForDeletion) return
+
+    setIsProcessing(true)
+    try {
+      const response = await fetch("/api/admin/users/request-deletion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: userForDeletion.id })
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        alert(`Failed to request deletion: ${data.error || 'Unknown error'}`)
+        return
+      }
+
+      alert("Deletion request submitted. Another superadmin must approve it.")
+      setShowDeletionRequestDialog(false)
+      setUserForDeletion(null)
+      await fetchPendingDeletions()
+    } catch (error) {
+      console.error("Error requesting deletion:", error)
+      alert("Failed to request deletion. Please try again.")
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  async function handleApproveDeletion(requestId: string) {
+    if (!confirm("Are you sure you want to approve this deletion? This action is permanent.")) return
+
+    setIsProcessing(true)
+    try {
+      const response = await fetch("/api/admin/users/approve-deletion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId })
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        alert(`Failed to approve deletion: ${data.error || 'Unknown error'}`)
+        return
+      }
+
+      alert(`User ${data.deletedUserEmail} has been permanently deleted.`)
+      await fetchPendingDeletions()
+      await fetchAllUsers()
+    } catch (error) {
+      console.error("Error approving deletion:", error)
+      alert("Failed to approve deletion. Please try again.")
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  async function handleRejectDeletion(requestId: string) {
+    const reason = prompt("Enter rejection reason (optional):")
+
+    setIsProcessing(true)
+    try {
+      const response = await fetch("/api/admin/users/reject-deletion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId, reason })
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        alert(`Failed to reject deletion: ${data.error || 'Unknown error'}`)
+        return
+      }
+
+      alert("Deletion request rejected.")
+      await fetchPendingDeletions()
+    } catch (error) {
+      console.error("Error rejecting deletion:", error)
+      alert("Failed to reject deletion. Please try again.")
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  // Payment on behalf functions
+  async function openPaymentDialog(user: NetworkUser) {
+    setUserForPayment(user)
+    setPaymentAddress(null)
+    setPaymentQrCode(null)
+    setPaymentType(user.initial_payment_completed ? "weekly" : "initial")
+    setShowPaymentDialog(true)
+    await fetchPaymentAddress(user.id, user.initial_payment_completed ? "weekly" : "initial")
+  }
+
+  async function fetchPaymentAddress(userId: string, type: "weekly" | "monthly" | "initial") {
+    setLoadingPaymentAddress(true)
+    try {
+      const response = await fetch("/api/admin/users/payment-address", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, paymentType: type })
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        alert(`Failed to get payment address: ${data.error || 'Unknown error'}`)
+        return
+      }
+
+      setPaymentAddress(data.depositAddress)
+      setExpectedPaymentAmount(data.remainingAmount || data.expectedAmount)
+
+      // Generate QR code
+      if (data.depositAddress) {
+        const qrUrl = await QRCode.toDataURL(data.depositAddress, {
+          width: 200,
+          margin: 2,
+          color: { dark: '#000000', light: '#FFFFFF' }
+        })
+        setPaymentQrCode(qrUrl)
+      }
+    } catch (error) {
+      console.error("Error fetching payment address:", error)
+      alert("Failed to fetch payment address. Please try again.")
+    } finally {
+      setLoadingPaymentAddress(false)
+    }
+  }
+
+  async function handlePaymentTypeChange(type: "weekly" | "monthly" | "initial") {
+    setPaymentType(type)
+    if (userForPayment) {
+      await fetchPaymentAddress(userForPayment.id, type)
+    }
+  }
+
+  function handleCopyAddress() {
+    if (paymentAddress) {
+      navigator.clipboard.writeText(paymentAddress)
+      setCopiedAddress(true)
+      setTimeout(() => setCopiedAddress(false), 2000)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -462,6 +737,90 @@ export default function AdminNetworkPage() {
         </div>
         <p className="text-muted-foreground">Complete view of all users in the Trading Hub network</p>
       </div>
+
+      {/* Pending Deletion Requests Section - Superadmin Only */}
+      {isSuperAdmin && pendingDeletionsCount > 0 && (
+        <Card className="mb-6 border-red-500">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-400">
+                  <Trash2 className="h-5 w-5" />
+                  Pending Deletion Requests
+                </CardTitle>
+                <CardDescription>
+                  User deletion requests awaiting approval from another superadmin
+                </CardDescription>
+              </div>
+              <Badge variant="destructive">
+                {pendingDeletionsCount} pending
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-2 text-sm font-semibold">User</th>
+                    <th className="text-left p-2 text-sm font-semibold">Requested By</th>
+                    <th className="text-left p-2 text-sm font-semibold">Requested At</th>
+                    <th className="text-right p-2 text-sm font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingDeletions.map((req) => (
+                    <tr key={req.id} className="border-b hover:bg-muted/50">
+                      <td className="p-2 text-sm">
+                        <div>
+                          <p className="font-medium">{req.user_name || "No name"}</p>
+                          <p className="text-xs text-muted-foreground">{req.user_email}</p>
+                        </div>
+                      </td>
+                      <td className="p-2 text-sm">
+                        {req.requester?.name || req.requester?.email || "Unknown"}
+                      </td>
+                      <td className="p-2 text-sm">
+                        {new Date(req.requested_at).toLocaleString()}
+                      </td>
+                      <td className="p-2 text-right">
+                        <div className="flex gap-2 justify-end">
+                          {req.requested_by !== currentUserId ? (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleApproveDeletion(req.id)}
+                                disabled={isProcessing}
+                              >
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleRejectDeletion(req.id)}
+                                disabled={isProcessing}
+                              >
+                                <XCircle className="h-3 w-3 mr-1" />
+                                Reject
+                              </Button>
+                            </>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              Awaiting other superadmin
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Orphaned Users Section - Superadmin Only */}
       {isSuperAdmin && (
@@ -829,7 +1188,24 @@ export default function AdminNetworkPage() {
                         </div>
                       </div>
                       {isSuperAdmin && (
-                        <div className="flex gap-2 mt-4">
+                        <div className="flex flex-wrap gap-2 mt-4">
+                          {/* Toggle Active Status - Only show if initial payment completed */}
+                          {user.initial_payment_completed && (
+                            <Button
+                              size="sm"
+                              variant={user.is_active ? "outline" : "default"}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleToggleActive(user)
+                              }}
+                              disabled={isProcessing}
+                            >
+                              <Power className="h-3 w-3 mr-2" />
+                              {user.is_active ? "Deactivate" : "Activate"}
+                            </Button>
+                          )}
+
+                          {/* Grant Admin */}
                           <Button
                             size="sm"
                             variant={user.role === "admin" ? "destructive" : "default"}
@@ -841,6 +1217,8 @@ export default function AdminNetworkPage() {
                             <Shield className="h-3 w-3 mr-2" />
                             {user.role === "admin" ? "Revoke Admin" : "Grant Admin"}
                           </Button>
+
+                          {/* Grant Bypass */}
                           <Button
                             size="sm"
                             variant="default"
@@ -851,8 +1229,51 @@ export default function AdminNetworkPage() {
                             }}
                           >
                             <Sparkles className="h-3 w-3 mr-2" />
-                            Grant Bypass Access
+                            Grant Bypass
                           </Button>
+
+                          {/* Manual Payout - Only show if user has payout wallet */}
+                          {user.payout_wallet_address && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                openManualPayoutDialog(user)
+                              }}
+                            >
+                              <DollarSign className="h-3 w-3 mr-2" />
+                              Manual Payout
+                            </Button>
+                          )}
+
+                          {/* Make Payment */}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openPaymentDialog(user)
+                            }}
+                          >
+                            <CreditCard className="h-3 w-3 mr-2" />
+                            Make Payment
+                          </Button>
+
+                          {/* Request Deletion */}
+                          {user.role !== "superadmin" && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                openDeletionRequestDialog(user)
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3 mr-2" />
+                              Delete Account
+                            </Button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -983,7 +1404,7 @@ export default function AdminNetworkPage() {
               <Checkbox
                 id="bypass-initial"
                 checked={bypassSelections.initialPayment}
-                disabled={userForBypass?.currentBypasses.initialPayment}
+                disabled={userForBypass?.currentBypasses.initialPayment || userForBypass?.initialPaymentCompleted}
                 onCheckedChange={(checked) =>
                   setBypassSelections(prev => ({ ...prev, initialPayment: checked === true }))
                 }
@@ -991,15 +1412,20 @@ export default function AdminNetworkPage() {
               <div className="grid gap-1.5 leading-none">
                 <label
                   htmlFor="bypass-initial"
-                  className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${userForBypass?.currentBypasses.initialPayment ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                  className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${(userForBypass?.currentBypasses.initialPayment || userForBypass?.initialPaymentCompleted) ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                 >
                   Bypass Initial Payment Requirement
                   {userForBypass?.currentBypasses.initialPayment && (
-                    <span className="text-purple-600 ml-2">(Permanent - Cannot be revoked)</span>
+                    <span className="text-purple-600 ml-2">(Already bypassed)</span>
+                  )}
+                  {userForBypass?.initialPaymentCompleted && !userForBypass?.currentBypasses.initialPayment && (
+                    <span className="text-green-600 ml-2">(Already paid)</span>
                   )}
                 </label>
                 <p className="text-sm text-muted-foreground">
-                  {userForBypass?.currentBypasses.initialPayment
+                  {userForBypass?.initialPaymentCompleted
+                    ? "User has already completed their initial payment"
+                    : userForBypass?.currentBypasses.initialPayment
                     ? "This bypass is permanent once granted and cannot be revoked"
                     : "User gets platform access without the $499 initial payment"}
                 </p>
@@ -1128,6 +1554,212 @@ export default function AdminNetworkPage() {
                   Delete Permanently
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manual Payout Dialog */}
+      <Dialog open={showManualPayoutDialog} onOpenChange={setShowManualPayoutDialog}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-green-600" />
+              Manual Payout
+            </DialogTitle>
+            <DialogDescription>
+              Send USDC to {userForPayout?.name || userForPayout?.email}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="payout-amount">Amount (USDC)</Label>
+              <Input
+                id="payout-amount"
+                type="number"
+                min="0.01"
+                max="2000"
+                step="0.01"
+                value={payoutAmount}
+                onChange={(e) => setPayoutAmount(e.target.value)}
+                placeholder="0.00"
+              />
+              <p className="text-xs text-muted-foreground">Max 2,000 USDC</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setShowManualPayoutDialog(false)} disabled={isProcessing}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleManualPayout}
+              disabled={isProcessing || !payoutAmount || parseFloat(payoutAmount) <= 0}
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                "Send"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Request Deletion Dialog */}
+      <Dialog open={showDeletionRequestDialog} onOpenChange={setShowDeletionRequestDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              Request Account Deletion
+            </DialogTitle>
+            <DialogDescription>
+              This will request deletion of the account. Another superadmin must approve for the deletion to proceed.
+            </DialogDescription>
+          </DialogHeader>
+          {userForDeletion && (
+            <div className="space-y-4">
+              <div className="p-4 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-900">
+                <p className="text-sm"><strong>Name:</strong> {userForDeletion.name || "No name"}</p>
+                <p className="text-sm"><strong>Email:</strong> {userForDeletion.email}</p>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                <p className="font-medium mb-1">This will permanently delete:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>User profile and all associated data</li>
+                  <li>Authentication credentials</li>
+                  <li>Commission history</li>
+                  <li>Payment records</li>
+                </ul>
+              </div>
+              <div className="p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border border-yellow-200 dark:border-yellow-900">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  <strong>Note:</strong> This action requires approval from another superadmin before execution.
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeletionRequestDialog(false)} disabled={isProcessing}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleRequestDeletion}
+              disabled={isProcessing}
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Requesting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Request Deletion
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment QR Code Dialog */}
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-primary" />
+              Make Payment for User
+            </DialogTitle>
+            <DialogDescription>
+              Make a payment on behalf of{" "}
+              <span className="font-semibold text-foreground">{userForPayment?.name || userForPayment?.email}</span>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* Payment Type Selector */}
+            <div className="space-y-2">
+              <Label>Payment Type</Label>
+              <Select
+                value={paymentType}
+                onValueChange={(value: "weekly" | "monthly" | "initial") => handlePaymentTypeChange(value)}
+                disabled={loadingPaymentAddress}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {!userForPayment?.initial_payment_completed && (
+                    <SelectItem value="initial">Initial Payment ($499)</SelectItem>
+                  )}
+                  {userForPayment?.initial_payment_completed && (
+                    <>
+                      <SelectItem value="weekly">Weekly Subscription ($49.75)</SelectItem>
+                      <SelectItem value="monthly">Monthly Subscription ($199)</SelectItem>
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Expected Amount */}
+            <div className="p-3 bg-muted rounded-lg text-center">
+              <p className="text-sm text-muted-foreground">Amount Due</p>
+              <p className="text-2xl font-bold text-primary">${expectedPaymentAmount.toFixed(2)}</p>
+            </div>
+
+            {/* QR Code & Address */}
+            {loadingPaymentAddress ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : paymentAddress ? (
+              <div className="flex flex-col items-center gap-4">
+                {paymentQrCode && (
+                  <div className="p-4 bg-white rounded-lg border">
+                    <img src={paymentQrCode} alt="Payment QR Code" className="w-48 h-48" />
+                  </div>
+                )}
+                <div className="text-center w-full">
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Send USDC (Polygon) to this address:
+                  </p>
+                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                    <code className="text-xs font-mono break-all flex-1">
+                      {paymentAddress}
+                    </code>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCopyAddress}
+                      className="shrink-0"
+                    >
+                      {copiedAddress ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground text-center">
+                  <p>Payment will be automatically detected via webhook</p>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-4 text-muted-foreground">
+                Failed to load payment address
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPaymentDialog(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -146,19 +146,34 @@ async function processTransfer(
 
   // Determine what payment this user owes
   const needsInitialPayment = !user.initial_payment_completed && !user.bypass_initial_payment;
-  const isWeekly = user.payment_schedule === 'weekly';
 
   let paymentType: 'initial_unlock' | 'subscription';
   let expectedAmountUsdc: number;
+  let detectedSchedule: 'weekly' | 'monthly' = 'monthly';
+
+  const weeklyAmount = parseFloat(PAYMENT_AMOUNTS.WEEKLY_SUBSCRIPTION);
+  const monthlyAmount = parseFloat(PAYMENT_AMOUNTS.MONTHLY_SUBSCRIPTION);
 
   if (needsInitialPayment) {
     paymentType = 'initial_unlock';
     expectedAmountUsdc = parseFloat(PAYMENT_AMOUNTS.INITIAL_UNLOCK);
   } else {
     paymentType = 'subscription';
-    expectedAmountUsdc = isWeekly
-      ? parseFloat(PAYMENT_AMOUNTS.WEEKLY_SUBSCRIPTION)
-      : parseFloat(PAYMENT_AMOUNTS.MONTHLY_SUBSCRIPTION);
+    // Detect which payment type based on amount received
+    // If amount is closer to weekly, treat as weekly; otherwise monthly
+    const receivedAmount = transfer.amountUsdc;
+    const weeklyDiff = Math.abs(receivedAmount - weeklyAmount);
+    const monthlyDiff = Math.abs(receivedAmount - monthlyAmount);
+
+    if (weeklyDiff < monthlyDiff && receivedAmount >= weeklyAmount * 0.99) {
+      // Amount is closer to weekly and meets minimum
+      detectedSchedule = 'weekly';
+      expectedAmountUsdc = weeklyAmount;
+    } else {
+      // Amount is closer to monthly (or not enough for weekly)
+      detectedSchedule = 'monthly';
+      expectedAmountUsdc = monthlyAmount;
+    }
   }
 
   const receivedAmountUsdc = transfer.amountUsdc;
@@ -264,7 +279,8 @@ async function processTransfer(
     const currentNextDueDate = user.next_payment_due_date
       ? new Date(user.next_payment_due_date)
       : new Date(); // Fallback if not set
-    await processSubscriptionPayment(supabase, user.id, expectedAmountUsdc.toFixed(2), !isWeekly, currentNextDueDate);
+    const isMonthly = detectedSchedule === 'monthly';
+    await processSubscriptionPayment(supabase, user.id, expectedAmountUsdc.toFixed(2), isMonthly, currentNextDueDate);
   }
 
   // Handle overpayment credit

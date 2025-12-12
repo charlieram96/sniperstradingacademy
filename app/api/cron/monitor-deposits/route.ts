@@ -172,16 +172,21 @@ async function checkUserDeposit(
 
   let paymentType: 'initial_unlock' | 'subscription';
   let expectedAmountUsdc: number;
-  const isWeekly = user.payment_schedule === 'weekly';
+  let detectedSchedule: 'weekly' | 'monthly' = 'monthly';
+
+  const weeklyAmount = parseFloat(PAYMENT_AMOUNTS.WEEKLY_SUBSCRIPTION);
+  const monthlyAmount = parseFloat(PAYMENT_AMOUNTS.MONTHLY_SUBSCRIPTION);
 
   if (needsInitialPayment) {
     paymentType = 'initial_unlock';
     expectedAmountUsdc = parseFloat(PAYMENT_AMOUNTS.INITIAL_UNLOCK);
   } else {
     paymentType = 'subscription';
-    expectedAmountUsdc = isWeekly
-      ? parseFloat(PAYMENT_AMOUNTS.WEEKLY_SUBSCRIPTION)
-      : parseFloat(PAYMENT_AMOUNTS.MONTHLY_SUBSCRIPTION);
+    // We'll detect the schedule based on total paid this period later
+    // For now, use user's existing schedule to determine expected amount
+    const isWeekly = user.payment_schedule === 'weekly';
+    expectedAmountUsdc = isWeekly ? weeklyAmount : monthlyAmount;
+    detectedSchedule = isWeekly ? 'weekly' : 'monthly';
   }
 
   // PERIOD-BASED LOGIC: Sum transactions since previous_payment_due_date
@@ -249,11 +254,23 @@ async function checkUserDeposit(
     if (paymentType === 'initial_unlock') {
       await processInitialUnlock(supabase, user.id, expectedAmountUsdc.toFixed(2));
     } else {
+      // Detect schedule based on amount paid
+      const weeklyDiff = Math.abs(paidThisPeriod - weeklyAmount);
+      const monthlyDiff = Math.abs(paidThisPeriod - monthlyAmount);
+      if (weeklyDiff < monthlyDiff && paidThisPeriod >= weeklyAmount * 0.99) {
+        detectedSchedule = 'weekly';
+        expectedAmountUsdc = weeklyAmount;
+      } else {
+        detectedSchedule = 'monthly';
+        expectedAmountUsdc = monthlyAmount;
+      }
+
       // Roll forward from current next_payment_due_date
       const currentNextDueDate = user.next_payment_due_date
         ? new Date(user.next_payment_due_date)
         : new Date(); // Fallback if not set
-      await processSubscriptionPayment(supabase, user.id, expectedAmountUsdc.toFixed(2), !isWeekly, currentNextDueDate);
+      const isMonthly = detectedSchedule === 'monthly';
+      await processSubscriptionPayment(supabase, user.id, expectedAmountUsdc.toFixed(2), isMonthly, currentNextDueDate);
     }
 
     return;
@@ -351,11 +368,23 @@ async function checkUserDeposit(
       if (paymentType === 'initial_unlock') {
         await processInitialUnlock(supabase, user.id, expectedAmountUsdc.toFixed(2));
       } else {
+        // Detect schedule based on amount paid
+        const weeklyDiff2 = Math.abs(newPaidThisPeriod - weeklyAmount);
+        const monthlyDiff2 = Math.abs(newPaidThisPeriod - monthlyAmount);
+        if (weeklyDiff2 < monthlyDiff2 && newPaidThisPeriod >= weeklyAmount * 0.99) {
+          detectedSchedule = 'weekly';
+          expectedAmountUsdc = weeklyAmount;
+        } else {
+          detectedSchedule = 'monthly';
+          expectedAmountUsdc = monthlyAmount;
+        }
+
         // Roll forward from current next_payment_due_date
         const currentNextDueDate = user.next_payment_due_date
           ? new Date(user.next_payment_due_date)
           : new Date(); // Fallback if not set
-        await processSubscriptionPayment(supabase, user.id, expectedAmountUsdc.toFixed(2), !isWeekly, currentNextDueDate);
+        const isMonthly = detectedSchedule === 'monthly';
+        await processSubscriptionPayment(supabase, user.id, expectedAmountUsdc.toFixed(2), isMonthly, currentNextDueDate);
       }
     } else {
       // Still underpaid

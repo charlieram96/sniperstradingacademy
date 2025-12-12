@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     .eq("id", user.id)
     .single()
 
-  if (userData?.role !== "superadmin") {
+  if (userData?.role !== "superadmin" && userData?.role !== "superadmin+") {
     return NextResponse.json({ error: "Forbidden - Superadmin only" }, { status: 403 })
   }
 

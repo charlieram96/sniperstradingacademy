@@ -79,7 +79,7 @@ export function PaymentScheduleSelector({ value, onChange }: PaymentScheduleSele
                     </div>
                     <div className="flex items-baseline gap-1 mb-3">
                       <DollarSign className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-3xl font-bold text-primary">3</span>
+                      <span className="text-3xl font-bold text-primary">199</span>
                       <span className="text-sm text-muted-foreground">/month</span>
                     </div>
                     <ul className="space-y-2 text-sm">

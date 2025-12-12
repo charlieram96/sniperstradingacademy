@@ -17,7 +17,7 @@ export default async function NetworkVisualizerPage() {
     .eq("id", user.id)
     .single()
 
-  if (userData?.role !== "superadmin") {
+  if (userData?.role !== "superadmin" && userData?.role !== "superadmin+") {
     redirect("/dashboard")
   }
 

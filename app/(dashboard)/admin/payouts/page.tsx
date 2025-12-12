@@ -143,7 +143,7 @@ export default function AdminPayoutsPage() {
         .eq("id", user.id)
         .single()
 
-      if (userData?.role === "superadmin") {
+      if (userData?.role === "superadmin+") {
         setIsSuperAdmin(true)
         await fetchData()
       }

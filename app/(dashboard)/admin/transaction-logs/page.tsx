@@ -72,6 +72,7 @@ const TYPE_LABELS: Record<string, string> = {
   direct_bonus: "Direct Bonus",
   residual: "Residual Commission",
   residual_monthly: "Monthly Residual",
+  crypto_deposit: "Crypto Deposit",
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -139,7 +140,7 @@ export default function TransactionLogsPage() {
         .eq("id", user.id)
         .single()
 
-      if (userData?.role === "superadmin") {
+      if (userData?.role === "superadmin" || userData?.role === "superadmin+") {
         setIsSuperAdmin(true)
         await fetchTransactions()
       }
@@ -308,6 +309,7 @@ export default function TransactionLogsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="crypto_deposit">Crypto Deposit</SelectItem>
                   <SelectItem value="initial">Initial Payment</SelectItem>
                   <SelectItem value="weekly">Weekly Subscription</SelectItem>
                   <SelectItem value="monthly">Monthly Subscription</SelectItem>

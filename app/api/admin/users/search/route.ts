@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       .eq("id", authUser.id)
       .single()
 
-    if (userData?.role !== "superadmin") {
+    if (userData?.role !== "superadmin" && userData?.role !== "superadmin+") {
       return NextResponse.json(
         { error: "Access denied. Superadmin only." },
         { status: 403 }

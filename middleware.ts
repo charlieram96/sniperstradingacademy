@@ -74,7 +74,7 @@ export async function middleware(req: NextRequest) {
     const hasInitialAccess = userData?.initial_payment_completed || userData?.bypass_initial_payment
     const hasSubscriptionAccess = userData?.is_active !== false || userData?.bypass_subscription
     const isActive = hasInitialAccess && hasSubscriptionAccess
-    const isAdmin = userData?.role === "admin" || userData?.role === "superadmin"
+    const isAdmin = userData?.role === "admin" || userData?.role === "superadmin" || userData?.role === "superadmin+"
 
     // Admins bypass activation check
     // Inactive users can only access /payments and /settings

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
 
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (!['admin', 'superadmin'].includes(userData?.role || '')) {
+    if (!['admin', 'superadmin', 'superadmin+'].includes(userData?.role || '')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -85,12 +85,12 @@ export async function GET(req: NextRequest) {
         paymentsQuery = paymentsQuery.eq('payment_type', 'weekly');
       } else if (type === 'monthly') {
         paymentsQuery = paymentsQuery.eq('payment_type', 'monthly');
-      } else if (['direct_bonus', 'residual', 'residual_monthly'].includes(type)) {
-        // Skip payments if filtering for commission types only
+      } else if (['direct_bonus', 'residual', 'residual_monthly', 'crypto_deposit'].includes(type)) {
+        // Skip payments if filtering for commission or crypto types only
       }
 
-      // Only fetch payments if not filtering for commission-only types
-      if (!['direct_bonus', 'residual', 'residual_monthly'].includes(type)) {
+      // Only fetch payments if not filtering for commission-only or crypto-only types
+      if (!['direct_bonus', 'residual', 'residual_monthly', 'crypto_deposit'].includes(type)) {
         const { data: paymentsData } = await paymentsQuery;
 
         if (paymentsData) {
@@ -104,9 +104,67 @@ export async function GET(req: NextRequest) {
               status: p.status === 'succeeded' ? 'completed' : p.status,
               userName: userData?.name || null,
               userEmail: userData?.email || '',
-              txHash: null, // TODO: Link to usdc_transactions.polygon_tx_hash if available
+              txHash: null,
               createdAt: p.created_at,
               paidAt: null,
+            });
+          }
+        }
+      }
+
+      // Also fetch crypto deposits from usdc_transactions
+      // Fetch if type is 'all' or 'crypto_deposit', skip if filtering for payments or commissions
+      if (!['direct_bonus', 'residual', 'residual_monthly', 'initial', 'weekly', 'monthly'].includes(type)) {
+        // Use service role client to bypass RLS
+        const serviceSupabase = createServiceRoleClient();
+        let cryptoQuery = serviceSupabase
+          .from('usdc_transactions')
+          .select(`
+            id,
+            user_id,
+            amount,
+            status,
+            transaction_type,
+            polygon_tx_hash,
+            created_at,
+            confirmed_at,
+            user:users!usdc_transactions_user_id_fkey (
+              name,
+              email
+            )
+          `)
+          .eq('transaction_type', 'deposit')
+          .order('created_at', { ascending: false });
+
+        // Apply status filter for crypto transactions
+        if (status === 'completed') {
+          cryptoQuery = cryptoQuery.eq('status', 'confirmed');
+        } else if (status === 'pending') {
+          cryptoQuery = cryptoQuery.eq('status', 'pending');
+        } else if (status === 'failed') {
+          cryptoQuery = cryptoQuery.eq('status', 'failed');
+        }
+
+        const { data: cryptoData, error: cryptoError } = await cryptoQuery;
+
+        if (cryptoError) {
+          console.error('[TransactionLogsAPI] Crypto query error:', cryptoError);
+        }
+
+        if (cryptoData) {
+          for (const c of cryptoData) {
+            const userData = Array.isArray(c.user) ? c.user[0] : c.user;
+            transactions.push({
+              id: c.id,
+              direction: 'incoming',
+              type: 'crypto_deposit',
+              amount: parseFloat(c.amount || '0'),
+              status: c.status === 'confirmed' ? 'completed' : c.status,
+              userName: userData?.name || null,
+              userEmail: userData?.email || '',
+              txHash: c.polygon_tx_hash,
+              createdAt: c.created_at,
+              paidAt: c.confirmed_at,
             });
           }
         }
