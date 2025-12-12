@@ -41,7 +41,7 @@ export async function GET() {
       .eq('id', user.id)
       .single();
 
-    if (userError || userData?.role !== 'superadmin') {
+    if (userError || !['superadmin', 'superadmin+'].includes(userData?.role || '')) {
       return NextResponse.json(
         { success: false, error: 'Forbidden: Superadmin access required' },
         { status: 403 }
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (userError || userData?.role !== 'superadmin') {
+    if (userError || !['superadmin', 'superadmin+'].includes(userData?.role || '')) {
       return NextResponse.json(
         { success: false, error: 'Forbidden: Superadmin access required' },
         { status: 403 }

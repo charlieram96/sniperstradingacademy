@@ -27,7 +27,7 @@ export async function GET() {
       .eq('id', user.id)
       .single()
 
-    if (userData?.role !== 'superadmin') {
+    if (!['superadmin', 'superadmin+'].includes(userData?.role || '')) {
       return NextResponse.json({ success: false, error: 'Access denied' }, { status: 403 })
     }
 
@@ -101,7 +101,7 @@ export async function POST(request: Request) {
       .eq('id', user.id)
       .single()
 
-    if (userData?.role !== 'superadmin') {
+    if (!['superadmin', 'superadmin+'].includes(userData?.role || '')) {
       return NextResponse.json({ success: false, error: 'Access denied' }, { status: 403 })
     }
 

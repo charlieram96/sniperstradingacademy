@@ -714,7 +714,7 @@ export default function AdminFinancialsPage() {
         .eq("id", user.id)
         .single()
 
-      if (userData?.role === "superadmin+") {
+      if (['superadmin', 'superadmin+'].includes(userData?.role || '')) {
         setIsSuperAdmin(true)
         await fetchFinancialData()
         await fetchTreasurySettings()
