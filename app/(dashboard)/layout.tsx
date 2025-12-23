@@ -27,7 +27,8 @@ import {
   GitBranch,
   Activity,
   BookOpen,
-  Bell
+  Bell,
+  Gift
 } from "lucide-react"
 
 export default async function DashboardLayout({
@@ -238,6 +239,13 @@ export default async function DashboardLayout({
                       >
                         <Wallet className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
                         <span className="text-sm font-medium">Payouts</span>
+                      </NavigationLink>
+                      <NavigationLink
+                        href="/admin/direct-bonuses"
+                        className="flex items-center gap-[10px] pl-8 pr-4 py-[10px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
+                      >
+                        <Gift className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+                        <span className="text-sm font-medium">Direct Bonuses</span>
                       </NavigationLink>
                     </AccordionContent>
                   </AccordionItem>
