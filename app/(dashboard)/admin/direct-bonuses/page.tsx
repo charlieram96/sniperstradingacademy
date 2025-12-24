@@ -45,6 +45,7 @@ interface InitialPayment {
     name: string
     email: string
     hasWallet: boolean
+    payoutWallet: string | null
   } | null
   bonus: {
     id: string
@@ -77,8 +78,8 @@ export default function DirectBonusesPage() {
   const [processing, setProcessing] = useState(false)
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [creatingBonusFor, setCreatingBonusFor] = useState<string | null>(null)
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
-  const [selectedPayment, setSelectedPayment] = useState<InitialPayment | null>(null)
+  const [showPayoutModal, setShowPayoutModal] = useState(false)
+  const [selectedPaymentForPayout, setSelectedPaymentForPayout] = useState<InitialPayment | null>(null)
 
   const fetchData = useCallback(async () => {
     try {
@@ -149,8 +150,18 @@ export default function DirectBonusesPage() {
     }
   }
 
-  const handleProcessBonus = async (commissionId: string) => {
+  const openPayoutModal = (payment: InitialPayment) => {
+    setSelectedPaymentForPayout(payment)
+    setShowPayoutModal(true)
+  }
+
+  const handleConfirmPayout = async () => {
+    if (!selectedPaymentForPayout?.bonus?.id) return
+
+    const commissionId = selectedPaymentForPayout.bonus.id
     setProcessingId(commissionId)
+    setShowPayoutModal(false)
+
     try {
       const response = await fetch("/api/admin/payouts/process-single", {
         method: "POST",
@@ -161,7 +172,7 @@ export default function DirectBonusesPage() {
       const data = await response.json()
 
       if (data.success) {
-        alert(`Success! $${data.amount} transferred to ${data.userName}`)
+        alert(`Success! $${data.amount} USDC transferred to ${data.userName}`)
         await fetchData()
       } else {
         alert(`Failed: ${data.error || "Unknown error"}`)
@@ -171,6 +182,7 @@ export default function DirectBonusesPage() {
       console.error(error)
     } finally {
       setProcessingId(null)
+      setSelectedPaymentForPayout(null)
     }
   }
 
@@ -465,7 +477,7 @@ export default function DirectBonusesPage() {
                           <div className="flex gap-2 justify-end">
                             <Button
                               size="sm"
-                              onClick={() => handleProcessBonus(payment.bonus!.id)}
+                              onClick={() => openPayoutModal(payment)}
                               disabled={processingId === payment.bonus.id || !payment.referrer?.hasWallet}
                               title={!payment.referrer?.hasWallet ? "Referrer has no payout wallet" : ""}
                             >
@@ -508,13 +520,13 @@ export default function DirectBonusesPage() {
       </Card>
 
       {/* Info Box */}
-      <Card className="mt-6 border-blue-200 bg-blue-50/50">
+      <Card className="mt-6 border-blue-500/30 bg-blue-500/10">
         <CardContent className="pt-6">
           <div className="flex gap-3">
-            <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-blue-800">
-              <p className="font-medium mb-1">How Direct Bonuses Work</p>
-              <ul className="list-disc list-inside space-y-1 text-blue-700">
+            <AlertCircle className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-blue-300">
+              <p className="font-medium mb-1 text-blue-200">How Direct Bonuses Work</p>
+              <ul className="list-disc list-inside space-y-1 text-blue-300/90">
                 <li>When a new user pays $499, a $249 bonus is automatically created for their referrer</li>
                 <li>If no bonus was created (rare), you can manually create one using the "Create $249 Bonus" button</li>
                 <li>Click "Pay $249" to process the USDC transfer to the referrer's wallet</li>
@@ -525,6 +537,100 @@ export default function DirectBonusesPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Payout Confirmation Modal */}
+      <Dialog open={showPayoutModal} onOpenChange={setShowPayoutModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-green-600" />
+              Confirm Direct Bonus Payout
+            </DialogTitle>
+            <DialogDescription>
+              You are about to send a USDC payout. Please review the details below.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedPaymentForPayout && (
+            <div className="space-y-4 py-4">
+              {/* Payout Amount */}
+              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 text-center">
+                <p className="text-sm text-green-400 mb-1">Payout Amount</p>
+                <p className="text-3xl font-bold text-green-400">
+                  ${selectedPaymentForPayout.bonus?.amount || 249} USDC
+                </p>
+              </div>
+
+              {/* Recipient Details */}
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Recipient</p>
+                  <p className="font-semibold">{selectedPaymentForPayout.referrer?.name}</p>
+                  <p className="text-sm text-muted-foreground">{selectedPaymentForPayout.referrer?.email}</p>
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Payout Wallet Address</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Wallet className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <code className="text-xs bg-muted px-2 py-1 rounded break-all">
+                      {selectedPaymentForPayout.referrer?.payoutWallet || "No wallet set"}
+                    </code>
+                  </div>
+                  {selectedPaymentForPayout.referrer?.payoutWallet && (
+                    <a
+                      href={`https://polygonscan.com/address/${selectedPaymentForPayout.referrer.payoutWallet}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-400 hover:underline flex items-center gap-1 mt-1"
+                    >
+                      View on PolygonScan
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </div>
+
+                <div className="border-t border-border pt-3">
+                  <p className="text-sm font-medium text-muted-foreground">Bonus For</p>
+                  <p className="text-sm">
+                    {selectedPaymentForPayout.payer.name}'s $499 initial payment
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Paid on {new Date(selectedPaymentForPayout.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Warning */}
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 flex gap-2">
+                <AlertCircle className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-300">
+                  This will initiate an on-chain USDC transfer from the platform payout wallet to the recipient's wallet. This action cannot be undone.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowPayoutModal(false)
+                setSelectedPaymentForPayout(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmPayout}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <DollarSign className="h-4 w-4 mr-1" />
+              Confirm & Send ${selectedPaymentForPayout?.bonus?.amount || 249} USDC
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

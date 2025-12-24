@@ -130,7 +130,8 @@ export async function GET(req: NextRequest) {
           id: referrer.id,
           name: referrer.name || 'Unknown',
           email: referrer.email,
-          hasWallet: !!referrer.payout_wallet_address
+          hasWallet: !!referrer.payout_wallet_address,
+          payoutWallet: referrer.payout_wallet_address || null
         } : null,
         bonus: commission ? {
           id: commission.id,
