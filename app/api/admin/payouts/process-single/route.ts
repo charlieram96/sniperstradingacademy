@@ -83,11 +83,12 @@ export async function POST(req: NextRequest) {
 
     const user = Array.isArray(commission.users) ? commission.users[0] : commission.users
 
-    // Validate user is qualified for payouts
-    if (!user?.qualified) {
+    // For direct bonuses, users only need a payout wallet (no qualification required)
+    // For residual commissions, qualification is still required
+    if (commission.commission_type !== 'direct_bonus' && !user?.qualified) {
       return NextResponse.json({
         success: false,
-        error: "Cannot process payout: User is not qualified",
+        error: "Cannot process payout: User is not qualified (required for residual commissions)",
         commissionId: commission.id,
       }, { status: 400 })
     }
