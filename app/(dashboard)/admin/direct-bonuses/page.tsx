@@ -528,9 +528,9 @@ export default function DirectBonusesPage() {
               <p className="font-medium mb-1 text-blue-200">How Direct Bonuses Work</p>
               <ul className="list-disc list-inside space-y-1 text-blue-300/90">
                 <li>When a new user pays $499, a $249 bonus is automatically created for their referrer</li>
-                <li>If no bonus was created (rare), you can manually create one using the "Create $249 Bonus" button</li>
-                <li>Click "Pay $249" to process the USDC transfer to the referrer's wallet</li>
-                <li>Use "Mark Paid" only if the bonus was paid outside the system (cash, wire, etc.)</li>
+                <li>If no bonus was created (rare), you can manually create one using the &quot;Create $249 Bonus&quot; button</li>
+                <li>Click &quot;Pay $249&quot; to process the USDC transfer to the referrer&apos;s wallet</li>
+                <li>Use &quot;Mark Paid&quot; only if the bonus was paid outside the system (cash, wire, etc.)</li>
                 <li>Referrers need a payout wallet configured to receive USDC payments</li>
               </ul>
             </div>
@@ -593,7 +593,7 @@ export default function DirectBonusesPage() {
                 <div className="border-t border-border pt-3">
                   <p className="text-sm font-medium text-muted-foreground">Bonus For</p>
                   <p className="text-sm">
-                    {selectedPaymentForPayout.payer.name}'s $499 initial payment
+                    {selectedPaymentForPayout.payer.name}&apos;s $499 initial payment
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Paid on {new Date(selectedPaymentForPayout.createdAt).toLocaleDateString()}
@@ -605,7 +605,7 @@ export default function DirectBonusesPage() {
               <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 flex gap-2">
                 <AlertCircle className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-300">
-                  This will initiate an on-chain USDC transfer from the platform payout wallet to the recipient's wallet. This action cannot be undone.
+                  This will initiate an on-chain USDC transfer from the platform payout wallet to the recipient&apos;s wallet. This action cannot be undone.
                 </p>
               </div>
             </div>
