@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
       .eq('initial_payment_completed', true)
       .eq('is_active', true)
       .or('bypass_subscription.is.null,bypass_subscription.eq.false')
-      .neq('role', 'superadmin')
+      .not('role', 'in', '("superadmin","superadmin+")')
       .not('next_payment_due_date', 'is', null);
 
     if (queryError) {
@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
     // Filter users who are overdue: NOW > next_payment_due_date + 3 days
     const usersToDeactivate = activeUsers.filter((user) => {
       // Skip if bypassed (double-check in case query didn't filter perfectly)
-      if (user.bypass_subscription || user.role === 'superadmin') {
+      if (user.bypass_subscription || user.role === 'superadmin' || user.role === 'superadmin+') {
         return false;
       }
 

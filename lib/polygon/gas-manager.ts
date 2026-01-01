@@ -382,7 +382,7 @@ class GasManager {
       const { data: admins } = await supabase
         .from('users')
         .select('id, email, full_name')
-        .in('role', ['admin', 'superadmin']);
+        .in('role', ['admin', 'superadmin', 'superadmin+']);
 
       if (!admins || admins.length === 0) {
         console.warn('[GasManager] No admins found to send alert');
@@ -495,7 +495,7 @@ class GasManager {
       const { data: admins } = await supabase
         .from('users')
         .select('id, email, full_name')
-        .in('role', ['admin', 'superadmin']);
+        .in('role', ['admin', 'superadmin', 'superadmin+']);
 
       if (!admins || admins.length === 0) {
         console.warn('[GasManager] No admins found to send payout wallet alert');

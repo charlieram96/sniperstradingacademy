@@ -540,6 +540,26 @@ async function processSubscriptionPayment(
 ) {
   const now = new Date();
   const isWeekly = !isMonthly;
+  const paymentType = isMonthly ? 'monthly' : 'weekly';
+
+  // IDEMPOTENCY CHECK: Prevent duplicate payment records
+  // Check if a payment already exists for this user in the last 24 hours
+  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const { data: recentPayment } = await supabase
+    .from('payments')
+    .select('id, created_at')
+    .eq('user_id', userId)
+    .eq('status', 'succeeded')
+    .in('payment_type', ['weekly', 'monthly'])
+    .gte('created_at', oneDayAgo.toISOString())
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (recentPayment) {
+    console.log(`[MonitorDeposits] IDEMPOTENCY: Payment already exists for user ${userId} at ${recentPayment.created_at}, skipping duplicate`);
+    return;
+  }
 
   // Roll forward from the CURRENT next_payment_due_date, not NOW
   // previous becomes current next, next becomes one period after current next
@@ -565,7 +585,7 @@ async function processSubscriptionPayment(
     .insert({
       user_id: userId,
       amount: amountUsdc,
-      payment_type: isMonthly ? 'monthly' : 'weekly',
+      payment_type: paymentType,
       status: 'succeeded',
       usdc_transaction_id: usdcTxId,
     })

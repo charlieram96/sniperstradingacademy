@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       .eq("id", authUser.id)
       .single()
 
-    if (!adminCheck || !["admin", "superadmin"].includes(adminCheck.role)) {
+    if (!adminCheck || !["admin", "superadmin", "superadmin+"].includes(adminCheck.role)) {
       return NextResponse.json(
         { error: "Forbidden: Admin access required" },
         { status: 403 }
