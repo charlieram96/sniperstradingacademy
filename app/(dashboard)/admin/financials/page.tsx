@@ -226,6 +226,14 @@ export default function AdminFinancialsPage() {
     message: string
     details?: { successful: number; failed: number; totalSweptUsdc: number }
   } | null>(null)
+  const [sweepPipelineStats, setSweepPipelineStats] = useState<{
+    idle: number
+    needs_funding: number
+    funding_sent: number
+    ready: number
+    sweeping: number
+    failed: number
+  } | null>(null)
 
   // Monthly processing state
   const [monthlyStatus, setMonthlyStatus] = useState<MonthlyProcessingStatus | null>(null)
@@ -640,6 +648,31 @@ export default function AdminFinancialsPage() {
           pendingUsdc: data.pendingDeposits?.reduce((sum: number, d: { usdcBalance: number }) => sum + d.usdcBalance, 0) || 0,
           lastSweep: data.lastSweep,
         })
+      }
+
+      // Fetch pipeline stats from database
+      const supabase = createClient()
+      const { data: pipelineData } = await supabase
+        .from('users')
+        .select('sweep_status')
+        .not('crypto_deposit_address', 'is', null)
+
+      if (pipelineData) {
+        const stats = {
+          idle: 0,
+          needs_funding: 0,
+          funding_sent: 0,
+          ready: 0,
+          sweeping: 0,
+          failed: 0,
+        }
+        pipelineData.forEach((user) => {
+          const status = user.sweep_status || 'idle'
+          if (status in stats) {
+            stats[status as keyof typeof stats]++
+          }
+        })
+        setSweepPipelineStats(stats)
       }
     } catch (error) {
       console.error("Failed to fetch sweep status:", error)
@@ -1278,10 +1311,50 @@ export default function AdminFinancialsPage() {
                 </Button>
               )}
 
+              {/* Pipeline Status */}
+              {sweepPipelineStats && (
+                <div className="border rounded-lg p-4 space-y-3">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <RefreshCw className="h-4 w-4" />
+                    Pipeline Status
+                  </h4>
+                  <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                    <div className="p-2 bg-gray-50 rounded text-center">
+                      <p className="text-lg font-semibold">{sweepPipelineStats.idle}</p>
+                      <p className="text-xs text-muted-foreground">Idle</p>
+                    </div>
+                    <div className="p-2 bg-amber-50 rounded text-center">
+                      <p className="text-lg font-semibold text-amber-600">{sweepPipelineStats.needs_funding}</p>
+                      <p className="text-xs text-amber-600">Needs Funding</p>
+                    </div>
+                    <div className="p-2 bg-blue-50 rounded text-center">
+                      <p className="text-lg font-semibold text-blue-600">{sweepPipelineStats.funding_sent}</p>
+                      <p className="text-xs text-blue-600">Funding Sent</p>
+                    </div>
+                    <div className="p-2 bg-green-50 rounded text-center">
+                      <p className="text-lg font-semibold text-green-600">{sweepPipelineStats.ready}</p>
+                      <p className="text-xs text-green-600">Ready</p>
+                    </div>
+                    <div className="p-2 bg-purple-50 rounded text-center">
+                      <p className="text-lg font-semibold text-purple-600">{sweepPipelineStats.sweeping}</p>
+                      <p className="text-xs text-purple-600">Sweeping</p>
+                    </div>
+                    <div className="p-2 bg-red-50 rounded text-center">
+                      <p className="text-lg font-semibold text-red-600">{sweepPipelineStats.failed}</p>
+                      <p className="text-xs text-red-600">Failed</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Total addresses with deposits: {Object.values(sweepPipelineStats).reduce((a, b) => a + b, 0)}
+                  </p>
+                </div>
+              )}
+
               {/* Info Note */}
               <div className="text-xs text-muted-foreground">
-                <p>Sweep runs automatically daily at 3 AM UTC. Use this for manual sweeps.</p>
-                <p className="mt-1">Deposits with less than $1 USDC are skipped. POL gas is auto-funded from the gas tank.</p>
+                <p><strong>Automated Pipeline:</strong> Sweeps run automatically every 5 minutes in 4 stages:</p>
+                <p className="mt-1">1. Identify (find addresses with USDC) → 2. Fund (send POL for gas) → 3. Execute (sweep USDC) → 4. Verify (confirm transactions)</p>
+                <p className="mt-1">Deposits with less than $1 USDC are skipped. Each stage processes up to 20-50 addresses per run for scalability.</p>
               </div>
             </div>
           )}
