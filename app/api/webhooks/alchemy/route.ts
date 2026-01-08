@@ -420,8 +420,28 @@ async function processSubscriptionPayment(
   const isWeekly = !isMonthly;
   const paymentType = isMonthly ? 'monthly' : 'weekly';
 
+  // Roll forward from the CURRENT next_payment_due_date, not NOW
+  // previous becomes current next, next becomes one period after current next
+  const newPreviousDueDate = currentNextDueDate;
+  const newNextDueDate = calculateNextDueDate(isWeekly, currentNextDueDate);
+
+  // ALWAYS update user status first - this ensures user is marked as paid
+  // even if the idempotency check below skips payment record creation
+  await supabase
+    .from('users')
+    .update({
+      is_active: true,
+      paid_for_period: true,
+      last_payment_date: now.toISOString(),
+      payment_schedule: isMonthly ? 'monthly' : 'weekly',
+      previous_payment_due_date: newPreviousDueDate.toISOString(),
+      next_payment_due_date: newNextDueDate.toISOString(),
+    })
+    .eq('id', userId);
+
   // IDEMPOTENCY CHECK: Prevent duplicate payment records
   // Check if a payment already exists for this user in the last 24 hours
+  // Note: User status was already updated above, this only prevents duplicate payment records
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   const { data: recentPayment } = await supabase
     .from('payments')
@@ -435,27 +455,9 @@ async function processSubscriptionPayment(
     .single();
 
   if (recentPayment) {
-    console.log(`[AlchemyWebhook] IDEMPOTENCY: Payment already exists for user ${userId} at ${recentPayment.created_at}, skipping duplicate`);
+    console.log(`[AlchemyWebhook] IDEMPOTENCY: Payment record already exists for user ${userId} at ${recentPayment.created_at}, skipping duplicate record creation (user status was updated)`);
     return;
   }
-
-  // Roll forward from the CURRENT next_payment_due_date, not NOW
-  // previous becomes current next, next becomes one period after current next
-  const newPreviousDueDate = currentNextDueDate;
-  const newNextDueDate = calculateNextDueDate(isWeekly, currentNextDueDate);
-
-  // Update user active status, payment dates, and due dates
-  await supabase
-    .from('users')
-    .update({
-      is_active: true,
-      paid_for_period: true,
-      last_payment_date: now.toISOString(),
-      payment_schedule: isMonthly ? 'monthly' : 'weekly',
-      previous_payment_due_date: newPreviousDueDate.toISOString(),
-      next_payment_due_date: newNextDueDate.toISOString(),
-    })
-    .eq('id', userId);
 
   // Create payment record
   await supabase

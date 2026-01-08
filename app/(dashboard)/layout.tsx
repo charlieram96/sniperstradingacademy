@@ -46,7 +46,7 @@ export default async function DashboardLayout({
   // Get user role and activation status from database
   const { data: userData } = await supabase
     .from("users")
-    .select("role, initial_payment_completed, bypass_initial_payment, bypass_subscription, is_active, last_payment_date, payout_wallet_address")
+    .select("role, initial_payment_completed, bypass_initial_payment, bypass_subscription, is_active, last_payment_date, payout_wallet_address, referred_by")
     .eq("id", user.id)
     .single()
 

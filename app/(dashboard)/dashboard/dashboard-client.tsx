@@ -13,6 +13,9 @@ import { NavigationLink } from "@/components/navigation-link"
 import { isTestUser } from "@/lib/mock-data"
 import { createClient } from "@/lib/supabase/client"
 import { BypassAccessBanner } from "@/components/bypass-access-banner"
+import { ConfirmReferralModal } from "@/components/referral/confirm-referral-modal"
+
+const ROOT_USER_ID = 'b10f0367-0471-4eab-9d15-db68b1ac4556'
 
 interface AcademyClass {
   id: string
@@ -82,7 +85,8 @@ export function DashboardClient({
   bypassInitialPayment = false,
   bypassSubscription = false,
   bypassDirectReferrals = 0,
-  bypassBannerDismissed = false
+  bypassBannerDismissed = false,
+  referredBy = null
 }: {
   data: DashboardData
   session: {
@@ -96,12 +100,34 @@ export function DashboardClient({
   bypassSubscription?: boolean
   bypassDirectReferrals?: number // Changed from boolean to number (0-18)
   bypassBannerDismissed?: boolean
+  referredBy?: string | null
 }) {
   const [selectedStructure, setSelectedStructure] = useState("1")
   const [academyClasses, setAcademyClasses] = useState<AcademyClass[]>([])
   const [classesLoading, setClassesLoading] = useState(true)
   const [bannerDismissed, setBannerDismissed] = useState(bypassBannerDismissed)
+  const [showReferralModal, setShowReferralModal] = useState(false)
   const rankInfo = getRankInfo(data.completedStructures)
+
+  // Check if we should show the referral confirmation modal
+  useEffect(() => {
+    // Only show modal if:
+    // 1. User's referrer is root
+    // 2. User hasn't paid yet (no initial payment)
+    // 3. User hasn't seen/dismissed the modal before (localStorage check)
+    // 4. Not a test user
+    const shouldShowModal =
+      referredBy === ROOT_USER_ID &&
+      !data.initialPaymentCompleted &&
+      !bypassInitialPayment &&
+      !isTestUser(session.user.id) &&
+      typeof window !== 'undefined' &&
+      localStorage.getItem('referral_confirmed') !== 'true'
+
+    if (shouldShowModal) {
+      setShowReferralModal(true)
+    }
+  }, [referredBy, data.initialPaymentCompleted, bypassInitialPayment, session.user.id])
 
   // Fetch academy classes
   useEffect(() => {
@@ -143,6 +169,14 @@ export function DashboardClient({
   
   return (
     <div>
+      {/* Confirm Referral Modal */}
+      <ConfirmReferralModal
+        open={showReferralModal}
+        onOpenChange={setShowReferralModal}
+        onConfirmed={() => setShowReferralModal(false)}
+        userId={session.user.id}
+      />
+
       {/* Demo Mode Banner */}
       {isTestUser(session.user.id) && (
         <div className="mb-6 p-4 bg-gradient-to-r from-red-600 to-red-800 text-white rounded-lg shadow-lg shadow-black/20">

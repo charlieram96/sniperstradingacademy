@@ -136,10 +136,10 @@ export default async function DashboardPage() {
 
   const data = await getDashboardData(user.id)
 
-  // Get all bypass flags
+  // Get all bypass flags and referred_by
   const { data: userBypassData } = await supabase
     .from("users")
-    .select("bypass_initial_payment, bypass_subscription, bypass_direct_referrals, bypass_banner_dismissed")
+    .select("bypass_initial_payment, bypass_subscription, bypass_direct_referrals, bypass_banner_dismissed, referred_by")
     .eq("id", user.id)
     .single()
 
@@ -157,6 +157,7 @@ export default async function DashboardPage() {
       bypassSubscription={userBypassData?.bypass_subscription || false}
       bypassDirectReferrals={userBypassData?.bypass_direct_referrals || 0}
       bypassBannerDismissed={userBypassData?.bypass_banner_dismissed || false}
+      referredBy={userBypassData?.referred_by || null}
     />
   )
 }
