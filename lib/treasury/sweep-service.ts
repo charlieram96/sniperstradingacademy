@@ -146,9 +146,10 @@ export async function sweepUserDeposit(
     console.log(`[SweepService] Sweeping ${balanceUsdc} USDC from ${depositAddress} to treasury`);
 
     // Check POL balance for gas (POL is Polygon's native token, formerly MATIC)
+    // Need ~0.08-0.1 POL for ERC-20 transfer at high gas prices
     const polResult = await polygonUSDCClient.getMATICBalance(depositAddress);
-    if (!polResult.success || parseFloat(polResult.data || '0') < 0.01) {
-      throw new Error(`Insufficient POL for gas. Have: ${polResult.data || '0'} POL`);
+    if (!polResult.success || parseFloat(polResult.data || '0') < 0.08) {
+      throw new Error(`Insufficient POL for gas. Have: ${polResult.data || '0'} POL, need at least 0.08 POL`);
     }
 
     // Transfer USDC to treasury
@@ -366,7 +367,7 @@ export async function estimateSweepGas(): Promise<{
  */
 export async function fundDepositForSweep(
   depositAddress: string,
-  amountPol: string = '0.05'
+  amountPol: string = '0.15'
 ): Promise<{ success: boolean; txHash?: string; error?: string }> {
   // Get gas tank private key
   const gasTankPrivateKey = process.env.GAS_TANK_PRIVATE_KEY;

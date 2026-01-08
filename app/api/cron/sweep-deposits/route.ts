@@ -151,10 +151,10 @@ export async function GET(req: NextRequest) {
       const polResult = await polygonUSDCClient.getMATICBalance(user.crypto_deposit_address);
       const polBalance = parseFloat(polResult.data || '0');
 
-      // Fund if less than 0.02 POL (need ~0.01 for transfer)
-      if (polBalance < 0.02) {
+      // Fund if less than 0.08 POL (need ~0.1 POL for ERC-20 transfer at high gas prices)
+      if (polBalance < 0.08) {
         console.log(`[SweepDeposits] Funding ${user.crypto_deposit_address} (has ${polBalance} POL)`);
-        const fundResult = await fundDepositForSweep(user.crypto_deposit_address, '0.05');
+        const fundResult = await fundDepositForSweep(user.crypto_deposit_address, '0.15');
         if (fundResult.success) {
           fundedCount++;
           // Wait a bit for the funding to confirm
@@ -314,8 +314,8 @@ export async function POST(req: NextRequest) {
         const polResult = await polygonUSDCClient.getMATICBalance(user.crypto_deposit_address);
         const polBalance = parseFloat(polResult.data || '0');
 
-        if (polBalance < 0.02) {
-          const fundResult = await fundDepositForSweep(user.crypto_deposit_address, '0.05');
+        if (polBalance < 0.08) {
+          const fundResult = await fundDepositForSweep(user.crypto_deposit_address, '0.15');
           if (fundResult.success) {
             fundedCount++;
             await new Promise((resolve) => setTimeout(resolve, 2000));
