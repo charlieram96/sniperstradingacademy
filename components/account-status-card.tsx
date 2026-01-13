@@ -195,7 +195,7 @@ export function AccountStatusCard({
                 <CreditCard className="h-4 w-4" />
                 <span>{paymentSchedule === 'weekly' ? 'Weekly' : 'Monthly'} Subscription</span>
               </div>
-              <p className="text-2xl font-bold">${paymentSchedule === 'weekly' ? '49.75' : '3'}</p>
+              <p className="text-2xl font-bold">${paymentSchedule === 'weekly' ? '49.75' : '199'}</p>
               <p className="text-xs text-muted-foreground">Due {paymentSchedule === 'weekly' ? 'weekly' : 'monthly'}</p>
             </div>
           )}
@@ -341,7 +341,7 @@ export function AccountStatusCard({
             {/* How to fix */}
             <div className="pt-1 border-t border-red-500/20">
               <p className="text-xs text-red-500">
-                <strong>To reactivate:</strong> Make your subscription payment of ${paymentSchedule === 'weekly' ? '49.75' : '3'} {paymentSchedule === 'weekly' ? 'weekly' : 'monthly'}.
+                <strong>To reactivate:</strong> Make your subscription payment of ${paymentSchedule === 'weekly' ? '49.75' : '199'} {paymentSchedule === 'weekly' ? 'weekly' : 'monthly'}.
               </p>
             </div>
           </div>
