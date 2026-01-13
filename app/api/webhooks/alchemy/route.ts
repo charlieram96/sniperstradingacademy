@@ -312,19 +312,46 @@ async function processInitialUnlock(
   userId: string,
   amountUsdc: string
 ) {
-  // Get referrer_id from referrals table FIRST
-  const { data: referralData, error: referralError } = await supabase
+  // Try referrals table first
+  const { data: referralData } = await supabase
     .from('referrals')
     .select('referrer_id')
     .eq('referred_id', userId)
     .single();
 
-  if (referralError || !referralData?.referrer_id) {
-    console.error(`[AlchemyWebhook] No referrer found for user ${userId}:`, referralError);
-    throw new Error(`No referrer found for user ${userId} - cannot assign network position`);
+  let referrerId = referralData?.referrer_id;
+
+  // Fallback: check users.referred_by if no referral record exists
+  // This handles cases where OAuth signup was interrupted before referral record was created
+  if (!referrerId) {
+    const { data: userReferralData } = await supabase
+      .from('users')
+      .select('referred_by')
+      .eq('id', userId)
+      .single();
+
+    referrerId = userReferralData?.referred_by;
+
+    // Create missing referral record for consistency
+    if (referrerId) {
+      const { error: insertError } = await supabase.from('referrals').insert({
+        referrer_id: referrerId,
+        referred_id: userId,
+        status: 'pending',
+      });
+
+      if (!insertError) {
+        console.log(`[AlchemyWebhook] Created missing referral record for user ${userId}`);
+      } else {
+        console.warn(`[AlchemyWebhook] Failed to create missing referral record:`, insertError);
+      }
+    }
   }
 
-  const referrerId = referralData.referrer_id;
+  if (!referrerId) {
+    console.error(`[AlchemyWebhook] No referrer found for user ${userId} in referrals table or users.referred_by`);
+    throw new Error(`No referrer found for user ${userId} - cannot assign network position`);
+  }
 
   // Assign network position WITH referrer_id (required for non-root users)
   const { error: positionError } = await supabase.rpc('assign_network_position', {
