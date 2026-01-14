@@ -190,26 +190,20 @@ async function checkUserDeposit(
   }
 
   // PERIOD-BASED LOGIC: Sum transactions since previous_payment_due_date
-  // IMPORTANT: Only count deposits that haven't been linked to a payment yet
-  // This prevents the same deposit from being credited multiple times
   const periodStart = user.previous_payment_due_date || '1970-01-01';
 
   const { data: periodTxs } = await supabase
     .from('usdc_transactions')
-    .select('id, amount, created_at')
+    .select('amount, created_at')
     .eq('user_id', user.id)
     .eq('status', 'confirmed')
     .eq('transaction_type', 'deposit')
-    .gt('created_at', periodStart)
-    .is('related_payment_id', null);
+    .gt('created_at', periodStart);
 
   const paidThisPeriod = periodTxs?.reduce(
     (sum, tx) => sum + parseFloat(tx.amount),
     0
   ) || 0;
-
-  // Collect transaction IDs to link to payment record
-  const periodTxIds = periodTxs?.map(tx => tx.id) || [];
 
   const remaining = expectedAmountUsdc - paidThisPeriod;
   const tolerance = expectedAmountUsdc * 0.01; // 1% tolerance
@@ -276,7 +270,7 @@ async function checkUserDeposit(
         ? new Date(user.next_payment_due_date)
         : new Date(); // Fallback if not set
       const isMonthly = detectedSchedule === 'monthly';
-      await processSubscriptionPayment(supabase, user.id, expectedAmountUsdc.toFixed(2), isMonthly, currentNextDueDate, periodTxIds);
+      await processSubscriptionPayment(supabase, user.id, expectedAmountUsdc.toFixed(2), isMonthly, currentNextDueDate);
     }
 
     return;
@@ -323,7 +317,7 @@ async function checkUserDeposit(
     }
 
     // Record the new deposit - MUST succeed before processing payment
-    const { data: newTxRecord, error: txInsertError } = await supabase
+    const { error: txInsertError } = await supabase
       .from('usdc_transactions')
       .insert({
         transaction_type: 'deposit',
@@ -334,20 +328,15 @@ async function checkUserDeposit(
         status: 'confirmed',
         polygon_tx_hash: txHash || `cron-${Date.now()}-${user.id.slice(0, 8)}`,
         confirmed_at: new Date().toISOString(),
-      })
-      .select('id')
-      .single();
+      });
 
     // If transaction recording fails, don't process the payment
     // This prevents duplicate payments on retry
-    if (txInsertError || !newTxRecord) {
+    if (txInsertError) {
       console.error(`[MonitorDeposits] Failed to record transaction for ${user.email}:`, txInsertError);
-      results.errors.push(`Failed to record tx for ${user.email}: ${txInsertError?.message || 'Unknown error'}`);
+      results.errors.push(`Failed to record tx for ${user.email}: ${txInsertError.message}`);
       return;
     }
-
-    // Combine existing period transactions with the newly recorded one
-    const allTxIds = [...periodTxIds, newTxRecord.id];
 
     console.log(`[MonitorDeposits] Successfully recorded ${unrecordedFunds.toFixed(2)} USDC deposit for ${user.email}`);
 
@@ -395,7 +384,7 @@ async function checkUserDeposit(
           ? new Date(user.next_payment_due_date)
           : new Date(); // Fallback if not set
         const isMonthly = detectedSchedule === 'monthly';
-        await processSubscriptionPayment(supabase, user.id, expectedAmountUsdc.toFixed(2), isMonthly, currentNextDueDate, allTxIds);
+        await processSubscriptionPayment(supabase, user.id, expectedAmountUsdc.toFixed(2), isMonthly, currentNextDueDate);
       }
     } else {
       // Still underpaid
@@ -540,7 +529,6 @@ async function processInitialUnlock(
  * Process subscription payment
  * Rolls forward due dates from the current next_payment_due_date (not NOW)
  * @param currentNextDueDate - The user's current next_payment_due_date to roll forward from
- * @param usdcTxIds - Array of USDC transaction IDs to link to this payment (prevents double-counting)
  */
 async function processSubscriptionPayment(
   supabase: ReturnType<typeof createServiceRoleClient>,
@@ -548,7 +536,7 @@ async function processSubscriptionPayment(
   amountUsdc: string,
   isMonthly: boolean,
   currentNextDueDate: Date,
-  usdcTxIds: string[] = []
+  usdcTxId?: string
 ) {
   const now = new Date();
   const isWeekly = !isMonthly;
@@ -593,7 +581,7 @@ async function processSubscriptionPayment(
     return;
   }
 
-  // Create payment record (link to first transaction if available)
+  // Create payment record
   const { data: paymentRecord } = await supabase
     .from('payments')
     .insert({
@@ -601,20 +589,16 @@ async function processSubscriptionPayment(
       amount: amountUsdc,
       payment_type: paymentType,
       status: 'succeeded',
-      usdc_transaction_id: usdcTxIds[0] || null,
+      usdc_transaction_id: usdcTxId,
     })
     .select()
     .single();
 
-  // Link ALL contributing transactions to this payment
-  // This prevents them from being counted again in future cron runs
-  if (paymentRecord && usdcTxIds.length > 0) {
+  if (paymentRecord && usdcTxId) {
     await supabase
       .from('usdc_transactions')
       .update({ related_payment_id: paymentRecord.id })
-      .in('id', usdcTxIds);
-
-    console.log(`[MonitorDeposits] Linked ${usdcTxIds.length} transaction(s) to payment ${paymentRecord.id}`);
+      .eq('id', usdcTxId);
   }
 
   // Distribute to upline
