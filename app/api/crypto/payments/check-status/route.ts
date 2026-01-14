@@ -38,7 +38,8 @@ export async function GET() {
         is_active,
         payment_schedule,
         previous_payment_due_date,
-        next_payment_due_date
+        next_payment_due_date,
+        paid_for_period
       `)
       .eq('id', user.id)
       .single();
@@ -146,7 +147,12 @@ export async function GET() {
 
     // Determine status
     let status: string;
-    if (periodPaid) {
+
+    // If user has already paid for this period (payment was processed), return 'paid'
+    // This prevents the modal from showing "funds detected" for already-processed payments
+    if (!needsInitialPayment && userData.paid_for_period) {
+      status = 'paid';
+    } else if (periodPaid) {
       status = 'period_paid';
     } else if (remaining <= tolerance && paidThisPeriod > 0) {
       // Paid but due dates not updated yet (monitor-deposits will handle)
