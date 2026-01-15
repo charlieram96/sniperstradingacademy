@@ -148,9 +148,10 @@ export async function GET() {
     // Determine status
     let status: string;
 
-    // If user has already paid for this period (payment was processed), return 'paid'
-    // This prevents the modal from showing "funds detected" for already-processed payments
-    if (!needsInitialPayment && userData.paid_for_period) {
+    // If user has paid for this period AND hasn't entered the next payment window yet, return 'paid'
+    // paidAhead = now < previousDueDate (user is paid ahead, payment window not open)
+    // This prevents modal spinning for just-processed payments while allowing users to pay when window opens
+    if (!needsInitialPayment && userData.paid_for_period && paidAhead) {
       status = 'paid';
     } else if (periodPaid) {
       status = 'period_paid';
