@@ -559,13 +559,18 @@ async function processSubscriptionPayment(
   const newPreviousDueDate = currentNextDueDate;
   const newNextDueDate = calculateNextDueDate(isWeekly, currentNextDueDate);
 
+  // Determine if this is a late payment (on or after due date)
+  // Late payments cover the previous period only - user still owes for new period
+  // Early payments (before due date) cover the current period
+  const isLatePayment = now >= currentNextDueDate;
+
   // ALWAYS update user status first - this ensures user is marked as paid
   // even if the idempotency check below skips payment record creation
   await supabase
     .from('users')
     .update({
       is_active: true,
-      paid_for_period: true,
+      paid_for_period: !isLatePayment, // false if late, true if early
       last_payment_date: now.toISOString(),
       payment_schedule: isMonthly ? 'monthly' : 'weekly',
       previous_payment_due_date: newPreviousDueDate.toISOString(),
