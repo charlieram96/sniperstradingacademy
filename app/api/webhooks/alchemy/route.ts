@@ -312,6 +312,18 @@ async function processInitialUnlock(
   userId: string,
   amountUsdc: string
 ) {
+  // IDEMPOTENCY CHECK: Verify user hasn't already been activated
+  const { data: userCheck } = await supabase
+    .from('users')
+    .select('initial_payment_completed')
+    .eq('id', userId)
+    .single();
+
+  if (userCheck?.initial_payment_completed) {
+    console.log(`[AlchemyWebhook] User ${userId} already has initial payment completed, skipping processInitialUnlock`);
+    return;
+  }
+
   // Try referrals table first
   const { data: referralData } = await supabase
     .from('referrals')
@@ -380,7 +392,7 @@ async function processInitialUnlock(
   const nextDueDate = calculateNextDueDate(isWeekly, anchorDate);
 
   // Update user membership with initial due dates
-  await supabase
+  const { error: userUpdateError } = await supabase
     .from('users')
     .update({
       membership_status: 'unlocked',
@@ -393,6 +405,11 @@ async function processInitialUnlock(
       next_payment_due_date: nextDueDate.toISOString(),
     })
     .eq('id', userId);
+
+  if (userUpdateError) {
+    console.error(`[AlchemyWebhook] CRITICAL: Failed to activate user ${userId}:`, userUpdateError);
+    throw new Error(`Failed to activate user membership: ${userUpdateError.message}`);
+  }
 
   // Increment active count for upline
   await supabase.rpc('increment_upchain_active_count', { p_user_id: userId });
