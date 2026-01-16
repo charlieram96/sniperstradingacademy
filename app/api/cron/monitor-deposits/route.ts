@@ -494,7 +494,7 @@ async function processInitialUnlock(
       is_active: true,
       paid_for_period: true,
       initial_payment_completed: true,
-      initial_payment_at: now.toISOString(),
+      initial_payment_date: now.toISOString(),
       last_payment_date: now.toISOString(),
       previous_payment_due_date: anchorDate.toISOString(),
       next_payment_due_date: nextDueDate.toISOString(),

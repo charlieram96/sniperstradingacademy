@@ -39,7 +39,8 @@ export async function GET() {
         payment_schedule,
         previous_payment_due_date,
         next_payment_due_date,
-        paid_for_period
+        paid_for_period,
+        last_payment_date
       `)
       .eq('id', user.id)
       .single();
@@ -111,14 +112,25 @@ export async function GET() {
       ? new Date(userData.next_payment_due_date)
       : null;
 
-    // NEW LOGIC:
-    // - NOW < previous_payment_due_date → paid ahead, disable payment
-    // - NOW >= previous_payment_due_date → payment is available
-    const paidAhead = previousDueDate && now < previousDueDate;
-    const paymentAvailable = !paidAhead; // Payment can be made if not paid ahead
+    // PAYMENT BLOCKING LOGIC:
+    // Block ONLY if BOTH conditions are true:
+    // 1. Payment exists in the last 7 days (weekly) / 30 days (monthly)
+    // 2. AND now < previous_payment_due_date (payment window not open yet)
+    const lastPaymentDate = userData.last_payment_date
+      ? new Date(userData.last_payment_date)
+      : null;
+    const daysSinceLastPayment = lastPaymentDate
+      ? (now.getTime() - lastPaymentDate.getTime()) / (1000 * 60 * 60 * 24)
+      : Infinity;
+    const cooldownDays = isWeekly ? 7 : 30;
+    const paidRecently = daysSinceLastPayment < cooldownDays;
+    const beforeWindow = previousDueDate && now < previousDueDate;
+    const paymentBlocked = paidRecently && beforeWindow;
 
-    // Period is already paid if user paid ahead (NOW < previous_payment_due_date)
-    const periodPaid = paidAhead || false;
+    // Legacy variables for backwards compatibility
+    const paidAhead = beforeWindow;
+    const paymentAvailable = !paymentBlocked;
+    const periodPaid = paymentBlocked;
 
     // Check wallet balance for unrecorded transactions
     const balanceResponse = await polygonUSDCClient.getBalance(userData.crypto_deposit_address);
@@ -148,13 +160,10 @@ export async function GET() {
     // Determine status
     let status: string;
 
-    // If user has paid for this period AND hasn't entered the next payment window yet, return 'paid'
-    // paidAhead = now < previousDueDate (user is paid ahead, payment window not open)
-    // This prevents modal spinning for just-processed payments while allowing users to pay when window opens
-    if (!needsInitialPayment && userData.paid_for_period && paidAhead) {
+    // BLOCK payment only if: paid recently AND before payment window opens
+    // This uses the new paymentBlocked variable calculated above
+    if (!needsInitialPayment && paymentBlocked) {
       status = 'paid';
-    } else if (periodPaid) {
-      status = 'period_paid';
     } else if (remaining <= tolerance && paidThisPeriod > 0) {
       // Paid but due dates not updated yet (monitor-deposits will handle)
       status = 'funds_detected';
