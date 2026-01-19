@@ -25,25 +25,27 @@ export function PaymentScheduleSelector({ value, onChange }: PaymentScheduleSele
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Weekly Option */}
             <div
-              className={`relative cursor-pointer rounded-lg border-2 p-4 transition-all hover:border-primary ${
+              className={`relative cursor-pointer rounded-lg border-2 p-3 sm:p-4 transition-all hover:border-primary ${
                 value === 'weekly' ? 'border-primary bg-primary/5' : 'border-border'
               }`}
               onClick={() => onChange('weekly')}
             >
-              <div className="flex items-start gap-3">
-                <RadioGroupItem value="weekly" id="weekly" className="mt-1" />
-                <div className="flex-1">
+              <div className="flex items-start gap-2 sm:gap-3">
+                <RadioGroupItem value="weekly" id="weekly" className="mt-1 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
                   <Label htmlFor="weekly" className="cursor-pointer">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-lg font-bold">Weekly</span>
-                      <Badge variant="secondary" className="text-xs">Smaller Payments</Badge>
+                    <div className="mb-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-base sm:text-lg font-bold">Weekly</span>
+                        <Badge variant="secondary" className="text-xs whitespace-nowrap">Flexible</Badge>
+                      </div>
                     </div>
                     <div className="flex items-baseline gap-1 mb-3">
-                      <DollarSign className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-3xl font-bold text-primary">49.75</span>
+                      <DollarSign className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-2xl sm:text-3xl font-bold text-primary">49.75</span>
                       <span className="text-sm text-muted-foreground">/week</span>
                     </div>
-                    <ul className="space-y-2 text-sm">
+                    <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
                         <span className="text-muted-foreground">Easier on your budget</span>
@@ -54,7 +56,7 @@ export function PaymentScheduleSelector({ value, onChange }: PaymentScheduleSele
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-muted-foreground">Total: ~$199/month (4 weeks)</span>
+                        <span className="text-muted-foreground">~$199/mo total</span>
                       </li>
                     </ul>
                   </Label>
@@ -64,25 +66,27 @@ export function PaymentScheduleSelector({ value, onChange }: PaymentScheduleSele
 
             {/* Monthly Option */}
             <div
-              className={`relative cursor-pointer rounded-lg border-2 p-4 transition-all hover:border-primary ${
+              className={`relative cursor-pointer rounded-lg border-2 p-3 sm:p-4 transition-all hover:border-primary ${
                 value === 'monthly' ? 'border-primary bg-primary/5' : 'border-border'
               }`}
               onClick={() => onChange('monthly')}
             >
-              <div className="flex items-start gap-3">
-                <RadioGroupItem value="monthly" id="monthly" className="mt-1" />
-                <div className="flex-1">
+              <div className="flex items-start gap-2 sm:gap-3">
+                <RadioGroupItem value="monthly" id="monthly" className="mt-1 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
                   <Label htmlFor="monthly" className="cursor-pointer">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-lg font-bold">Monthly</span>
-                      <Badge variant="secondary" className="text-xs">Most Popular</Badge>
+                    <div className="mb-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-base sm:text-lg font-bold">Monthly</span>
+                        <Badge variant="secondary" className="text-xs whitespace-nowrap">Popular</Badge>
+                      </div>
                     </div>
                     <div className="flex items-baseline gap-1 mb-3">
-                      <DollarSign className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-3xl font-bold text-primary">199</span>
+                      <DollarSign className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-2xl sm:text-3xl font-bold text-primary">199</span>
                       <span className="text-sm text-muted-foreground">/month</span>
                     </div>
-                    <ul className="space-y-2 text-sm">
+                    <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
                         <span className="text-muted-foreground">One payment per month</span>
