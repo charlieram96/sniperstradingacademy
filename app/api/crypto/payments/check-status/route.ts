@@ -86,6 +86,7 @@ export async function GET() {
     const tolerance = requiredAmountNum * 0.01; // 1% tolerance
 
     // PERIOD-BASED LOGIC: Sum transactions since previous_payment_due_date
+    // Only count deposits that haven't been linked to a payment yet
     const periodStart = userData.previous_payment_due_date || '1970-01-01';
 
     const { data: periodTxs } = await serviceSupabase
@@ -94,7 +95,8 @@ export async function GET() {
       .eq('user_id', user.id)
       .eq('status', 'confirmed')
       .eq('transaction_type', 'deposit')
-      .gt('created_at', periodStart);
+      .gt('created_at', periodStart)
+      .is('related_payment_id', null);
 
     const paidThisPeriod = periodTxs?.reduce(
       (sum, tx) => sum + parseFloat(tx.amount || '0'),
