@@ -180,7 +180,8 @@ async function processTransfer(
   const tolerance = expectedAmountUsdc * 0.01; // 1% tolerance
 
   // PERIOD-BASED LOGIC: Record this transaction first, then check period total
-  const { error: txInsertError } = await supabase.from('usdc_transactions').insert({
+  // Get the ID back so we can link it to the payment record later
+  const { data: txRecord, error: txInsertError } = await supabase.from('usdc_transactions').insert({
     transaction_type: 'deposit',
     from_address: transfer.from,
     to_address: transfer.to,
@@ -189,7 +190,7 @@ async function processTransfer(
     status: 'confirmed',
     polygon_tx_hash: transfer.txHash,
     confirmed_at: new Date().toISOString(),
-  });
+  }).select('id').single();
 
   // If transaction recording fails, don't process the payment
   // This prevents duplicate payments on retry/race conditions
@@ -280,7 +281,9 @@ async function processTransfer(
       ? new Date(user.next_payment_due_date)
       : new Date(); // Fallback if not set
     const isMonthly = detectedSchedule === 'monthly';
-    await processSubscriptionPayment(supabase, user.id, expectedAmountUsdc.toFixed(2), isMonthly, currentNextDueDate);
+    // Pass transaction ID so it gets linked to the payment record
+    const txIds = txRecord ? [txRecord.id] : [];
+    await processSubscriptionPayment(supabase, user.id, expectedAmountUsdc.toFixed(2), isMonthly, currentNextDueDate, txIds);
   }
 
   // Handle overpayment credit
@@ -452,13 +455,15 @@ async function processInitialUnlock(
  * Process subscription payment
  * Rolls forward due dates from the current next_payment_due_date (not NOW)
  * @param currentNextDueDate - The user's current next_payment_due_date to roll forward from
+ * @param usdcTxIds - Array of USDC transaction IDs to link to this payment (prevents double-counting by cron)
  */
 async function processSubscriptionPayment(
   supabase: ReturnType<typeof createServiceRoleClient>,
   userId: string,
   amountUsdc: string,
   isMonthly: boolean,
-  currentNextDueDate: Date
+  currentNextDueDate: Date,
+  usdcTxIds: string[] = []
 ) {
   const now = new Date();
   const isWeekly = !isMonthly;
@@ -504,14 +509,28 @@ async function processSubscriptionPayment(
   }
 
   // Create payment record
-  await supabase
+  const { data: paymentRecord } = await supabase
     .from('payments')
     .insert({
       user_id: userId,
       amount: amountUsdc,
       payment_type: paymentType,
       status: 'succeeded',
-    });
+      usdc_transaction_id: usdcTxIds[0] || null,
+    })
+    .select()
+    .single();
+
+  // Link ALL contributing transactions to this payment
+  // This prevents them from being counted again in future cron runs
+  if (paymentRecord && usdcTxIds.length > 0) {
+    await supabase
+      .from('usdc_transactions')
+      .update({ related_payment_id: paymentRecord.id })
+      .in('id', usdcTxIds);
+
+    console.log(`[AlchemyWebhook] Linked ${usdcTxIds.length} transaction(s) to payment ${paymentRecord.id}`);
+  }
 
   // Distribute to upline
   await supabase.rpc('distribute_to_upline_batch', {
