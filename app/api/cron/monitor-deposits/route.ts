@@ -591,10 +591,20 @@ async function processSubscriptionPayment(
     return;
   }
 
-  // Roll forward from the CURRENT next_payment_due_date, not NOW
-  // previous becomes current next, next becomes one period after current next
-  const newPreviousDueDate = currentNextDueDate;
-  const newNextDueDate = calculateNextDueDate(isWeekly, currentNextDueDate);
+  // If user is overdue/inactive, one payment brings them current (anchor from NOW)
+  // Otherwise, roll forward from the current next_payment_due_date
+  let newPreviousDueDate: Date;
+  let newNextDueDate: Date;
+
+  if (currentNextDueDate <= now) {
+    // User is overdue/inactive — one payment brings them current
+    newPreviousDueDate = getInitialAnchorDate(now);
+    newNextDueDate = calculateNextDueDate(isWeekly, newPreviousDueDate);
+  } else {
+    // Normal on-time payment — roll forward from current dates
+    newPreviousDueDate = currentNextDueDate;
+    newNextDueDate = calculateNextDueDate(isWeekly, currentNextDueDate);
+  }
 
   // Determine if this is a late payment (on or after due date)
   // Late payments cover the previous period only - user still owes for new period
@@ -606,7 +616,7 @@ async function processSubscriptionPayment(
     .from('users')
     .update({
       is_active: true,
-      paid_for_period: !isLatePayment, // false if late, true if early
+      paid_for_period: currentNextDueDate <= now ? true : !isLatePayment,
       last_payment_date: now.toISOString(),
       payment_schedule: isMonthly ? 'monthly' : 'weekly',
       previous_payment_due_date: newPreviousDueDate.toISOString(),

@@ -56,7 +56,7 @@ export async function GET() {
           qualified
         )
       `)
-      .or(`commission_type.eq.residual_monthly,and(commission_type.eq.direct_bonus,created_at.gte.${previousMonthStart.toISOString()},created_at.lt.${currentMonthStart.toISOString()})`)
+      .or(`commission_type.eq.residual_monthly,commission_type.eq.manual_payout,and(commission_type.eq.direct_bonus,created_at.gte.${previousMonthStart.toISOString()},created_at.lt.${currentMonthStart.toISOString()})`)
       .in("status", ["pending", "failed"])
       .order("created_at", { ascending: false })
 
@@ -92,8 +92,9 @@ export async function GET() {
     })
 
     // Filter to only qualified users - unqualified users should not be paid
-    const formattedCommissions = allCommissions.filter(c => c.qualified === true)
-    const excludedUnqualified = allCommissions.filter(c => c.qualified === false)
+    // Manual payouts are admin overrides and exempt from qualification checks
+    const formattedCommissions = allCommissions.filter(c => c.commissionType === 'manual_payout' || c.qualified === true)
+    const excludedUnqualified = allCommissions.filter(c => c.commissionType !== 'manual_payout' && c.qualified === false)
 
     // Calculate totals for qualified commissions only
     const totalAmount = formattedCommissions.reduce((sum, c) => sum + c.amount, 0)

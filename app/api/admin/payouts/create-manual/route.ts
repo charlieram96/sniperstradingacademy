@@ -7,6 +7,7 @@ export const runtime = 'nodejs'
 const MAX_MANUAL_PAYOUT_AMOUNT = 2000
 
 export async function POST(req: NextRequest) {
+  let commissionId: string | undefined
   try {
     // Use regular client for authentication
     const authSupabase = await createClient()
@@ -136,7 +137,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const commissionId = newCommission.id
+    commissionId = newCommission.id
 
     // Execute USDC transfer
     try {
@@ -295,6 +296,24 @@ export async function POST(req: NextRequest) {
     }
   } catch (error) {
     console.error("Error creating manual payout:", error)
+
+    // Clean up orphaned commission if one was created
+    if (commissionId) {
+      try {
+        const cleanupSupabase = createServiceRoleClient()
+        await cleanupSupabase
+          .from("commissions")
+          .update({
+            status: "cancelled",
+            error_message: `Manual payout failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            processed_at: new Date().toISOString(),
+          })
+          .eq("id", commissionId)
+      } catch (cleanupError) {
+        console.error("Error cleaning up orphaned commission:", cleanupError)
+      }
+    }
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
