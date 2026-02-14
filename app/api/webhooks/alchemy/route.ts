@@ -202,6 +202,40 @@ async function processTransfer(
 
   console.log(`[AlchemyWebhook] Recorded ${receivedAmountUsdc.toFixed(2)} USDC deposit for ${user.email}`);
 
+  // GRACE PERIOD CHECK: Block premature subscription payments
+  // Users get 30 free days after their $499 initial payment — no subscription payment should
+  // be processed during that window. The USDC transaction is already recorded above, so funds
+  // are tracked; we just skip payment processing and sniper volume distribution.
+  if (paymentType === 'subscription' && user.initial_payment_date) {
+    const gracePeriodEnd = new Date(user.initial_payment_date);
+    gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 30);
+    const now = new Date();
+
+    if (now < gracePeriodEnd) {
+      const daysRemaining = Math.ceil((gracePeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      console.warn(`[AlchemyWebhook] BLOCKED: User ${user.id} (${user.email}) sent ${receivedAmountUsdc} USDC subscription payment during grace period. ${daysRemaining} days remaining until ${gracePeriodEnd.toISOString()}`);
+
+      await supabase.from('crypto_audit_log').insert({
+        event_type: 'deposit_grace_period_blocked',
+        user_id: user.id,
+        entity_type: 'user',
+        entity_id: user.id,
+        details: {
+          source: 'alchemy_webhook',
+          tx_hash: transfer.txHash,
+          received_usdc: receivedAmountUsdc,
+          initial_payment_date: user.initial_payment_date,
+          grace_period_end: gracePeriodEnd.toISOString(),
+          days_remaining: daysRemaining,
+          detected_schedule: detectedSchedule,
+          reason: 'Subscription payment blocked during 30-day grace period after initial $499 payment',
+        },
+      });
+
+      return;
+    }
+  }
+
   // Now get period total (including the transaction we just recorded)
   const periodStart = user.previous_payment_due_date || '1970-01-01';
 
