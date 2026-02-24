@@ -476,6 +476,36 @@ function PaymentsContent() {
                   </Button>
                 </div>
               )}
+              {/* Fallback: user is active but has no next_payment_due_date set (e.g. bypassed initial payment before this was fixed) */}
+              {!bypassSubscription && !nextPaymentDueDate && (
+                <div className="mt-4 space-y-4">
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <p className="text-sm text-amber-700 dark:text-amber-400">
+                      Please make your first subscription payment to maintain your active status.
+                    </p>
+                  </div>
+                  <PaymentScheduleSelector
+                    value={paymentSchedule}
+                    onChange={setPaymentSchedule}
+                  />
+                  <Button
+                    onClick={() => initiatePayment('subscription')}
+                    disabled={subscribing}
+                  >
+                    {subscribing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Getting Deposit Address...
+                      </>
+                    ) : (
+                      <>
+                        <Wallet className="h-4 w-4 mr-2" />
+                        Pay {paymentSchedule === 'weekly' ? '$49.75' : '$199'} Now
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           ) : bypassSubscription ? (
             <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border-2 border-green-200 dark:border-green-900">

@@ -245,7 +245,8 @@ async function processTransfer(
     .eq('user_id', user.id)
     .eq('status', 'confirmed')
     .eq('transaction_type', 'deposit')
-    .gt('created_at', periodStart);
+    .gt('created_at', periodStart)
+    .is('related_payment_id', null);
 
   const paidThisPeriod = periodTxs?.reduce(
     (sum, tx) => sum + parseFloat(tx.amount || '0'),
@@ -308,7 +309,8 @@ async function processTransfer(
   // Process the payment based on type
   // Use expectedAmountUsdc for distribution (not overpayment)
   if (paymentType === 'initial_unlock') {
-    await processInitialUnlock(supabase, user.id, expectedAmountUsdc.toFixed(2));
+    const txIds = txRecord ? [txRecord.id] : [];
+    await processInitialUnlock(supabase, user.id, expectedAmountUsdc.toFixed(2), txIds);
   } else {
     // Roll forward from current next_payment_due_date
     const currentNextDueDate = user.next_payment_due_date
@@ -347,7 +349,8 @@ async function processTransfer(
 async function processInitialUnlock(
   supabase: ReturnType<typeof createServiceRoleClient>,
   userId: string,
-  amountUsdc: string
+  amountUsdc: string,
+  usdcTxIds: string[] = []
 ) {
   // IDEMPOTENCY CHECK: Verify user hasn't already been activated
   const { data: userCheck } = await supabase
@@ -452,14 +455,28 @@ async function processInitialUnlock(
   await supabase.rpc('increment_upchain_active_count', { p_user_id: userId });
 
   // Create payment record
-  await supabase
+  const { data: paymentRecord } = await supabase
     .from('payments')
     .insert({
       user_id: userId,
       amount: amountUsdc,
       payment_type: 'initial',
       status: 'succeeded',
-    });
+      usdc_transaction_id: usdcTxIds[0] || null,
+    })
+    .select()
+    .single();
+
+  // Link ALL contributing transactions to this payment
+  // This prevents them from being counted again by the cron
+  if (paymentRecord && usdcTxIds.length > 0) {
+    await supabase
+      .from('usdc_transactions')
+      .update({ related_payment_id: paymentRecord.id })
+      .in('id', usdcTxIds);
+
+    console.log(`[AlchemyWebhook] Linked ${usdcTxIds.length} transaction(s) to initial payment ${paymentRecord.id}`);
+  }
 
   // Update referral status
   await supabase

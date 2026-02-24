@@ -94,6 +94,14 @@ export async function POST(req: NextRequest) {
         // STEP 2: Update user status (unlock membership + activate)
         processLog.push("Unlocking membership and activating user...")
 
+        // If subscription is NOT bypassed, set payment dates so the user
+        // sees subscription payment options and the cron job can track them
+        const paymentDateFields = !bypassSubscription ? {
+          next_payment_due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          previous_payment_due_date: new Date().toISOString(),
+          paid_for_period: true,
+        } : {}
+
         await serviceSupabase
           .from("users")
           .update({
@@ -102,7 +110,8 @@ export async function POST(req: NextRequest) {
             initial_payment_date: new Date().toISOString(),
             is_active: true,
             last_payment_date: new Date().toISOString(),
-            bypass_initial_payment: true
+            bypass_initial_payment: true,
+            ...paymentDateFields,
           })
           .eq("id", userId)
 

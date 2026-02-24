@@ -258,7 +258,7 @@ async function checkUserDeposit(
     // Process the payment
     // Use expectedAmountUsdc for distribution (not overpayment)
     if (paymentType === 'initial_unlock') {
-      await processInitialUnlock(supabase, user.id, expectedAmountUsdc.toFixed(2));
+      await processInitialUnlock(supabase, user.id, expectedAmountUsdc.toFixed(2), periodTxIds);
     } else {
       // Detect schedule based on amount paid
       const weeklyDiff = Math.abs(paidThisPeriod - weeklyAmount);
@@ -377,7 +377,7 @@ async function checkUserDeposit(
 
       // Use expectedAmountUsdc for distribution (not overpayment)
       if (paymentType === 'initial_unlock') {
-        await processInitialUnlock(supabase, user.id, expectedAmountUsdc.toFixed(2));
+        await processInitialUnlock(supabase, user.id, expectedAmountUsdc.toFixed(2), allTxIds);
       } else {
         // Detect schedule based on amount paid
         const weeklyDiff2 = Math.abs(newPaidThisPeriod - weeklyAmount);
@@ -432,7 +432,7 @@ async function processInitialUnlock(
   supabase: ReturnType<typeof createServiceRoleClient>,
   userId: string,
   amountUsdc: string,
-  usdcTxId?: string
+  usdcTxIds: string[] = []
 ) {
   // IDEMPOTENCY CHECK: Verify user hasn't already been activated
   const { data: userCheck } = await supabase
@@ -517,16 +517,20 @@ async function processInitialUnlock(
       amount: amountUsdc,
       payment_type: 'initial',
       status: 'succeeded',
-      usdc_transaction_id: usdcTxId,
+      usdc_transaction_id: usdcTxIds[0] || null,
     })
     .select()
     .single();
 
-  if (paymentRecord && usdcTxId) {
+  // Link ALL contributing transactions to this payment
+  // This prevents them from being counted again in future cron runs
+  if (paymentRecord && usdcTxIds.length > 0) {
     await supabase
       .from('usdc_transactions')
       .update({ related_payment_id: paymentRecord.id })
-      .eq('id', usdcTxId);
+      .in('id', usdcTxIds);
+
+    console.log(`[MonitorDeposits] Linked ${usdcTxIds.length} transaction(s) to initial payment ${paymentRecord.id}`);
   }
 
   // Update referral status
