@@ -171,7 +171,7 @@ export default function CompleteSignupPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Visual */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary via-primary/90 to-primary/80 p-12 flex-col justify-between">
+      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-[#0F1629]/80 via-[#162044]/80 to-[#1A2550]/80 p-12 flex-col justify-between">
         <div className="flex items-center space-x-3">
           <Image src="/gold-logo.svg" alt="Trading Hub" width={48} height={48} className="w-12 h-12" />
           <span className="font-bold text-2xl text-white">Trading Hub</span>
@@ -230,7 +230,7 @@ export default function CompleteSignupPage() {
               </div>
             ) : (
               // MFA Prompt Screen
-              <Card className="border-0 shadow-lg">
+              <Card className="border-border-subtle">
                 <CardHeader className="space-y-1 pb-4">
                   <div className="flex justify-center mb-4">
                     <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
@@ -245,7 +245,7 @@ export default function CompleteSignupPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="p-4 bg-muted/50 rounded-lg">
+                  <div className="p-4 bg-surface-2 rounded-lg">
                     <p className="text-sm font-medium mb-2">Why enable 2FA?</p>
                     <ul className="text-sm text-muted-foreground space-y-1">
                       <li>• Protect your account from unauthorized access</li>
@@ -278,7 +278,7 @@ export default function CompleteSignupPage() {
             )
           ) : (
             // Processing/Success/Error Screen
-            <Card className="border-0 shadow-lg">
+            <Card className="border-border-subtle">
               <CardHeader className="space-y-1 pb-4">
                 <CardTitle className="text-3xl font-bold text-center">
                   {success ? "All Set!" : isProcessing ? "Completing Setup..." : "Error"}
@@ -293,7 +293,7 @@ export default function CompleteSignupPage() {
               </CardHeader>
               <CardContent className="flex justify-center py-8">
                 {success ? (
-                  <CheckCircle className="h-16 w-16 text-green-600 animate-pulse" />
+                  <CheckCircle className="h-16 w-16 text-[#D4A853] animate-pulse" />
                 ) : (
                   <Loader2 className="h-16 w-16 animate-spin text-primary" />
                 )}

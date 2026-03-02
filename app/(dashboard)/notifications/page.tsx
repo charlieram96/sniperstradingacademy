@@ -11,6 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Bell, BellOff, Mail, MessageSquare, Clock, CheckCircle2, XCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { motion } from "framer-motion"
+import { PageHeader } from "@/components/page-header"
+import { SectionHeader } from "@/components/section-header"
 
 // Common timezones for the select
 const COMMON_TIMEZONES = [
@@ -275,17 +278,15 @@ export default function NotificationsPage() {
   ]
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Notification Preferences</h1>
-        <p className="text-muted-foreground">
-          Manage how you receive notifications about your account activity
-        </p>
-      </div>
+    <div>
+      <PageHeader
+        title="Notification Preferences"
+        description="Manage how you receive notifications about your account activity"
+      />
 
       {message && (
         <div className={`mb-6 p-4 rounded-lg flex items-center gap-2 ${
-          message.type === 'success' ? 'bg-green-50 text-green-900' : 'bg-red-50 text-red-900'
+          message.type === 'success' ? 'bg-[#D4A853]/10 text-[#C49B3E]' : 'bg-red-50 text-red-900'
         }`}>
           {message.type === 'success' ? (
             <CheckCircle2 className="h-5 w-5" />
@@ -322,8 +323,10 @@ export default function NotificationsPage() {
         </Card>
       )}
 
-      {/* Channel Settings */}
-      <Card className="mb-6">
+      {/* Channels & Types */}
+      <SectionHeader title="Channels & Types" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <Card>
         <CardHeader>
           <CardTitle>Notification Channels</CardTitle>
           <CardDescription>
@@ -376,7 +379,7 @@ export default function NotificationsPage() {
 
             {/* SMS Opt-in Section */}
             {!smsConsent?.is_verified && (
-              <div className="ml-8 p-4 bg-muted rounded-lg">
+              <div className="ml-8 p-4 bg-surface-2 rounded-lg">
                 {!showSmsOptIn && !showVerification && (
                   <div>
                     <p className="text-sm text-muted-foreground mb-3">
@@ -447,9 +450,9 @@ export default function NotificationsPage() {
             )}
 
             {smsConsent?.is_verified && (
-              <div className="ml-8 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <span className="text-sm text-green-900">
+              <div className="ml-8 p-3 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-lg flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
+                <span className="text-sm text-[#C49B3E]">
                   SMS verified for {phoneNumber.slice(-4) ? `•••• ${phoneNumber.slice(-4)}` : 'your phone'}
                 </span>
               </div>
@@ -458,8 +461,8 @@ export default function NotificationsPage() {
         </CardContent>
       </Card>
 
-      {/* Notification Types */}
-      <Card className="mb-6">
+      {/* Notification Types - side by side with Channels */}
+      <Card>
         <CardHeader>
           <CardTitle>Notification Types</CardTitle>
           <CardDescription>
@@ -498,8 +501,13 @@ export default function NotificationsPage() {
         </CardContent>
       </Card>
 
+      </div>{/* end Channels & Types grid */}
+
+      {/* Schedule */}
+      <SectionHeader title="Schedule" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
       {/* Quiet Hours */}
-      <Card className="mb-6">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
@@ -550,8 +558,8 @@ export default function NotificationsPage() {
         </CardContent>
       </Card>
 
-      {/* Timezone */}
-      <Card className="mb-6">
+      {/* Timezone - side by side with Quiet Hours */}
+      <Card>
         <CardHeader>
           <CardTitle>Timezone</CardTitle>
           <CardDescription>
@@ -573,6 +581,8 @@ export default function NotificationsPage() {
           </Select>
         </CardContent>
       </Card>
+
+      </div>{/* end Schedule grid */}
 
       {/* Save Button */}
       <div className="flex justify-end gap-3">
@@ -623,8 +633,8 @@ export default function NotificationsPage() {
                 <div className="flex items-center gap-2">
                   {!notificationHealth.email_disabled && !notificationHealth.sms_disabled ? (
                     <>
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
-                      <span className="text-green-600 font-medium">Healthy</span>
+                      <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
+                      <span className="text-[#D4A853] font-medium">Healthy</span>
                     </>
                   ) : (
                     <>

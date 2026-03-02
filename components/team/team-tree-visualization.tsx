@@ -120,7 +120,7 @@ function TeamMemberNode({ data }: { data: NodeData }) {
   
   return (
     <div 
-      className={`group bg-card border-2 border-border rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 active:scale-95 transition-all hover:shadow-lg ${sizes.container}`}
+      className={`group bg-surface-1 border-2 border-border rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 active:scale-95 transition-all hover:shadow-lg ${sizes.container}`}
       onClick={() => data.onMemberClick(member)}
       role="button"
       tabIndex={0}
@@ -333,7 +333,7 @@ function TeamTreeVisualizationInner({ members, onMemberClick, showOnlyMembers = 
                 type: 'smoothstep',
                 animated: memberAtPosition?.subscription_status === 'active',
                 style: {
-                  stroke: memberAtPosition?.is_direct_referral ? '#10b981' : 
+                  stroke: memberAtPosition?.is_direct_referral ? '#D4A853' : 
                          memberAtPosition?.spillover_from ? '#3b82f6' : '#d1d5db',
                   strokeWidth: memberAtPosition ? 2 : 1,
                   opacity: memberAtPosition ? 1 : 0.3
@@ -390,7 +390,7 @@ function TeamTreeVisualizationInner({ members, onMemberClick, showOnlyMembers = 
                   type: 'smoothstep',
                   animated: member.subscription_status === 'active',
                   style: {
-                    stroke: member.is_direct_referral ? '#10b981' : 
+                    stroke: member.is_direct_referral ? '#D4A853' : 
                            member.spillover_from ? '#3b82f6' : '#6b7280',
                     strokeWidth: 2
                   }
@@ -447,7 +447,7 @@ function TeamTreeVisualizationInner({ members, onMemberClick, showOnlyMembers = 
           <MiniMap 
             nodeColor={(node) => {
               const member = node.data?.member
-              if (member?.subscription_status === 'active') return '#10b981'
+              if (member?.subscription_status === 'active') return '#D4A853'
               return '#6b7280'
             }}
             pannable
@@ -468,7 +468,7 @@ function TeamTreeVisualizationInner({ members, onMemberClick, showOnlyMembers = 
           <span className="text-xs">Spillover</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-12 h-0.5 bg-green-500" />
+          <div className="w-12 h-0.5 bg-[#D4A853]" />
           <span className="text-xs">Direct connection</span>
         </div>
         <div className="flex items-center gap-2">

@@ -76,9 +76,9 @@ const TYPE_LABELS: Record<string, string> = {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  completed: "bg-green-500",
-  succeeded: "bg-green-500",
-  paid: "bg-green-500",
+  completed: "bg-[#D4A853]",
+  succeeded: "bg-[#D4A853]",
+  paid: "bg-[#D4A853]",
   pending: "bg-yellow-500",
   failed: "bg-red-500",
   cancelled: "bg-gray-500",
@@ -209,9 +209,9 @@ export default function TransactionLogsPage() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2">
-                <ArrowDownCircle className="h-5 w-5 text-green-600" />
+                <ArrowDownCircle className="h-5 w-5 text-[#D4A853]" />
                 <div>
-                  <p className="text-2xl font-bold text-green-600">{formatDollars(stats.totalIncomingAmount)}</p>
+                  <p className="text-2xl font-bold text-[#D4A853]">{formatDollars(stats.totalIncomingAmount)}</p>
                   <p className="text-xs text-muted-foreground">{stats.totalIncoming} transactions</p>
                 </div>
               </div>
@@ -369,8 +369,8 @@ export default function TransactionLogsPage() {
                       <TableCell>
                         {tx.direction === "incoming" ? (
                           <div className="flex items-center gap-1">
-                            <ArrowDownCircle className="h-4 w-4 text-green-600" />
-                            <span className="text-sm text-green-600">In</span>
+                            <ArrowDownCircle className="h-4 w-4 text-[#D4A853]" />
+                            <span className="text-sm text-[#D4A853]">In</span>
                           </div>
                         ) : (
                           <div className="flex items-center gap-1">
@@ -391,7 +391,7 @@ export default function TransactionLogsPage() {
                         </div>
                       </TableCell>
                       <TableCell className={`text-right font-mono font-semibold ${
-                        tx.direction === "incoming" ? "text-green-600" : "text-red-600"
+                        tx.direction === "incoming" ? "text-[#D4A853]" : "text-red-600"
                       }`}>
                         {tx.direction === "incoming" ? "+" : "-"}{formatDollars(tx.amount)}
                       </TableCell>

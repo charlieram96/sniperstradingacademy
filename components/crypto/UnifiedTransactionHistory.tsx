@@ -128,8 +128,8 @@ export function UnifiedTransactionHistory({
       );
     }
     return (
-      <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-        <ArrowDownLeft className="h-5 w-5 text-green-500" />
+      <div className="w-10 h-10 rounded-full bg-[#D4A853]/10 dark:bg-[#D4A853]/10 flex items-center justify-center">
+        <ArrowDownLeft className="h-5 w-5 text-[#D4A853]" />
       </div>
     );
   };
@@ -223,7 +223,7 @@ export function UnifiedTransactionHistory({
                   {txs.map((tx) => (
                     <div
                       key={tx.id}
-                      className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                      className="flex items-start gap-3 p-3 rounded-lg border border-border-subtle bg-surface-1 hover:bg-surface-2 transition-colors"
                     >
                       {getTransactionIcon(tx.direction)}
 
@@ -259,7 +259,7 @@ export function UnifiedTransactionHistory({
                       <div className="text-right">
                         <p
                           className={`font-semibold ${
-                            tx.direction === 'out' ? 'text-red-500' : 'text-green-500'
+                            tx.direction === 'out' ? 'text-red-500' : 'text-[#D4A853]'
                           }`}
                         >
                           {tx.direction === 'out' ? '-' : '+'}${formatAmount(tx.amount)}

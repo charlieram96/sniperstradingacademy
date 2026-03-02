@@ -29,6 +29,10 @@ import {
 } from "lucide-react"
 import { AccountStatusCard } from "@/components/account-status-card"
 import PayoutWalletSetup from "@/components/crypto/PayoutWalletSetup"
+import { motion } from "framer-motion"
+import { staggerContainer, staggerItem } from "@/lib/motion"
+import { AnimatedNumber } from "@/components/motion/animated-number"
+import { PageHeader } from "@/components/page-header"
 
 interface DirectBonus {
   id: string
@@ -305,15 +309,14 @@ export default function FinancePage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">Finance Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
-          Track your earnings, bonuses, and team volume
-        </p>
-      </div>
+      <PageHeader
+        title="Finance Dashboard"
+        description="Track your earnings, bonuses, and team volume"
+      />
 
-      {/* Account Status Card */}
-      <div className="mb-6">
+      {/* Account Status + Payout Wallet side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div>
         <AccountStatusCard
           accountActive={accountStatus.accountActive}
           monthlyPaymentDueDate={accountStatus.monthlyPaymentDueDate}
@@ -325,12 +328,13 @@ export default function FinancePage() {
         />
       </div>
 
-      {/* Payout Wallet Section */}
-      <Card className="mb-6">
+      {/* Payout Wallet Section - side by side with Account Status */}
+      <Card>
         <CardContent className="pt-6">
           <PayoutWalletSetup showAsCard isModal={false} />
         </CardContent>
       </Card>
+      </div>{/* end Account Status + Payout grid */}
 
       {/* Legacy Qualification Status - Hidden when using new countdown */}
       {false && !financialStats.isQualified && (
@@ -347,9 +351,12 @@ export default function FinancePage() {
         </Card>
       )}
 
+      {/* Warning cards side by side */}
+      {((!accountStatus.accountActive && !accountStatus.bypassSubscription) || (!accountStatus.payoutWalletAddress && !accountStatus.bypassSubscription)) && (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
       {/* Inactive Account Financial Impact Notice */}
       {!accountStatus.accountActive && !accountStatus.bypassSubscription && (
-        <Card className="mb-6 border-red-500/30 bg-red-950/50">
+        <Card className="border-red-500/30 bg-red-950/50">
           <CardContent className="pt-6">
             <div className="flex items-start gap-4">
               <div className="p-2 bg-red-500/20 rounded-full">
@@ -392,7 +399,7 @@ export default function FinancePage() {
 
       {/* Missing Payout Wallet Warning */}
       {!accountStatus.payoutWalletAddress && !accountStatus.bypassSubscription && (
-        <Card className="mb-6 border-amber-500/30 bg-amber-950/50">
+        <Card className="border-amber-500/30 bg-amber-950/50">
           <CardContent className="pt-6">
             <div className="flex items-start gap-4">
               <div className="p-2 bg-amber-500/20 rounded-full">
@@ -420,71 +427,86 @@ export default function FinancePage() {
           </CardContent>
         </Card>
       )}
+      </div>
+      )}
 
       {/* Financial Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              <DollarSign className="h-4 w-4 inline mr-2" />
-              Lifetime Earnings
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${financialStats.lifetimeEarnings.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">All time total</p>
-          </CardContent>
-        </Card>
+      <motion.div
+        className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8"
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+      >
+        <motion.div variants={staggerItem}>
+          <Card variant="elevated" className="relative overflow-hidden border-l-2 border-l-emerald-500">
+            <DollarSign className="absolute top-3 right-3 h-12 w-12 text-emerald-500/5" />
+            <CardHeader className="pb-3">
+              <CardTitle className="text-[11px] uppercase tracking-wide font-semibold text-foreground-tertiary">
+                Lifetime Earnings
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                <AnimatedNumber value={financialStats.lifetimeEarnings} prefix="$" />
+              </div>
+              <p className="text-xs text-foreground-tertiary">All time total</p>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              <TrendingUp className="h-4 w-4 inline mr-2" />
-              Current Month Residual
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">
-              ${financialStats.currentMonthResidual.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">{(financialStats.commissionRate * 100).toFixed(0)}% of team volume</p>
-          </CardContent>
-        </Card>
+        <motion.div variants={staggerItem}>
+          <Card variant="elevated" className="relative overflow-hidden border-l-2 border-l-blue-500">
+            <TrendingUp className="absolute top-3 right-3 h-12 w-12 text-blue-500/5" />
+            <CardHeader className="pb-3">
+              <CardTitle className="text-[11px] uppercase tracking-wide font-semibold text-foreground-tertiary">
+                Current Month Residual
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-400">
+                <AnimatedNumber value={financialStats.currentMonthResidual} prefix="$" />
+              </div>
+              <p className="text-xs text-foreground-tertiary">{(financialStats.commissionRate * 100).toFixed(0)}% of team volume</p>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              <Users className="h-4 w-4 inline mr-2" />
-              Direct Bonuses
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${financialStats.totalDirectBonuses.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              ${financialStats.pendingBonuses} pending
-            </p>
-          </CardContent>
-        </Card>
+        <motion.div variants={staggerItem}>
+          <Card variant="elevated" className="relative overflow-hidden border-l-2 border-l-purple-500">
+            <Users className="absolute top-3 right-3 h-12 w-12 text-purple-500/5" />
+            <CardHeader className="pb-3">
+              <CardTitle className="text-[11px] uppercase tracking-wide font-semibold text-foreground-tertiary">
+                Direct Bonuses
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                <AnimatedNumber value={financialStats.totalDirectBonuses} prefix="$" />
+              </div>
+              <p className="text-xs text-foreground-tertiary">
+                ${financialStats.pendingBonuses} pending
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-        <Card className="border-primary/20 bg-primary/5">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-primary">
-              <Wallet className="h-4 w-4 inline mr-2" />
-              Next Payout
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">
-              ${financialStats.nextPayoutAmount.toLocaleString()}
-            </div>
-            <p className="text-xs text-primary/80">{financialStats.nextPayoutDate}</p>
-          </CardContent>
-        </Card>
-      </div>
+        <motion.div variants={staggerItem}>
+          <Card variant="highlighted" className="relative overflow-hidden border-l-2 border-l-gold-400">
+            <Wallet className="absolute top-3 right-3 h-12 w-12 text-gold-400/5" />
+            <CardHeader className="pb-3">
+              <CardTitle className="text-[11px] uppercase tracking-wide font-semibold text-gold-400">
+                Next Payout
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gold-400">
+                <AnimatedNumber value={financialStats.nextPayoutAmount} prefix="$" />
+              </div>
+              <p className="text-xs text-gold-400/80">{financialStats.nextPayoutDate}</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </motion.div>
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="residual" className="space-y-4">
@@ -635,7 +657,7 @@ export default function FinancePage() {
                             <div className="flex items-center mt-3 pt-3 border-t">
                               {bonus.status === "paid" ? (
                                 <div>
-                                  <Badge className="bg-green-500 text-white">
+                                  <Badge className="bg-[#D4A853] text-white">
                                     <CheckCircle className="h-3 w-3 mr-1" />
                                     Paid
                                   </Badge>
@@ -733,7 +755,7 @@ export default function FinancePage() {
                 <div className="border rounded-lg p-4">
                   <h4 className="font-medium mb-3">Payment Method</h4>
                   <div className="space-y-3">
-                    <div className="p-3 border rounded-lg bg-muted/30">
+                    <div className="p-3 border border-border rounded-lg bg-surface-2">
                       <div className="flex items-center gap-3 mb-2">
                         <CreditCard className="h-5 w-5 text-muted-foreground" />
                         <div className="flex-1">
@@ -745,7 +767,7 @@ export default function FinancePage() {
                           </div>
                         </div>
                         {stripeConnected && (
-                          <Badge className="bg-green-500 text-white">
+                          <Badge className="bg-[#D4A853] text-white">
                             <CheckCircle className="h-3 w-3 mr-1" />
                             Connected
                           </Badge>
@@ -793,7 +815,7 @@ export default function FinancePage() {
                   </div>
                 </div>
 
-                <div className="border rounded-lg p-4 bg-muted/30">
+                <div className="border border-border rounded-lg p-4 bg-surface-2">
                   <div className="flex items-start gap-3">
                     <AlertCircle className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                     <div>

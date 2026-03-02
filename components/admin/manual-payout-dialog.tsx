@@ -174,7 +174,7 @@ export function ManualPayoutDialog({
 
           {/* Preview */}
           {isValidAmount && selectedUser && (
-            <Card className="p-4 bg-muted/50">
+            <Card className="p-4 bg-surface-2">
               <p className="text-sm font-medium mb-2">Transfer Preview</p>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
@@ -189,7 +189,7 @@ export function ManualPayoutDialog({
                 </div>
                 <div className="border-t pt-1 mt-1 flex justify-between">
                   <span className="font-medium">Amount:</span>
-                  <span className="font-bold text-green-600">${amountNumber.toFixed(2)} USDC</span>
+                  <span className="font-bold text-[#D4A853]">${amountNumber.toFixed(2)} USDC</span>
                 </div>
               </div>
             </Card>

@@ -9,9 +9,13 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { User, Lock, CheckCircle, Mail, Calendar, Hash, Eye, EyeOff, Heart, LifeBuoy, Copy, Shield, Plus, Pencil, Trash2, Star, X } from "lucide-react"
+import { motion } from "framer-motion"
+import { staggerContainer, staggerItem } from "@/lib/motion"
 import { useRouter } from "next/navigation"
 import { MFAEnrollment } from "@/components/mfa/mfa-enrollment"
 import { MFAFactorsList } from "@/components/mfa/mfa-factors-list"
+import { PageHeader } from "@/components/page-header"
+import { SectionHeader } from "@/components/section-header"
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -383,13 +387,22 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground">Manage your account settings and preferences</p>
-      </div>
+    <div>
+      <PageHeader
+        title="Settings"
+        description="Manage your account settings and preferences"
+      />
 
-      <div className="space-y-6">
+      <motion.div
+        className="space-y-8"
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+      >
+        {/* Profile & Account */}
+        <SectionHeader title="Profile & Account" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
         {/* Profile Information */}
         <Card>
           <CardHeader>
@@ -424,10 +437,10 @@ export default function SettingsPage() {
                     type="email"
                     value={user?.email || ""}
                     disabled
-                    className="max-w-md bg-muted"
+                    className="max-w-md bg-surface-2"
                   />
                   {user?.email_confirmed_at && (
-                    <div className="flex items-center gap-1 text-green-600 text-sm">
+                    <div className="flex items-center gap-1 text-[#D4A853] text-sm">
                       <CheckCircle className="h-4 w-4" />
                       <span>Verified</span>
                     </div>
@@ -439,8 +452,8 @@ export default function SettingsPage() {
               </div>
 
               {nameSuccess && (
-                <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-                  <p className="text-sm text-green-600 flex items-center gap-2">
+                <div className="p-3 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-md">
+                  <p className="text-sm text-[#D4A853] flex items-center gap-2">
                     <CheckCircle className="h-4 w-4" />
                     {nameSuccess}
                   </p>
@@ -460,7 +473,7 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Account Details */}
+        {/* Account Details - side by side with Profile */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -519,6 +532,12 @@ export default function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+
+        </div>{/* end Profile & Account grid */}
+
+        {/* Security */}
+        <SectionHeader title="Security" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Password & Security */}
         <Card>
@@ -621,8 +640,8 @@ export default function SettingsPage() {
               </div>
 
               {passwordSuccess && (
-                <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-                  <p className="text-sm text-green-600 flex items-center gap-2">
+                <div className="p-3 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-md">
+                  <p className="text-sm text-[#D4A853] flex items-center gap-2">
                     <CheckCircle className="h-4 w-4" />
                     {passwordSuccess}
                   </p>
@@ -659,8 +678,8 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             {mfaFactorsCount > 0 ? (
               <>
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-sm text-green-600 flex items-center gap-2">
+                <div className="p-4 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-lg">
+                  <p className="text-sm text-[#D4A853] flex items-center gap-2">
                     <CheckCircle className="h-4 w-4" />
                     2FA is enabled on your account
                   </p>
@@ -679,7 +698,7 @@ export default function SettingsPage() {
               </>
             ) : (
               <div className="space-y-4">
-                <div className="p-4 bg-muted/50 rounded-lg">
+                <div className="p-4 bg-surface-2 rounded-lg">
                   <p className="text-sm font-medium mb-2">Why enable 2FA?</p>
                   <ul className="text-sm text-muted-foreground space-y-1">
                     <li>• Protect your account from unauthorized access</li>
@@ -707,6 +726,12 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        </div>{/* end Security grid */}
+
+        {/* Additional Settings */}
+        <SectionHeader title="Additional Settings" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
         {/* Beneficiary Information */}
         <Card>
           <CardHeader>
@@ -721,8 +746,8 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             {/* Success/Error messages */}
             {beneficiarySuccess && (
-              <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-                <p className="text-sm text-green-600 flex items-center gap-2">
+              <div className="p-3 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-md">
+                <p className="text-sm text-[#D4A853] flex items-center gap-2">
                   <CheckCircle className="h-4 w-4" />
                   {beneficiarySuccess}
                 </p>
@@ -803,7 +828,7 @@ export default function SettingsPage() {
 
             {/* Add/Edit Form */}
             {showBeneficiaryForm ? (
-              <form onSubmit={saveBeneficiary} className="space-y-4 p-4 border rounded-lg bg-muted/30">
+              <form onSubmit={saveBeneficiary} className="space-y-4 p-4 border border-border rounded-lg bg-surface-2">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium">
                     {editingBeneficiary ? "Edit Beneficiary" : "Add New Beneficiary"}
@@ -913,7 +938,8 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Support & Help */}
+        {/* Support & Help - side by side with Beneficiary */}
+        <motion.div variants={staggerItem}>
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -932,7 +958,7 @@ export default function SettingsPage() {
                   type="email"
                   value="support@sniperstradingacademy.com"
                   disabled
-                  className="max-w-md bg-muted"
+                  className="max-w-md bg-surface-2"
                 />
                 <Button
                   variant="outline"
@@ -948,7 +974,7 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            <div className="p-4 bg-muted/50 rounded-lg">
+            <div className="p-4 bg-surface-2 rounded-lg">
               <p className="text-sm font-medium mb-2">How can we help?</p>
               <ul className="text-sm text-muted-foreground space-y-1">
                 <li>• Technical issues or bugs</li>
@@ -967,7 +993,10 @@ export default function SettingsPage() {
             </a>
           </CardContent>
         </Card>
-      </div>
+        </motion.div>
+
+        </div>{/* end Additional Settings grid */}
+      </motion.div>
     </div>
   )
 }

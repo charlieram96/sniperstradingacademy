@@ -17,6 +17,7 @@ import { createServiceRoleClient } from '@/lib/supabase/server';
 import { polygonUSDCClient } from '@/lib/polygon/usdc-client';
 import { getMasterXprv, derivePrivateKey, verifyDerivedAddress } from '@/lib/treasury/sweep-service';
 import { getTreasurySetting } from '@/lib/treasury/treasury-service';
+import { POLYGON_CONFIG, ACCEPTED_USDC_CONTRACTS_MAINNET } from '@/lib/coinbase/wallet-types';
 import { ethers } from 'ethers';
 
 export const runtime = 'nodejs';
@@ -116,11 +117,11 @@ export async function GET(req: NextRequest) {
     const rpcUrl = process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com';
     const provider = new ethers.JsonRpcProvider(rpcUrl);
 
-    // Get USDC contract address from config
+    // Get all USDC contract addresses to sweep
     const network = (process.env.POLYGON_NETWORK as 'polygon' | 'polygon-testnet') || 'polygon';
-    const usdcAddress = network === 'polygon'
-      ? '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359' // Polygon mainnet USDC
-      : '0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582'; // Testnet
+    const usdcAddresses = network === 'polygon'
+      ? [...ACCEPTED_USDC_CONTRACTS_MAINNET]
+      : [POLYGON_CONFIG.TESTNET.usdcContract];
 
     // Get gas price once
     const feeData = await provider.getFeeData();
@@ -144,42 +145,56 @@ export async function GET(req: NextRequest) {
         // Create wallet
         const wallet = new ethers.Wallet(privateKey, provider);
 
-        // Get actual USDC balance
-        const usdcContract = new ethers.Contract(usdcAddress, USDC_ABI, wallet);
-        const balanceRaw = await usdcContract.balanceOf(user.crypto_deposit_address);
-        const balanceUsdc = parseFloat(ethers.formatUnits(balanceRaw, 6));
+        // Check balance on each USDC contract and sweep non-zero ones
+        let totalBalanceUsdc = 0;
+        let lastTxHash: string | null = null;
 
-        if (balanceUsdc < 1) {
-          console.log(`[SweepExecute] Skipping ${user.email}: balance ${balanceUsdc} below minimum`);
+        for (const usdcAddr of usdcAddresses) {
+          const usdcContract = new ethers.Contract(usdcAddr, USDC_ABI, wallet);
+          const balanceRaw = await usdcContract.balanceOf(user.crypto_deposit_address);
+          const balanceUsdc = parseFloat(ethers.formatUnits(balanceRaw, 6));
+
+          if (balanceUsdc < 1) {
+            continue;
+          }
+
+          // Execute transfer for this token
+          const tx = await usdcContract.transfer(treasuryAddress, balanceRaw, {
+            maxFeePerGas,
+            maxPriorityFeePerGas,
+            gasLimit: 100000,
+          });
+
+          const tokenLabel = usdcAddr.toLowerCase() === POLYGON_CONFIG.MAINNET.usdcContract.toLowerCase()
+            ? 'USDC' : 'USDC.e';
+          console.log(`[SweepExecute] Sweeping ${balanceUsdc} ${tokenLabel} from ${user.crypto_deposit_address}, tx: ${tx.hash}`);
+
+          totalBalanceUsdc += balanceUsdc;
+          lastTxHash = tx.hash;
+          txHashes.push(tx.hash);
+        }
+
+        if (totalBalanceUsdc < 1) {
+          console.log(`[SweepExecute] Skipping ${user.email}: combined balance ${totalBalanceUsdc} below minimum`);
           await supabase
             .from('users')
-            .update({ sweep_status: 'idle', sweep_usdc_balance: balanceUsdc })
+            .update({ sweep_status: 'idle', sweep_usdc_balance: totalBalanceUsdc })
             .eq('id', user.id);
           continue;
         }
 
-        // Execute transfer
-        const tx = await usdcContract.transfer(treasuryAddress, balanceRaw, {
-          maxFeePerGas,
-          maxPriorityFeePerGas,
-          gasLimit: 100000,
-        });
-
-        console.log(`[SweepExecute] Sweeping ${balanceUsdc} USDC from ${user.crypto_deposit_address}, tx: ${tx.hash}`);
-
-        // Update user status
+        // Update user status with last tx hash
         await supabase
           .from('users')
           .update({
             sweep_status: 'sweeping',
-            sweep_tx: tx.hash,
+            sweep_tx: lastTxHash,
             sweep_executed_at: new Date().toISOString(),
-            sweep_usdc_balance: balanceUsdc,
+            sweep_usdc_balance: totalBalanceUsdc,
           })
           .eq('id', user.id);
 
         swept++;
-        txHashes.push(tx.hash);
       } catch (err) {
         console.error(`[SweepExecute] Error sweeping ${user.email}:`, err);
 

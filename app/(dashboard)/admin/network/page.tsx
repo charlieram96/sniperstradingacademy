@@ -770,7 +770,7 @@ export default function AdminNetworkPage() {
                 </thead>
                 <tbody>
                   {pendingDeletions.map((req) => (
-                    <tr key={req.id} className="border-b hover:bg-muted/50">
+                    <tr key={req.id} className="border-b border-border-subtle hover:bg-surface-2">
                       <td className="p-2 text-sm">
                         <div>
                           <p className="font-medium">{req.user_name || "No name"}</p>
@@ -850,7 +850,7 @@ export default function AdminNetworkPage() {
               </div>
             ) : orphanedUsers.length === 0 ? (
               <div className="text-center py-4 text-muted-foreground">
-                <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-[#D4A853]" />
                 <p>No orphaned users found</p>
               </div>
             ) : (
@@ -867,7 +867,7 @@ export default function AdminNetworkPage() {
                   </thead>
                   <tbody>
                     {orphanedUsers.map((user) => (
-                      <tr key={user.id} className="border-b hover:bg-muted/50">
+                      <tr key={user.id} className="border-b border-border-subtle hover:bg-surface-2">
                         <td className="p-2 text-sm">{user.email}</td>
                         <td className="p-2 text-sm">{user.name || <span className="text-muted-foreground">—</span>}</td>
                         <td className="p-2 text-sm">{new Date(user.created_at).toLocaleDateString()}</td>
@@ -926,7 +926,7 @@ export default function AdminNetworkPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Active Users</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-green-600">
+            <p className="text-2xl font-bold text-[#D4A853]">
               {users.filter((u) => u.is_active).length}
             </p>
           </CardContent>
@@ -1045,7 +1045,7 @@ export default function AdminNetworkPage() {
                 <div
                   key={user.id}
                   onClick={() => setSelectedUser(selectedUser?.id === user.id ? null : user)}
-                  className="p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                  className="p-4 border border-border-subtle rounded-lg hover:bg-surface-2 transition-colors cursor-pointer"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -1072,7 +1072,7 @@ export default function AdminNetworkPage() {
                               </Badge>
                             )}
                             {user.bypass_subscription && (
-                              <Badge className="bg-green-600 text-white">
+                              <Badge className="bg-[#D4A853] text-white">
                                 <CheckCircle2 className="h-3 w-3 mr-1" />
                                 Bypass Subscription
                               </Badge>
@@ -1086,7 +1086,7 @@ export default function AdminNetworkPage() {
                           </>
                         )}
                         {user.is_active ? (
-                          <Badge className="bg-green-500 text-white">
+                          <Badge className="bg-[#D4A853] text-white">
                             <CheckCircle2 className="h-3 w-3 mr-1" />
                             Active
                           </Badge>
@@ -1157,7 +1157,7 @@ export default function AdminNetworkPage() {
                         </div>
                         <div>
                           <p className="text-muted-foreground">Initial Payment</p>
-                          <p className={`font-medium ${user.initial_payment_completed ? 'text-green-600' : 'text-yellow-600'}`}>
+                          <p className={`font-medium ${user.initial_payment_completed ? 'text-[#D4A853]' : 'text-yellow-600'}`}>
                             {user.initial_payment_completed ? "Completed" : "Pending"}
                           </p>
                         </div>
@@ -1419,7 +1419,7 @@ export default function AdminNetworkPage() {
                     <span className="text-purple-600 ml-2">(Already bypassed)</span>
                   )}
                   {userForBypass?.initialPaymentCompleted && !userForBypass?.currentBypasses.initialPayment && (
-                    <span className="text-green-600 ml-2">(Already paid)</span>
+                    <span className="text-[#D4A853] ml-2">(Already paid)</span>
                   )}
                 </label>
                 <p className="text-sm text-muted-foreground">
@@ -1463,7 +1463,7 @@ export default function AdminNetworkPage() {
           </DialogHeader>
           {orphanedUserToFix && (
             <div className="space-y-4">
-              <div className="p-4 bg-muted rounded-lg">
+              <div className="p-4 bg-surface-2 rounded-lg">
                 <p className="text-sm"><strong>Email:</strong> {orphanedUserToFix.email}</p>
                 <p className="text-sm"><strong>Name:</strong> {orphanedUserToFix.name || "Not set"}</p>
                 {orphanedUserToFix.referred_by && (
@@ -1564,7 +1564,7 @@ export default function AdminNetworkPage() {
         <DialogContent className="max-w-xs">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-600" />
+              <DollarSign className="h-5 w-5 text-[#D4A853]" />
               Manual Payout
             </DialogTitle>
             <DialogDescription>
@@ -1708,7 +1708,7 @@ export default function AdminNetworkPage() {
             </div>
 
             {/* Expected Amount */}
-            <div className="p-3 bg-muted rounded-lg text-center">
+            <div className="p-3 bg-surface-2 rounded-lg text-center">
               <p className="text-sm text-muted-foreground">Amount Due</p>
               <p className="text-2xl font-bold text-primary">${expectedPaymentAmount.toFixed(2)}</p>
             </div>
@@ -1729,7 +1729,7 @@ export default function AdminNetworkPage() {
                   <p className="text-sm text-muted-foreground mb-2">
                     Send USDC (Polygon) to this address:
                   </p>
-                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                  <div className="flex items-center gap-2 p-3 bg-surface-2 rounded-lg">
                     <code className="text-xs font-mono break-all flex-1">
                       {paymentAddress}
                     </code>
@@ -1740,7 +1740,7 @@ export default function AdminNetworkPage() {
                       className="shrink-0"
                     >
                       {copiedAddress ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
                       ) : (
                         <Copy className="h-4 w-4" />
                       )}

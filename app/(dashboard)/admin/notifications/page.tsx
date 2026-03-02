@@ -276,7 +276,7 @@ export default function AdminNotificationsPage() {
                       <button
                         key={user.id}
                         onClick={() => addUser(user)}
-                        className="w-full text-left p-2 hover:bg-muted flex items-center gap-2"
+                        className="w-full text-left p-2 hover:bg-surface-2 flex items-center gap-2"
                       >
                         <User className="h-4 w-4" />
                         <div>
@@ -402,7 +402,7 @@ export default function AdminNotificationsPage() {
 
       {message && (
         <div className={`mb-6 p-4 rounded-lg flex items-center gap-2 ${
-          message.type === 'success' ? 'bg-green-50 text-green-900' : 'bg-red-50 text-red-900'
+          message.type === 'success' ? 'bg-[#D4A853]/10 text-[#D4A853]' : 'bg-red-500/10 text-red-400'
         }`}>
           {message.type === 'success' ? (
             <CheckCircle2 className="h-5 w-5" />
@@ -428,7 +428,7 @@ export default function AdminNotificationsPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Enabled</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.enabled}</div>
+            <div className="text-2xl font-bold text-[#D4A853]">{stats.enabled}</div>
           </CardContent>
         </Card>
         <Card>
@@ -471,7 +471,7 @@ export default function AdminNotificationsPage() {
                               {NOTIFICATION_LABELS[setting.notification_type] || setting.notification_type}
                             </Label>
                             {setting.enabled ? (
-                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              <Badge variant="outline" className="bg-[#D4A853]/10 text-[#C49B3E] border-[#D4A853]/20">
                                 Enabled
                               </Badge>
                             ) : (

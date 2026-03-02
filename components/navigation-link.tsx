@@ -49,10 +49,16 @@ export function NavigationLink({ href, children, className, onClick, isLocked = 
   }
 
   // Combine base className with active state and locked state
-  const combinedClassName = `${className} ${isActive ? 'bg-sidebar-accent' : ''} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`
+  const combinedClassName = `${className} relative transition-all duration-150 ${isActive ? 'bg-white/[0.04] !rounded-l-none' : 'hover:bg-white/[0.03]'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`
 
   return (
     <Link href={href} onClick={handleClick} className={combinedClassName}>
+      {/* Gold left border indicator with transition */}
+      <div
+        className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-r-full bg-gold-400 transition-all duration-200 ${
+          isActive ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0'
+        }`}
+      />
       <div className="flex items-center gap-[10px] w-full">
         {children}
         {isLocked && <Lock className="h-3 w-3 ml-auto text-muted-foreground" />}

@@ -116,7 +116,7 @@ function renderPage(member: MemberProfile) {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <nav className="border-b border-border-subtle bg-surface-1 backdrop-blur-xl">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
@@ -159,7 +159,7 @@ function renderPage(member: MemberProfile) {
           </p>
 
           {member.custom_message && (
-            <Card className="mb-8 max-w-2xl mx-auto border-primary/20 bg-primary/5">
+            <Card className="mb-8 max-w-2xl mx-auto  border-amber-400/20">
               <CardContent className="pt-6">
                 <p className="text-lg italic">&ldquo;{member.custom_message}&rdquo;</p>
                 <p className="text-sm text-muted-foreground mt-2">- {member.name}</p>
@@ -182,7 +182,7 @@ function renderPage(member: MemberProfile) {
 
           <div className="flex items-center justify-center gap-8 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
+              <CheckCircle className="h-4 w-4 text-[#D4A853]" />
               <span>30-Day Money Back</span>
             </div>
             <div className="flex items-center gap-2">
@@ -211,7 +211,7 @@ function renderPage(member: MemberProfile) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
+              <Card key={index} className="transition-all">
                 <CardHeader>
                   <feature.icon className="h-10 w-10 text-primary mb-2" />
                   <CardTitle className="text-lg">{feature.title}</CardTitle>
@@ -226,7 +226,7 @@ function renderPage(member: MemberProfile) {
       </section>
 
       {/* Investment Section */}
-      <section className="py-20 px-4 bg-muted/30">
+      <section className="py-20 px-4 bg-surface-2">
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
@@ -237,7 +237,7 @@ function renderPage(member: MemberProfile) {
             </p>
           </div>
 
-          <Card className="border-primary shadow-xl">
+          <Card className=" border-amber-400/20">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl">Full Academy Access</CardTitle>
               <CardDescription className="text-lg">
@@ -266,7 +266,7 @@ function renderPage(member: MemberProfile) {
                 ))}
               </div>
 
-              <div className="bg-primary/10 rounded-lg p-4">
+              <div className="bg-surface-2 rounded-lg p-4 border border-border-subtle">
                 <p className="font-semibold text-center mb-2">
                   🎯 Special Referral Bonus
                 </p>
@@ -293,7 +293,7 @@ function renderPage(member: MemberProfile) {
       {/* Urgency Section */}
       <section className="py-20 px-4 bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto max-w-4xl text-center">
-          <Card className="border-primary/20 bg-primary/5">
+          <Card className=" border-amber-400/20">
             <CardHeader>
               <Zap className="h-12 w-12 text-primary mx-auto mb-4" />
               <CardTitle className="text-2xl">Limited Time Opportunity</CardTitle>
@@ -321,7 +321,7 @@ function renderPage(member: MemberProfile) {
       </section>
 
       {/* Footer */}
-      <footer className="border-t py-8 px-4">
+      <footer className="border-t border-border-subtle py-8 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center">

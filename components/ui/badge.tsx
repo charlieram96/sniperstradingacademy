@@ -5,18 +5,22 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  "inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden",
+  "inline-flex items-center justify-center rounded-[4px] px-2 py-0.5 text-[11px] uppercase tracking-wide font-semibold w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] transition-[color,box-shadow] overflow-hidden",
   {
     variants: {
       variant: {
         default:
-          "border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
+          "bg-gold-400/12 text-gold-300 [a&]:hover:bg-gold-400/20",
         secondary:
-          "border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
+          "bg-surface-3 text-foreground-secondary [a&]:hover:bg-surface-4",
         destructive:
-          "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+          "bg-red-500/12 text-red-400 [a&]:hover:bg-red-500/20",
+        success:
+          "bg-emerald-500/12 text-emerald-400 [a&]:hover:bg-emerald-500/20",
+        info:
+          "bg-blue-500/12 text-blue-400 [a&]:hover:bg-blue-500/20",
         outline:
-          "text-foreground [a&]:hover:bg-accent-hover [a&]:hover:text-accent-foreground",
+          "border border-border text-foreground-secondary [a&]:hover:bg-surface-3",
       },
     },
     defaultVariants: {

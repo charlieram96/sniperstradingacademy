@@ -346,7 +346,8 @@ export const POLYGON_CONFIG = {
     name: 'Polygon Mainnet',
     rpcUrl: process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com',
     blockExplorer: 'https://polygonscan.com',
-    usdcContract: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359', // USDC on Polygon
+    usdcContract: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359', // Native USDC on Polygon
+    usdcBridgedContract: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', // USDC.e (Bridged USDC) on Polygon
   },
   TESTNET: {
     chainId: 80002,
@@ -356,6 +357,12 @@ export const POLYGON_CONFIG = {
     usdcContract: '0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582', // Mock USDC on testnet
   },
 } as const;
+
+// All accepted USDC contract addresses on mainnet (native + bridged)
+export const ACCEPTED_USDC_CONTRACTS_MAINNET: readonly string[] = [
+  POLYGON_CONFIG.MAINNET.usdcContract,
+  POLYGON_CONFIG.MAINNET.usdcBridgedContract,
+] as const;
 
 export const GAS_LIMITS = {
   USDC_TRANSFER: 65000, // Standard ERC-20 transfer

@@ -5,7 +5,7 @@
 // =============================================
 
 import { ethers } from 'ethers';
-import { POLYGON_CONFIG, GAS_LIMITS, ServiceResponse } from '../coinbase/wallet-types';
+import { POLYGON_CONFIG, GAS_LIMITS, ServiceResponse, ACCEPTED_USDC_CONTRACTS_MAINNET } from '../coinbase/wallet-types';
 
 // USDC ERC-20 ABI (minimal interface for transfers)
 const USDC_ABI = [
@@ -47,6 +47,7 @@ export interface GasEstimate {
 class PolygonUSDCClient {
   private provider: ethers.JsonRpcProvider;
   private usdcContract: ethers.Contract;
+  private usdcBridgedContract: ethers.Contract | null;
   private network: 'polygon' | 'polygon-testnet';
   private config: typeof POLYGON_CONFIG.MAINNET | typeof POLYGON_CONFIG.TESTNET;
 
@@ -58,12 +59,17 @@ class PolygonUSDCClient {
     const rpcUrl = process.env.POLYGON_RPC_URL || this.config.rpcUrl;
     this.provider = new ethers.JsonRpcProvider(rpcUrl);
 
-    // Initialize USDC contract
+    // Initialize native USDC contract
     this.usdcContract = new ethers.Contract(
       this.config.usdcContract,
       USDC_ABI,
       this.provider
     );
+
+    // Initialize bridged USDC.e contract (mainnet only)
+    this.usdcBridgedContract = this.network === 'polygon'
+      ? new ethers.Contract(POLYGON_CONFIG.MAINNET.usdcBridgedContract, USDC_ABI, this.provider)
+      : null;
   }
 
   /**
@@ -81,10 +87,17 @@ class PolygonUSDCClient {
         };
       }
 
-      const [balanceRaw, blockNumber] = await Promise.all([
-        this.usdcContract.balanceOf(address),
+      const balancePromises: Promise<bigint>[] = [this.usdcContract.balanceOf(address)];
+      if (this.usdcBridgedContract) {
+        balancePromises.push(this.usdcBridgedContract.balanceOf(address));
+      }
+
+      const [balances, blockNumber] = await Promise.all([
+        Promise.all(balancePromises),
         this.provider.getBlockNumber(),
       ]);
+
+      const balanceRaw = balances.reduce((sum, b) => sum + b, BigInt(0));
 
       // USDC has 6 decimals
       const balance = ethers.formatUnits(balanceRaw, 6);
@@ -109,6 +122,22 @@ class PolygonUSDCClient {
           details: error,
         },
       };
+    }
+  }
+
+  /**
+   * Get USDC balance per token (native vs bridged) for sweep use
+   */
+  async getBalancePerToken(address: string): Promise<{ native: bigint; bridged: bigint }> {
+    try {
+      const native: bigint = await this.usdcContract.balanceOf(address);
+      const bridged: bigint = this.usdcBridgedContract
+        ? await this.usdcBridgedContract.balanceOf(address)
+        : BigInt(0);
+      return { native, bridged };
+    } catch (error) {
+      console.error('[PolygonUSDCClient] getBalancePerToken error:', error);
+      return { native: BigInt(0), bridged: BigInt(0) };
     }
   }
 
