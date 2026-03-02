@@ -67,7 +67,7 @@ export function ManualPayoutDialog({
         throw new Error(data.error || "Failed to create manual payout")
       }
 
-      // Success
+      // Success 
       onSuccess()
       resetForm()
       onOpenChange(false)
