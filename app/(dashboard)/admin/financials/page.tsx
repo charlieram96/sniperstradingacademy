@@ -865,8 +865,8 @@ export default function AdminFinancialsPage() {
               <div className="flex items-center gap-2">
                 {treasurySettings?.isConfigured ? (
                   <>
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    <span className="text-sm text-green-600 font-medium">Treasury configured and ready</span>
+                    <CheckCircle2 className="h-5 w-5 text-[#D4A853]" />
+                    <span className="text-sm text-[#D4A853] font-medium">Treasury configured and ready</span>
                   </>
                 ) : (
                   <>
@@ -891,17 +891,17 @@ export default function AdminFinancialsPage() {
                     </Button>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="p-3 bg-muted rounded-lg">
+                    <div className="p-3 bg-surface-2 rounded-lg">
                       <p className="text-xs text-muted-foreground">USDC Balance</p>
                       {treasuryBalanceLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin mt-1" />
                       ) : (
-                        <p className="text-lg font-semibold text-green-600">
+                        <p className="text-lg font-semibold text-[#D4A853]">
                           {treasuryWalletBalance ? `$${parseFloat(treasuryWalletBalance.usdc).toFixed(2)}` : '-'}
                         </p>
                       )}
                     </div>
-                    <div className="p-3 bg-muted rounded-lg">
+                    <div className="p-3 bg-surface-2 rounded-lg">
                       <p className="text-xs text-muted-foreground">MATIC (Gas)</p>
                       {treasuryBalanceLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin mt-1" />
@@ -935,7 +935,7 @@ export default function AdminFinancialsPage() {
                 <Label htmlFor="masterXpub">Master Wallet Extended Public Key (xpub)</Label>
                 {treasurySettings?.masterWalletXpub && !showXpubInput ? (
                   <div className="flex items-center gap-2">
-                    <code className="bg-muted px-3 py-2 rounded text-sm flex-1 font-mono">
+                    <code className="bg-surface-2 px-3 py-2 rounded text-sm flex-1 font-mono">
                       {treasurySettings.masterWalletXpub}
                     </code>
                     <Button
@@ -965,7 +965,7 @@ export default function AdminFinancialsPage() {
                 <Label htmlFor="masterXprv">Master Wallet Extended Private Key (xprv)</Label>
                 <div className="flex items-center gap-2">
                   {treasurySettings?.hasMasterXprv && (
-                    <Badge variant="outline" className="text-green-600 border-green-300">
+                    <Badge variant="outline" className="text-[#D4A853] border-[#D4A853]/30">
                       <CheckCircle2 className="h-3 w-3 mr-1" />
                       Configured
                     </Badge>
@@ -997,7 +997,7 @@ export default function AdminFinancialsPage() {
 
               {/* Current derivation index */}
               {treasurySettings && (
-                <div className="flex items-center gap-4 p-3 bg-muted rounded-lg">
+                <div className="flex items-center gap-4 p-3 bg-surface-2 rounded-lg">
                   <Settings className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium">Current Derivation Index</p>
@@ -1017,9 +1017,9 @@ export default function AdminFinancialsPage() {
               )}
 
               {treasurySuccess && (
-                <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  <span className="text-sm text-green-600">Treasury settings saved successfully</span>
+                <div className="flex items-center gap-2 p-3 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-lg">
+                  <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
+                  <span className="text-sm text-[#D4A853]">Treasury settings saved successfully</span>
                 </div>
               )}
 
@@ -1064,8 +1064,8 @@ export default function AdminFinancialsPage() {
               <div className="flex items-center gap-2">
                 {treasurySettings?.isPayoutWalletConfigured ? (
                   <>
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    <span className="text-sm text-green-600 font-medium">Payout wallet configured and ready</span>
+                    <CheckCircle2 className="h-5 w-5 text-[#D4A853]" />
+                    <span className="text-sm text-[#D4A853] font-medium">Payout wallet configured and ready</span>
                   </>
                 ) : (
                   <>
@@ -1078,17 +1078,17 @@ export default function AdminFinancialsPage() {
               {/* Wallet balance display */}
               {treasurySettings?.payoutWalletAddress && (
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-muted rounded-lg">
+                  <div className="p-3 bg-surface-2 rounded-lg">
                     <p className="text-xs text-muted-foreground">USDC Balance</p>
                     {payoutBalanceLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin mt-1" />
                     ) : (
-                      <p className="text-lg font-semibold text-green-600">
+                      <p className="text-lg font-semibold text-[#D4A853]">
                         {payoutWalletBalance ? `$${parseFloat(payoutWalletBalance.usdc).toFixed(2)}` : '-'}
                       </p>
                     )}
                   </div>
-                  <div className="p-3 bg-muted rounded-lg">
+                  <div className="p-3 bg-surface-2 rounded-lg">
                     <p className="text-xs text-muted-foreground">MATIC (Gas)</p>
                     {payoutBalanceLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin mt-1" />
@@ -1152,9 +1152,9 @@ export default function AdminFinancialsPage() {
               )}
 
               {payoutSuccess && (
-                <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  <span className="text-sm text-green-600">Payout wallet settings saved successfully</span>
+                <div className="flex items-center gap-2 p-3 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-lg">
+                  <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
+                  <span className="text-sm text-[#D4A853]">Payout wallet settings saved successfully</span>
                 </div>
               )}
 
@@ -1209,8 +1209,8 @@ export default function AdminFinancialsPage() {
               <div className="flex items-center gap-2">
                 {sweepStatus?.configured ? (
                   <>
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    <span className="text-sm text-green-600 font-medium">Sweep configured and ready</span>
+                    <CheckCircle2 className="h-5 w-5 text-[#D4A853]" />
+                    <span className="text-sm text-[#D4A853] font-medium">Sweep configured and ready</span>
                   </>
                 ) : (
                   <>
@@ -1222,19 +1222,19 @@ export default function AdminFinancialsPage() {
 
               {/* Stats Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-muted rounded-lg">
+                <div className="p-4 bg-surface-2 rounded-lg">
                   <p className="text-sm text-muted-foreground">Pending Deposits</p>
                   <p className="text-2xl font-semibold">{sweepStatus?.pendingCount || 0}</p>
                   <p className="text-xs text-muted-foreground">addresses to sweep</p>
                 </div>
-                <div className="p-4 bg-muted rounded-lg">
+                <div className="p-4 bg-surface-2 rounded-lg">
                   <p className="text-sm text-muted-foreground">Pending USDC</p>
-                  <p className="text-2xl font-semibold text-green-600">
+                  <p className="text-2xl font-semibold text-[#D4A853]">
                     ${(sweepStatus?.pendingUsdc || 0).toFixed(2)}
                   </p>
                   <p className="text-xs text-muted-foreground">waiting to sweep</p>
                 </div>
-                <div className="p-4 bg-muted rounded-lg">
+                <div className="p-4 bg-surface-2 rounded-lg">
                   <p className="text-sm text-muted-foreground">Last Sweep</p>
                   {sweepStatus?.lastSweep ? (
                     <>
@@ -1255,23 +1255,23 @@ export default function AdminFinancialsPage() {
               {sweepResult && (
                 <div className={`p-4 rounded-lg border ${
                   sweepResult.success
-                    ? "bg-green-50 border-green-200"
+                    ? "bg-[#D4A853]/10 border-[#D4A853]/20"
                     : "bg-red-50 border-red-200"
                 }`}>
                   <div className="flex items-start gap-3">
                     {sweepResult.success ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
+                      <CheckCircle2 className="h-5 w-5 text-[#D4A853] mt-0.5" />
                     ) : (
                       <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
                     )}
                     <div className="flex-1">
                       <p className={`font-medium ${
-                        sweepResult.success ? "text-green-700" : "text-red-700"
+                        sweepResult.success ? "text-[#C49B3E]" : "text-red-700"
                       }`}>
                         {sweepResult.message}
                       </p>
                       {sweepResult.details && sweepResult.success && (
-                        <div className="mt-2 text-sm text-green-600 space-y-1">
+                        <div className="mt-2 text-sm text-[#D4A853] space-y-1">
                           <p>Successful: {sweepResult.details.successful} deposits</p>
                           <p>Failed: {sweepResult.details.failed} deposits</p>
                           <p>Total swept: ${sweepResult.details.totalSweptUsdc.toFixed(2)} USDC</p>
@@ -1331,9 +1331,9 @@ export default function AdminFinancialsPage() {
                       <p className="text-lg font-semibold text-blue-600">{sweepPipelineStats.funding_sent}</p>
                       <p className="text-xs text-blue-600">Funding Sent</p>
                     </div>
-                    <div className="p-2 bg-green-50 rounded text-center">
-                      <p className="text-lg font-semibold text-green-600">{sweepPipelineStats.ready}</p>
-                      <p className="text-xs text-green-600">Ready</p>
+                    <div className="p-2 bg-[#D4A853]/10 rounded text-center">
+                      <p className="text-lg font-semibold text-[#D4A853]">{sweepPipelineStats.ready}</p>
+                      <p className="text-xs text-[#D4A853]">Ready</p>
                     </div>
                     <div className="p-2 bg-purple-50 rounded text-center">
                       <p className="text-lg font-semibold text-purple-600">{sweepPipelineStats.sweeping}</p>
@@ -1391,7 +1391,7 @@ export default function AdminFinancialsPage() {
             <div className="space-y-6">
               {/* Status Overview */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-muted rounded-lg">
+                <div className="p-4 bg-surface-2 rounded-lg">
                   <p className="text-sm text-muted-foreground">Last Processed</p>
                   <p className="text-lg font-semibold">
                     {monthlyStatus?.lastExecution?.details?.month_period || "Never"}
@@ -1402,7 +1402,7 @@ export default function AdminFinancialsPage() {
                     </p>
                   )}
                 </div>
-                <div className="p-4 bg-muted rounded-lg">
+                <div className="p-4 bg-surface-2 rounded-lg">
                   <p className="text-sm text-muted-foreground">Users with Volume</p>
                   <p className="text-lg font-semibold">
                     {monthlyStatus?.currentPeriodStats?.usersWithVolume || 0}
@@ -1411,7 +1411,7 @@ export default function AdminFinancialsPage() {
                     {monthlyStatus?.currentPeriodStats?.activeUsersWithVolume || 0} active
                   </p>
                 </div>
-                <div className="p-4 bg-muted rounded-lg">
+                <div className="p-4 bg-surface-2 rounded-lg">
                   <p className="text-sm text-muted-foreground">Current Month Volume</p>
                   <p className="text-lg font-semibold">
                     {formatDollars(parseFloat(monthlyStatus?.currentPeriodStats?.totalCurrentMonthVolume || "0"))}
@@ -1471,15 +1471,15 @@ export default function AdminFinancialsPage() {
                         {formatDollars(monthlyPreview.totalVolumeToArchive)}
                       </p>
                     </div>
-                    <div className="p-3 bg-green-50 rounded-lg">
-                      <p className="text-xs text-green-600">Commissions</p>
-                      <p className="text-lg font-semibold text-green-700">
+                    <div className="p-3 bg-[#D4A853]/10 rounded-lg">
+                      <p className="text-xs text-[#D4A853]">Commissions</p>
+                      <p className="text-lg font-semibold text-[#C49B3E]">
                         {monthlyPreview.commissionsToCreate.count}
                       </p>
                     </div>
-                    <div className="p-3 bg-green-50 rounded-lg">
-                      <p className="text-xs text-green-600">Total Payout</p>
-                      <p className="text-lg font-semibold text-green-700">
+                    <div className="p-3 bg-[#D4A853]/10 rounded-lg">
+                      <p className="text-xs text-[#D4A853]">Total Payout</p>
+                      <p className="text-lg font-semibold text-[#C49B3E]">
                         {formatDollars(monthlyPreview.commissionsToCreate.totalAmount)}
                       </p>
                     </div>
@@ -1494,7 +1494,7 @@ export default function AdminFinancialsPage() {
                   {/* Commission Breakdown Table */}
                   {monthlyPreview.commissionsToCreate.breakdown.length > 0 && (
                     <div className="border rounded-lg overflow-hidden">
-                      <div className="bg-muted px-4 py-2">
+                      <div className="bg-surface-2 px-4 py-2">
                         <h5 className="text-sm font-medium">Commission Breakdown (Top {Math.min(50, monthlyPreview.commissionsToCreate.count)})</h5>
                       </div>
                       <div className="max-h-64 overflow-y-auto">
@@ -1519,7 +1519,7 @@ export default function AdminFinancialsPage() {
                                 </TableCell>
                                 <TableCell className="text-center">
                                   {user.isQualified ? (
-                                    <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                                    <Badge variant="default" className="bg-[#D4A853] hover:bg-[#C49B3E]">
                                       <CheckCircle2 className="h-3 w-3 mr-1" />
                                       Yes
                                     </Badge>
@@ -1536,7 +1536,7 @@ export default function AdminFinancialsPage() {
                                 <TableCell className="text-right">
                                   {user.commissionRate.toFixed(0)}%
                                 </TableCell>
-                                <TableCell className="text-right font-mono font-semibold text-green-600">
+                                <TableCell className="text-right font-mono font-semibold text-[#D4A853]">
                                   {formatDollars(user.commissionAmount)}
                                 </TableCell>
                               </TableRow>
@@ -1545,7 +1545,7 @@ export default function AdminFinancialsPage() {
                         </Table>
                       </div>
                       {monthlyPreview.commissionsToCreate.hasMore && (
-                        <div className="px-4 py-2 bg-muted text-center text-sm text-muted-foreground">
+                        <div className="px-4 py-2 bg-surface-2 text-center text-sm text-muted-foreground">
                           + {monthlyPreview.commissionsToCreate.count - 50} more users
                         </div>
                       )}
@@ -1608,23 +1608,23 @@ export default function AdminFinancialsPage() {
               {monthlyProcessResult && (
                 <div className={`p-4 rounded-lg border ${
                   monthlyProcessResult.success
-                    ? "bg-green-50 border-green-200"
+                    ? "bg-[#D4A853]/10 border-[#D4A853]/20"
                     : "bg-red-50 border-red-200"
                 }`}>
                   <div className="flex items-start gap-3">
                     {monthlyProcessResult.success ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
+                      <CheckCircle2 className="h-5 w-5 text-[#D4A853] mt-0.5" />
                     ) : (
                       <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
                     )}
                     <div className="flex-1">
                       <p className={`font-medium ${
-                        monthlyProcessResult.success ? "text-green-700" : "text-red-700"
+                        monthlyProcessResult.success ? "text-[#C49B3E]" : "text-red-700"
                       }`}>
                         {monthlyProcessResult.message}
                       </p>
                       {monthlyProcessResult.details && monthlyProcessResult.success && (
-                        <div className="mt-2 text-sm text-green-600 space-y-1">
+                        <div className="mt-2 text-sm text-[#D4A853] space-y-1">
                           <p>Archived: {(monthlyProcessResult.details.archiveStep as { usersProcessed?: number })?.usersProcessed || 0} users</p>
                           <p>Commissions created: {(monthlyProcessResult.details.commissionStep as { commissionsCreated?: number })?.commissionsCreated || 0}</p>
                           <p>Total payout: {formatDollars((monthlyProcessResult.details.commissionStep as { totalPayoutAmount?: number })?.totalPayoutAmount || 0)}</p>
@@ -1700,7 +1700,7 @@ export default function AdminFinancialsPage() {
                         <TableCell className="font-mono">
                           {formatDollars(item.expectedAmount)}
                         </TableCell>
-                        <TableCell className="font-mono text-green-600 font-semibold">
+                        <TableCell className="font-mono text-[#D4A853] font-semibold">
                           {formatDollars(item.receivedAmount)}
                         </TableCell>
                         <TableCell className="font-mono text-amber-600 font-semibold">
@@ -1784,8 +1784,8 @@ export default function AdminFinancialsPage() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <ArrowUpCircle className="h-5 w-5 text-green-600" />
-              <p className="text-2xl font-bold text-green-600">{formatDollars(stats.totalRevenue)}</p>
+              <ArrowUpCircle className="h-5 w-5 text-[#D4A853]" />
+              <p className="text-2xl font-bold text-[#D4A853]">{formatDollars(stats.totalRevenue)}</p>
             </div>
           </CardContent>
         </Card>
@@ -1869,7 +1869,7 @@ export default function AdminFinancialsPage() {
                       </TableCell>
                       <TableCell>
                         {user.is_active ? (
-                          <Badge className="bg-green-500">Active</Badge>
+                          <Badge className="bg-[#D4A853]">Active</Badge>
                         ) : (
                           <Badge variant="secondary">Inactive</Badge>
                         )}
@@ -1898,7 +1898,7 @@ export default function AdminFinancialsPage() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ArrowUpCircle className="h-5 w-5 text-green-600" />
+            <ArrowUpCircle className="h-5 w-5 text-[#D4A853]" />
             Incoming Payments ({filteredPayments.length})
           </CardTitle>
           <CardDescription>All payments received from users</CardDescription>
@@ -1967,7 +1967,7 @@ export default function AdminFinancialsPage() {
                           <p className="text-sm text-muted-foreground">{payment.user_email}</p>
                         </div>
                       </TableCell>
-                      <TableCell className="font-mono font-semibold text-green-600">
+                      <TableCell className="font-mono font-semibold text-[#D4A853]">
                         {formatDollars(payment.amount)}
                       </TableCell>
                       <TableCell>
@@ -1977,7 +1977,7 @@ export default function AdminFinancialsPage() {
                       </TableCell>
                       <TableCell>
                         {payment.status === "succeeded" ? (
-                          <Badge className="bg-green-500 text-white">Succeeded</Badge>
+                          <Badge className="bg-[#D4A853] text-white">Succeeded</Badge>
                         ) : payment.status === "bypassed" ? (
                           <Badge className="bg-amber-500 text-white">Bypassed</Badge>
                         ) : payment.status === "pending" ? (
@@ -2069,7 +2069,7 @@ export default function AdminFinancialsPage() {
                       </TableCell>
                       <TableCell>
                         {commission.status === "paid" ? (
-                          <Badge className="bg-green-500 text-white">Paid</Badge>
+                          <Badge className="bg-[#D4A853] text-white">Paid</Badge>
                         ) : commission.status === "pending" ? (
                           <Badge className="bg-yellow-500 text-white">Pending</Badge>
                         ) : (

@@ -4,12 +4,9 @@
  */
 
 import { ethers } from 'ethers';
-import { POLYGON_CONFIG, ACCEPTED_USDC_CONTRACTS_MAINNET } from '../coinbase/wallet-types';
 
-// All accepted USDC contract addresses (native + bridged)
-const USDC_CONTRACTS: string[] = (process.env.POLYGON_NETWORK || 'polygon') === 'polygon'
-  ? [...ACCEPTED_USDC_CONTRACTS_MAINNET]
-  : [POLYGON_CONFIG.TESTNET.usdcContract];
+// Polygon USDC contract address (native USDC)
+const USDC_CONTRACT_ADDRESS = '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359';
 
 // Transfer event topic (keccak256("Transfer(address,address,uint256)"))
 const TRANSFER_TOPIC = ethers.id('Transfer(address,address,uint256)');
@@ -64,7 +61,7 @@ export async function findDepositTransactionHash(
     const toAddressTopic = ethers.zeroPadValue(depositAddress.toLowerCase(), 32);
 
     const logs = await provider.getLogs({
-      address: USDC_CONTRACTS,
+      address: USDC_CONTRACT_ADDRESS,
       topics: [
         TRANSFER_TOPIC,
         null, // from: any
@@ -130,7 +127,7 @@ export async function scanRecentDeposits(
     // Note: We can't filter by multiple `to` addresses in one query,
     // so we fetch all and filter locally
     const logs = await provider.getLogs({
-      address: USDC_CONTRACTS,
+      address: USDC_CONTRACT_ADDRESS,
       topics: [TRANSFER_TOPIC],
       fromBlock,
       toBlock: toBlock || 'latest',
@@ -182,19 +179,14 @@ export async function getUsdcBalance(address: string): Promise<bigint> {
   const provider = getProvider();
 
   try {
-    let total = BigInt(0);
+    const usdcContract = new ethers.Contract(
+      USDC_CONTRACT_ADDRESS,
+      ['function balanceOf(address) view returns (uint256)'],
+      provider
+    );
 
-    for (const contractAddr of USDC_CONTRACTS) {
-      const usdcContract = new ethers.Contract(
-        contractAddr,
-        ['function balanceOf(address) view returns (uint256)'],
-        provider
-      );
-      const balance = await usdcContract.balanceOf(address);
-      total += balance;
-    }
-
-    return total;
+    const balance = await usdcContract.balanceOf(address);
+    return balance;
   } catch (error) {
     console.error('[EventScanner] Error getting USDC balance:', error);
     return BigInt(0);
@@ -212,18 +204,17 @@ export async function batchGetUsdcBalances(
   const results = new Map<string, bigint>();
 
   try {
-    const contracts = USDC_CONTRACTS.map(
-      (addr) => new ethers.Contract(addr, ['function balanceOf(address) view returns (uint256)'], provider)
+    const usdcContract = new ethers.Contract(
+      USDC_CONTRACT_ADDRESS,
+      ['function balanceOf(address) view returns (uint256)'],
+      provider
     );
 
+    // For now, sequential calls (can be optimized with multicall later)
     const promises = addresses.map(async (address) => {
       try {
-        let total = BigInt(0);
-        for (const contract of contracts) {
-          const balance = await contract.balanceOf(address);
-          total += balance;
-        }
-        return { address: address.toLowerCase(), balance: total };
+        const balance = await usdcContract.balanceOf(address);
+        return { address: address.toLowerCase(), balance };
       } catch {
         return { address: address.toLowerCase(), balance: BigInt(0) };
       }
@@ -258,7 +249,7 @@ export async function getTotalReceivedSince(
     const toAddressTopic = ethers.zeroPadValue(address.toLowerCase(), 32);
 
     const logs = await provider.getLogs({
-      address: USDC_CONTRACTS,
+      address: USDC_CONTRACT_ADDRESS,
       topics: [TRANSFER_TOPIC, null, toAddressTopic],
       fromBlock: sinceBlock,
       toBlock: 'latest',

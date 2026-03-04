@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { motion } from "framer-motion"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -14,6 +15,9 @@ import { isTestUser } from "@/lib/mock-data"
 import { createClient } from "@/lib/supabase/client"
 import { BypassAccessBanner } from "@/components/bypass-access-banner"
 import { ConfirmReferralModal } from "@/components/referral/confirm-referral-modal"
+import { staggerContainer, staggerItem } from "@/lib/motion"
+import { AnimatedNumber } from "@/components/motion/animated-number"
+import { PageHeader } from "@/components/page-header"
 
 const ROOT_USER_ID = 'b10f0367-0471-4eab-9d15-db68b1ac4556'
 
@@ -229,19 +233,19 @@ export function DashboardClient({
                 <h3 className="font-semibold text-amber-900 dark:text-amber-200 mb-2">What you&apos;ll unlock:</h3>
                 <ul className="space-y-2 text-sm text-amber-800 dark:text-amber-300">
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
                     Access to Trading Academy and live classes
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
                     Ability to refer others and earn commissions
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
                     View your team and network statistics
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
                     Access to financial dashboard and earnings
                   </li>
                 </ul>
@@ -257,13 +261,16 @@ export function DashboardClient({
         </Card>
       )}
 
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground mt-2">Welcome back, {data.user?.name || session.user.email}</p>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description={`Welcome back, ${data.user?.name || session.user.email}`}
+      />
 
-      {/* Academy Section - Will be populated with upcoming classes */}
-      <Card className="mb-6 border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+      {/* Academy + Payout side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+      {/* Academy Section */}
+      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -313,15 +320,15 @@ export function DashboardClient({
                     key={classItem.id}
                     className={`p-4 rounded-lg border-2 ${
                       isFirst
-                        ? "bg-green-500/20 border-green-500"
+                        ? "bg-[#D4A853]/20 border-[#D4A853]"
                         : "border-border"
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <Badge className={isFirst ? "bg-green-500 text-white" : "bg-muted"}>
+                      <Badge className={isFirst ? "bg-[#D4A853] text-white" : "bg-surface-2"}>
                         {isFirst ? "Next Class" : "Upcoming"}
                       </Badge>
-                      <PlayCircle className={`h-5 w-5 ${isFirst ? "text-green-600" : "text-muted-foreground"}`} />
+                      <PlayCircle className={`h-5 w-5 ${isFirst ? "text-[#D4A853]" : "text-muted-foreground"}`} />
                     </div>
                     <h3 className="font-semibold text-lg mb-1">{classItem.title}</h3>
                     {classItem.description && (
@@ -338,7 +345,7 @@ export function DashboardClient({
                         size="sm"
                         className={`w-full ${
                           isFirst
-                            ? "bg-green-600 hover:bg-green-700"
+                            ? "bg-[#D4A853] hover:bg-[#B38A30]"
                             : ""
                         }`}
                         variant={isFirst ? "default" : "outline"}
@@ -355,14 +362,14 @@ export function DashboardClient({
         </CardContent>
       </Card>
 
-      {/* Payout Wallet Section */}
+      {/* Payout Wallet Section - side by side with Academy */}
       {data.initialPaymentCompleted && (
-        <Card className={`mb-6 ${data.payoutWalletAddress ? 'border-green-500/20 bg-gradient-to-r from-green-500/5 to-green-600/10' : 'border-amber-500/20 bg-gradient-to-r from-amber-500/5 to-amber-600/10'}`}>
+        <Card className={`${data.payoutWalletAddress ? 'border-[#D4A853]/20 bg-gradient-to-r from-[#D4A853]/5 to-[#C49B3E]/10' : 'border-amber-500/20 bg-gradient-to-r from-amber-500/5 to-amber-600/10'}`}>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <Wallet className={`h-5 w-5 ${data.payoutWalletAddress ? 'text-green-600' : 'text-amber-600'}`} />
+                  <Wallet className={`h-5 w-5 ${data.payoutWalletAddress ? 'text-[#D4A853]' : 'text-amber-600'}`} />
                   Payout Wallet (Polygon)
                 </CardTitle>
                 <CardDescription className="mt-1">
@@ -372,7 +379,7 @@ export function DashboardClient({
                 </CardDescription>
               </div>
               {data.payoutWalletAddress ? (
-                <Badge className="bg-green-500 text-white">
+                <Badge className="bg-[#D4A853] text-white">
                   <CheckCircle2 className="h-3 w-3 mr-1" />
                   Configured
                 </Badge>
@@ -388,23 +395,23 @@ export function DashboardClient({
             {data.payoutWalletAddress ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-3 rounded-lg bg-card">
+                  <div className="p-3 rounded-lg bg-surface-1">
                     <p className="text-sm text-muted-foreground">Wallet Address</p>
                     <p className="text-sm font-medium font-mono mt-1">
                       {data.payoutWalletAddress.slice(0, 6)}...{data.payoutWalletAddress.slice(-4)}
                     </p>
                   </div>
-                  <div className="p-3 rounded-lg bg-card">
+                  <div className="p-3 rounded-lg bg-surface-1">
                     <p className="text-sm text-muted-foreground">Network</p>
                     <p className="text-sm font-medium mt-1">Polygon (MATIC)</p>
                   </div>
-                  <div className="p-3 rounded-lg bg-card">
+                  <div className="p-3 rounded-lg bg-surface-1">
                     <p className="text-sm text-muted-foreground">Estimated Commission</p>
                     <p className="text-sm font-medium mt-1 text-primary">{formatCurrency(data.monthlyCommission)} USDC</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 p-3 bg-green-500/10 rounded-lg">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <div className="flex items-center gap-2 p-3 bg-[#D4A853]/10 rounded-lg">
+                  <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
                   <p className="text-sm">
                     Your wallet is ready to receive payouts. Commissions are paid in USDC on the Polygon network around the 15th of each month.
                   </p>
@@ -457,6 +464,8 @@ export function DashboardClient({
           </CardContent>
         </Card>
       )}
+
+      </div>{/* end Academy + Payout grid */}
 
       {/* Membership Status Alert */}
       {!data.initialPaymentCompleted && !isTestUser(session.user.id) && !bypassInitialPayment && (
@@ -517,35 +526,35 @@ export function DashboardClient({
             <CardContent>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                  <div className="p-3 rounded-lg bg-muted/50">
+                  <div className="p-3 rounded-lg bg-surface-2">
                     <p className="text-sm text-muted-foreground">Current Rank</p>
                     <div className="flex items-center gap-2">
                       <rankInfo.icon className={`h-5 w-5 ${rankInfo.color}`} />
                       <p className="text-lg font-bold">{rankInfo.name}</p>
                     </div>
                   </div>
-                  <div className="p-3 rounded-lg bg-muted/50">
+                  <div className="p-3 rounded-lg bg-surface-2">
                     <p className="text-sm text-muted-foreground">Active Structures</p>
                     <p className="text-2xl font-bold">{data.unlockedStructures}/6</p>
                   </div>
-                  <div className="p-3 rounded-lg bg-muted/50">
+                  <div className="p-3 rounded-lg bg-surface-2">
                     <p className="text-sm text-muted-foreground">Commission Rate</p>
                     <p className="text-2xl font-bold">
                       {10 + data.completedStructures}%
                     </p>
                   </div>
-                  <div className={`p-3 rounded-lg ${data.directReferrals >= 3 ? 'bg-green-500/20 border-2 border-green-500' : 'bg-red-500/20 border-2 border-red-500'}`}>
+                  <div className={`p-3 rounded-lg ${data.directReferrals >= 3 ? 'bg-[#D4A853]/20 border-2 border-[#D4A853]' : 'bg-red-500/20 border-2 border-red-500'}`}>
                     <p className="text-sm text-muted-foreground">Active Direct Referrals</p>
-                    <p className={`text-2xl font-bold ${data.directReferrals >= 3 ? 'text-green-600' : 'text-red-600'}`}>{data.directReferrals}</p>
+                    <p className={`text-2xl font-bold ${data.directReferrals >= 3 ? 'text-[#D4A853]' : 'text-red-600'}`}>{data.directReferrals}</p>
                   </div>
-                  <div className="p-3 rounded-lg bg-muted/50">
+                  <div className="p-3 rounded-lg bg-surface-2">
                     <p className="text-sm text-muted-foreground">Total Team</p>
                     <p className="text-2xl font-bold">{data.totalTeamSize}/{data.unlockedStructures * 1092}</p>
                   </div>
                 </div>
                 
                 {/* Structure Selector */}
-                <div className="p-4 bg-muted/30 rounded-lg">
+                <div className="p-4 bg-surface-2 rounded-lg">
                   <p className="text-sm font-medium mb-3">Select Structure to View</p>
                   <div className="grid grid-cols-3 md:grid-cols-7 gap-3">
                     <RadioGroup 
@@ -573,13 +582,13 @@ export function DashboardClient({
                           <Label 
                             htmlFor={`structure-${structureNum}`}
                             className={`block cursor-pointer p-4 rounded-lg border-2 transition-all ${
-                              selectedStructure === structureNum.toString() 
-                                ? 'border-primary bg-primary/10 shadow-lg' 
+                              selectedStructure === structureNum.toString()
+                                ? 'border-primary bg-primary/10 shadow-lg'
                                 : 'border-border'
                             } ${
-                              isUnlocked 
-                                ? 'hover:border-primary/50 hover:shadow-md' 
-                                : 'opacity-40 cursor-not-allowed bg-muted/20'
+                              isUnlocked
+                                ? 'hover:border-primary/50 hover:shadow-md'
+                                : 'opacity-40 cursor-not-allowed bg-surface-1'
                             }`}
                           >
                             <div className="flex flex-col items-center space-y-2">
@@ -595,7 +604,7 @@ export function DashboardClient({
                                   {structureRank.name}
                                 </div>
                                 {isComplete && (
-                                  <Badge className="mt-1 text-xs bg-green-500 text-white">Complete</Badge>
+                                  <Badge className="mt-1 text-xs bg-[#D4A853] text-white">Complete</Badge>
                                 )}
                                 {isUnlocked && !isComplete && (
                                   <div className="text-xs mt-1 text-muted-foreground">
@@ -618,7 +627,7 @@ export function DashboardClient({
                       <div className={`block p-4 rounded-lg border-2 transition-all ${
                         data.completedStructures >= 6
                           ? 'border-yellow-500 bg-gradient-to-br from-yellow-500/20 to-yellow-600/20 shadow-lg shadow-yellow-500/20'
-                          : 'border-border opacity-40 bg-muted/20'
+                          : 'border-border opacity-40 bg-surface-1'
                       }`}>
                         <div className="flex flex-col items-center space-y-2">
                           <div className={`w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center shadow-md ${data.completedStructures < 6 ? 'opacity-50' : ''}`}>
@@ -645,7 +654,7 @@ export function DashboardClient({
                 </div>
 
                 {/* Selected Structure Details */}
-                <div className="p-4 bg-card rounded-lg border">
+                <div className="p-4 bg-surface-1 rounded-lg border border-border">
                   {(() => {
                     const structureNum = parseInt(selectedStructure)
                     const isUnlocked = structureNum <= data.unlockedStructures
@@ -664,7 +673,7 @@ export function DashboardClient({
                             </p>
                           </div>
                           {isUnlocked ? (
-                            <Badge className="bg-green-500 text-white">Active</Badge>
+                            <Badge className="bg-[#D4A853] text-white">Active</Badge>
                           ) : data.directReferrals >= requiredDirectReferrals && structureNum === data.unlockedStructures + 1 ? (
                             <Badge variant="outline" className="border-yellow-500 text-yellow-500">Ready to Unlock</Badge>
                           ) : (
@@ -691,63 +700,88 @@ export function DashboardClient({
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Team Pool</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(data.teamPool)}</div>
-            <p className="text-xs text-muted-foreground">
-              Monthly team revenue
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Your Commission</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">
-              {formatCurrency(data.monthlyCommission)}
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+      >
+        <motion.div variants={staggerItem}>
+          <Card variant="elevated" className="relative overflow-hidden border-l-2 border-l-emerald-500">
+            <div className="absolute top-3 right-3 opacity-[0.05]">
+              <DollarSign className="h-12 w-12" />
             </div>
-            <p className="text-xs text-muted-foreground">
-              {10 + data.completedStructures}% of team pool
-            </p>
-          </CardContent>
-        </Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-b-0">
+              <CardTitle className="text-[13px] font-medium text-foreground-secondary">Team Pool</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                <AnimatedNumber value={data.teamPool / 100} prefix="$" decimals={2} />
+              </div>
+              <p className="text-[12px] text-foreground-tertiary mt-1">
+                Monthly team revenue
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Direct Referrals</CardTitle>
-            <UserPlus className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${data.directReferrals >= 3 ? 'text-green-600' : 'text-red-600'}`}>
-              {data.directReferrals}/{data.unlockedStructures * 3}
+        <motion.div variants={staggerItem}>
+          <Card variant="elevated" className="relative overflow-hidden border-l-2 border-l-blue-500">
+            <div className="absolute top-3 right-3 opacity-[0.05]">
+              <TrendingUp className="h-12 w-12" />
             </div>
-            <p className="text-xs text-muted-foreground">
-              Across {data.unlockedStructures} structures
-            </p>
-          </CardContent>
-        </Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-b-0">
+              <CardTitle className="text-[13px] font-medium text-foreground-secondary">Your Commission</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gold-400">
+                <AnimatedNumber value={data.monthlyCommission / 100} prefix="$" decimals={2} />
+              </div>
+              <p className="text-[12px] text-foreground-tertiary mt-1">
+                {10 + data.completedStructures}% of team pool
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Team</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data.totalTeamSize}</div>
-            <p className="text-xs text-muted-foreground">
-              Your entire network
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+        <motion.div variants={staggerItem}>
+          <Card variant="elevated" className="relative overflow-hidden border-l-2 border-l-purple-500">
+            <div className="absolute top-3 right-3 opacity-[0.05]">
+              <UserPlus className="h-12 w-12" />
+            </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-b-0">
+              <CardTitle className="text-[13px] font-medium text-foreground-secondary">Active Direct Referrals</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${data.directReferrals >= 3 ? 'text-gold-400' : 'text-red-400'}`}>
+                {data.directReferrals}/{data.unlockedStructures * 3}
+              </div>
+              <p className="text-[12px] text-foreground-tertiary mt-1">
+                Across {data.unlockedStructures} structures
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div variants={staggerItem}>
+          <Card variant="elevated" className="relative overflow-hidden border-l-2 border-l-gold-400">
+            <div className="absolute top-3 right-3 opacity-[0.05]">
+              <Users className="h-12 w-12" />
+            </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-b-0">
+              <CardTitle className="text-[13px] font-medium text-foreground-secondary">Total Team</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                <AnimatedNumber value={data.totalTeamSize} />
+              </div>
+              <p className="text-[12px] text-foreground-tertiary mt-1">
+                Your entire network
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </motion.div>
 
     </div>
   )

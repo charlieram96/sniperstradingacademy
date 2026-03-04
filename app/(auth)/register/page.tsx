@@ -290,7 +290,7 @@ function RegisterForm() {
     return (
       <div className="min-h-screen flex">
         {/* Left Side - Visual */}
-        <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary via-primary/90 to-primary/80 p-12 flex-col justify-between">
+        <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-[#0F1629]/80 via-[#162044]/80 to-[#1A2550]/80 p-12 flex-col justify-between">
           <NavigationLink href="/" className="flex items-center space-x-3">
             <Image src="/gold-logo.svg" alt="Trading Hub" width={48} height={48} className="w-12 h-12" />
             <span className="font-bold text-2xl text-white">Trading Hub</span>
@@ -321,7 +321,7 @@ function RegisterForm() {
               </NavigationLink>
             </div>
 
-            <Card className="border-0 shadow-lg">
+            <Card className="border-border-subtle">
               <CardHeader className="space-y-1 pb-4">
                 <div className="flex justify-center mb-4">
                   <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
@@ -337,7 +337,7 @@ function RegisterForm() {
                 <p className="text-center font-medium text-foreground">{userEmail}</p>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+                <div className="p-4 bg-surface-2 rounded-lg space-y-2">
                   <div className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                     <div className="space-y-1">
@@ -406,7 +406,7 @@ function RegisterForm() {
     return (
       <div className="min-h-screen flex">
         {/* Left Side - Visual */}
-        <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary via-primary/90 to-primary/80 p-12 flex-col justify-between">
+        <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-[#0F1629]/80 via-[#162044]/80 to-[#1A2550]/80 p-12 flex-col justify-between">
           <NavigationLink href="/" className="flex items-center space-x-3">
             <Image src="/gold-logo.svg" alt="Trading Hub" width={48} height={48} className="w-12 h-12" />
             <span className="font-bold text-2xl text-white">Trading Hub</span>
@@ -451,7 +451,7 @@ function RegisterForm() {
               </NavigationLink>
             </div>
 
-            <Card className="border-0 shadow-lg">
+            <Card className="border-border-subtle">
               <CardHeader className="space-y-1 pb-4">
                 <CardTitle className="text-3xl font-bold">Welcome!</CardTitle>
                 <CardDescription className="text-base">
@@ -509,7 +509,7 @@ function RegisterForm() {
 
                 {/* Error Message */}
                 {error && (
-                  <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 rounded-md">
+                  <div className="flex items-center gap-2 p-3 text-sm text-red-400 bg-red-500/10 rounded-md">
                     <XCircle className="h-4 w-4 shrink-0" />
                     <span>{error}</span>
                   </div>
@@ -518,7 +518,7 @@ function RegisterForm() {
                 {/* Referrer Preview */}
                 {referrerInfo && (
                   <div className="space-y-4">
-                    <div className="p-4 border rounded-lg bg-muted/30">
+                    <div className="p-4 border rounded-lg bg-surface-2">
                       <div className="flex items-center gap-4">
                         <Avatar className="h-16 w-16">
                           <AvatarFallback className="text-lg font-semibold bg-primary text-primary-foreground">
@@ -534,7 +534,7 @@ function RegisterForm() {
                             </Badge>
                           </div>
                         </div>
-                        <CheckCircle className="h-6 w-6 text-green-600" />
+                        <CheckCircle className="h-6 w-6 text-[#D4A853]" />
                       </div>
                     </div>
 
@@ -640,7 +640,7 @@ function RegisterForm() {
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Visual */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary via-primary/90 to-primary/80 p-12 flex-col justify-between">
+      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-[#0F1629]/80 via-[#162044]/80 to-[#1A2550]/80 p-12 flex-col justify-between">
         <NavigationLink href="/" className="flex items-center space-x-3">
           <Image src="/gold-logo.svg" alt="Trading Hub" width={48} height={48} className="w-12 h-12" />
           <span className="font-bold text-2xl text-white">Trading Hub</span>
@@ -685,7 +685,7 @@ function RegisterForm() {
             </NavigationLink>
           </div>
 
-          <Card className="border-0 shadow-lg">
+          <Card className="border-border-subtle">
             <CardHeader className="space-y-1 pb-4">
               <CardTitle className="text-3xl font-bold">Create an account</CardTitle>
               <CardDescription className="text-base">
@@ -809,13 +809,13 @@ function RegisterForm() {
                 </Button>
               </div>
               {confirmPassword && password !== confirmPassword && (
-                <p className="text-xs text-red-600">
+                <p className="text-xs text-red-400">
                   Passwords do not match
                 </p>
               )}
             </div>
             {error && (
-              <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
+              <div className="p-3 text-sm text-red-400 bg-red-500/10 rounded-md">
                 {error}
               </div>
             )}

@@ -264,7 +264,7 @@ export default function DirectBonusesPage() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-600" />
+              <DollarSign className="h-5 w-5 text-[#D4A853]" />
               <span className="text-2xl font-bold">{summary.totalPayments}</span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">Last 90 days</p>
@@ -303,8 +303,8 @@ export default function DirectBonusesPage() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <span className="text-2xl font-bold text-green-600">{summary.paidBonuses}</span>
+              <CheckCircle className="h-5 w-5 text-[#D4A853]" />
+              <span className="text-2xl font-bold text-[#D4A853]">{summary.paidBonuses}</span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">Completed</p>
           </CardContent>
@@ -437,7 +437,7 @@ export default function DirectBonusesPage() {
                           </div>
                         ) : payment.bonus.status === "paid" ? (
                           <div>
-                            <Badge className="bg-green-600">
+                            <Badge className="bg-[#D4A853]">
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Paid
                             </Badge>
@@ -504,7 +504,7 @@ export default function DirectBonusesPage() {
                             </Button>
                           </div>
                         ) : (
-                          <Badge className="bg-green-600">
+                          <Badge className="bg-[#D4A853]">
                             <CheckCircle className="h-3 w-3 mr-1" />
                             Completed
                           </Badge>
@@ -543,7 +543,7 @@ export default function DirectBonusesPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-600" />
+              <DollarSign className="h-5 w-5 text-[#D4A853]" />
               Confirm Direct Bonus Payout
             </DialogTitle>
             <DialogDescription>
@@ -554,9 +554,9 @@ export default function DirectBonusesPage() {
           {selectedPaymentForPayout && (
             <div className="space-y-4 py-4">
               {/* Payout Amount */}
-              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 text-center">
-                <p className="text-sm text-green-400 mb-1">Payout Amount</p>
-                <p className="text-3xl font-bold text-green-400">
+              <div className="bg-[#D4A853]/10 border border-[#D4A853]/30 rounded-lg p-4 text-center">
+                <p className="text-sm text-[#D4A853] mb-1">Payout Amount</p>
+                <p className="text-3xl font-bold text-[#D4A853]">
                   ${selectedPaymentForPayout.bonus?.amount || 249} USDC
                 </p>
               </div>
@@ -573,7 +573,7 @@ export default function DirectBonusesPage() {
                   <p className="text-sm font-medium text-muted-foreground">Payout Wallet Address</p>
                   <div className="flex items-center gap-2 mt-1">
                     <Wallet className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <code className="text-xs bg-muted px-2 py-1 rounded break-all">
+                    <code className="text-xs bg-surface-2 px-2 py-1 rounded break-all">
                       {selectedPaymentForPayout.referrer?.payoutWallet || "No wallet set"}
                     </code>
                   </div>
@@ -590,7 +590,7 @@ export default function DirectBonusesPage() {
                   )}
                 </div>
 
-                <div className="border-t border-border pt-3">
+                <div className="border-t border-border-subtle pt-3">
                   <p className="text-sm font-medium text-muted-foreground">Bonus For</p>
                   <p className="text-sm">
                     {selectedPaymentForPayout.payer.name}&apos;s $499 initial payment
@@ -623,7 +623,7 @@ export default function DirectBonusesPage() {
             </Button>
             <Button
               onClick={handleConfirmPayout}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-[#D4A853] hover:bg-[#B38A30]"
             >
               <DollarSign className="h-4 w-4 mr-1" />
               Confirm & Send ${selectedPaymentForPayout?.bonus?.amount || 249} USDC

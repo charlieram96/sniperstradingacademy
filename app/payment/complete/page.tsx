@@ -96,10 +96,10 @@ function PaymentCompleteContent() {
       color: 'text-primary',
     },
     success: {
-      icon: <CheckCircle className="h-16 w-16 text-green-500" />,
+      icon: <CheckCircle className="h-16 w-16 text-[#D4A853]" />,
       title: 'Payment Successful!',
       description: 'Your payment has been confirmed. Your account is now active.',
-      color: 'text-green-500',
+      color: 'text-[#D4A853]',
     },
     pending: {
       icon: <Clock className="h-16 w-16 text-yellow-500" />,
@@ -141,7 +141,7 @@ function PaymentCompleteContent() {
         <CardContent className="space-y-6">
           {/* Payment Details */}
           {details.amount && (
-            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <div className="bg-surface-2 rounded-lg p-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Amount</span>
                 <span className="font-medium">${details.amount} USDC</span>

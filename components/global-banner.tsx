@@ -38,11 +38,11 @@ const ICON_MAP: Record<string, LucideIcon> = {
 
 // Color styling mapping (all with white text)
 const COLOR_MAP: Record<string, string> = {
-  green: "bg-green-600 border-green-700",
-  red: "bg-red-600 border-red-700",
-  purple: "bg-gradient-to-r from-purple-600 to-purple-700 border-purple-800",
-  gray: "bg-gray-700 border-gray-800",
-  black: "bg-black border-gray-900"
+  green: "bg-[#D4A853]/90 border-[#C49B3E]/50",
+  red: "bg-red-600/90 border-red-700/50",
+  purple: "bg-gradient-to-r from-purple-600/90 to-purple-700/90 border-purple-800/50",
+  gray: "bg-gray-700/90 border-gray-800/50",
+  black: "bg-black/90 border-gray-900/50"
 }
 
 export function GlobalBanner() {

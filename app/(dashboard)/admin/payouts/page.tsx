@@ -458,7 +458,7 @@ export default function AdminPayoutsPage() {
                       </TableCell>
                       <TableCell>
                         {commission.payoutWalletAddress ? (
-                          <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                          <code className="text-xs bg-surface-2 px-1.5 py-0.5 rounded">
                             {truncateAddress(commission.payoutWalletAddress)}
                           </code>
                         ) : (
@@ -475,7 +475,7 @@ export default function AdminPayoutsPage() {
                             ❌ Failed
                           </Badge>
                         ) : commission.status === "paid" ? (
-                          <Badge className="bg-green-600">
+                          <Badge className="bg-[#D4A853]">
                             ✅ Paid
                           </Badge>
                         ) : (
@@ -540,7 +540,7 @@ export default function AdminPayoutsPage() {
                             </Button>
                           </div>
                         ) : (
-                          <Badge className="bg-green-600">
+                          <Badge className="bg-[#D4A853]">
                             <CheckCircle className="h-3 w-3 mr-1" />
                             Completed
                           </Badge>
@@ -565,17 +565,17 @@ export default function AdminPayoutsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-surface-2 rounded-lg">
               <span className="text-sm font-medium">Total Users:</span>
               <span className="text-lg font-bold">{summary.pending}</span>
             </div>
-            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-surface-2 rounded-lg">
               <span className="text-sm font-medium">Total Amount:</span>
               <span className="text-lg font-bold text-primary">${summary.totalAmount.toFixed(2)} USDC</span>
             </div>
-            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-surface-2 rounded-lg">
               <span className="text-sm font-medium">Payout Wallet Balance:</span>
-              <span className={`text-lg font-bold ${balanceWarning ? 'text-red-500' : 'text-green-600'}`}>
+              <span className={`text-lg font-bold ${balanceWarning ? 'text-red-500' : 'text-[#D4A853]'}`}>
                 ${payoutWalletBalance?.toFixed(2) || "0.00"} USDC
               </span>
             </div>
@@ -613,7 +613,7 @@ export default function AdminPayoutsPage() {
               <div
                 key={result.commissionId}
                 className={`flex items-center justify-between p-3 rounded-lg border ${
-                  result.success ? 'bg-green-500/10 border-green-500/20' :
+                  result.success ? 'bg-[#D4A853]/10 border-[#D4A853]/20' :
                   result.skipped ? 'bg-gray-500/10 border-gray-500/20' :
                   'bg-red-500/10 border-red-500/20'
                 }`}
@@ -638,7 +638,7 @@ export default function AdminPayoutsPage() {
                 </div>
                 <div>
                   {result.success ? (
-                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <CheckCircle className="h-5 w-5 text-[#D4A853]" />
                   ) : result.skipped ? (
                     <Badge variant="outline">Skipped</Badge>
                   ) : (

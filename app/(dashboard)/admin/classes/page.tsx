@@ -341,7 +341,7 @@ export default function AdminClassesPage() {
                     <SelectContent>
                       <SelectItem value="green">
                         <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded bg-green-600"></div>
+                          <div className="w-4 h-4 rounded bg-[#D4A853]"></div>
                           <span>Green</span>
                         </div>
                       </SelectItem>
@@ -450,7 +450,7 @@ export default function AdminClassesPage() {
                 <div>
                   <Label>Preview</Label>
                   <div className={`mt-2 p-3 rounded-lg border flex items-center justify-center gap-2 ${
-                    bannerColor === "green" ? "bg-green-600 border-green-700" :
+                    bannerColor === "green" ? "bg-[#D4A853] border-[#D4A853]/30" :
                     bannerColor === "red" ? "bg-red-600 border-red-700" :
                     bannerColor === "purple" ? "bg-gradient-to-r from-purple-600 to-purple-700 border-purple-800" :
                     bannerColor === "gray" ? "bg-gray-700 border-gray-800" :
@@ -485,7 +485,7 @@ export default function AdminClassesPage() {
             <div>
               {banner ? (
                 <div className={`p-3 rounded-lg border flex items-center gap-2 ${
-                  bannerColor === "green" ? "bg-green-600 border-green-700" :
+                  bannerColor === "green" ? "bg-[#D4A853] border-[#D4A853]/30" :
                   bannerColor === "red" ? "bg-red-600 border-red-700" :
                   bannerColor === "purple" ? "bg-gradient-to-r from-purple-600 to-purple-700 border-purple-800" :
                   bannerColor === "gray" ? "bg-gray-700 border-gray-800" :
@@ -546,8 +546,8 @@ export default function AdminClassesPage() {
                     key={classItem.id}
                     className={`p-5 rounded-lg border-2 min-h-[320px] flex flex-col ${
                       isFirst
-                        ? "bg-green-500/10 border-green-500 shadow-sm shadow-green-500/20"
-                        : "border-border bg-card"
+                        ? "bg-[#D4A853]/10 border-[#D4A853] shadow-sm shadow-[#D4A853]/20"
+                        : "border-border-subtle"
                     }`}
                   >
                   {isEditing && editData ? (
@@ -672,10 +672,10 @@ export default function AdminClassesPage() {
                   ) : (
                     <div className="flex flex-col h-full">
                       <div className="flex items-center justify-between mb-3">
-                        <Badge className={isFirst ? "bg-green-500 text-white" : "bg-muted"}>
+                        <Badge className={isFirst ? "bg-[#D4A853] text-white" : "bg-surface-2"}>
                           {isFirst ? "Next Class" : "Upcoming"}
                         </Badge>
-                        <PlayCircle className={`h-5 w-5 ${isFirst ? "text-green-600" : "text-muted-foreground"}`} />
+                        <PlayCircle className={`h-5 w-5 ${isFirst ? "text-[#D4A853]" : "text-muted-foreground"}`} />
                       </div>
                       <h3 className="font-semibold text-lg mb-2 text-foreground">{classItem.title}</h3>
                       {classItem.description && (
@@ -708,7 +708,7 @@ export default function AdminClassesPage() {
                           {isFirst && (
                             <Button
                               size="sm"
-                              className="w-full bg-green-600 hover:bg-green-700 text-white"
+                              className="w-full bg-[#D4A853] hover:bg-[#B38A30] text-white"
                               onClick={() => openCompleteDialog(classItem)}
                             >
                               <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
@@ -750,7 +750,7 @@ export default function AdminClassesPage() {
           </DialogHeader>
 
           {classToComplete && (
-            <div className="p-4 rounded-lg bg-muted/50 border">
+            <div className="p-4 rounded-lg bg-surface-2 border border-border-subtle">
               <div className="font-semibold mb-1">{classToComplete.title}</div>
               {classToComplete.description && (
                 <div className="text-sm text-muted-foreground mb-2">{classToComplete.description}</div>
@@ -774,7 +774,7 @@ export default function AdminClassesPage() {
               Cancel
             </Button>
             <Button
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="bg-[#D4A853] hover:bg-[#B38A30] text-white"
               onClick={confirmMarkComplete}
             >
               <CheckCircle className="h-4 w-4 mr-2" />
@@ -798,7 +798,7 @@ export default function AdminClassesPage() {
           </DialogHeader>
 
           {classToDelete && (
-            <div className="p-4 rounded-lg bg-muted/50 border">
+            <div className="p-4 rounded-lg bg-surface-2 border border-border-subtle">
               <div className="font-semibold mb-1">{classToDelete.title}</div>
               {classToDelete.description && (
                 <div className="text-sm text-muted-foreground mb-2">{classToDelete.description}</div>

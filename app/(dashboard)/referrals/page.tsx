@@ -8,7 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Copy, Check, Share2, Users, Globe, Link2, Edit } from "lucide-react"
+import { motion } from "framer-motion"
 import { isTestUser, mockReferrals } from "@/lib/mock-data"
+import { PageHeader } from "@/components/page-header"
 
 export default function ReferralsPage() {
   const [userId, setUserId] = useState<string | null>(null)
@@ -158,13 +160,16 @@ export default function ReferralsPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">Referrals</h1>
-        <p className="text-muted-foreground mt-2">Share your referral link and earn 10% commission</p>
-      </div>
+      <PageHeader
+        title="Referrals"
+        description="Share your referral link and earn 10% commission"
+      />
+
+      {/* Referrer + Links side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6 mb-8">
 
       {/* Who Referred Me Card */}
-      <Card className="mb-8">
+      <Card>
         <CardHeader>
           <CardTitle>Your Referrer</CardTitle>
           <CardDescription>
@@ -173,7 +178,7 @@ export default function ReferralsPage() {
         </CardHeader>
         <CardContent>
           {referredBy ? (
-            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-surface-2 rounded-lg">
               <div>
                 <p className="font-medium text-lg">{referredBy.name}</p>
                 <p className="text-sm text-muted-foreground">{referredBy.email}</p>
@@ -184,15 +189,15 @@ export default function ReferralsPage() {
               <Badge variant="secondary">Your Sponsor</Badge>
             </div>
           ) : (
-            <div className="p-4 bg-muted/50 rounded-lg">
+            <div className="p-4 bg-surface-2 rounded-lg">
               <p className="text-sm text-muted-foreground">Loading referrer information...</p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Referral Links Card */}
-      <Card className="mb-8">
+      {/* Referral Links Card - wider column */}
+      <Card>
         <CardHeader>
           <CardTitle>Your Referral Links</CardTitle>
           <CardDescription>
@@ -224,7 +229,7 @@ export default function ReferralsPage() {
                     size="icon"
                   >
                     {copied ? (
-                      <Check className="h-4 w-4 text-green-600" />
+                      <Check className="h-4 w-4 text-[#D4A853]" />
                     ) : (
                       <Copy className="h-4 w-4" />
                     )}
@@ -238,7 +243,7 @@ export default function ReferralsPage() {
                 </p>
               </div>
 
-              <div className="p-4 bg-muted/50 rounded-lg">
+              <div className="p-4 bg-surface-2 rounded-lg">
                 <p className="text-sm">
                   <strong>Your referral code:</strong> <span className="font-mono">{referralCode || "Loading..."}</span>
                 </p>
@@ -268,7 +273,7 @@ export default function ReferralsPage() {
                     size="icon"
                   >
                     {copiedUrl ? (
-                      <Check className="h-4 w-4 text-green-600" />
+                      <Check className="h-4 w-4 text-[#D4A853]" />
                     ) : (
                       <Copy className="h-4 w-4" />
                     )}
@@ -300,7 +305,7 @@ export default function ReferralsPage() {
                 </Button>
               </div>
 
-              <div className="p-4 bg-muted/50 rounded-lg">
+              <div className="p-4 bg-surface-2 rounded-lg">
                 <p className="text-sm">
                   <strong>Your custom URL:</strong> <span className="font-mono">/ref/{referralCode}</span>
                 </p>
@@ -310,7 +315,9 @@ export default function ReferralsPage() {
         </CardContent>
       </Card>
 
-      {/* Referrals List */}
+      </div>{/* end Referrer + Links grid */}
+
+      {/* Referrals List - full width */}
       <Card>
         <CardHeader>
           <CardTitle>Your Referrals</CardTitle>
@@ -328,7 +335,7 @@ export default function ReferralsPage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {referrals.map((referral) => (
                 <div key={referral.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div>

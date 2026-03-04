@@ -1,35 +1,11 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { SignOutButton } from "@/components/sign-out-button"
-import { NavigationLink } from "@/components/navigation-link"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { GlobalBanner } from "@/components/global-banner"
 import { InactiveAccountBanner } from "@/components/inactive-account-banner"
 import { MissingWalletBanner } from "@/components/missing-wallet-banner"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import {
-  LayoutDashboard,
-  Users,
-  CreditCard,
-  Share2,
-  GraduationCap,
-  DollarSign,
-  Shield,
-  Network,
-  TrendingUp,
-  Wallet,
-  Settings,
-  GitBranch,
-  Activity,
-  BookOpen,
-  Bell,
-  Gift
-} from "lucide-react"
+import { Sidebar } from "@/components/sidebar"
+import { PageTransition } from "@/components/motion/page-transition"
 
 export default async function DashboardLayout({
   children,
@@ -55,10 +31,6 @@ export default async function DashboardLayout({
   const isSuperAdmin = userRole === "superadmin" || userRole === "superadmin+"
   const isSuperAdminPlus = userRole === "superadmin+"
 
-  // User is active if:
-  // 1. Has completed initial payment OR has bypass_initial_payment
-  // 2. AND (is_active is true OR has bypass_subscription)
-  // 3. OR is admin/superadmin
   const hasInitialAccess = userData?.initial_payment_completed || userData?.bypass_initial_payment
   const hasSubscriptionAccess = userData?.is_active !== false || userData?.bypass_subscription
   const isActive = (hasInitialAccess && hasSubscriptionAccess) || isAdminOrSuper
@@ -68,14 +40,14 @@ export default async function DashboardLayout({
       {/* Global Banner */}
       <GlobalBanner />
 
-      {/* Inactive Account Banner - shows when subscription has lapsed */}
+      {/* Inactive Account Banner */}
       <InactiveAccountBanner
         lastPaymentDate={userData?.last_payment_date || null}
         bypassSubscription={userData?.bypass_subscription || false}
         isAdmin={isAdminOrSuper}
       />
 
-      {/* Missing Wallet Banner - shows when payout wallet not configured */}
+      {/* Missing Wallet Banner */}
       <MissingWalletBanner
         payoutWalletAddress={userData?.payout_wallet_address || null}
         bypassSubscription={userData?.bypass_subscription || false}
@@ -84,227 +56,29 @@ export default async function DashboardLayout({
 
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col fixed h-full z-40 transition-all duration-200" style={{ paddingTop: 'calc(var(--banner-height, 0px) + var(--inactive-banner-height, 0px) + var(--wallet-banner-height, 0px) + 50px)' }}>
-        <nav className="flex-1 py-4 overflow-y-auto">
-          <NavigationLink
-            href="/dashboard"
-            isLocked={!isActive}
-            className="flex items-center gap-[10px] px-4 py-[10px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-          >
-            <LayoutDashboard className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-            <span className="text-sm font-medium">Dashboard</span>
-          </NavigationLink>
-          <NavigationLink
-            href="/academy"
-            isLocked={!isActive}
-            className="flex items-center gap-[10px] px-4 py-[10px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-          >
-            <GraduationCap className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-            <span className="text-sm font-medium">Academy</span>
-          </NavigationLink>
-          <NavigationLink
-            href="/team"
-            isLocked={!isActive}
-            className="flex items-center gap-[10px] px-4 py-[10px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-          >
-            <Users className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-            <span className="text-sm font-medium">My Team</span>
-          </NavigationLink>
-          <NavigationLink
-            href="/finance"
-            isLocked={!isActive}
-            className="flex items-center gap-[10px] px-4 py-[10px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-          >
-            <DollarSign className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-            <span className="text-sm font-medium">Finance</span>
-          </NavigationLink>
-          <NavigationLink
-            href="/payments"
-            className="flex items-center gap-[10px] px-4 py-[10px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-          >
-            <CreditCard className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-            <span className="text-sm font-medium">Payments</span>
-          </NavigationLink>
-          <NavigationLink
-            href="/referrals"
-            isLocked={!isActive}
-            className="flex items-center gap-[10px] px-4 py-[10px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-          >
-            <Share2 className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-            <span className="text-sm font-medium">Referrals</span>
-          </NavigationLink>
+        <Sidebar
+          user={user}
+          isActive={isActive}
+          isAdminOrSuper={isAdminOrSuper}
+          isSuperAdmin={isSuperAdmin}
+          isSuperAdminPlus={isSuperAdminPlus}
+        />
 
-          <div className="mx-4 my-3 border-t border-sidebar-border"></div>
-          <NavigationLink
-            href="/notifications"
-            isLocked={!isActive}
-            className="flex items-center gap-[10px] px-4 py-[10px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-          >
-            <Bell className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-            <span className="text-sm font-medium">Notifications</span>
-          </NavigationLink>
-          <NavigationLink
-            href="/settings"
-            className="flex items-center gap-[10px] px-4 py-[10px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-          >
-            <Settings className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-            <span className="text-sm font-medium">Settings</span>
-          </NavigationLink>
+        {/* Header */}
+        <DashboardHeader user={user} />
 
-          {/* Admin Section */}
-          {isAdminOrSuper && (
-            <>
-              <div className="mx-4 my-3 border-t border-sidebar-border"></div>
-              <div className="px-4 py-2 mx-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Admin</p>
-              </div>
-
-              <Accordion type="multiple" className="mx-2">
-                {/* Notifiers Group */}
-                <AccordionItem value="notifiers" className="border-b-0">
-                  <AccordionTrigger className="flex items-center gap-[10px] px-4 py-[10px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 hover:no-underline">
-                    <div className="flex items-center gap-[10px] flex-1">
-                      <Bell className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">Notifiers</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="pb-0">
-                    <NavigationLink
-                      href="/admin/classes"
-                      className="flex items-center gap-[10px] pl-8 pr-4 py-[10px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-                    >
-                      <Shield className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                      <span className="text-sm font-medium">Admin Panel</span>
-                    </NavigationLink>
-                    {isSuperAdmin && (
-                      <NavigationLink
-                        href="/admin/notifications"
-                        className="flex items-center gap-[10px] pl-8 pr-4 py-[10px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-                      >
-                        <Bell className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                        <span className="text-sm font-medium">Notifications Manager</span>
-                      </NavigationLink>
-                    )}
-                  </AccordionContent>
-                </AccordionItem>
-
-                {/* Network Group */}
-                <AccordionItem value="network" className="border-b-0">
-                  <AccordionTrigger className="flex items-center gap-[10px] px-4 py-[10px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 hover:no-underline">
-                    <div className="flex items-center gap-[10px] flex-1">
-                      <Network className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">Network</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="pb-0">
-                    <NavigationLink
-                      href="/admin/network"
-                      className="flex items-center gap-[10px] pl-8 pr-4 py-[10px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-                    >
-                      <Network className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                      <span className="text-sm font-medium">Network View</span>
-                    </NavigationLink>
-                    {isSuperAdmin && (
-                      <NavigationLink
-                        href="/admin/network-visualizer"
-                        className="flex items-center gap-[10px] pl-8 pr-4 py-[10px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-                      >
-                        <GitBranch className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                        <span className="text-sm font-medium">Network Visualizer</span>
-                      </NavigationLink>
-                    )}
-                  </AccordionContent>
-                </AccordionItem>
-
-                {/* Payments Group - superadmin+ only */}
-                {isSuperAdminPlus && (
-                  <AccordionItem value="payments" className="border-b-0">
-                    <AccordionTrigger className="flex items-center gap-[10px] px-4 py-[10px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 hover:no-underline">
-                      <div className="flex items-center gap-[10px] flex-1">
-                        <Wallet className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Payments</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="pb-0">
-                      <NavigationLink
-                        href="/admin/financials"
-                        className="flex items-center gap-[10px] pl-8 pr-4 py-[10px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-                      >
-                        <TrendingUp className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                        <span className="text-sm font-medium">Financials</span>
-                      </NavigationLink>
-                      <NavigationLink
-                        href="/admin/payouts"
-                        className="flex items-center gap-[10px] pl-8 pr-4 py-[10px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-                      >
-                        <Wallet className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                        <span className="text-sm font-medium">Payouts</span>
-                      </NavigationLink>
-                      <NavigationLink
-                        href="/admin/direct-bonuses"
-                        className="flex items-center gap-[10px] pl-8 pr-4 py-[10px] rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-                      >
-                        <Gift className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                        <span className="text-sm font-medium">Direct Bonuses</span>
-                      </NavigationLink>
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
-              </Accordion>
-
-              {/* Standalone Items (SuperAdmin only) */}
-              {isSuperAdmin && (
-                <>
-                  <NavigationLink
-                    href="/admin/transaction-logs"
-                    className="flex items-center gap-[10px] px-4 py-[10px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-                  >
-                    <Activity className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                    <span className="text-sm font-medium">Transaction Logs</span>
-                  </NavigationLink>
-                  <NavigationLink
-                    href="/admin/academy-manager"
-                    className="flex items-center gap-[10px] px-4 py-[10px] mx-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer"
-                  >
-                    <BookOpen className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                    <span className="text-sm font-medium">Academy Manager</span>
-                  </NavigationLink>
-                </>
-              )}
-            </>
-          )}
-        </nav>
-
-        <div className="p-4 border-t border-sidebar-border">
-          <div className="flex items-center gap-3 px-2 py-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white text-sm font-medium shadow-lg shadow-red-900/50">
-              {user.email?.[0]?.toUpperCase() || "U"}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">
-                {user.user_metadata?.name || "User"}
-              </p>
-              <p className="text-xs text-muted-foreground truncate">
-                {user.email}
-              </p>
-            </div>
+        {/* Main content */}
+        <main
+          className="flex-1 overflow-auto ml-0 lg:ml-[72px]"
+          style={{ paddingTop: 'calc(var(--banner-height, 0px) + var(--inactive-banner-height, 0px) + var(--wallet-banner-height, 0px) + 56px)' }}
+        >
+          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12">
+            <PageTransition>
+              {children}
+            </PageTransition>
           </div>
-          <div className="mt-3">
-            <SignOutButton />
-          </div>
-        </div>
-      </aside>
-
-      {/* Header */}
-      <DashboardHeader user={user} />
-
-      {/* Main content */}
-      <main className="flex-1 overflow-auto ml-64 transition-all duration-200" style={{ paddingTop: 'calc(var(--banner-height, 0px) + var(--inactive-banner-height, 0px) + var(--wallet-banner-height, 0px) + 50px)' }}>
-        <div className="p-8">
-          {children}
-        </div>
-      </main>
+        </main>
       </div>
-    </div> 
+    </div>
   )
 }

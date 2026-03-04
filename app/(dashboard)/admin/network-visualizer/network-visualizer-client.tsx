@@ -268,7 +268,7 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
                       {/* Level Header */}
                       <button
                         onClick={() => toggleLevel(level)}
-                        className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors rounded-lg"
+                        className="w-full flex items-center justify-between p-4 hover:bg-surface-2 transition-colors rounded-lg"
                       >
                         <div className="flex items-center gap-2">
                           {isExpanded ? (
@@ -290,7 +290,7 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
                             <button
                               key={user.id}
                               onClick={() => handleUserClick(user)}
-                              className="w-full flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left overflow-hidden"
+                              className="w-full flex items-center justify-between p-3 rounded-lg border border-border-subtle hover:bg-surface-2 transition-colors text-left overflow-hidden"
                             >
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
@@ -298,7 +298,7 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
                                     {user.name || user.email}
                                   </span>
                                   {user.is_active ? (
-                                    <Badge className="bg-green-500">Active</Badge>
+                                    <Badge className="bg-[#D4A853]/100">Active</Badge>
                                   ) : (
                                     <Badge variant="outline">Inactive</Badge>
                                   )}
@@ -354,7 +354,7 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
                           {parentUser.network_position_id}
                         </span>
                         {parentUser.is_active ? (
-                          <Badge className="bg-green-500 text-xs">Active</Badge>
+                          <Badge className="bg-[#D4A853]/100 text-xs">Active</Badge>
                         ) : (
                           <Badge variant="outline" className="text-xs">Inactive</Badge>
                         )}
@@ -365,13 +365,13 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
               })()}
 
               {/* User Info */}
-              <div className="p-4 bg-muted rounded-lg space-y-2">
+              <div className="p-4 bg-surface-2 rounded-lg space-y-2">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-lg">
                     {selectedUser.name || selectedUser.email}
                   </h3>
                   {selectedUser.is_active ? (
-                    <Badge className="bg-green-500">Active</Badge>
+                    <Badge className="bg-[#D4A853]/100">Active</Badge>
                   ) : (
                     <Badge variant="outline">Inactive</Badge>
                   )}
@@ -415,14 +415,14 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
                     members in downline
                   </div>
                 </div>
-                <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border-2 border-green-200 dark:border-green-900">
-                  <div className="text-sm text-green-600 dark:text-green-400 font-medium mb-1">
+                <div className="p-4 bg-[#D4A853]/10 dark:bg-[#D4A853]/10 rounded-lg border-2 border-[#D4A853]/20 dark:border-[#D4A853]/30">
+                  <div className="text-sm text-[#D4A853] dark:text-[#D4A853] font-medium mb-1">
                     Active Members
                   </div>
-                  <div className="text-2xl font-bold text-green-900 dark:text-green-300">
+                  <div className="text-2xl font-bold text-[#C49B3E] dark:text-[#D4A853]">
                     {selectedUser.active_network_count}
                   </div>
-                  <div className="text-xs text-green-600/80 dark:text-green-400/80 mt-1">
+                  <div className="text-xs text-[#D4A853]/80 dark:text-[#D4A853]/80 mt-1">
                     active in downline
                   </div>
                 </div>
@@ -461,8 +461,8 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
                         key={child.positionId}
                         className={`p-4 rounded-lg border-2 ${
                           child.occupied
-                            ? "bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900"
-                            : "bg-muted border-border"
+                            ? "bg-[#D4A853]/10 border-[#D4A853]/20 dark:bg-[#D4A853]/10 dark:border-[#D4A853]/30"
+                            : "bg-surface-2 border-border-subtle"
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
@@ -483,7 +483,7 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
                             </div>
                             <div className="flex items-center gap-2 mt-2">
                               {child.user.is_active ? (
-                                <Badge className="bg-green-500 text-xs">Active</Badge>
+                                <Badge className="bg-[#D4A853]/100 text-xs">Active</Badge>
                               ) : (
                                 <Badge variant="outline" className="text-xs">Inactive</Badge>
                               )}
@@ -617,7 +617,7 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
                   {blockingUsers.map((user) => (
                     <div
                       key={user.id}
-                      className="p-3 bg-muted rounded-lg border"
+                      className="p-3 bg-surface-2 rounded-lg border border-border-subtle"
                     >
                       <div className="font-medium">{user.name || user.email}</div>
                       <div className="text-sm text-muted-foreground">{user.email}</div>

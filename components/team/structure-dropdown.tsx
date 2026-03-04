@@ -268,7 +268,7 @@ export function StructureDropdown({
                   Performance Metrics
                 </h4>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-surface-2">
                     <span className="text-sm">Join Date</span>
                     <span className="text-sm font-medium">
                       {new Date(selectedMember.created_at).toLocaleDateString('en-US', {
@@ -278,17 +278,17 @@ export function StructureDropdown({
                       })}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-surface-2">
                     <span className="text-sm">Days in Network</span>
                     <span className="text-sm font-medium">
                       {Math.floor((Date.now() - new Date(selectedMember.created_at).getTime()) / (1000 * 60 * 60 * 24))}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-surface-2">
                     <span className="text-sm">Qualification Status</span>
                     <span className="text-sm font-medium">
                       {(selectedMember.referrals_count || 0) >= 3 ? (
-                        <Badge className="bg-green-500/10 text-green-500">Qualified</Badge>
+                        <Badge className="bg-[#D4A853]/10 text-[#D4A853]">Qualified</Badge>
                       ) : (
                         <Badge variant="outline">
                           {3 - (selectedMember.referrals_count || 0)} more needed

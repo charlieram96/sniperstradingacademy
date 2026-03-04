@@ -103,7 +103,7 @@ export function MFAFactorsList({ onFactorsChange }: MFAFactorsListProps) {
 
   if (factors.length === 0) {
     return (
-      <div className="text-center p-6 bg-muted/50 rounded-lg">
+      <div className="text-center p-6 bg-surface-2 rounded-lg">
         <p className="text-sm text-muted-foreground">
           No 2FA methods enabled yet
         </p>
@@ -114,8 +114,8 @@ export function MFAFactorsList({ onFactorsChange }: MFAFactorsListProps) {
   return (
     <div className="space-y-4">
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600 flex items-center gap-2">
+        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-md">
+          <p className="text-sm text-red-400 flex items-center gap-2">
             <AlertCircle className="h-4 w-4" />
             {error}
           </p>
@@ -123,8 +123,8 @@ export function MFAFactorsList({ onFactorsChange }: MFAFactorsListProps) {
       )}
 
       {success && (
-        <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-          <p className="text-sm text-green-600 flex items-center gap-2">
+        <div className="p-3 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-md">
+          <p className="text-sm text-[#D4A853] flex items-center gap-2">
             <CheckCircle className="h-4 w-4" />
             {success}
           </p>
@@ -135,7 +135,7 @@ export function MFAFactorsList({ onFactorsChange }: MFAFactorsListProps) {
         {factors.map((factor) => (
           <div
             key={factor.id}
-            className="flex items-center justify-between p-4 border rounded-lg bg-background"
+            className="flex items-center justify-between p-4 border border-border-subtle rounded-lg bg-surface-1"
           >
             <div className="flex items-center gap-3">
               <Smartphone className="h-5 w-5 text-muted-foreground" />
@@ -145,7 +145,7 @@ export function MFAFactorsList({ onFactorsChange }: MFAFactorsListProps) {
                     {factor.friendly_name || "Authenticator App"}
                   </p>
                   {factor.status === "verified" ? (
-                    <Badge variant="default" className="bg-green-600">
+                    <Badge variant="default" className="bg-[#D4A853]">
                       Active
                     </Badge>
                   ) : (
@@ -165,7 +165,7 @@ export function MFAFactorsList({ onFactorsChange }: MFAFactorsListProps) {
               size="sm"
               onClick={() => setFactorToRemove(factor.id)}
               disabled={unenrolling}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -173,8 +173,8 @@ export function MFAFactorsList({ onFactorsChange }: MFAFactorsListProps) {
         ))}
       </div>
 
-      <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-        <p className="text-xs text-blue-600">
+      <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-md">
+        <p className="text-xs text-blue-400">
           <strong>Tip:</strong> Add a backup authenticator on a different device
           to ensure you don&apos;t lose access to your account.
         </p>

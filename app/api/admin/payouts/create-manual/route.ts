@@ -167,7 +167,7 @@ export async function POST(req: NextRequest) {
             amount: amountNumber,
             reason: errorMsg,
             dashboardUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://tradinghub.com'}/finance`,
-            payoutId: commissionId
+            payoutId: commissionId || ''
           })
         } catch (notifError) {
           console.error('❌ Error sending payout failed notification:', notifError)
@@ -245,7 +245,7 @@ export async function POST(req: NextRequest) {
           userId: userId,
           amount: amountNumber,
           commissionType: 'manual_payout',
-          payoutId: commissionId
+          payoutId: commissionId || ''
         })
       } catch (notifError) {
         console.error('❌ Error sending payout processed notification:', notifError)
@@ -282,7 +282,7 @@ export async function POST(req: NextRequest) {
           amount: amountNumber,
           reason: errorMsg,
           dashboardUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://tradinghub.com'}/finance`,
-          payoutId: commissionId
+          payoutId: commissionId || ''
         })
       } catch (notifError) {
         console.error('❌ Error sending payout failed notification:', notifError)

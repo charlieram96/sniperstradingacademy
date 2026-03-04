@@ -140,11 +140,11 @@ export default function PayoutWalletSetup({
 
       {/* Current wallet status */}
       {walletStatus?.isConfigured && walletStatus.payoutWalletAddress && (
-        <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-          <CheckCircle2 className="h-4 w-4 text-green-400" />
+        <div className="flex items-center gap-2 p-3 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-lg">
+          <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm text-green-400 font-medium">Wallet configured</p>
-            <p className="text-xs text-green-300 font-mono truncate">
+            <p className="text-sm text-[#D4A853] font-medium">Wallet configured</p>
+            <p className="text-xs text-[#D4A853] font-mono truncate">
               {walletStatus.payoutWalletAddress}
             </p>
           </div>
@@ -191,9 +191,9 @@ export default function PayoutWalletSetup({
 
       {/* Success message */}
       {success && (
-        <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-          <CheckCircle2 className="h-4 w-4 text-green-400" />
-          <span className="text-sm text-green-300">Payout wallet saved successfully!</span>
+        <div className="flex items-center gap-2 p-3 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-lg">
+          <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
+          <span className="text-sm text-[#D4A853]">Payout wallet saved successfully!</span>
         </div>
       )}
 

@@ -18,6 +18,9 @@ import {
   ExternalLink
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { motion } from "framer-motion"
+import { fadeInUp } from "@/lib/motion"
+import { PageHeader } from "@/components/page-header"
 
 interface AcademyClass {
   id: string
@@ -224,19 +227,19 @@ export default function AcademyPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">Trading Academy</h1>
-        <p className="text-muted-foreground mt-2">
-          Master options trading with our comprehensive 6-module course
-        </p>
-      </div>
+      <PageHeader
+        title="Trading Academy"
+        description="Master options trading with our comprehensive 6-module course"
+      />
 
+      {/* Live Classes + Course Progress side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
       {/* Live Classes Schedule */}
       {!classesLoading && academyClasses.length > 0 && (
-        <Card className="mb-8 border-green-500/20 bg-gradient-to-r from-green-500/5 to-green-600/10">
+        <Card className="border-[#D4A853]/20 bg-gradient-to-r from-[#D4A853]/5 to-[#C49B3E]/10">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-green-600" />
+              <Calendar className="h-5 w-5 text-[#D4A853]" />
               Live Trading Classes Schedule
             </CardTitle>
             <CardDescription>
@@ -244,7 +247,7 @@ export default function AcademyPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {academyClasses.map((classItem, index) => {
                 const isFirst = index === 0
                 const scheduledDate = new Date(classItem.scheduled_at)
@@ -262,15 +265,15 @@ export default function AcademyPage() {
                     key={classItem.id}
                     className={`p-4 rounded-lg border-2 ${
                       isFirst
-                        ? "bg-green-500/20 border-green-500"
+                        ? "bg-[#D4A853]/20 border-[#D4A853]"
                         : "border-border"
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <Badge className={isFirst ? "bg-green-500 text-white" : "bg-muted"}>
+                      <Badge className={isFirst ? "bg-[#D4A853] text-white" : "bg-surface-2"}>
                         {isFirst ? "Next Class" : "Upcoming"}
                       </Badge>
-                      <PlayCircle className={`h-5 w-5 ${isFirst ? "text-green-600" : "text-muted-foreground"}`} />
+                      <PlayCircle className={`h-5 w-5 ${isFirst ? "text-[#D4A853]" : "text-muted-foreground"}`} />
                     </div>
                     <h3 className="font-semibold text-lg mb-1">{classItem.title}</h3>
                     {classItem.description && (
@@ -287,7 +290,7 @@ export default function AcademyPage() {
                         size="sm"
                         className={`w-full ${
                           isFirst
-                            ? "bg-green-600 hover:bg-green-700"
+                            ? "bg-[#D4A853] hover:bg-[#B38A30]"
                             : ""
                         }`}
                         variant={isFirst ? "default" : "outline"}
@@ -305,7 +308,8 @@ export default function AcademyPage() {
       )}
 
       {/* Overall Progress Card */}
-      <Card className="mb-8 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+      <motion.div variants={fadeInUp} initial="hidden" animate="show">
+      <Card variant="highlighted">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -342,6 +346,8 @@ export default function AcademyPage() {
           </div>
         </CardContent>
       </Card>
+      </motion.div>
+      </div>{/* end Classes + Progress grid */}
 
       {/* Course Module */}
       <Card>
@@ -367,7 +373,7 @@ export default function AcademyPage() {
                       <div className="flex items-center gap-4">
                         <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
                           isModuleComplete
-                            ? "bg-green-500/10 text-green-500"
+                            ? "bg-[#D4A853]/10 text-[#D4A853]"
                             : "bg-primary/10 text-primary"
                         }`}>
                           {isModuleComplete ? (
@@ -406,7 +412,7 @@ export default function AcademyPage() {
                             <div className="flex items-center gap-3 flex-1">
                               <div className="flex-shrink-0">
                                 {lesson.completed ? (
-                                  <CheckCircle className="h-5 w-5 text-green-500" />
+                                  <CheckCircle className="h-5 w-5 text-[#D4A853]" />
                                 ) : (
                                   <Circle className="h-5 w-5 text-muted-foreground" />
                                 )}

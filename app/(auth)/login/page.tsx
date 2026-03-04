@@ -100,7 +100,12 @@ function LoginForm() {
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Visual */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary via-primary/90 to-primary/80 p-12 flex-col justify-between">
+      <div className="hidden lg:flex lg:w-1/2 relative bg-surface-0 p-12 flex-col justify-between overflow-hidden">
+        {/* Animated mesh gradient background */}
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-gold-400/20 rounded-full blur-3xl animate-float-slow" />
+          <div className="absolute bottom-0 right-0 w-80 h-80 bg-blue-500/15 rounded-full blur-3xl animate-float-slower" />
+        </div>
         <NavigationLink href="/" className="flex items-center space-x-3">
           <Image src="/gold-logo.svg" alt="Trading Hub" width={48} height={48} className="w-12 h-12" />
           <span className="font-bold text-2xl text-white">Trading Hub</span>
@@ -141,7 +146,7 @@ function LoginForm() {
             </NavigationLink>
           </div>
 
-          <Card className="border-0 shadow-lg">
+          <Card className="border-border">
             <CardHeader className="space-y-1 pb-4">
               <CardTitle className="text-3xl font-bold">Welcome back</CardTitle>
               <CardDescription className="text-base">
@@ -194,12 +199,12 @@ function LoginForm() {
                   </div>
                 </div>
                 {success && (
-                  <div className="p-3 text-sm text-green-600 bg-green-50 rounded-md">
+                  <div className="p-3 text-sm text-emerald-400 bg-emerald-500/10 rounded-md">
                     {success}
                   </div>
                 )}
                 {error && (
-                  <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
+                  <div className="p-3 text-sm text-red-400 bg-red-500/10 rounded-md">
                     {error}
                   </div>
                 )}

@@ -40,7 +40,7 @@ function AnimatedCheckmark() {
           cy="50"
           r="45"
           fill="none"
-          stroke="#22c55e"
+          stroke="#D4A853"
           strokeWidth="4"
           strokeLinecap="round"
           className="animate-[drawCircle_0.6s_ease-out_forwards]"
@@ -53,7 +53,7 @@ function AnimatedCheckmark() {
         <path
           d="M30 50 L45 65 L70 35"
           fill="none"
-          stroke="#22c55e"
+          stroke="#D4A853"
           strokeWidth="5"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -441,10 +441,10 @@ function PaymentsContent() {
 
       {/* Success/Cancel Messages */}
       {success && (
-        <Card className="mb-6 border-green-500/20 bg-green-500/5">
+        <Card className="mb-6 border-[#D4A853]/20 bg-[#D4A853]/5">
           <CardHeader>
             <CardTitle className="text-foreground flex items-center">
-              <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
+              <CheckCircle className="h-5 w-5 mr-2 text-[#D4A853]" />
               Payment Successful!
             </CardTitle>
             <CardDescription className="text-muted-foreground">
@@ -516,14 +516,14 @@ function PaymentsContent() {
         </CardHeader>
         <CardContent>
           {bypassSubscription ? (
-            <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border-2 border-green-200 dark:border-green-900">
+            <div className="p-4 bg-[#D4A853]/10 dark:bg-[#D4A853]/10 rounded-lg border-2 border-[#D4A853]/20 dark:border-[#D4A853]/30">
               <div className="flex items-center gap-2 mb-2">
-                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-                <p className="font-semibold text-green-900 dark:text-green-300">
+                <CheckCircle className="h-5 w-5 text-[#D4A853] dark:text-[#D4A853]" />
+                <p className="font-semibold text-[#C49B3E] dark:text-[#D4A853]">
                   Subscription Bypass Active
                 </p>
               </div>
-              <p className="text-sm text-green-700 dark:text-green-400">
+              <p className="text-sm text-[#C49B3E] dark:text-[#D4A853]">
                 You have been granted subscription bypass. You do not need to pay the monthly subscription fee.
               </p>
             </div>
@@ -542,14 +542,14 @@ function PaymentsContent() {
               ) : periodStatus?.periodPaid ? (
                 // Period is already paid - show success message with next due date
                 <div className="space-y-4">
-                  <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-900">
+                  <div className="p-4 bg-[#D4A853]/10 dark:bg-[#D4A853]/10 rounded-lg border border-[#D4A853]/20 dark:border-[#D4A853]/30">
                     <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                      <p className="font-semibold text-green-900 dark:text-green-300">
+                      <CheckCircle className="h-5 w-5 text-[#D4A853]" />
+                      <p className="font-semibold text-[#C49B3E] dark:text-[#D4A853]">
                         Current Period Paid
                       </p>
                     </div>
-                    <p className="text-sm text-green-700 dark:text-green-400">
+                    <p className="text-sm text-[#C49B3E] dark:text-[#D4A853]">
                       Your subscription is up to date.
                       {periodStatus.nextDueDate && (
                         <> Next payment due: <strong>{new Date(periodStatus.nextDueDate).toLocaleDateString()}</strong></>
@@ -600,7 +600,7 @@ function PaymentsContent() {
                         <p className="text-sm text-muted-foreground">Next payment due</p>
                         <p className="font-medium">{new Date(periodStatus.nextDueDate).toLocaleDateString()}</p>
                       </div>
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#D4A853]/10 text-[#C49B3E] dark:bg-[#D4A853]/15 dark:text-[#D4A853]">
                         Active
                       </span>
                     </div>
@@ -629,10 +629,10 @@ function PaymentsContent() {
                   </Button>
                 </div>
               ) : (
-                <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                <div className="p-4 bg-[#D4A853]/10 dark:bg-[#D4A853]/10 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <p className="font-medium text-green-900 dark:text-green-300">All payments up to date</p>
+                    <CheckCircle className="h-5 w-5 text-[#D4A853]" />
+                    <p className="font-medium text-[#C49B3E] dark:text-[#D4A853]">All payments up to date</p>
                   </div>
                 </div>
               )}
@@ -705,11 +705,11 @@ function PaymentsContent() {
 
                     {/* Back - Thank You */}
                     <div className="flip-card-back">
-                      <div className="w-full h-full p-6 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950 dark:to-emerald-900 rounded-xl border-2 border-green-200 dark:border-green-800 shadow-lg flex flex-col items-center justify-center">
+                      <div className="w-full h-full p-6 bg-gradient-to-br from-[#D4A853]/10 to-[#C49B3E]/15 dark:from-[#D4A853]/10 dark:to-[#C49B3E]/15 rounded-xl border-2 border-[#D4A853]/20 dark:border-[#D4A853]/30 shadow-lg flex flex-col items-center justify-center">
                         <AnimatedCheckmark />
                         <div className="thank-you-text text-center mt-4">
-                          <p className="text-xl font-bold text-green-700 dark:text-green-300">Thank you!</p>
-                          <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                          <p className="text-xl font-bold text-[#C49B3E] dark:text-[#D4A853]">Thank you!</p>
+                          <p className="text-sm text-[#D4A853] dark:text-[#D4A853] mt-1">
                             Your payment has been received
                           </p>
                         </div>
@@ -736,7 +736,7 @@ function PaymentsContent() {
                           className="shrink-0"
                         >
                           {copied ? (
-                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            <CheckCircle className="h-4 w-4 text-[#D4A853]" />
                           ) : (
                             <Copy className="h-4 w-4" />
                           )}
@@ -777,7 +777,7 @@ function PaymentsContent() {
 
                 {/* Processing message when payment detected */}
                 {paymentStatus?.fundsDetected && (
-                  <div className="thank-you-text flex items-center gap-2 text-green-600 dark:text-green-400">
+                  <div className="thank-you-text flex items-center gap-2 text-[#D4A853] dark:text-[#D4A853]">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span className="text-sm">Processing your payment...</span>
                   </div>

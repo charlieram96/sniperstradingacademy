@@ -5,9 +5,12 @@
  */
 
 import { createHmac } from 'crypto';
+import { ACCEPTED_USDC_CONTRACTS_MAINNET } from '../coinbase/wallet-types';
 
-// Polygon native USDC contract address
-const USDC_CONTRACT_ADDRESS = '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359';
+// Set of accepted USDC contract addresses (lowercase for comparison)
+const ACCEPTED_USDC_SET = new Set(
+  ACCEPTED_USDC_CONTRACTS_MAINNET.map((addr) => addr.toLowerCase())
+);
 
 export interface AlchemyWebhookPayload {
   webhookId: string;
@@ -103,9 +106,9 @@ export function parseUSDCTransfers(payload: AlchemyWebhookPayload): ParsedUSDCTr
       continue;
     }
 
-    // Only process USDC transfers (check contract address)
+    // Only process USDC transfers (check contract address against accepted list)
     const contractAddress = activity.rawContract?.address?.toLowerCase();
-    if (contractAddress !== USDC_CONTRACT_ADDRESS.toLowerCase()) {
+    if (!contractAddress || !ACCEPTED_USDC_SET.has(contractAddress)) {
       continue;
     }
 
@@ -136,7 +139,7 @@ export function isUSDCTransfer(activity: AlchemyActivity): boolean {
   }
 
   const contractAddress = activity.rawContract?.address?.toLowerCase();
-  return contractAddress === USDC_CONTRACT_ADDRESS.toLowerCase();
+  return !!contractAddress && ACCEPTED_USDC_SET.has(contractAddress);
 }
 
 /**

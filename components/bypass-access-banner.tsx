@@ -52,7 +52,7 @@ export function BypassAccessBanner({
             </Badge>
           )}
           {bypassDirectReferrals > 0 && (
-            <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200">
+            <Badge variant="secondary" className="bg-[#D4A853]/10 text-[#C49B3E] dark:bg-[#D4A853]/10 dark:text-[#D4A853]">
               <Users className="h-3 w-3 mr-1" />
               {bypassDirectReferrals} Direct Referral{bypassDirectReferrals !== 1 ? 's' : ''} Bypassed
             </Badge>
@@ -67,7 +67,7 @@ export function BypassAccessBanner({
             <Button
               variant="outline"
               onClick={onDismiss}
-              className="bg-white dark:bg-white text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-50 border-blue-200"
+              className="bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border-blue-500/20"
             >
               I understand
             </Button>

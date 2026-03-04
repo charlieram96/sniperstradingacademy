@@ -148,7 +148,7 @@ export function ConfirmReferralModal({
 
         {success ? (
           <div className="py-6 flex flex-col items-center gap-3">
-            <CheckCircle2 className="h-12 w-12 text-green-500" />
+            <CheckCircle2 className="h-12 w-12 text-[#D4A853]" />
             <p className="text-center font-medium">Referral updated successfully!</p>
           </div>
         ) : (
@@ -195,8 +195,8 @@ export function ConfirmReferralModal({
               )}
 
               {validatedReferrer && (
-                <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                  <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                <div className="p-3 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-lg">
+                  <div className="flex items-center gap-2 text-[#C49B3E] dark:text-[#D4A853]">
                     <CheckCircle2 className="h-4 w-4" />
                     <span className="font-medium">Valid referral code!</span>
                   </div>
@@ -206,7 +206,7 @@ export function ConfirmReferralModal({
                 </div>
               )}
 
-              <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+              <div className="p-3 bg-surface-2 rounded-lg text-sm text-muted-foreground">
                 <p>
                   If you don&apos;t have a referral code, you can continue without one.
                   Your account will be linked to the platform directly.
