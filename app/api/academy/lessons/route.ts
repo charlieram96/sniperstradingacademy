@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
-// GET - List lessons (optionally filtered by module_id)
+// GET - List lessons (optionally filtered by module_id) 
 export async function GET(req: NextRequest) {
   try {
     const supabase = await createClient()
