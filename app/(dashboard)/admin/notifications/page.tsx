@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Bell, Loader2, CheckCircle2, AlertCircle, Send, User } from 'lucide-react'
+import { useTranslation } from "@/components/language-provider"
 
 interface GlobalSetting {
   id: string
@@ -70,6 +71,7 @@ const NOTIFICATION_LABELS: Record<string, string> = {
 }
 
 export default function AdminNotificationsPage() {
+  const { t } = useTranslation()
   const [settings, setSettings] = useState<GlobalSetting[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
@@ -230,23 +232,23 @@ export default function AdminNotificationsPage() {
     <div className="container mx-auto p-6 max-w-6xl">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Global Notification Control</h1>
+          <h1 className="text-3xl font-bold mb-2">{t("admin.notificationsManager.title")}</h1>
           <p className="text-muted-foreground">
-            Manage system-wide notification toggles and send manual messages
+            {t("admin.notificationsManager.description")}
           </p>
         </div>
         <Dialog open={showManualDialog} onOpenChange={setShowManualDialog}>
           <DialogTrigger asChild>
             <Button>
               <Send className="mr-2 h-4 w-4" />
-              Send Manual Message
+              {t("admin.notificationsManager.sendManualMessage")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Send Manual Message</DialogTitle>
+              <DialogTitle>{t("admin.notificationsManager.sendManualMessage")}</DialogTitle>
               <DialogDescription>
-                Send a custom message to selected users via email and/or SMS
+                {t("admin.notificationsManager.sendManualMessageDesc")}
               </DialogDescription>
             </DialogHeader>
 
