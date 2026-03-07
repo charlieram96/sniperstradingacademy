@@ -2,7 +2,7 @@
 
 import { useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { FileText, Download, GraduationCap, ChevronLeft, ChevronRight } from "lucide-react"
+import { FileText, Download, GraduationCap, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { fadeInUp } from "@/lib/motion"
 import { VideoPlayer } from "./video-player"
@@ -10,7 +10,7 @@ import { VideoPlayer } from "./video-player"
 interface Lesson {
   id: string
   title: string
-  type: "video" | "pdf"
+  type: "video" | "pdf" | "link"
   duration?: string
   size?: string
   url?: string
@@ -137,6 +137,36 @@ export function LessonContent({
                   >
                     <Download className="h-4 w-4 mr-2" />
                     Download PDF
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Link lesson */}
+            {selectedLesson.lesson.type === "link" && (
+              <div className="rounded-xl border border-border bg-surface-1 p-8">
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-16 h-16 rounded-xl bg-emerald-500/10 flex items-center justify-center mb-4">
+                    <ExternalLink className="h-8 w-8 text-emerald-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-1">
+                    {selectedLesson.lesson.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-6">This lesson links to an external resource.</p>
+                  <Button
+                    className="bg-gold-400 hover:bg-gold-500 text-primary-foreground"
+                    onClick={() => {
+                      if (selectedLesson.lesson.url) {
+                        window.open(selectedLesson.lesson.url, "_blank")
+                        if (!selectedLesson.lesson.completed) {
+                          markLessonComplete(selectedLesson.moduleId, selectedLesson.lesson.id)
+                        }
+                      }
+                    }}
+                    disabled={!selectedLesson.lesson.url}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Open Link
                   </Button>
                 </div>
               </div>

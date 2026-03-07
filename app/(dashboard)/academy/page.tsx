@@ -20,7 +20,7 @@ interface AcademyClass {
 interface Lesson {
   id: string
   title: string
-  type: "video" | "pdf"
+  type: "video" | "pdf" | "link"
   duration?: string
   size?: string
   url?: string
@@ -49,9 +49,10 @@ interface DBLesson {
   lesson_id: string
   module_id: string
   title: string
-  type: 'video' | 'pdf'
+  type: 'video' | 'pdf' | 'link'
   video_url: string | null
   pdf_url: string | null
+  link_url: string | null
   duration: string | null
   file_size: string | null
   display_order: number
@@ -117,7 +118,7 @@ export default function AcademyPage() {
               type: lesson.type,
               duration: lesson.duration || undefined,
               size: lesson.file_size || undefined,
-              url: lesson.type === 'pdf' ? lesson.pdf_url || undefined : lesson.video_url || undefined,
+              url: lesson.type === 'link' ? lesson.link_url || undefined : lesson.type === 'pdf' ? lesson.pdf_url || undefined : lesson.video_url || undefined,
               completed: false // Will be updated by progress fetch
             }))
         }))

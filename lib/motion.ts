@@ -188,5 +188,58 @@ export const sidebarMobileRight: Variants = {
 export const buttonTap = { scale: 0.98 }
 export const buttonHover = { y: -1 }
 
+// Fade in from left
+export const fadeInLeft: Variants = {
+  hidden: { opacity: 0, x: -24 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.5, ease: ease.out },
+  },
+}
+
+// Fade in from right
+export const fadeInRight: Variants = {
+  hidden: { opacity: 0, x: 24 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.5, ease: ease.out },
+  },
+}
+
+// Stagger container (slower)
+export const staggerContainerSlow: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.12,
+      delayChildren: 0.15,
+    },
+  },
+}
+
+// Scale + fade in
+export const scaleFadeIn: Variants = {
+  hidden: { opacity: 0, scale: 0.95, y: 20 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: ease.out },
+  },
+}
+
+// SVG path draw
+export const pathDraw: Variants = {
+  hidden: { pathLength: 0, opacity: 0 },
+  visible: {
+    pathLength: 1,
+    opacity: 1,
+    transition: { duration: 1.5, ease: "easeInOut" },
+  },
+}
+
 // whileInView defaults
 export const viewportOnce = { once: true, margin: "-60px" as const }

@@ -128,6 +128,7 @@ export default function TeamPage() {
       // Get all downline members using the database function
       const { data: downlineMembers } = await supabase
         .rpc("get_downline_contributors", { p_user_id: userId })
+        .limit(10000)
 
       // Get tree children (3 direct positions below user)
       const treeChildrenResponse = await fetch(`/api/network/tree-children?userId=${userId}`)
@@ -146,6 +147,7 @@ export default function TeamPage() {
         .from("users")
         .select("id, name, email, created_at, is_active, direct_referrals_count, active_network_count, network_level")
         .in("id", downlineIds)
+        .limit(10000)
 
       // Create a map for quick lookup
       const userDataMap = new Map(fullUserData?.map(u => [u.id, u]) || [])

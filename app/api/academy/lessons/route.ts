@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { lesson_id, module_id, title, type, video_url, pdf_url, duration, file_size, is_published } = body
+    const { lesson_id, module_id, title, type, video_url, pdf_url, link_url, duration, file_size, is_published } = body
 
     if (!lesson_id || !module_id || !title || !type) {
       return NextResponse.json(
@@ -70,9 +70,9 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (!["video", "pdf"].includes(type)) {
+    if (!["video", "pdf", "link"].includes(type)) {
       return NextResponse.json(
-        { error: "Invalid type. Must be 'video' or 'pdf'" },
+        { error: "Invalid type. Must be 'video', 'pdf', or 'link'" },
         { status: 400 }
       )
     }
@@ -100,6 +100,7 @@ export async function POST(req: NextRequest) {
         display_order: nextDisplayOrder,
         video_url: video_url || null,
         pdf_url: pdf_url || null,
+        link_url: link_url || null,
         duration: duration || null,
         file_size: file_size || null,
         is_published: is_published || false

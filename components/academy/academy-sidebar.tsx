@@ -2,14 +2,14 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { CheckCircle, Circle, PlayCircle, FileText, ChevronDown, BookOpen, X, Clock } from "lucide-react"
+import { CheckCircle, Circle, PlayCircle, FileText, ChevronDown, BookOpen, X, Clock, ExternalLink } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { staggerContainer, staggerItem, sidebarMobileRight, sidebarOverlay } from "@/lib/motion"
 
 interface Lesson {
   id: string
   title: string
-  type: "video" | "pdf"
+  type: "video" | "pdf" | "link"
   duration?: string
   size?: string
   url?: string
@@ -195,6 +195,8 @@ export function AcademySidebar({
                               <div className="flex-shrink-0">
                                 {lesson.type === "video" ? (
                                   <PlayCircle className="h-3.5 w-3.5 text-foreground-tertiary" />
+                                ) : lesson.type === "link" ? (
+                                  <ExternalLink className="h-3.5 w-3.5 text-foreground-tertiary" />
                                 ) : (
                                   <FileText className="h-3.5 w-3.5 text-foreground-tertiary" />
                                 )}
