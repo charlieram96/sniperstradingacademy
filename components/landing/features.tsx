@@ -12,7 +12,7 @@ import {
   Shield,
   Zap,
 } from "lucide-react"
-import { fadeInUp, staggerContainer, staggerItem, viewportOnce, spring } from "@/lib/motion"
+import { fadeInUp, staggerContainer, staggerItem, viewportOnce } from "@/lib/motion"
 
 function TiltCard({ children, className }: { children: React.ReactNode; className?: string }) {
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
