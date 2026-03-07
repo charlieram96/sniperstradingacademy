@@ -120,12 +120,12 @@ function LoginForm() {
           </p>
           <div className="grid grid-cols-2 gap-4 pt-8">
             <div className="space-y-2">
-              <div className="text-3xl font-bold">10,000+</div>
-              <div className="text-sm text-white/80">Active Traders</div>
+              <div className="text-3xl font-bold">Growing</div>
+              <div className="text-sm text-white/80">Community of Traders</div>
             </div>
             <div className="space-y-2">
-              <div className="text-3xl font-bold">$2M+</div>
-              <div className="text-sm text-white/80">Commissions Paid</div>
+              <div className="text-3xl font-bold">24/7</div>
+              <div className="text-sm text-white/80">Academy Access</div>
             </div>
           </div>
         </div>

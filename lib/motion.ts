@@ -178,6 +178,12 @@ export const sidebarMobile: Variants = {
   exit: { x: -260, transition: { duration: 0.2 } },
 }
 
+export const sidebarMobileRight: Variants = {
+  hidden: { x: 320 },
+  visible: { x: 0, transition: spring.smooth },
+  exit: { x: 320, transition: { duration: 0.2 } },
+}
+
 // Micro interactions
 export const buttonTap = { scale: 0.98 }
 export const buttonHover = { y: -1 }

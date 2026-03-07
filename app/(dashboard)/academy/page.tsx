@@ -1,26 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Badge } from "@/components/ui/badge"
-import {
-  PlayCircle,
-  FileText,
-  CheckCircle,
-  Circle,
-  Download,
-  Clock,
-  BookOpen,
-  Calendar,
-  ExternalLink
-} from "lucide-react"
+import { useState, useEffect, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { motion } from "framer-motion"
 import { fadeInUp } from "@/lib/motion"
 import { PageHeader } from "@/components/page-header"
+import { AcademySidebar } from "@/components/academy/academy-sidebar"
+import { LessonContent } from "@/components/academy/lesson-content"
+import { LiveClassCard } from "@/components/academy/live-class-card"
 
 interface AcademyClass {
   id: string
@@ -77,6 +64,7 @@ export default function AcademyPage() {
   const [progressLoading, setProgressLoading] = useState(true)
   const [modules, setModules] = useState<Module[]>([])
   const [modulesLoading, setModulesLoading] = useState(true)
+  const [selectedLesson, setSelectedLesson] = useState<{ moduleId: string; lesson: Lesson } | null>(null)
 
   // Fetch academy classes
   useEffect(() => {
@@ -180,15 +168,29 @@ export default function AcademyPage() {
     fetchProgress()
   }, [])
 
+  // Auto-select first incomplete lesson on mount
+  useEffect(() => {
+    if (modulesLoading || progressLoading || selectedLesson || modules.length === 0) return
+
+    for (const mod of modules) {
+      const incompleteLesson = mod.lessons.find(l => !l.completed)
+      if (incompleteLesson) {
+        setSelectedLesson({ moduleId: mod.id, lesson: incompleteLesson })
+        return
+      }
+    }
+    // All complete — select the first lesson
+    if (modules[0]?.lessons[0]) {
+      setSelectedLesson({ moduleId: modules[0].id, lesson: modules[0].lessons[0] })
+    }
+  }, [modulesLoading, progressLoading, modules, selectedLesson])
+
   // Calculate overall progress
   const totalLessons = modules.reduce((acc, module) => acc + module.lessons.length, 0)
   const completedLessons = modules.reduce(
     (acc, module) => acc + module.lessons.filter(lesson => lesson.completed).length,
     0
   )
-  const completedModules = modules.filter(module =>
-    module.lessons.every(lesson => lesson.completed)
-  ).length
   const overallProgress = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0
 
   const markLessonComplete = async (moduleId: string, lessonId: string) => {
@@ -207,6 +209,14 @@ export default function AcademyPage() {
       })
     )
 
+    // Also update selectedLesson if it matches
+    setSelectedLesson(prev => {
+      if (prev && prev.lesson.id === lessonId) {
+        return { ...prev, lesson: { ...prev.lesson, completed: true } }
+      }
+      return prev
+    })
+
     // Save to database
     try {
       await fetch('/api/academy/progress', {
@@ -219,271 +229,42 @@ export default function AcademyPage() {
     }
   }
 
-  const getModuleProgress = (module: Module) => {
-    const completed = module.lessons.filter(lesson => lesson.completed).length
-    const total = module.lessons.length
-    return { completed, total, percentage: total > 0 ? (completed / total) * 100 : 0 }
+  const handleSelectLesson = (moduleId: string, lesson: Lesson) => {
+    // Get the latest lesson state from modules
+    const mod = modules.find(m => m.id === moduleId)
+    const latestLesson = mod?.lessons.find(l => l.id === lesson.id)
+    setSelectedLesson({ moduleId, lesson: latestLesson || lesson })
   }
 
   return (
-    <div>
-      <PageHeader
-        title="Trading Academy"
-        description="Master options trading with our comprehensive 6-module course"
-      />
+    <motion.div variants={fadeInUp} initial="hidden" animate="visible">
+      {/* Header row */}
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+        <PageHeader
+          title="Trading Academy"
+          description="Master options trading with our comprehensive course"
+          className="flex-1 min-w-0 !border-b-0 !pb-0 !mb-0"
+        />
+        {!classesLoading && <LiveClassCard classes={academyClasses} />}
+      </div>
 
-      {/* Live Classes + Course Progress side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-      {/* Live Classes Schedule */}
-      {!classesLoading && academyClasses.length > 0 && (
-        <Card className="border-[#D4A853]/20 bg-gradient-to-r from-[#D4A853]/5 to-[#C49B3E]/10">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-[#D4A853]" />
-              Live Trading Classes Schedule
-            </CardTitle>
-            <CardDescription>
-              Join our upcoming live sessions to learn directly from expert traders
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-4">
-              {academyClasses.map((classItem, index) => {
-                const isFirst = index === 0
-                const scheduledDate = new Date(classItem.scheduled_at)
-                const formattedDate = scheduledDate.toLocaleString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                  timeZone: "America/New_York"
-                })
-
-                return (
-                  <div
-                    key={classItem.id}
-                    className={`p-4 rounded-lg border-2 ${
-                      isFirst
-                        ? "bg-[#D4A853]/20 border-[#D4A853]"
-                        : "border-border"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <Badge className={isFirst ? "bg-[#D4A853] text-white" : "bg-surface-2"}>
-                        {isFirst ? "Next Class" : "Upcoming"}
-                      </Badge>
-                      <PlayCircle className={`h-5 w-5 ${isFirst ? "text-[#D4A853]" : "text-muted-foreground"}`} />
-                    </div>
-                    <h3 className="font-semibold text-lg mb-1">{classItem.title}</h3>
-                    {classItem.description && (
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                        {classItem.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-                      <Calendar className="h-3.5 w-3.5" />
-                      <span>{formattedDate} EST</span>
-                    </div>
-                    <a href={classItem.meeting_link} target="_blank" rel="noopener noreferrer" className="block">
-                      <Button
-                        size="sm"
-                        className={`w-full ${
-                          isFirst
-                            ? "bg-[#D4A853] hover:bg-[#B38A30]"
-                            : ""
-                        }`}
-                        variant={isFirst ? "default" : "outline"}
-                      >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        {isFirst ? "Join Class" : "View Details"}
-                      </Button>
-                    </a>
-                  </div>
-                )
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Overall Progress Card */}
-      <motion.div variants={fadeInUp} initial="hidden" animate="show">
-      <Card variant="highlighted">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-foreground">Your Course Progress</CardTitle>
-              <CardDescription>
-                Keep learning to unlock your full trading potential
-              </CardDescription>
-            </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold text-primary">
-                {Math.round(overallProgress)}%
-              </div>
-              <p className="text-sm text-muted-foreground">Complete</p> 
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Progress value={overallProgress} className="h-3 mb-4" />
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-foreground">{completedModules}/6</div>
-              <p className="text-sm text-muted-foreground">Modules Completed</p>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-foreground">{completedLessons}/{totalLessons}</div>
-              <p className="text-sm text-muted-foreground">Lessons Completed</p>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-foreground">
-                {modules.reduce((acc, m) => acc + m.lessons.filter(l => l.type === "video").length, 0)}
-              </div>
-              <p className="text-sm text-muted-foreground">Video Lessons</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      </motion.div>
-      </div>{/* end Classes + Progress grid */}
-
-      {/* Course Module */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-primary" />
-            Course Curriculum
-          </CardTitle>
-          <CardDescription>
-            Click on any module to view lessons and track your progress
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Accordion type="multiple" className="w-full">
-            {modules.map((module) => {
-              const progress = getModuleProgress(module)
-              const isModuleComplete = progress.completed === progress.total
-
-              return (
-                <AccordionItem key={module.id} value={module.id} className="border-b">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center justify-between w-full pr-4">
-                      <div className="flex items-center gap-4">
-                        <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                          isModuleComplete
-                            ? "bg-[#D4A853]/10 text-[#D4A853]"
-                            : "bg-primary/10 text-primary"
-                        }`}>
-                          {isModuleComplete ? (
-                            <CheckCircle className="h-5 w-5" />
-                          ) : (
-                            <span className="font-bold">{module.number}</span>
-                          )}
-                        </div>
-                        <div className="text-left">
-                          <div className="font-semibold text-base">
-                            Module {module.number}: {module.title}
-                          </div>
-                          <div className="text-sm text-muted-foreground font-normal">
-                            {module.description}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <div className="text-sm font-medium">
-                            {progress.completed}/{progress.total} lessons
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {Math.round(progress.percentage)}% complete
-                          </div>
-                        </div>
-                        <Progress value={progress.percentage} className="w-20 h-2" />
-                      </div>
-                    </div>
-                  </AccordionTrigger> 
-                  <AccordionContent>
-                    <div className="space-y-4 pt-4 pl-14">
-                      {module.lessons.map((lesson) => (
-                        <div key={lesson.id} className="space-y-3">
-                          <div className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-accent-hover transition-colors duration-200">
-                            <div className="flex items-center gap-3 flex-1">
-                              <div className="flex-shrink-0">
-                                {lesson.completed ? (
-                                  <CheckCircle className="h-5 w-5 text-[#D4A853]" />
-                                ) : (
-                                  <Circle className="h-5 w-5 text-muted-foreground" />
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2 flex-1">
-                                {lesson.type === "video" ? (
-                                  <PlayCircle className="h-4 w-4 text-primary" />
-                                ) : (
-                                  <FileText className="h-4 w-4 text-red-500" />
-                                )}
-                                <span className={`font-medium ${
-                                  lesson.completed ? "text-muted-foreground line-through" : "text-foreground"
-                                }`}>
-                                  {lesson.title}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                {lesson.type === "video" ? (
-                                  <>
-                                    <Clock className="h-3 w-3" />
-                                    <span>{lesson.duration}</span>
-                                  </>
-                                ) : (
-                                  <span>{lesson.size}</span>
-                                )}
-                              </div>
-                            </div>
-                            {lesson.type === "pdf" && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="ml-4"
-                                onClick={() => {
-                                  if (lesson.url) {
-                                    window.open(lesson.url, '_blank')
-                                    if (!lesson.completed) {
-                                      markLessonComplete(module.id, lesson.id)
-                                    }
-                                  }
-                                }}
-                                disabled={!lesson.url}
-                              >
-                                <Download className="h-4 w-4 mr-1" />
-                                Download
-                              </Button>
-                            )}
-                          </div>
-                          {lesson.type === "video" && lesson.url && (
-                            <div className="rounded-lg overflow-hidden border border-border bg-black">
-                              <video
-                                controls
-                                className="w-full"
-                                style={{ maxHeight: '500px' }}
-                                preload="metadata"
-                                onPlay={() => !lesson.completed && markLessonComplete(module.id, lesson.id)}
-                              >
-                                <source src={lesson.url} type="video/mp4" />
-                                Your browser does not support the video tag.
-                              </video>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              )
-            })}
-          </Accordion>
-        </CardContent>
-      </Card>
-    </div>
+      {/* Two-panel body */}
+      <div className="flex gap-0 -mt-4" style={{ minHeight: 'calc(100vh - 180px)' }}>
+        <LessonContent
+          modules={modules}
+          selectedLesson={selectedLesson}
+          onSelectLesson={handleSelectLesson}
+          markLessonComplete={markLessonComplete}
+        />
+        <AcademySidebar
+          modules={modules}
+          selectedLesson={selectedLesson}
+          onSelectLesson={handleSelectLesson}
+          totalLessons={totalLessons}
+          completedLessons={completedLessons}
+          overallProgress={overallProgress}
+        />
+      </div>
+    </motion.div>
   )
 }

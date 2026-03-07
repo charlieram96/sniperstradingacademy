@@ -13,6 +13,7 @@ import {
   Zap,
   Clock,
   CheckCircle,
+  X,
   LucideIcon
 } from "lucide-react"
 
@@ -47,6 +48,9 @@ const COLOR_MAP: Record<string, string> = {
 
 export function GlobalBanner() {
   const [bannerConfig, setBannerConfig] = useState<BannerConfig | null>(null)
+  const [dismissed, setDismissed] = useState(() =>
+    typeof window !== "undefined" && sessionStorage.getItem("global-banner-dismissed") === "true"
+  )
 
   useEffect(() => {
     async function fetchBanner() {
@@ -78,11 +82,16 @@ export function GlobalBanner() {
 
   // Set CSS variable for banner height so other components can adjust
   useEffect(() => {
-    const height = bannerConfig?.text ? "48px" : "0px"
+    const height = bannerConfig?.text && !dismissed ? "38px" : "0px"
     document.documentElement.style.setProperty("--banner-height", height)
-  }, [bannerConfig])
+  }, [bannerConfig, dismissed])
 
-  if (!bannerConfig?.text) {
+  const handleDismiss = () => {
+    setDismissed(true)
+    sessionStorage.setItem("global-banner-dismissed", "true")
+  }
+
+  if (!bannerConfig?.text || dismissed) {
     return (
       <div className="fixed top-0 left-0 right-0 z-[60] w-full h-0 transition-all duration-200" />
     )
@@ -92,12 +101,19 @@ export function GlobalBanner() {
   const colorClasses = COLOR_MAP[bannerConfig.color || "green"] || COLOR_MAP.green
 
   return (
-    <div className={`fixed top-0 left-0 right-0 z-[60] w-full h-12 transition-all duration-200 ${colorClasses} border-b`}>
-      <div className="h-full px-4 flex items-center justify-center">
+    <div className={`fixed top-0 left-0 right-0 z-[60] h-[38px] transition-all duration-200 ${colorClasses} border-b rounded-b-[15px]`}>
+      <div className="h-full px-4 flex items-center justify-center relative">
         <div className="max-w-7xl w-full mx-auto flex items-center justify-center gap-2">
           <IconComponent className="h-4 w-4 text-white flex-shrink-0" />
           <p className="text-sm text-white text-center">{bannerConfig.text}</p>
         </div>
+        <button
+          onClick={handleDismiss}
+          className="absolute right-3 text-white/80 hover:text-white transition-opacity"
+          aria-label="Dismiss banner"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
     </div>
   )

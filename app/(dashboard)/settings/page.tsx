@@ -397,7 +397,7 @@ export default function SettingsPage() {
         className="space-y-8"
         variants={staggerContainer}
         initial="hidden"
-        animate="show"
+        animate="visible"
       >
         {/* Profile & Account */}
         <SectionHeader title="Profile & Account" />

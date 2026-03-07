@@ -1869,7 +1869,7 @@ export default function AdminFinancialsPage() {
                       </TableCell>
                       <TableCell>
                         {user.is_active ? (
-                          <Badge className="bg-[#D4A853]">Active</Badge>
+                          <Badge variant="success">Active</Badge>
                         ) : (
                           <Badge variant="secondary">Inactive</Badge>
                         )}

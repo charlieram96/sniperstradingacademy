@@ -1086,7 +1086,7 @@ export default function AdminNetworkPage() {
                           </>
                         )}
                         {user.is_active ? (
-                          <Badge className="bg-[#D4A853] text-white">
+                          <Badge variant="success">
                             <CheckCircle2 className="h-3 w-3 mr-1" />
                             Active
                           </Badge>

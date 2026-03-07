@@ -81,7 +81,7 @@ export function StructureDropdown({
       >
         <div className="flex items-center gap-2">
           <span className="font-medium">Structure {structureNum}</span>
-          <Badge variant={isComplete ? "default" : isActive ? "secondary" : "outline"}>
+          <Badge variant={isComplete ? "default" : isActive ? "success" : "outline"}>
             {isComplete ? "Complete" : isActive ? "Active" : "Locked"}
           </Badge>
         </div>

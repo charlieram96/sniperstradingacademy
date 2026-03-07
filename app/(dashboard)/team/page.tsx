@@ -309,7 +309,7 @@ export default function TeamPage() {
                 )}
                 <span className="text-sm font-medium">Your Active Status</span>
               </div>
-              <Badge className={isUserActive ? 'bg-[#D4A853] text-white' : 'bg-destructive text-white'}>
+              <Badge variant={isUserActive ? 'success' : 'destructive'}>
                 {isUserActive ? 'Active' : 'Inactive'}
               </Badge>
             </div>
@@ -512,7 +512,7 @@ export default function TeamPage() {
               <div className="p-4 rounded-lg bg-surface-2">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium">Status</span>
-                  <Badge className={selectedMember.is_active ? 'bg-[#D4A853] text-white' : 'bg-surface-2'}>
+                  <Badge variant={selectedMember.is_active ? 'success' : 'secondary'}>
                     {selectedMember.is_active ? 'Active' : 'Inactive'}
                   </Badge>
                 </div>

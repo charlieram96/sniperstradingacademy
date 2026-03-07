@@ -673,7 +673,7 @@ export function DashboardClient({
                             </p>
                           </div>
                           {isUnlocked ? (
-                            <Badge className="bg-[#D4A853] text-white">Active</Badge>
+                            <Badge variant="success">Active</Badge>
                           ) : data.directReferrals >= requiredDirectReferrals && structureNum === data.unlockedStructures + 1 ? (
                             <Badge variant="outline" className="border-yellow-500 text-yellow-500">Ready to Unlock</Badge>
                           ) : (
@@ -716,7 +716,7 @@ export function DashboardClient({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                <AnimatedNumber value={data.teamPool / 100} prefix="$" decimals={2} />
+                <AnimatedNumber value={data.teamPool} prefix="$" decimals={2} />
               </div>
               <p className="text-[12px] text-foreground-tertiary mt-1">
                 Monthly team revenue
@@ -735,7 +735,7 @@ export function DashboardClient({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-gold-400">
-                <AnimatedNumber value={data.monthlyCommission / 100} prefix="$" decimals={2} />
+                <AnimatedNumber value={data.monthlyCommission} prefix="$" decimals={2} />
               </div>
               <p className="text-[12px] text-foreground-tertiary mt-1">
                 {10 + data.completedStructures}% of team pool

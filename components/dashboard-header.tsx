@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
-import Image from "next/image"
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { Search, LogOut, Bell, ChevronRight, User, Settings, Mail } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
+import { Search, LogOut, Bell, User, Settings, Mail } from "lucide-react"
+import { LiveClassIndicator } from "@/components/academy/live-class-indicator"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,30 +28,26 @@ interface DashboardHeaderProps {
   }
 }
 
-const ROUTE_LABELS: Record<string, string> = {
-  dashboard: "Dashboard",
-  academy: "Academy",
-  team: "My Team",
-  finance: "Finance",
-  payments: "Payments",
-  referrals: "Referrals",
-  settings: "Settings",
-  notifications: "Notifications",
-  admin: "Admin",
-  classes: "Admin Panel",
-  network: "Network View",
-  "network-visualizer": "Network Visualizer",
-  financials: "Financials",
-  payouts: "Payouts",
-  "direct-bonuses": "Direct Bonuses",
-  "transaction-logs": "Transaction Logs",
-  "academy-manager": "Academy Manager",
-}
-
 export function DashboardHeader({ user }: DashboardHeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const pathname = usePathname()
+  const [isMac, setIsMac] = useState(true)
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
+
+  useEffect(() => {
+    setIsMac(/Mac|iPhone|iPad/.test(navigator.userAgent))
+  }, [])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault()
+        setIsSearchOpen(true)
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [])
 
   const handleSignOut = async () => {
     const supabase = createClient()
@@ -58,78 +55,58 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
     router.push("/login")
   }
 
-  // Build breadcrumbs
-  const segments = pathname.split("/").filter(Boolean)
-  const breadcrumbs = segments.map((seg, idx) => ({
-    label: ROUTE_LABELS[seg] || seg.charAt(0).toUpperCase() + seg.slice(1).replace(/-/g, " "),
-    href: "/" + segments.slice(0, idx + 1).join("/"),
-    isLast: idx === segments.length - 1,
-  }))
-
   return (
     <header
-      className="h-14 fixed right-0 left-0 z-50 flex items-center justify-between px-6 lg:pl-[80px] bg-background/80 backdrop-blur-xl border-b border-white/[0.06]"
+      className="h-14 fixed right-0 left-0 lg:left-[72px] z-40 flex items-center justify-between px-6 bg-background/80 backdrop-blur-xl border-b border-white/[0.06]"
       style={{
         top: 'var(--banner-height, 0px)',
       }}
     >
-      {/* Left side - Logo + Breadcrumbs */}
-      <div className="flex items-center gap-3">
-        <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <Image
-            src="/gold-logo.svg"
-            alt="Logo"
-            width={24}
-            height={24}
-            className="w-6 h-6"
-          />
-        </Link>
-
-        {/* Breadcrumbs - desktop */}
-        <nav className="hidden md:flex items-center gap-1 text-sm">
-          {breadcrumbs.map((crumb, idx) => (
-            <div key={crumb.href} className="flex items-center gap-1">
-              {idx > 0 && <ChevronRight className="h-3 w-3 text-foreground-quaternary" />}
-              {crumb.isLast ? (
-                <span className="text-foreground font-medium">{crumb.label}</span>
-              ) : (
-                <Link href={crumb.href} className="text-foreground-tertiary hover:text-foreground transition-colors">
-                  {crumb.label}
-                </Link>
-              )}
-            </div>
-          ))}
-        </nav>
-      </div>
-
       {/* Right side */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 ml-auto">
         {/* Search trigger */}
-        {isSearchOpen ? (
-          <div className="flex items-center gap-2">
-            <Input
-              type="text"
-              placeholder="Search..."
-              className="w-64 h-8 text-sm"
-              autoFocus
-              onBlur={() => setIsSearchOpen(false)}
-            />
-          </div>
-        ) : (
-          <button
-            onClick={() => setIsSearchOpen(true)}
-            className="hidden md:flex items-center gap-2 h-8 px-3 rounded-[6px] border border-border bg-surface-1 text-foreground-tertiary text-sm hover:border-border-strong transition-colors duration-150"
-          >
-            <Search className="h-3.5 w-3.5" />
-            <span>Search...</span>
-            <kbd className="ml-4 text-[10px] font-mono text-foreground-quaternary bg-surface-0 px-1.5 py-0.5 rounded-[3px] border border-border-subtle">⌘K</kbd>
-          </button>
-        )}
+        <button
+          onClick={() => setIsSearchOpen(true)}
+          className="hidden md:flex items-center gap-2 h-8 px-3 rounded-[6px] border border-border bg-surface-1 text-foreground-tertiary text-sm hover:border-border-strong transition-colors duration-150"
+        >
+          <Search className="h-3.5 w-3.5" />
+          <span>Search...</span>
+          <kbd className="ml-4 text-[10px] font-mono text-foreground-quaternary bg-surface-0 px-1.5 py-0.5 rounded-[3px] border border-border-subtle">{isMac ? "⌘K" : "Ctrl K"}</kbd>
+        </button>
 
         {/* Mobile search */}
-        <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden" onClick={() => setIsSearchOpen(!isSearchOpen)}>
+        <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden" onClick={() => setIsSearchOpen(true)}>
           <Search className="h-4 w-4" />
         </Button>
+
+        {/* Search command palette */}
+        <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+          <DialogContent
+            className="max-w-lg top-[20%] translate-y-0 p-0 gap-0"
+            showCloseButton={false}
+          >
+            <VisuallyHidden><DialogTitle>Search</DialogTitle></VisuallyHidden>
+            <div className="flex items-center gap-3 px-4 py-3">
+              <Search className="h-4 w-4 text-foreground-tertiary shrink-0" />
+              <Input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search..."
+                className="border-0 bg-transparent h-auto p-0 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
+                autoFocus
+              />
+            </div>
+            <div className="flex items-center justify-end gap-3 px-4 py-2 border-t border-border-subtle">
+              <span className="text-[11px] text-foreground-quaternary">
+                <kbd className="font-mono text-[10px] bg-surface-0 px-1.5 py-0.5 rounded-[3px] border border-border-subtle">Esc</kbd>
+                <span className="ml-1.5">to close</span>
+              </span>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Academy live class indicator */}
+        <LiveClassIndicator />
 
         {/* Notifications */}
         <Button variant="ghost" size="icon" className="h-8 w-8 relative">

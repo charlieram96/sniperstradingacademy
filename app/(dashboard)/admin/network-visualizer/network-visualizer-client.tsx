@@ -298,7 +298,7 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
                                     {user.name || user.email}
                                   </span>
                                   {user.is_active ? (
-                                    <Badge className="bg-[#D4A853]/100">Active</Badge>
+                                    <Badge variant="success">Active</Badge>
                                   ) : (
                                     <Badge variant="outline">Inactive</Badge>
                                   )}
@@ -354,7 +354,7 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
                           {parentUser.network_position_id}
                         </span>
                         {parentUser.is_active ? (
-                          <Badge className="bg-[#D4A853]/100 text-xs">Active</Badge>
+                          <Badge variant="success" className="text-xs">Active</Badge>
                         ) : (
                           <Badge variant="outline" className="text-xs">Inactive</Badge>
                         )}
@@ -371,7 +371,7 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
                     {selectedUser.name || selectedUser.email}
                   </h3>
                   {selectedUser.is_active ? (
-                    <Badge className="bg-[#D4A853]/100">Active</Badge>
+                    <Badge variant="success">Active</Badge>
                   ) : (
                     <Badge variant="outline">Inactive</Badge>
                   )}
@@ -483,7 +483,7 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
                             </div>
                             <div className="flex items-center gap-2 mt-2">
                               {child.user.is_active ? (
-                                <Badge className="bg-[#D4A853]/100 text-xs">Active</Badge>
+                                <Badge variant="success" className="text-xs">Active</Badge>
                               ) : (
                                 <Badge variant="outline" className="text-xs">Inactive</Badge>
                               )}
