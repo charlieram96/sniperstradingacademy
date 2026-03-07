@@ -140,7 +140,7 @@ export default function TransactionLogsPage() {
         .eq("id", user.id)
         .single()
 
-      if (userData?.role === "superadmin" || userData?.role === "superadmin+") {
+      if (userData?.role === "superadmin+") {
         setIsSuperAdmin(true)
         await fetchTransactions()
       }

@@ -248,23 +248,23 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
               )}
             </Accordion>
 
+            {isSuperAdminPlus && (
+              <NavigationLink
+                href="/admin/transaction-logs"
+                className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+              >
+                <Activity className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
+                <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>Transaction Logs</span>
+              </NavigationLink>
+            )}
             {isSuperAdmin && (
-              <>
-                <NavigationLink
-                  href="/admin/transaction-logs"
-                  className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
-                >
-                  <Activity className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
-                  <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>Transaction Logs</span>
-                </NavigationLink>
-                <NavigationLink
-                  href="/admin/academy-manager"
-                  className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
-                >
-                  <BookOpen className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
-                  <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>Academy Manager</span>
-                </NavigationLink>
-              </>
+              <NavigationLink
+                href="/admin/academy-manager"
+                className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+              >
+                <BookOpen className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
+                <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>Academy Manager</span>
+              </NavigationLink>
             )}
           </div>
         </>

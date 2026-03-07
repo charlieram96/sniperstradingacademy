@@ -523,13 +523,43 @@ async function processInitialUnlock(supabase: any, intent: any, transaction: any
  */
 async function processSubscriptionPayment(supabase: any, intent: any, transaction: any) {
   try {
-    // Update user's active status and last payment date
+    const now = new Date();
+    const isWeekly = intent.intent_type !== 'monthly_subscription';
+
+    // Fetch current user dates to determine rotation logic
+    const { data: userData } = await supabase
+      .from('users')
+      .select('next_payment_due_date, previous_payment_due_date, is_active')
+      .eq('id', intent.user_id)
+      .single();
+
+    const currentNextDueDate = userData?.next_payment_due_date
+      ? new Date(userData.next_payment_due_date)
+      : now;
+
+    let newPreviousDueDate: Date;
+    let newNextDueDate: Date;
+
+    if (currentNextDueDate <= now) {
+      // User is overdue/inactive — anchor from NOW
+      newPreviousDueDate = now;
+      newNextDueDate = new Date(now.getTime() + (isWeekly ? 7 : 30) * 24 * 60 * 60 * 1000);
+    } else {
+      // Active, on-time payment — roll forward from current dates
+      newPreviousDueDate = currentNextDueDate;
+      newNextDueDate = new Date(currentNextDueDate.getTime() + (isWeekly ? 7 : 30) * 24 * 60 * 60 * 1000);
+    }
+
+    // Update user's active status, payment dates, and last payment date
     await supabase
       .from('users')
       .update({
         is_active: true,
-        last_payment_date: new Date().toISOString(),
-        payment_schedule: intent.intent_type === 'monthly_subscription' ? 'monthly' : 'weekly',
+        paid_for_period: true,
+        last_payment_date: now.toISOString(),
+        payment_schedule: isWeekly ? 'weekly' : 'monthly',
+        previous_payment_due_date: newPreviousDueDate.toISOString(),
+        next_payment_due_date: newNextDueDate.toISOString(),
       })
       .eq('id', intent.user_id);
 

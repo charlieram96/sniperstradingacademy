@@ -546,9 +546,9 @@ async function processSubscriptionPayment(
   let newNextDueDate: Date;
 
   if (currentNextDueDate <= now) {
-    // User is overdue/inactive — one payment brings them current
-    newPreviousDueDate = getInitialAnchorDate(now);
-    newNextDueDate = calculateNextDueDate(isWeekly, newPreviousDueDate);
+    // User is overdue/inactive — one payment brings them current, anchor from NOW
+    newPreviousDueDate = now;
+    newNextDueDate = new Date(now.getTime() + (isWeekly ? 7 : 30) * 24 * 60 * 60 * 1000);
   } else {
     // Normal on-time payment — roll forward from current dates
     newPreviousDueDate = currentNextDueDate;
