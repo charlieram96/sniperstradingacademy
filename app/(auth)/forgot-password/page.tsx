@@ -9,8 +9,10 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, Mail, ArrowLeft, CheckCircle } from "lucide-react"
 import Image from "next/image"
+import { useTranslation } from "@/components/language-provider"
 
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation()
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -35,7 +37,7 @@ export default function ForgotPasswordPage() {
         setSuccess(true)
       }
     } catch {
-      setError("An error occurred. Please try again.")
+      setError(t("auth.forgotPassword.errorOccurred"))
     } finally {
       setIsLoading(false)
     }
@@ -48,20 +50,20 @@ export default function ForgotPasswordPage() {
         <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-[#0F1629]/80 via-[#162044]/80 to-[#1A2550]/80 p-12 flex-col justify-between">
           <NavigationLink href="/" className="flex items-center space-x-3">
             <Image src="/gold-logo.svg" alt="Trading Hub" width={48} height={48} className="w-12 h-12" />
-            <span className="font-bold text-2xl text-white">Trading Hub</span>
+            <span className="font-bold text-2xl text-white">{t("common.brandName")}</span>
           </NavigationLink>
 
           <div className="space-y-6 text-white">
             <h1 className="text-4xl font-bold leading-tight">
-              Check your email
+              {t("auth.forgotPassword.checkEmailSideTitle")}
             </h1>
             <p className="text-lg text-white/90">
-              We&apos;ve sent you instructions to reset your password. Click the link in the email to continue.
+              {t("auth.forgotPassword.checkEmailSideDesc")}
             </p>
           </div>
 
           <div className="text-sm text-white/60">
-            © 2024 Trading Hub. All rights reserved.
+            {t("common.copyright", { year: "2024" })}
           </div>
         </div>
 
@@ -72,7 +74,7 @@ export default function ForgotPasswordPage() {
             <div className="lg:hidden mb-8 text-center">
               <NavigationLink href="/" className="inline-flex items-center space-x-3">
                 <Image src="/gold-logo.svg" alt="Trading Hub" width={40} height={40} className="w-10 h-10" />
-                <span className="font-bold text-xl text-foreground">Trading Hub</span>
+                <span className="font-bold text-xl text-foreground">{t("common.brandName")}</span>
               </NavigationLink>
             </div>
 
@@ -84,10 +86,10 @@ export default function ForgotPasswordPage() {
                   </div>
                 </div>
                 <CardTitle className="text-3xl font-bold text-center">
-                  Check your email
+                  {t("auth.forgotPassword.checkEmailTitle")}
                 </CardTitle>
                 <CardDescription className="text-base text-center">
-                  We sent a password reset link to
+                  {t("auth.forgotPassword.resetLinkSent")}
                 </CardDescription>
                 <p className="text-center font-medium text-foreground">{email}</p>
               </CardHeader>
@@ -96,9 +98,9 @@ export default function ForgotPasswordPage() {
                   <div className="flex items-start gap-3">
                     <Mail className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                     <div className="space-y-1">
-                      <p className="text-sm font-medium">Click the link in your email</p>
+                      <p className="text-sm font-medium">{t("auth.forgotPassword.clickLink")}</p>
                       <p className="text-xs text-muted-foreground">
-                        Open your email and click the password reset link to continue
+                        {t("auth.forgotPassword.clickLinkDesc")}
                       </p>
                     </div>
                   </div>
@@ -106,7 +108,7 @@ export default function ForgotPasswordPage() {
 
                 <div className="pt-4 text-center space-y-4">
                   <p className="text-xs text-muted-foreground">
-                    Didn&apos;t receive the email? Check your spam folder or try again.
+                    {t("auth.forgotPassword.didntReceive")}
                   </p>
                   <Button
                     variant="outline"
@@ -116,7 +118,7 @@ export default function ForgotPasswordPage() {
                       setEmail("")
                     }}
                   >
-                    Try another email
+                    {t("auth.forgotPassword.tryAnotherEmail")}
                   </Button>
                 </div>
               </CardContent>
@@ -126,7 +128,7 @@ export default function ForgotPasswordPage() {
                   className="text-sm text-center w-full text-muted-foreground hover:text-foreground flex items-center justify-center gap-2"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Back to login
+                  {t("auth.forgotPassword.backToLogin")}
                 </NavigationLink>
               </CardFooter>
             </Card>
@@ -142,20 +144,20 @@ export default function ForgotPasswordPage() {
       <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-[#0F1629]/80 via-[#162044]/80 to-[#1A2550]/80 p-12 flex-col justify-between">
         <NavigationLink href="/" className="flex items-center space-x-3">
           <Image src="/gold-logo.svg" alt="Trading Hub" width={48} height={48} className="w-12 h-12" />
-          <span className="font-bold text-2xl text-white">Trading Hub</span>
+          <span className="font-bold text-2xl text-white">{t("common.brandName")}</span>
         </NavigationLink>
 
         <div className="space-y-6 text-white">
           <h1 className="text-4xl font-bold leading-tight">
-            Forgot your password?
+            {t("auth.forgotPassword.sideTitle")}
           </h1>
           <p className="text-lg text-white/90">
-            No worries! Enter your email address and we&apos;ll send you instructions to reset your password.
+            {t("auth.forgotPassword.sideDesc")}
           </p>
         </div>
 
         <div className="text-sm text-white/60">
-          © 2024 Trading Hub. All rights reserved.
+          {t("common.copyright", { year: "2024" })}
         </div>
       </div>
 
@@ -166,26 +168,26 @@ export default function ForgotPasswordPage() {
           <div className="lg:hidden mb-8 text-center">
             <NavigationLink href="/" className="inline-flex items-center space-x-3">
               <Image src="/gold-logo.svg" alt="Trading Hub" width={40} height={40} className="w-10 h-10" />
-              <span className="font-bold text-xl text-foreground">Trading Hub</span>
+              <span className="font-bold text-xl text-foreground">{t("common.brandName")}</span>
             </NavigationLink>
           </div>
 
           <Card className="border-border-subtle">
             <CardHeader className="space-y-1 pb-4">
-              <CardTitle className="text-3xl font-bold">Reset password</CardTitle>
+              <CardTitle className="text-3xl font-bold">{t("auth.forgotPassword.title")}</CardTitle>
               <CardDescription className="text-base">
-                Enter your email address and we&apos;ll send you a link to reset your password
+                {t("auth.forgotPassword.subtitle")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={onSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
+                  <Label htmlFor="email">{t("auth.forgotPassword.emailAddress")}</Label>
                   <Input
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="trader@example.com"
+                    placeholder={t("auth.forgotPassword.emailPlaceholder")}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -208,12 +210,12 @@ export default function ForgotPasswordPage() {
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending...
+                      {t("auth.forgotPassword.sending")}
                     </>
                   ) : (
                     <>
                       <Mail className="mr-2 h-4 w-4" />
-                      Send reset link
+                      {t("auth.forgotPassword.sendResetLink")}
                     </>
                   )}
                 </Button>
@@ -225,7 +227,7 @@ export default function ForgotPasswordPage() {
                 className="text-sm text-center w-full text-muted-foreground hover:text-foreground flex items-center justify-center gap-2"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Back to login
+                {t("auth.forgotPassword.backToLogin")}
               </NavigationLink>
             </CardFooter>
           </Card>

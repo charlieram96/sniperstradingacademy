@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Network, Search, Shield, ShieldCheck, Users, CheckCircle2, XCircle, AlertTriangle, Crown, Sparkles, Trash2, UserPlus, Loader2, Power, DollarSign, CreditCard, Copy } from "lucide-react"
+import { Network, Search, Shield, ShieldCheck, Users, CheckCircle2, XCircle, AlertTriangle, Crown, Sparkles, Trash2, UserPlus, Loader2, Power, DollarSign, CreditCard, Copy, UserCheck } from "lucide-react"
 import QRCode from "qrcode"
 import { formatCurrency } from "@/lib/utils"
 import {
@@ -35,6 +35,7 @@ interface NetworkUser {
   is_active: boolean
   initial_payment_completed: boolean
   active_direct_referrals_count: number
+  direct_referrals_count: number
   total_network_count: number
   active_network_count: number
   current_commission_rate: number
@@ -71,6 +72,7 @@ export default function AdminNetworkPage() {
   const [sortField, setSortField] = useState<SortField>("created_at")
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
   const [selectedUser, setSelectedUser] = useState<NetworkUser | null>(null)
+  const [showUserDetailDialog, setShowUserDetailDialog] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [userToToggle, setUserToToggle] = useState<{ id: string; name: string; currentRole: "member" | "admin" | "superadmin" } | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
@@ -233,6 +235,7 @@ export default function AdminNetworkPage() {
         is_active,
         initial_payment_completed,
         active_direct_referrals_count,
+        direct_referrals_count,
         total_network_count,
         active_network_count,
         current_commission_rate,
@@ -1044,7 +1047,7 @@ export default function AdminNetworkPage() {
               {filteredUsers.map((user) => (
                 <div
                   key={user.id}
-                  onClick={() => setSelectedUser(selectedUser?.id === user.id ? null : user)}
+                  onClick={() => { setSelectedUser(user); setShowUserDetailDialog(true) }}
                   className="p-4 border border-border-subtle rounded-lg hover:bg-surface-2 transition-colors cursor-pointer"
                 >
                   <div className="flex items-start justify-between">
@@ -1101,7 +1104,7 @@ export default function AdminNetworkPage() {
                       <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-sm">
                         <div>
                           <p className="text-muted-foreground">Direct Referrals</p>
-                          <p className="font-medium">{user.active_direct_referrals_count}</p>
+                          <p className="font-medium">{user.active_direct_referrals_count}/{user.direct_referrals_count}</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground">Total Team</p>
@@ -1133,157 +1136,212 @@ export default function AdminNetworkPage() {
                     </div>
                   </div>
 
-                  {/* Expanded Details */}
-                  {selectedUser?.id === user.id && (
-                    <div className="mt-4 pt-4 border-t space-y-3">
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <p className="text-muted-foreground">User ID</p>
-                          <p className="font-mono text-xs">{user.id}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Referral Code</p>
-                          <p className="font-mono text-sm font-medium">{user.referral_code || "N/A"}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Joined</p>
-                          <p className="font-medium">
-                            {new Date(user.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Payment Schedule</p>
-                          <p className="font-medium capitalize">{user.payment_schedule}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Initial Payment</p>
-                          <p className={`font-medium ${user.initial_payment_completed ? 'text-[#D4A853]' : 'text-yellow-600'}`}>
-                            {user.initial_payment_completed ? "Completed" : "Pending"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Referred By</p>
-                          <p className="font-medium">
-                            {user.referrer && user.referrer.length > 0 ? (
-                              <>
-                                {user.referrer[0].name || "Unknown"}
-                                {user.referrer[0].network_position_id && (
-                                  <span className="text-xs text-muted-foreground ml-1">
-                                    (Pos: {user.referrer[0].network_position_id})
-                                  </span>
-                                )}
-                              </>
-                            ) : (
-                              <span className="text-muted-foreground">No Referrer</span>
-                            )}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Last Payment</p>
-                          <p className="font-medium">
-                            {user.last_payment_date
-                              ? new Date(user.last_payment_date).toLocaleDateString()
-                              : "Never"}
-                          </p>
-                        </div>
-                      </div>
-                      {isSuperAdmin && (
-                        <div className="flex flex-wrap gap-2 mt-4">
-                          {/* Toggle Active Status - Only show if initial payment completed */}
-                          {user.initial_payment_completed && (
-                            <Button
-                              size="sm"
-                              variant={user.is_active ? "outline" : "default"}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleToggleActive(user)
-                              }}
-                              disabled={isProcessing}
-                            >
-                              <Power className="h-3 w-3 mr-2" />
-                              {user.is_active ? "Deactivate" : "Activate"}
-                            </Button>
-                          )}
-
-                          {/* Grant Admin */}
-                          <Button
-                            size="sm"
-                            variant={user.role === "admin" ? "destructive" : "default"}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              openConfirmDialog(user.id, user.name || user.email, user.role)
-                            }}
-                          >
-                            <Shield className="h-3 w-3 mr-2" />
-                            {user.role === "admin" ? "Revoke Admin" : "Grant Admin"}
-                          </Button>
-
-                          {/* Grant Bypass */}
-                          <Button
-                            size="sm"
-                            variant="default"
-                            className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              openBypassDialog(user)
-                            }}
-                          >
-                            <Sparkles className="h-3 w-3 mr-2" />
-                            Grant Bypass
-                          </Button>
-
-                          {/* Manual Payout - Only show if user has payout wallet */}
-                          {user.payout_wallet_address && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                openManualPayoutDialog(user)
-                              }}
-                            >
-                              <DollarSign className="h-3 w-3 mr-2" />
-                              Manual Payout
-                            </Button>
-                          )}
-
-                          {/* Make Payment */}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              openPaymentDialog(user)
-                            }}
-                          >
-                            <CreditCard className="h-3 w-3 mr-2" />
-                            Make Payment
-                          </Button>
-
-                          {/* Request Deletion */}
-                          {user.role !== "superadmin" && (
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                openDeletionRequestDialog(user)
-                              }}
-                            >
-                              <Trash2 className="h-3 w-3 mr-2" />
-                              Delete Account
-                            </Button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* User Detail Dialog */}
+      <Dialog open={showUserDetailDialog} onOpenChange={setShowUserDetailDialog}>
+        <DialogContent className="max-w-lg">
+          {selectedUser && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <UserCheck className="h-5 w-5" />
+                  {selectedUser.name || "No name"}&apos;s Details
+                </DialogTitle>
+                <DialogDescription>View stats and manage this user</DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-5">
+                {/* User Info */}
+                <div className="rounded-lg border p-4 space-y-2 text-sm">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {selectedUser.is_active ? (
+                      <Badge variant="success">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        Active
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-muted-foreground">
+                        <XCircle className="h-3 w-3 mr-1" />
+                        Inactive
+                      </Badge>
+                    )}
+                    {selectedUser.role === "superadmin" && (
+                      <Badge className="bg-purple-600 text-white">
+                        <ShieldCheck className="h-3 w-3 mr-1" />
+                        Superadmin
+                      </Badge>
+                    )}
+                    {selectedUser.role === "admin" && (
+                      <Badge className="bg-primary text-white">
+                        <ShieldCheck className="h-3 w-3 mr-1" />
+                        Admin
+                      </Badge>
+                    )}
+                    {selectedUser.role === "member" && (
+                      <Badge variant="outline">Member</Badge>
+                    )}
+                  </div>
+                  <p className="text-muted-foreground">{selectedUser.email}</p>
+                  <p className="text-muted-foreground">Joined {new Date(selectedUser.created_at).toLocaleDateString()}</p>
+                </div>
+
+                {/* Referral Statistics */}
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">Referral Statistics</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-lg border p-3 text-center">
+                      <p className="text-xs text-muted-foreground">Total Direct Referrals</p>
+                      <p className="text-2xl font-bold">{selectedUser.direct_referrals_count}</p>
+                    </div>
+                    <div className="rounded-lg border p-3 text-center">
+                      <p className="text-xs text-muted-foreground">Active Direct Referrals</p>
+                      <p className="text-2xl font-bold text-primary">{selectedUser.active_direct_referrals_count}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Network Stats */}
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">Network Stats</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-lg border p-3 text-center">
+                      <p className="text-xs text-muted-foreground">Total Team</p>
+                      <p className="text-2xl font-bold">{selectedUser.total_network_count}</p>
+                    </div>
+                    <div className="rounded-lg border p-3 text-center">
+                      <p className="text-xs text-muted-foreground">Active Team</p>
+                      <p className="text-2xl font-bold text-primary">{selectedUser.active_network_count}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Info */}
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">Additional Info</h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Referral Code</p>
+                      <p className="font-mono font-medium">{selectedUser.referral_code || "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Referred By</p>
+                      <p className="font-medium">
+                        {selectedUser.referrer && selectedUser.referrer.length > 0 ? (
+                          <>
+                            {selectedUser.referrer[0].name || "Unknown"}
+                            {selectedUser.referrer[0].network_position_id && (
+                              <span className="text-xs text-muted-foreground ml-1">
+                                (Pos: {selectedUser.referrer[0].network_position_id})
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-muted-foreground">No Referrer</span>
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Commission Rate</p>
+                      <p className="font-medium">{(selectedUser.current_commission_rate * 100).toFixed(0)}%</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Payment Schedule</p>
+                      <p className="font-medium capitalize">{selectedUser.payment_schedule}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Initial Payment</p>
+                      <p className={`font-medium ${selectedUser.initial_payment_completed ? 'text-[#D4A853]' : 'text-yellow-600'}`}>
+                        {selectedUser.initial_payment_completed ? "Completed" : "Pending"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Last Payment</p>
+                      <p className="font-medium">
+                        {selectedUser.last_payment_date
+                          ? new Date(selectedUser.last_payment_date).toLocaleDateString()
+                          : "Never"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Admin Actions */}
+                {isSuperAdmin && (
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2">Admin Actions</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedUser.initial_payment_completed && (
+                        <Button
+                          size="sm"
+                          variant={selectedUser.is_active ? "outline" : "default"}
+                          onClick={() => handleToggleActive(selectedUser)}
+                          disabled={isProcessing}
+                        >
+                          <Power className="h-3 w-3 mr-2" />
+                          {selectedUser.is_active ? "Deactivate" : "Activate"}
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant={selectedUser.role === "admin" ? "destructive" : "default"}
+                        onClick={() => {
+                          openConfirmDialog(selectedUser.id, selectedUser.name || selectedUser.email, selectedUser.role)
+                        }}
+                      >
+                        <Shield className="h-3 w-3 mr-2" />
+                        {selectedUser.role === "admin" ? "Revoke Admin" : "Grant Admin"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="default"
+                        className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+                        onClick={() => openBypassDialog(selectedUser)}
+                      >
+                        <Sparkles className="h-3 w-3 mr-2" />
+                        Grant Bypass
+                      </Button>
+                      {selectedUser.payout_wallet_address && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openManualPayoutDialog(selectedUser)}
+                        >
+                          <DollarSign className="h-3 w-3 mr-2" />
+                          Manual Payout
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openPaymentDialog(selectedUser)}
+                      >
+                        <CreditCard className="h-3 w-3 mr-2" />
+                        Make Payment
+                      </Button>
+                      {selectedUser.role !== "superadmin" && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => openDeletionRequestDialog(selectedUser)}
+                        >
+                          <Trash2 className="h-3 w-3 mr-2" />
+                          Delete Account
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Confirmation Dialog */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>

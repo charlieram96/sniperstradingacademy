@@ -8,13 +8,11 @@ export const mockDashboardData = {
     email: "test@example.com",
     name: "Demo Trader",
     referral_code: "DEMO1234",
-    stripe_customer_id: "cus_test123",
     created_at: new Date().toISOString(),
   },
   subscription: {
     id: "sub_test123",
     user_id: "test-user-id-123",
-    stripe_subscription_id: "sub_test123",
     status: "active",
     current_period_start: new Date().toISOString(),
     current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
@@ -93,7 +91,7 @@ export const mockPayments = [
   {
     id: "pay1",
     user_id: "test-user-id-123",
-    stripe_payment_intent_id: "pi_test1",
+    external_payment_id: "pay_test1",
     amount: 200,
     currency: "usd",
     status: "succeeded",
@@ -102,7 +100,7 @@ export const mockPayments = [
   {
     id: "pay2",
     user_id: "test-user-id-123",
-    stripe_payment_intent_id: "pi_test2",
+    external_payment_id: "pay_test2",
     amount: 200,
     currency: "usd",
     status: "succeeded",
@@ -111,7 +109,7 @@ export const mockPayments = [
   {
     id: "pay3",
     user_id: "test-user-id-123",
-    stripe_payment_intent_id: "pi_test3",
+    external_payment_id: "pay_test3",
     amount: 200,
     currency: "usd",
     status: "succeeded",

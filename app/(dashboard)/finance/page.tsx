@@ -8,13 +8,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
   DollarSign,
   TrendingUp,
   Users,
@@ -24,7 +17,6 @@ import {
   CreditCard,
   Download,
   Wallet,
-  ExternalLink,
   AlertCircle
 } from "lucide-react"
 import { AccountStatusCard } from "@/components/account-status-card"
@@ -89,10 +81,6 @@ export default function FinancePage() {
     commissionRate: 0.10
   })
   const [loading, setLoading] = useState(true)
-  const [stripeConnected, setStripeConnected] = useState(false)
-  const [loadingDashboard, setLoadingDashboard] = useState(false)
-  const [dashboardError, setDashboardError] = useState<string | null>(null)
-  const [showDashboardError, setShowDashboardError] = useState(false)
 
   useEffect(() => {
     async function getUser() {
@@ -115,12 +103,9 @@ export default function FinancePage() {
         // Fetch user account data
         const { data: userData } = await supabase
           .from('users')
-          .select('is_active, previous_payment_due_date, next_payment_due_date, initial_payment_date, qualified_at, direct_referrals_count, active_network_count, current_commission_rate, bypass_direct_referrals, bypass_subscription, bypass_initial_payment, stripe_connect_account_id, payment_schedule, payout_wallet_address')
+          .select('is_active, previous_payment_due_date, next_payment_due_date, initial_payment_date, qualified_at, direct_referrals_count, active_network_count, current_commission_rate, bypass_direct_referrals, bypass_subscription, bypass_initial_payment, payment_schedule, payout_wallet_address')
           .eq('id', userId)
           .single()
-
-        // Check if user has completed Stripe Connect onboarding
-        setStripeConnected(!!userData?.stripe_connect_account_id)
 
         // Get payment schedule and next payment due date directly from database
         const paymentSchedule = userData?.payment_schedule || 'monthly'
@@ -278,33 +263,6 @@ export default function FinancePage() {
 
   const handlePayNow = () => {
     router.push('/payments')
-  }
-
-  const handleOpenStripeDashboard = async () => {
-    setLoadingDashboard(true)
-    setDashboardError(null)
-    try {
-      const response = await fetch('/api/stripe/connect/dashboard', {
-        method: 'POST',
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        setDashboardError(data.error || 'Failed to access dashboard')
-        setShowDashboardError(true)
-        return
-      }
-
-      // Open Stripe dashboard in new tab
-      window.open(data.url, '_blank')
-    } catch (error) {
-      console.error('Error opening Stripe dashboard:', error)
-      setDashboardError('Failed to open dashboard. Please try again.')
-      setShowDashboardError(true)
-    } finally {
-      setLoadingDashboard(false)
-    }
   }
 
   return (
@@ -593,7 +551,7 @@ export default function FinancePage() {
             <CardHeader>
               <CardTitle>Direct Referral Bonuses</CardTitle>
               <CardDescription>
-                Earn $249.50 (50% of $499) for each person you directly refer. Bonuses are paid monthly around the 15th alongside residual commissions. A 3.5% Stripe transaction fee applies to all payouts.
+                Earn $249.50 (50% of $499) for each person you directly refer. Bonuses are paid monthly around the 15th alongside residual commissions.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -648,9 +606,6 @@ export default function FinancePage() {
                               </div>
                               <div className="text-right">
                                 <div className="text-xl font-bold">${bonus.bonusAmount.toFixed(2)}</div>
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  After 3.5% fee: ${(bonus.bonusAmount * 0.965).toFixed(2)}
-                                </div>
                               </div>
                             </div>
 
@@ -757,16 +712,16 @@ export default function FinancePage() {
                   <div className="space-y-3">
                     <div className="p-3 border border-border rounded-lg bg-surface-2">
                       <div className="flex items-center gap-3 mb-2">
-                        <CreditCard className="h-5 w-5 text-muted-foreground" />
+                        <Wallet className="h-5 w-5 text-muted-foreground" />
                         <div className="flex-1">
-                          <div className="font-medium">Stripe Connect</div>
+                          <div className="font-medium">Crypto Wallet (Polygon)</div>
                           <div className="text-sm text-muted-foreground">
-                            {stripeConnected
-                              ? 'Your bank account is connected'
-                              : 'Connect your bank account to receive payouts'}
+                            {accountStatus.payoutWalletAddress
+                              ? `Wallet: ${accountStatus.payoutWalletAddress.slice(0, 6)}...${accountStatus.payoutWalletAddress.slice(-4)}`
+                              : 'Set up your Polygon wallet to receive payouts'}
                           </div>
                         </div>
-                        {stripeConnected && (
+                        {accountStatus.payoutWalletAddress && (
                           <Badge className="bg-[#D4A853] text-white">
                             <CheckCircle className="h-3 w-3 mr-1" />
                             Connected
@@ -774,25 +729,10 @@ export default function FinancePage() {
                         )}
                       </div>
                     </div>
-                    {stripeConnected ? (
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={handleOpenStripeDashboard}
-                        disabled={loadingDashboard}
-                      >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        {loadingDashboard ? 'Opening...' : 'View Stripe Dashboard'}
-                      </Button>
-                    ) : (
-                      <>
-                        <Button variant="outline" className="w-full" disabled>
-                          Configure Payout Method
-                        </Button>
-                        <p className="text-xs text-muted-foreground text-center">
-                          Complete initial payment and onboarding to connect your bank account
-                        </p>
-                      </>
+                    {!accountStatus.payoutWalletAddress && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        Set up your payout wallet in the Payout Wallet section above
+                      </p>
                     )}
                   </div>
                 </div>
@@ -821,28 +761,10 @@ export default function FinancePage() {
                     <div>
                       <h4 className="font-medium mb-2">Transaction Fees</h4>
                       <p className="text-sm text-muted-foreground">
-                        All payouts include a <strong>3.5% transaction fee</strong> charged by Stripe for processing
-                        bank transfers. This fee covers Stripe&apos;s costs for securely transferring funds
-                        to your bank account. We pass this fee through at cost and do not add any
-                        additional markup.
+                        Payouts are sent via the Polygon network. Network gas fees are minimal
+                        (typically under $0.01) and are covered by the platform. You receive the
+                        full payout amount in your connected wallet.
                       </p>
-                      <div className="mt-3 p-3 bg-background rounded border">
-                        <div className="text-xs font-medium mb-1">Example:</div>
-                        <div className="text-sm space-y-1">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Gross Earnings:</span>
-                            <span>$100.00</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Stripe Fee (3.5%):</span>
-                            <span className="text-red-500">-$3.50</span>
-                          </div>
-                          <div className="flex justify-between font-semibold pt-1 border-t">
-                            <span>Net Transfer:</span>
-                            <span className="text-primary">$96.50</span>
-                          </div>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -863,25 +785,6 @@ export default function FinancePage() {
         </TabsContent>
       </Tabs>
 
-      {/* Error Dialog for Stripe Dashboard */}
-      <Dialog open={showDashboardError} onOpenChange={setShowDashboardError}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
-              <AlertCircle className="h-5 w-5" />
-              Dashboard Access Error
-            </DialogTitle>
-            <DialogDescription>
-              {dashboardError}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end pt-4">
-            <Button onClick={() => setShowDashboardError(false)}>
-              Close
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

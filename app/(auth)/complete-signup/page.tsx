@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Loader2, CheckCircle, Shield } from "lucide-react"
 import Image from "next/image"
 import { MFAEnrollment } from "@/components/mfa/mfa-enrollment"
+import { useTranslation } from "@/components/language-provider"
 
 interface ReferrerInfo {
   id: string
@@ -18,6 +19,7 @@ interface ReferrerInfo {
 
 export default function CompleteSignupPage() {
   const router = useRouter()
+  const { t } = useTranslation()
   const [isProcessing, setIsProcessing] = useState(true)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
@@ -79,7 +81,7 @@ export default function CompleteSignupPage() {
 
         // If no pending referral in localStorage, redirect back to register to select one
         if (!pendingReferralStr) {
-          setError("Please select a referral code to complete your signup.")
+          setError(t("auth.completeSignup.selectReferralCode"))
           setIsProcessing(false)
           setTimeout(() => router.push("/register"), 2000)
           return
@@ -139,7 +141,7 @@ export default function CompleteSignupPage() {
           }
 
           // Note: Network position will be assigned when user pays $500 initial payment
-          // This happens automatically via the Stripe webhook handler
+          // This happens automatically via the crypto payment webhook handler
         } else {
           // This shouldn't happen, but handle it anyway
           // The user should have been created by the database trigger
@@ -159,7 +161,7 @@ export default function CompleteSignupPage() {
 
       } catch (err) {
         console.error("Error completing signup:", err)
-        setError("Failed to complete signup. Please try again.")
+        setError(t("auth.completeSignup.failedCompleteSignup"))
         setIsProcessing(false)
         setTimeout(() => router.push("/register"), 2000)
       }
@@ -174,20 +176,20 @@ export default function CompleteSignupPage() {
       <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-[#0F1629]/80 via-[#162044]/80 to-[#1A2550]/80 p-12 flex-col justify-between">
         <div className="flex items-center space-x-3">
           <Image src="/gold-logo.svg" alt="Trading Hub" width={48} height={48} className="w-12 h-12" />
-          <span className="font-bold text-2xl text-white">Trading Hub</span>
+          <span className="font-bold text-2xl text-white">{t("common.brandName")}</span>
         </div>
 
         <div className="space-y-6 text-white">
           <h1 className="text-4xl font-bold leading-tight">
-            Welcome to Trading Hub!
+            {t("auth.completeSignup.sideTitle")}
           </h1>
           <p className="text-lg text-white/90">
-            We&apos;re completing your account setup. This will only take a moment.
+            {t("auth.completeSignup.sideDesc")}
           </p>
         </div>
 
         <div className="text-sm text-white/60">
-          © 2024 Trading Hub. All rights reserved.
+          {t("common.copyright", { year: "2024" })}
         </div>
       </div>
 
@@ -198,7 +200,7 @@ export default function CompleteSignupPage() {
           <div className="lg:hidden mb-8 text-center">
             <div className="inline-flex items-center space-x-3">
               <Image src="/gold-logo.svg" alt="Trading Hub" width={40} height={40} className="w-10 h-10" />
-              <span className="font-bold text-xl text-foreground">Trading Hub</span>
+              <span className="font-bold text-xl text-foreground">{t("common.brandName")}</span>
             </div>
           </div>
 
@@ -238,19 +240,19 @@ export default function CompleteSignupPage() {
                     </div>
                   </div>
                   <CardTitle className="text-3xl font-bold text-center">
-                    Secure Your Account
+                    {t("auth.completeSignup.secureAccount")}
                   </CardTitle>
                   <CardDescription className="text-base text-center">
-                    Enable two-factor authentication to add an extra layer of security to your account
+                    {t("auth.completeSignup.secureAccountDesc")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="p-4 bg-surface-2 rounded-lg">
-                    <p className="text-sm font-medium mb-2">Why enable 2FA?</p>
+                    <p className="text-sm font-medium mb-2">{t("auth.completeSignup.why2FA")}</p>
                     <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• Protect your account from unauthorized access</li>
-                      <li>• Takes only 1 minute to set up</li>
-                      <li>• Industry-standard security best practice</li>
+                      <li>• {t("auth.completeSignup.protect2FA")}</li>
+                      <li>• {t("auth.completeSignup.setup2FATime")}</li>
+                      <li>• {t("auth.completeSignup.setup2FABestPractice")}</li>
                     </ul>
                   </div>
 
@@ -259,7 +261,7 @@ export default function CompleteSignupPage() {
                     className="w-full"
                     size="lg"
                   >
-                    Set Up 2FA Now
+                    {t("auth.completeSignup.setup2FAButton")}
                   </Button>
 
                   <Button
@@ -267,11 +269,11 @@ export default function CompleteSignupPage() {
                     onClick={() => router.push("/dashboard")}
                     className="w-full"
                   >
-                    Skip for Now
+                    {t("auth.completeSignup.skipForNow")}
                   </Button>
 
                   <p className="text-xs text-center text-muted-foreground">
-                    You can always enable 2FA later in your settings
+                    {t("auth.completeSignup.enable2FALater")}
                   </p>
                 </CardContent>
               </Card>
@@ -281,14 +283,14 @@ export default function CompleteSignupPage() {
             <Card className="border-border-subtle">
               <CardHeader className="space-y-1 pb-4">
                 <CardTitle className="text-3xl font-bold text-center">
-                  {success ? "All Set!" : isProcessing ? "Completing Setup..." : "Error"}
+                  {success ? t("auth.completeSignup.allSet") : isProcessing ? t("auth.completeSignup.completingSetup") : "Error"}
                 </CardTitle>
                 <CardDescription className="text-base text-center">
                   {success
-                    ? "Your account is ready!"
+                    ? t("auth.completeSignup.accountReady")
                     : isProcessing
-                    ? "Please wait while we finalize your account"
-                    : error || "Something went wrong"}
+                    ? t("auth.completeSignup.pleaseWait")
+                    : error || t("auth.completeSignup.somethingWentWrong")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex justify-center py-8">

@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Loader2, Search, CheckCircle, XCircle, Eye, EyeOff, Mail, RefreshCw } from "lucide-react"
 import Image from "next/image"
+import { useTranslation } from "@/components/language-provider"
 
 interface ReferrerInfo {
   id: string
@@ -23,6 +24,7 @@ interface ReferrerInfo {
 
 function RegisterForm() {
   const router = useRouter()
+  const { t } = useTranslation()
   const searchParams = useSearchParams()
   const urlReferralCode = searchParams.get("ref")
   const isLockedReferral = !!urlReferralCode // Locked if coming from referral link
@@ -47,9 +49,9 @@ function RegisterForm() {
     const messageParam = searchParams.get("message")
 
     if (errorParam === "account_not_found") {
-      setError(messageParam || "No account found. Please sign up with a referral code below.")
+      setError(messageParam || t("auth.register.accountNotFound"))
     } else if (errorParam === "incomplete_signup") {
-      setError(messageParam || "Please complete your signup with a referral code below.")
+      setError(messageParam || t("auth.register.incompleteSignup"))
     }
   }, [searchParams])
 
@@ -106,7 +108,7 @@ function RegisterForm() {
 
   async function validateReferralCode(code: string) {
     if (!code.trim()) {
-      setError("Please enter a referral code")
+      setError(t("auth.register.enterReferralCode"))
       return
     }
 
@@ -137,11 +139,11 @@ function RegisterForm() {
         setError("")
       } else {
         setReferrerInfo(null)
-        setError(data.error || "Invalid referral code")
+        setError(data.error || t("auth.register.invalidReferralCode"))
       }
     } catch (err) {
       console.error("Error validating referral code:", err)
-      setError("Failed to validate referral code")
+      setError(t("auth.register.failedValidateReferral"))
       setReferrerInfo(null)
     } finally {
       setSearchingCode(false)
@@ -182,13 +184,13 @@ function RegisterForm() {
 
     // Validate password confirmation
     if (password !== confirmPassword) {
-      setError("Passwords do not match")
+      setError(t("auth.register.passwordsDoNotMatch"))
       setIsLoading(false)
       return
     }
 
     if (password.length < 8) {
-      setError("Password must be at least 8 characters long")
+      setError(t("auth.register.passwordTooShort"))
       setIsLoading(false)
       return
     }
@@ -243,7 +245,7 @@ function RegisterForm() {
         }
 
         // Note: Network position will be assigned when user pays $500 initial payment
-        // This happens automatically via the Stripe webhook handler
+        // This happens automatically via the crypto payment webhook handler
       }
 
       // Instead of redirecting to login, show verification waiting screen
@@ -251,7 +253,7 @@ function RegisterForm() {
       setWaitingForVerification(true)
       setIsLoading(false)
     } catch {
-      setError("An error occurred. Please try again.")
+      setError(t("auth.register.errorOccurred"))
       setIsLoading(false)
     }
   }
@@ -279,7 +281,7 @@ function RegisterForm() {
         alert("Verification email resent! Please check your inbox.")
       }
     } catch {
-      setError("Failed to resend email. Please try again.")
+      setError(t("auth.register.resendFailed"))
     } finally {
       setIsLoading(false)
     }
@@ -293,20 +295,20 @@ function RegisterForm() {
         <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-[#0F1629]/80 via-[#162044]/80 to-[#1A2550]/80 p-12 flex-col justify-between">
           <NavigationLink href="/" className="flex items-center space-x-3">
             <Image src="/gold-logo.svg" alt="Trading Hub" width={48} height={48} className="w-12 h-12" />
-            <span className="font-bold text-2xl text-white">Trading Hub</span>
+            <span className="font-bold text-2xl text-white">{t("common.brandName")}</span>
           </NavigationLink>
 
           <div className="space-y-6 text-white">
             <h1 className="text-4xl font-bold leading-tight">
-              Almost there!
+              {t("auth.register.verifySideTitle")}
             </h1>
             <p className="text-lg text-white/90">
-              We&apos;ve sent you a verification email. Click the link to activate your account and get started.
+              {t("auth.register.verifySideDesc")}
             </p>
           </div>
 
           <div className="text-sm text-white/60">
-            © 2024 Trading Hub. All rights reserved.
+            {t("common.copyright", { year: "2024" })}
           </div>
         </div>
 
@@ -317,7 +319,7 @@ function RegisterForm() {
             <div className="lg:hidden mb-8 text-center">
               <NavigationLink href="/" className="inline-flex items-center space-x-3">
                 <Image src="/gold-logo.svg" alt="Trading Hub" width={40} height={40} className="w-10 h-10" />
-                <span className="font-bold text-xl text-foreground">Trading Hub</span>
+                <span className="font-bold text-xl text-foreground">{t("common.brandName")}</span>
               </NavigationLink>
             </div>
 
@@ -329,10 +331,10 @@ function RegisterForm() {
                   </div>
                 </div>
                 <CardTitle className="text-3xl font-bold text-center">
-                  Check your email
+                  {t("auth.register.checkEmail")}
                 </CardTitle>
                 <CardDescription className="text-base text-center">
-                  We sent a verification link to
+                  {t("auth.register.verificationSent")}
                 </CardDescription>
                 <p className="text-center font-medium text-foreground">{userEmail}</p>
               </CardHeader>
@@ -341,18 +343,18 @@ function RegisterForm() {
                   <div className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                     <div className="space-y-1">
-                      <p className="text-sm font-medium">Click the verification link</p>
+                      <p className="text-sm font-medium">{t("auth.register.clickVerification")}</p>
                       <p className="text-xs text-muted-foreground">
-                        Open your email and click the link to verify your account
+                        {t("auth.register.clickVerificationDesc")}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Loader2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0 animate-spin" />
                     <div className="space-y-1">
-                      <p className="text-sm font-medium">Waiting for verification...</p>
+                      <p className="text-sm font-medium">{t("auth.register.waitingForVerification")}</p>
                       <p className="text-xs text-muted-foreground">
-                        This page will automatically redirect once verified
+                        {t("auth.register.autoRedirect")}
                       </p>
                     </div>
                   </div>
@@ -366,7 +368,7 @@ function RegisterForm() {
 
                 <div className="space-y-3 pt-2">
                   <p className="text-sm text-muted-foreground text-center">
-                    Didn&apos;t receive the email?
+                    {t("auth.register.didntReceiveEmail")}
                   </p>
                   <Button
                     onClick={handleResendEmail}
@@ -377,12 +379,12 @@ function RegisterForm() {
                     {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Sending...
+                        {t("auth.register.sending")}
                       </>
                     ) : (
                       <>
                         <RefreshCw className="mr-2 h-4 w-4" />
-                        Resend verification email
+                        {t("auth.register.resendVerification")}
                       </>
                     )}
                   </Button>
@@ -390,7 +392,7 @@ function RegisterForm() {
 
                 <div className="pt-4 text-center">
                   <p className="text-xs text-muted-foreground">
-                    Check your spam folder if you don&apos;t see the email
+                    {t("auth.register.checkSpam")}
                   </p>
                 </div>
               </CardContent>
@@ -409,34 +411,34 @@ function RegisterForm() {
         <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-[#0F1629]/80 via-[#162044]/80 to-[#1A2550]/80 p-12 flex-col justify-between">
           <NavigationLink href="/" className="flex items-center space-x-3">
             <Image src="/gold-logo.svg" alt="Trading Hub" width={48} height={48} className="w-12 h-12" />
-            <span className="font-bold text-2xl text-white">Trading Hub</span>
+            <span className="font-bold text-2xl text-white">{t("common.brandName")}</span>
           </NavigationLink>
 
           <div className="space-y-6 text-white">
             <h1 className="text-4xl font-bold leading-tight">
-              Join the most successful trading network
+              {t("auth.register.step1SideTitle")}
             </h1>
             <p className="text-lg text-white/90">
-              Learn from expert traders, earn commissions, and build your financial future.
+              {t("auth.register.step1SideDesc")}
             </p>
             <div className="space-y-3 pt-8">
               <div className="flex items-center gap-3">
                 <CheckCircle className="h-6 w-6" />
-                <span>Expert-led trading courses</span>
+                <span>{t("auth.register.featureExpertCourses")}</span>
               </div>
               <div className="flex items-center gap-3">
                 <CheckCircle className="h-6 w-6" />
-                <span>Earn $250 per referral + 10% residual</span>
+                <span>{t("auth.register.featureEarnReferral")}</span>
               </div>
               <div className="flex items-center gap-3">
                 <CheckCircle className="h-6 w-6" />
-                <span>Live trading sessions daily</span>
+                <span>{t("auth.register.featureLiveSessions")}</span>
               </div>
             </div>
           </div>
 
           <div className="text-sm text-white/60">
-            © 2024 Trading Hub. All rights reserved.
+            {t("common.copyright", { year: "2024" })}
           </div>
         </div>
 
@@ -447,15 +449,15 @@ function RegisterForm() {
             <div className="lg:hidden mb-8 text-center">
               <NavigationLink href="/" className="inline-flex items-center space-x-3">
                 <Image src="/gold-logo.svg" alt="Trading Hub" width={40} height={40} className="w-10 h-10" />
-                <span className="font-bold text-xl text-foreground">Trading Hub</span>
+                <span className="font-bold text-xl text-foreground">{t("common.brandName")}</span>
               </NavigationLink>
             </div>
 
             <Card className="border-border-subtle">
               <CardHeader className="space-y-1 pb-4">
-                <CardTitle className="text-3xl font-bold">Welcome!</CardTitle>
+                <CardTitle className="text-3xl font-bold">{t("auth.register.step1Title")}</CardTitle>
                 <CardDescription className="text-base">
-                  Who referred you to Trading Hub?
+                  {t("auth.register.step1Subtitle")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -465,7 +467,7 @@ function RegisterForm() {
                     <div className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-primary" />
                       <p className="text-sm font-medium text-primary">
-                        Referred by link - Referral code locked
+                        {t("auth.register.referredByLink")}
                       </p>
                     </div>
                   </div>
@@ -473,13 +475,13 @@ function RegisterForm() {
 
                 {/* Referral Code Input */}
                 <div className="space-y-3">
-                  <Label htmlFor="referralCode">Referral Code</Label>
+                  <Label htmlFor="referralCode">{t("auth.register.referralCode")}</Label>
                   <div className="flex gap-2">
                     <Input
                       id="referralCode"
                       value={referralCodeInput}
                       onChange={(e) => setReferralCodeInput(e.target.value.toUpperCase())}
-                      placeholder="Enter referral code"
+                      placeholder={t("auth.register.referralCodePlaceholder")}
                       className="flex-1 uppercase"
                       disabled={searchingCode || isLockedReferral}
                       readOnly={isLockedReferral}
@@ -501,8 +503,8 @@ function RegisterForm() {
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {isLockedReferral
-                      ? "This referral code is from your invitation link and cannot be changed"
-                      : "Enter the referral code from the person who invited you"
+                      ? t("auth.register.referralCodeLockedHint")
+                      : t("auth.register.referralCodeHint")
                     }
                   </p>
                 </div>
@@ -545,7 +547,7 @@ function RegisterForm() {
                         className="w-full"
                       >
                         <CheckCircle className="h-4 w-4 mr-2" />
-                        Continue with Email Signup
+                        {t("auth.register.continueWithEmail")}
                       </Button>
 
                       <div className="relative">
@@ -579,7 +581,7 @@ function RegisterForm() {
                           })
 
                           if (error) {
-                            setError("Failed to sign in with Google")
+                            setError(t("auth.register.errorOccurred"))
                           }
                         }}
                       >
@@ -601,7 +603,7 @@ function RegisterForm() {
                             fill="#EA4335"
                           />
                         </svg>
-                        Continue with Google
+                        {t("auth.register.continueWithGoogle")}
                       </Button>
 
                       <Button
@@ -615,7 +617,7 @@ function RegisterForm() {
                         size="sm"
                         className="w-full"
                       >
-                        Change Referral Code
+                        {t("auth.register.changeReferralCode")}
                       </Button>
                     </div>
                   </div>
@@ -623,9 +625,9 @@ function RegisterForm() {
               </CardContent>
           <CardFooter className="flex-col space-y-4">
             <p className="text-sm text-center w-full text-muted-foreground">
-              Already have an account?{" "}
+              {t("auth.register.alreadyHaveAccount")}{" "}
               <NavigationLink href="/login" className="font-semibold text-primary hover:underline">
-                Sign in
+                {t("auth.register.signIn")}
               </NavigationLink>
             </p>
           </CardFooter>
@@ -643,34 +645,34 @@ function RegisterForm() {
       <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-[#0F1629]/80 via-[#162044]/80 to-[#1A2550]/80 p-12 flex-col justify-between">
         <NavigationLink href="/" className="flex items-center space-x-3">
           <Image src="/gold-logo.svg" alt="Trading Hub" width={48} height={48} className="w-12 h-12" />
-          <span className="font-bold text-2xl text-white">Trading Hub</span>
+          <span className="font-bold text-2xl text-white">{t("common.brandName")}</span>
         </NavigationLink>
 
         <div className="space-y-6 text-white">
           <h1 className="text-4xl font-bold leading-tight">
-            Start your journey to financial freedom
+            {t("auth.register.step2SideTitle")}
           </h1>
           <p className="text-lg text-white/90">
-            Create your account and unlock access to expert trading courses, live sessions, and unlimited earning potential.
+            {t("auth.register.step2SideDesc")}
           </p>
           <div className="space-y-3 pt-8">
             <div className="flex items-center gap-3">
               <CheckCircle className="h-6 w-6" />
-              <span>Earn $250 per referral</span>
+              <span>{t("auth.register.featureEarnPerReferral")}</span>
             </div>
             <div className="flex items-center gap-3">
               <CheckCircle className="h-6 w-6" />
-              <span>10% monthly residual income</span>
+              <span>{t("auth.register.featureResidualIncome")}</span>
             </div>
             <div className="flex items-center gap-3">
               <CheckCircle className="h-6 w-6" />
-              <span>30-day money-back guarantee</span>
+              <span>{t("auth.register.featureMoneyBack")}</span>
             </div>
           </div>
         </div>
 
         <div className="text-sm text-white/60">
-          © 2024 Trading Hub. All rights reserved.
+          {t("common.copyright", { year: "2024" })}
         </div>
       </div>
 
@@ -681,15 +683,15 @@ function RegisterForm() {
           <div className="lg:hidden mb-8 text-center">
             <NavigationLink href="/" className="inline-flex items-center space-x-3">
               <Image src="/gold-logo.svg" alt="Trading Hub" width={40} height={40} className="w-10 h-10" />
-              <span className="font-bold text-xl text-foreground">Trading Hub</span>
+              <span className="font-bold text-xl text-foreground">{t("common.brandName")}</span>
             </NavigationLink>
           </div>
 
           <Card className="border-border-subtle">
             <CardHeader className="space-y-1 pb-4">
-              <CardTitle className="text-3xl font-bold">Create an account</CardTitle>
+              <CardTitle className="text-3xl font-bold">{t("auth.register.step2Title")}</CardTitle>
               <CardDescription className="text-base">
-                Join the trading network and start earning commissions
+                {t("auth.register.step2Subtitle")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -702,10 +704,10 @@ function RegisterForm() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">Referred by {confirmedReferrer.name}</p>
+                  <p className="text-sm font-medium">{t("auth.register.referredBy", { name: confirmedReferrer.name })}</p>
                   <p className="text-xs text-muted-foreground">
                     Code: {confirmedReferrer.referralCode}
-                    {isLockedReferral && <span className="ml-2 text-primary">• Locked by invitation link</span>}
+                    {isLockedReferral && <span className="ml-2 text-primary">• {t("auth.register.lockedByInvitation")}</span>}
                   </p>
                 </div>
                 {!isLockedReferral && (
@@ -725,31 +727,31 @@ function RegisterForm() {
 
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">{t("auth.register.fullName")}</Label>
               <Input
                 id="name"
                 name="name"
                 type="text"
-                placeholder="John Doe"
+                placeholder={t("auth.register.namePlaceholder")}
                 required
                 disabled={isLoading}
                 className="h-11"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("auth.register.email")}</Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
-                placeholder="trader@example.com"
+                placeholder={t("auth.register.emailPlaceholder")}
                 required
                 disabled={isLoading}
                 className="h-11"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("auth.register.password")}</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -777,11 +779,11 @@ function RegisterForm() {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Must be at least 8 characters
+                {t("auth.register.passwordMinLength")}
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">{t("auth.register.confirmPassword")}</Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
@@ -810,7 +812,7 @@ function RegisterForm() {
               </div>
               {confirmPassword && password !== confirmPassword && (
                 <p className="text-xs text-red-400">
-                  Passwords do not match
+                  {t("auth.register.passwordsDoNotMatch")}
                 </p>
               )}
             </div>
@@ -827,10 +829,10 @@ function RegisterForm() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating account...
+                  {t("auth.register.creatingAccount")}
                 </>
               ) : (
-                "Create account"
+                t("auth.register.createAccount")
               )}
             </Button>
           </form>
@@ -842,7 +844,7 @@ function RegisterForm() {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
+                  {t("auth.register.orContinueWith")}
                 </span>
               </div>
             </div>
@@ -872,25 +874,25 @@ function RegisterForm() {
                 fill="#EA4335"
               />
             </svg>
-            Continue with Google
+            {t("auth.register.continueWithGoogle")}
           </Button>
 
           <p className="mt-4 text-xs text-center text-muted-foreground">
-            By creating an account, you agree to our{" "}
+            {t("auth.register.termsAgreement")}{" "}
             <NavigationLink href="/terms" className="underline hover:text-foreground">
-              Terms of Service
+              {t("auth.register.termsOfService")}
             </NavigationLink>{" "}
-            and{" "}
+            {t("auth.register.and")}{" "}
             <NavigationLink href="/privacy" className="underline hover:text-foreground">
-              Privacy Policy
+              {t("auth.register.privacyPolicy")}
             </NavigationLink>
           </p>
         </CardContent>
         <CardFooter className="flex-col space-y-4">
           <p className="text-sm text-center w-full text-muted-foreground">
-            Already have an account?{" "}
+            {t("auth.register.alreadyHaveAccount")}{" "}
             <NavigationLink href="/login" className="font-semibold text-primary hover:underline">
-              Sign in
+              {t("auth.register.signIn")}
             </NavigationLink>
           </p>
         </CardFooter>

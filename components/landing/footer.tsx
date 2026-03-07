@@ -4,8 +4,10 @@ import Link from "next/link"
 import Image from "next/image"
 import { motion } from "framer-motion"
 import { fadeInUp, viewportOnce } from "@/lib/motion"
+import { useTranslation } from "@/components/language-provider"
 
 export function Footer() {
+  const { t } = useTranslation()
   return (
     <motion.footer
       variants={fadeInUp}
@@ -26,11 +28,11 @@ export function Footer() {
                 className="w-8 h-8"
               />
               <span className="font-bold bg-gradient-to-r from-gold-200 to-gold-400 bg-clip-text text-transparent">
-                Snipers Trading
+                {t("common.academyName")}
               </span>
             </Link>
             <p className="text-sm text-foreground-quaternary mb-4">
-              Elite options trading education.
+              {t("landing.footer.tagline")}
             </p>
             {/* Social links */}
             <div className="flex items-center gap-3">
@@ -65,36 +67,36 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-bold mb-4 text-foreground">Academy</h4>
+            <h4 className="font-bold mb-4 text-foreground">{t("landing.footer.academyHeading")}</h4>
             <ul className="space-y-2 text-sm text-foreground-quaternary">
               <li>
-                <Link href="#" className="hover:text-gold-300 transition-colors">Courses</Link>
+                <Link href="#" className="hover:text-gold-300 transition-colors">{t("landing.footer.courses")}</Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-gold-300 transition-colors">Resources</Link>
+                <Link href="#" className="hover:text-gold-300 transition-colors">{t("landing.footer.resources")}</Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-gold-300 transition-colors">Community</Link>
+                <Link href="#" className="hover:text-gold-300 transition-colors">{t("landing.footer.community")}</Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-gold-300 transition-colors">Blog</Link>
+                <Link href="#" className="hover:text-gold-300 transition-colors">{t("landing.footer.blog")}</Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-bold mb-4 text-foreground">Support</h4>
+            <h4 className="font-bold mb-4 text-foreground">{t("landing.footer.supportHeading")}</h4>
             <ul className="space-y-2 text-sm text-foreground-quaternary">
               <li>
-                <Link href="#" className="hover:text-gold-300 transition-colors">Help Center</Link>
+                <Link href="#" className="hover:text-gold-300 transition-colors">{t("landing.footer.helpCenter")}</Link>
               </li>
               <li>
                 <a href="mailto:support@sniperstradingacademy.com" className="hover:text-gold-300 transition-colors">
-                  Contact Support
+                  {t("landing.footer.contactSupport")}
                 </a>
               </li>
               <li>
-                <Link href="#faq" className="hover:text-gold-300 transition-colors">FAQ</Link>
+                <Link href="#faq" className="hover:text-gold-300 transition-colors">{t("landing.footer.faq")}</Link>
               </li>
             </ul>
             <p className="text-[11px] text-foreground-quaternary mt-3">
@@ -103,26 +105,25 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-bold mb-4 text-foreground">Legal</h4>
+            <h4 className="font-bold mb-4 text-foreground">{t("landing.footer.legalHeading")}</h4>
             <ul className="space-y-2 text-sm text-foreground-quaternary">
               <li>
-                <Link href="#" className="hover:text-gold-300 transition-colors">Privacy</Link>
+                <Link href="#" className="hover:text-gold-300 transition-colors">{t("landing.footer.privacy")}</Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-gold-300 transition-colors">Terms</Link>
+                <Link href="#" className="hover:text-gold-300 transition-colors">{t("landing.footer.terms")}</Link>
               </li>
               <li>
-                <Link href="#" className="hover:text-gold-300 transition-colors">Risk Disclosure</Link>
+                <Link href="#" className="hover:text-gold-300 transition-colors">{t("landing.footer.riskDisclosure")}</Link>
               </li>
             </ul>
           </div>
         </div>
 
         <div className="mt-12 pt-8 border-t border-border-subtle text-center text-sm text-foreground-quaternary">
-          <p>&copy; {new Date().getFullYear()} Snipers Trading Academy. All rights reserved.</p>
+          <p>{t("common.copyrightSnipers", { year: new Date().getFullYear().toString() })}</p>
           <p className="mt-2 text-[11px]">
-            Trading involves risk. Past performance is not indicative of future
-            results.
+            {t("landing.footer.riskWarning")}
           </p>
         </div>
       </div>

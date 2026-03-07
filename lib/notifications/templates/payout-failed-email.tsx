@@ -28,7 +28,7 @@ interface PayoutFailedEmailProps {
 export const PayoutFailedEmail = ({
   userName = 'Member',
   amount = 149.50,
-  reason = 'Bank account not verified',
+  reason = 'Wallet address not configured',
   settingsUrl = 'https://tradinghub.com/settings'
 }: PayoutFailedEmailProps) => {
   const formattedAmount = new Intl.NumberFormat('en-US', {
@@ -77,16 +77,16 @@ export const PayoutFailedEmail = ({
 
           <Section style={reasonsList}>
             <Text style={reasonItem}>
-              <strong>• Bank account not verified:</strong> Complete your Stripe Express onboarding to verify your bank account details.
+              <strong>• Wallet not configured:</strong> Set up your Polygon wallet address in your payout settings to receive payouts.
             </Text>
             <Text style={reasonItem}>
-              <strong>• No Stripe Connect account:</strong> Connect your bank account through your settings to receive payouts.
+              <strong>• Invalid wallet address:</strong> Double-check that your wallet address is a valid Polygon-compatible address.
             </Text>
             <Text style={reasonItem}>
-              <strong>• Account restrictions:</strong> Check your Stripe Express dashboard for any pending requirements or restrictions.
+              <strong>• Network issues:</strong> There may have been a temporary issue with the Polygon network. We will retry automatically.
             </Text>
             <Text style={reasonItem}>
-              <strong>• Invalid banking information:</strong> Update your bank account details in your Stripe Express account.
+              <strong>• Insufficient gas:</strong> The platform gas tank may need to be refilled. Our team has been notified.
             </Text>
           </Section>
 

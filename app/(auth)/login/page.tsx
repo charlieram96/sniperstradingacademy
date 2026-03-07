@@ -11,9 +11,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from "@/components/ui/separator"
 import { Loader2, Eye, EyeOff } from "lucide-react"
 import Image from "next/image"
+import { useTranslation } from "@/components/language-provider"
 
 function LoginForm() {
   const router = useRouter()
+  const { t } = useTranslation()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -26,11 +28,11 @@ function LoginForm() {
     const messageParam = searchParams.get("message")
 
     if (errorParam === "account_not_found") {
-      setError(messageParam || "No account found. Please sign up first.")
+      setError(messageParam || t("auth.login.accountNotFound"))
     } else if (errorParam === "incomplete_signup") {
-      setError(messageParam || "Please complete your signup with a referral code.")
+      setError(messageParam || t("auth.login.incompleteSignup"))
     } else if (errorParam === "auth_failed") {
-      setError("Authentication failed. Please try again.")
+      setError(t("auth.login.authFailed"))
     } else if (messageParam && !errorParam) {
       // Success message (like password reset)
       setSuccess(messageParam)
@@ -54,7 +56,7 @@ function LoginForm() {
       })
 
       if (error) {
-        setError("Invalid email or password")
+        setError(t("auth.login.invalidCredentials"))
       } else if (data.session) {
         // Check if user needs to verify MFA
         const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
@@ -69,7 +71,7 @@ function LoginForm() {
         router.refresh()
       }
     } catch {
-      setError("An error occurred. Please try again.")
+      setError(t("auth.login.errorOccurred"))
     } finally {
       setIsLoading(false)
     }
@@ -88,11 +90,11 @@ function LoginForm() {
       })
 
       if (error) {
-        setError("Failed to sign in with Google")
+        setError(t("auth.login.googleError"))
         setIsLoading(false)
       }
     } catch {
-      setError("An error occurred with Google sign in")
+      setError(t("auth.login.googleErrorGeneral"))
       setIsLoading(false)
     }
   }
@@ -108,30 +110,30 @@ function LoginForm() {
         </div>
         <NavigationLink href="/" className="flex items-center space-x-3">
           <Image src="/gold-logo.svg" alt="Trading Hub" width={48} height={48} className="w-12 h-12" />
-          <span className="font-bold text-2xl text-white">Trading Hub</span>
+          <span className="font-bold text-2xl text-white">{t("common.brandName")}</span>
         </NavigationLink>
 
         <div className="space-y-6 text-white">
           <h1 className="text-4xl font-bold leading-tight">
-            Welcome back to your trading journey
+            {t("auth.login.sideTitle")}
           </h1>
           <p className="text-lg text-white/90">
-            Access your dashboard, track your referrals, and manage your trading academy membership.
+            {t("auth.login.sideDesc")}
           </p>
           <div className="grid grid-cols-2 gap-4 pt-8">
             <div className="space-y-2">
-              <div className="text-3xl font-bold">Growing</div>
-              <div className="text-sm text-white/80">Community of Traders</div>
+              <div className="text-3xl font-bold">{t("auth.login.statGrowing")}</div>
+              <div className="text-sm text-white/80">{t("auth.login.statCommunity")}</div>
             </div>
             <div className="space-y-2">
-              <div className="text-3xl font-bold">24/7</div>
-              <div className="text-sm text-white/80">Academy Access</div>
+              <div className="text-3xl font-bold">{t("auth.login.stat247")}</div>
+              <div className="text-sm text-white/80">{t("auth.login.statAccess")}</div>
             </div>
           </div>
         </div>
 
         <div className="text-sm text-white/60">
-          © 2024 Trading Hub. All rights reserved.
+          {t("common.copyright", { year: "2024" })}
         </div>
       </div>
 
@@ -142,26 +144,26 @@ function LoginForm() {
           <div className="lg:hidden mb-8 text-center">
             <NavigationLink href="/" className="inline-flex items-center space-x-3">
               <Image src="/gold-logo.svg" alt="Trading Hub" width={40} height={40} className="w-10 h-10" />
-              <span className="font-bold text-xl text-foreground">Trading Hub</span>
+              <span className="font-bold text-xl text-foreground">{t("common.brandName")}</span>
             </NavigationLink>
           </div>
 
           <Card className="border-border">
             <CardHeader className="space-y-1 pb-4">
-              <CardTitle className="text-3xl font-bold">Welcome back</CardTitle>
+              <CardTitle className="text-3xl font-bold">{t("auth.login.title")}</CardTitle>
               <CardDescription className="text-base">
-                Sign in to your account to continue
+                {t("auth.login.subtitle")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={onSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t("auth.login.email")}</Label>
                   <Input
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="trader@example.com"
+                    placeholder={t("auth.login.emailPlaceholder")}
                     required
                     disabled={isLoading}
                     className="h-11"
@@ -169,9 +171,9 @@ function LoginForm() {
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password">{t("auth.login.password")}</Label>
                     <NavigationLink href="/forgot-password" className="text-sm text-primary hover:underline">
-                      Forgot password?
+                      {t("auth.login.forgotPassword")}
                     </NavigationLink>
                   </div>
                   <div className="relative">
@@ -216,10 +218,10 @@ function LoginForm() {
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Signing in...
+                      {t("auth.login.signingIn")}
                     </>
                   ) : (
-                    "Sign in"
+                    t("auth.login.signIn")
                   )}
                 </Button>
               </form>
@@ -231,7 +233,7 @@ function LoginForm() {
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
                     <span className="bg-background px-2 text-muted-foreground">
-                      Or continue with
+                      {t("auth.login.orContinueWith")}
                     </span>
                   </div>
                 </div>
@@ -262,14 +264,14 @@ function LoginForm() {
                     fill="#EA4335"
                   />
                 </svg>
-                Continue with Google
+                {t("auth.login.continueWithGoogle")}
               </Button>
             </CardContent>
             <CardFooter className="flex-col space-y-4">
               <p className="text-sm text-center w-full text-muted-foreground">
-                Don&apos;t have an account?{" "}
+                {t("auth.login.noAccount")}{" "}
                 <NavigationLink href="/register" className="font-semibold text-primary hover:underline">
-                  Sign up
+                  {t("auth.login.signUp")}
                 </NavigationLink>
               </p>
             </CardFooter>

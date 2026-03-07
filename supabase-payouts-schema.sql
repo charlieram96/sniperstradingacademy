@@ -2,7 +2,7 @@
 -- Run this in Supabase SQL Editor
 
 ALTER TABLE commissions
-ADD COLUMN IF NOT EXISTS stripe_transfer_id TEXT,
+ADD COLUMN IF NOT EXISTS crypto_transfer_id TEXT,
 ADD COLUMN IF NOT EXISTS error_message TEXT,
 ADD COLUMN IF NOT EXISTS processed_at TIMESTAMP,
 ADD COLUMN IF NOT EXISTS retry_count INTEGER DEFAULT 0;
@@ -20,4 +20,4 @@ ON commissions(commission_type);
 SELECT column_name, data_type
 FROM information_schema.columns
 WHERE table_name = 'commissions'
-AND column_name IN ('stripe_transfer_id', 'error_message', 'processed_at', 'retry_count');
+AND column_name IN ('crypto_transfer_id', 'error_message', 'processed_at', 'retry_count');

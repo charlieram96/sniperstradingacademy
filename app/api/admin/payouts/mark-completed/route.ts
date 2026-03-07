@@ -2,7 +2,7 @@
  * MARK COMMISSION AS COMPLETED (MANUAL)
  *
  * Allows superadmins to manually mark a commission as paid
- * without creating a Stripe transfer.
+ * without creating an on-chain transfer.
  *
  * Use case: Payments made outside the platform (check, cash, wire, etc.)
  */
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Update commission to paid (manual completion - no Stripe transfer)
+    // Update commission to paid (manual completion - no on-chain transfer)
     const { error: updateError } = await supabase
       .from("commissions")
       .update({
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
         paid_at: new Date().toISOString(),
         processed_at: new Date().toISOString(),
         error_message: null, // Clear any previous error
-        // Note: stripe_transfer_id remains null to indicate manual completion
+        // Note: crypto_transfer_id remains null to indicate manual completion
       })
       .eq("id", commissionId)
 

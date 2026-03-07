@@ -194,7 +194,7 @@ export async function POST(req: NextRequest) {
           .from("payments")
           .insert({
             user_id: userId,
-            stripe_payment_intent_id: null,
+            external_payment_id: null,
             amount: 0, // Shows it was free
             payment_type: "initial",
             status: "bypassed", // New status for audit trail

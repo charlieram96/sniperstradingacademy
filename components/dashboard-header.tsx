@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/client"
+import { LanguageToggle } from "@/components/language-toggle"
+import { useTranslation } from "@/components/language-provider"
 
 interface DashboardHeaderProps {
   user: {
@@ -33,6 +35,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
   const [isMac, setIsMac] = useState(true)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
+  const { t } = useTranslation()
 
   useEffect(() => {
     setIsMac(/Mac|iPhone|iPad/.test(navigator.userAgent))
@@ -70,7 +73,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
           className="hidden md:flex items-center gap-2 h-8 px-3 rounded-[6px] border border-border bg-surface-1 text-foreground-tertiary text-sm hover:border-border-strong transition-colors duration-150"
         >
           <Search className="h-3.5 w-3.5" />
-          <span>Search...</span>
+          <span>{t("common.search")}</span>
           <kbd className="ml-4 text-[10px] font-mono text-foreground-quaternary bg-surface-0 px-1.5 py-0.5 rounded-[3px] border border-border-subtle">{isMac ? "⌘K" : "Ctrl K"}</kbd>
         </button>
 
@@ -85,13 +88,13 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
             className="max-w-lg top-[20%] translate-y-0 p-0 gap-0"
             showCloseButton={false}
           >
-            <VisuallyHidden><DialogTitle>Search</DialogTitle></VisuallyHidden>
+            <VisuallyHidden><DialogTitle>{t("common.search")}</DialogTitle></VisuallyHidden>
             <div className="flex items-center gap-3 px-4 py-3">
               <Search className="h-4 w-4 text-foreground-tertiary shrink-0" />
               <Input
                 ref={searchInputRef}
                 type="text"
-                placeholder="Search..."
+                placeholder={t("common.search")}
                 className="border-0 bg-transparent h-auto p-0 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
                 autoFocus
               />
@@ -99,7 +102,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
             <div className="flex items-center justify-end gap-3 px-4 py-2 border-t border-border-subtle">
               <span className="text-[11px] text-foreground-quaternary">
                 <kbd className="font-mono text-[10px] bg-surface-0 px-1.5 py-0.5 rounded-[3px] border border-border-subtle">Esc</kbd>
-                <span className="ml-1.5">to close</span>
+                <span className="ml-1.5">{t("common.toClose")}</span>
               </span>
             </div>
           </DialogContent>
@@ -107,6 +110,9 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
 
         {/* Academy live class indicator */}
         <LiveClassIndicator />
+
+        {/* Language toggle */}
+        <LanguageToggle />
 
         {/* Notifications */}
         <Button variant="ghost" size="icon" className="h-8 w-8 relative">
@@ -132,7 +138,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium leading-none">
-                  {user.user_metadata?.name || "User"}
+                  {user.user_metadata?.name || t("common.user")}
                 </p>
                 <p className="text-[11px] leading-none text-muted-foreground">
                   {user.email}
@@ -142,22 +148,22 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push("/settings")}>
               <User className="h-4 w-4 mr-2" />
-              Profile
+              {t("header.profile")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => router.push("/settings")}>
               <Settings className="h-4 w-4 mr-2" />
-              Settings
+              {t("header.settings")}
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <a href="mailto:support@sniperstradingacademy.com">
                 <Mail className="h-4 w-4 mr-2" />
-                Contact Support
+                {t("header.contactSupport")}
               </a>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut} className="text-red-400">
               <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
+              {t("header.signOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

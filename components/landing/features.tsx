@@ -13,6 +13,7 @@ import {
   Zap,
 } from "lucide-react"
 import { fadeInUp, staggerContainer, staggerItem, viewportOnce } from "@/lib/motion"
+import { useTranslation } from "@/components/language-provider"
 
 function TiltCard({ children, className }: { children: React.ReactNode; className?: string }) {
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -39,6 +40,39 @@ function TiltCard({ children, className }: { children: React.ReactNode; classNam
 }
 
 export function Features() {
+  const { t } = useTranslation()
+
+  const mediumFeatures = [
+    {
+      icon: BarChart3,
+      title: t("landing.features.liveSessions"),
+      description: t("landing.features.liveSessionsDesc"),
+    },
+    {
+      icon: Target,
+      title: t("landing.features.riskFree"),
+      description: t("landing.features.riskFreeDesc"),
+    },
+  ]
+
+  const smallFeatures = [
+    {
+      icon: Users,
+      title: t("landing.features.community"),
+      description: t("landing.features.communityDesc"),
+    },
+    {
+      icon: Shield,
+      title: t("landing.features.riskManagement"),
+      description: t("landing.features.riskManagementDesc"),
+    },
+    {
+      icon: Zap,
+      title: t("landing.features.psychology"),
+      description: t("landing.features.psychologyDesc"),
+    },
+  ]
+
   return (
     <section id="features" className="py-24 px-4 relative">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gold-800/3 to-transparent" />
@@ -51,13 +85,12 @@ export function Features() {
           viewport={viewportOnce}
           className="text-center mb-16"
         >
-          <Badge className="mb-4">FEATURES</Badge>
+          <Badge className="mb-4">{t("landing.features.badge")}</Badge>
           <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-            Everything You Need
+            {t("landing.features.heading")}
           </h2>
           <p className="text-xl text-foreground-tertiary max-w-3xl mx-auto">
-            Professional-grade tools and education to transform you into a
-            profitable trader.
+            {t("landing.features.subheading")}
           </p>
         </motion.div>
 
@@ -77,12 +110,10 @@ export function Features() {
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold text-foreground mb-2">
-                    Expert Curriculum
+                    {t("landing.features.expertCurriculum")}
                   </h3>
                   <p className="text-foreground-secondary text-lg leading-relaxed">
-                    Structured learning path from fundamentals to advanced
-                    strategies designed by professional traders with over 20 years
-                    of combined market experience.
+                    {t("landing.features.expertCurriculumDesc")}
                   </p>
                 </div>
               </div>
@@ -98,20 +129,7 @@ export function Features() {
           viewport={viewportOnce}
           className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto mb-6"
         >
-          {[
-            {
-              icon: BarChart3,
-              title: "Live Trading Sessions",
-              description:
-                "Watch professionals analyze markets in real-time and learn to spot high-probability setups.",
-            },
-            {
-              icon: Target,
-              title: "Risk-Free Practice",
-              description:
-                "Master strategies using our paper trading simulator before risking real capital.",
-            },
-          ].map((feature) => (
+          {mediumFeatures.map((feature) => (
             <motion.div key={feature.title} variants={staggerItem}>
               <TiltCard className="h-full">
                 <Card variant="interactive" className="h-full group">
@@ -142,23 +160,7 @@ export function Features() {
           viewport={viewportOnce}
           className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto"
         >
-          {[
-            {
-              icon: Users,
-              title: "Elite Community",
-              description: "Network with successful traders and share insights.",
-            },
-            {
-              icon: Shield,
-              title: "Risk Management",
-              description: "Professional capital protection techniques.",
-            },
-            {
-              icon: Zap,
-              title: "Trading Psychology",
-              description: "Develop mental discipline for precision trading.",
-            },
-          ].map((feature) => (
+          {smallFeatures.map((feature) => (
             <motion.div key={feature.title} variants={staggerItem}>
               <TiltCard className="h-full">
                 <Card variant="interactive" className="h-full group">

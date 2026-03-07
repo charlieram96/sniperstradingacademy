@@ -43,6 +43,8 @@ import {
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { useTranslation } from "@/components/language-provider"
+import type { TranslationKey } from "@/lib/i18n"
 
 interface SidebarProps {
   user: {
@@ -58,23 +60,24 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, requiresActive: true },
-  { href: "/academy", label: "Academy", icon: GraduationCap, requiresActive: true },
-  { href: "/team", label: "My Team", icon: Users, requiresActive: true },
-  { href: "/finance", label: "Finance", icon: DollarSign, requiresActive: true },
-  { href: "/payments", label: "Payments", icon: CreditCard, requiresActive: false },
-  { href: "/referrals", label: "Referrals", icon: Share2, requiresActive: true },
+  { href: "/dashboard", labelKey: "nav.dashboard" as TranslationKey, icon: LayoutDashboard, requiresActive: true },
+  { href: "/academy", labelKey: "nav.academy" as TranslationKey, icon: GraduationCap, requiresActive: true },
+  { href: "/team", labelKey: "nav.myTeam" as TranslationKey, icon: Users, requiresActive: true },
+  { href: "/finance", labelKey: "nav.finance" as TranslationKey, icon: DollarSign, requiresActive: true },
+  { href: "/payments", labelKey: "nav.payments" as TranslationKey, icon: CreditCard, requiresActive: false },
+  { href: "/referrals", labelKey: "nav.referrals" as TranslationKey, icon: Share2, requiresActive: true },
 ]
 
 const secondaryItems = [
-  { href: "/notifications", label: "Notifications", icon: Bell, requiresActive: true },
-  { href: "/settings", label: "Settings", icon: Settings, requiresActive: false },
+  { href: "/notifications", labelKey: "nav.notifications" as TranslationKey, icon: Bell, requiresActive: true },
+  { href: "/settings", labelKey: "nav.settings" as TranslationKey, icon: Settings, requiresActive: false },
 ]
 
 export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperAdminPlus }: SidebarProps) {
   const [hovered, setHovered] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const router = useRouter()
+  const { t } = useTranslation()
   const leaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const isExpanded = hovered
@@ -114,7 +117,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
   const sidebarContent = (
     <nav className="flex-1 py-4 overflow-y-auto">
       <div className="px-2 pb-[5px]">
-        <p className={`text-[10px] uppercase tracking-[0.15em] text-muted-foreground/50 px-3 whitespace-nowrap h-4 mb-px transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>Navigation</p>
+        <p className={`text-[10px] uppercase tracking-[0.15em] text-muted-foreground/50 px-3 whitespace-nowrap h-4 mb-px transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>{t("nav.navigation")}</p>
         {navItems.map((item) => (
           <NavigationLink
             key={item.href}
@@ -123,7 +126,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
             className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer relative whitespace-nowrap"
           >
             <item.icon className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
-            <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{item.label}</span>
+            <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t(item.labelKey)}</span>
           </NavigationLink>
         ))}
       </div>
@@ -131,7 +134,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
       <div className={`mx-3 border-t border-border-subtle my-3`} />
 
       <div className="px-2 pb-[5px]">
-        <p className={`text-[10px] uppercase tracking-[0.15em] text-muted-foreground/50 px-3 whitespace-nowrap h-4 mb-px transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>General</p>
+        <p className={`text-[10px] uppercase tracking-[0.15em] text-muted-foreground/50 px-3 whitespace-nowrap h-4 mb-px transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>{t("nav.general")}</p>
         {secondaryItems.map((item) => (
           <NavigationLink
             key={item.href}
@@ -140,7 +143,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
             className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
           >
             <item.icon className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
-            <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{item.label}</span>
+            <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t(item.labelKey)}</span>
           </NavigationLink>
         ))}
       </div>
@@ -150,14 +153,14 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
         <>
           <div className={`mx-3 border-t border-border-subtle my-3`} />
           <div className="px-2 pb-[5px]">
-            <p className={`text-[10px] uppercase tracking-[0.15em] text-muted-foreground/50 px-3 whitespace-nowrap h-4 mb-px transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>Admin</p>
+            <p className={`text-[10px] uppercase tracking-[0.15em] text-muted-foreground/50 px-3 whitespace-nowrap h-4 mb-px transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>{t("nav.admin")}</p>
 
             <Accordion type="multiple" className="mx-1">
               <AccordionItem value="notifiers" className="border-b-0">
                 <AccordionTrigger className={`flex items-center gap-[10px] pl-4 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-gold-400 transition-all duration-150 hover:no-underline whitespace-nowrap ${!isExpanded ? '[&>svg]:hidden pointer-events-none' : ''}`}>
                   <div className="flex items-center gap-[10px] flex-1">
                     <Bell className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>Notifiers</span>
+                    <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t("nav.notifiers")}</span>
                   </div>
                 </AccordionTrigger>
                 {isExpanded && (
@@ -167,7 +170,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
                       className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
                     >
                       <Shield className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                      <span className="text-sm font-medium">Admin Panel</span>
+                      <span className="text-sm font-medium">{t("nav.adminPanel")}</span>
                     </NavigationLink>
                     {isSuperAdmin && (
                       <NavigationLink
@@ -175,7 +178,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
                         className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
                       >
                         <Bell className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                        <span className="text-sm font-medium">Notifications Manager</span>
+                        <span className="text-sm font-medium">{t("nav.notificationsManager")}</span>
                       </NavigationLink>
                     )}
                   </AccordionContent>
@@ -186,7 +189,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
                 <AccordionTrigger className={`flex items-center gap-[10px] pl-4 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-gold-400 transition-all duration-150 hover:no-underline whitespace-nowrap ${!isExpanded ? '[&>svg]:hidden pointer-events-none' : ''}`}>
                   <div className="flex items-center gap-[10px] flex-1">
                     <Network className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>Network</span>
+                    <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t("nav.network")}</span>
                   </div>
                 </AccordionTrigger>
                 {isExpanded && (
@@ -196,7 +199,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
                       className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
                     >
                       <Network className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                      <span className="text-sm font-medium">Network View</span>
+                      <span className="text-sm font-medium">{t("nav.networkView")}</span>
                     </NavigationLink>
                     {isSuperAdmin && (
                       <NavigationLink
@@ -204,7 +207,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
                         className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
                       >
                         <GitBranch className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                        <span className="text-sm font-medium">Network Visualizer</span>
+                        <span className="text-sm font-medium">{t("nav.networkVisualizer")}</span>
                       </NavigationLink>
                     )}
                   </AccordionContent>
@@ -216,7 +219,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
                   <AccordionTrigger className={`flex items-center gap-[10px] pl-4 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-gold-400 transition-all duration-150 hover:no-underline whitespace-nowrap ${!isExpanded ? '[&>svg]:hidden pointer-events-none' : ''}`}>
                     <div className="flex items-center gap-[10px] flex-1">
                       <Wallet className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>Payments</span>
+                      <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t("nav.payments")}</span>
                     </div>
                   </AccordionTrigger>
                   {isExpanded && (
@@ -226,21 +229,21 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
                         className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
                       >
                         <TrendingUp className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                        <span className="text-sm font-medium">Financials</span>
+                        <span className="text-sm font-medium">{t("nav.financials")}</span>
                       </NavigationLink>
                       <NavigationLink
                         href="/admin/payouts"
                         className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
                       >
                         <Wallet className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                        <span className="text-sm font-medium">Payouts</span>
+                        <span className="text-sm font-medium">{t("nav.payouts")}</span>
                       </NavigationLink>
                       <NavigationLink
                         href="/admin/direct-bonuses"
                         className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
                       >
                         <Gift className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                        <span className="text-sm font-medium">Direct Bonuses</span>
+                        <span className="text-sm font-medium">{t("nav.directBonuses")}</span>
                       </NavigationLink>
                     </AccordionContent>
                   )}
@@ -254,7 +257,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
                 className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
               >
                 <Activity className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
-                <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>Transaction Logs</span>
+                <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t("nav.transactionLogs")}</span>
               </NavigationLink>
             )}
             {isSuperAdmin && (
@@ -263,7 +266,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
                 className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
               >
                 <BookOpen className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
-                <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>Academy Manager</span>
+                <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t("nav.academyManager")}</span>
               </NavigationLink>
             )}
           </div>
@@ -282,7 +285,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
             </div>
             <div className={`flex-1 min-w-0 text-left whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>
               <p className="text-sm font-medium text-sidebar-foreground truncate">
-                {user.user_metadata?.name || "User"}
+                {user.user_metadata?.name || t("common.user")}
               </p>
               <p className="text-[11px] text-muted-foreground truncate">
                 {user.email}
@@ -293,18 +296,18 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" side="top" className="w-56">
           <div className="px-2 py-1.5">
-            <p className="text-sm font-medium">{user.user_metadata?.name || "User"}</p>
+            <p className="text-sm font-medium">{user.user_metadata?.name || t("common.user")}</p>
             <p className="text-[11px] text-muted-foreground">{user.email}</p>
           </div>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => router.push("/settings")}>
             <Settings className="h-4 w-4 mr-2" />
-            Settings
+            {t("header.settings")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut} className="text-red-400">
             <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
+            {t("header.signOut")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

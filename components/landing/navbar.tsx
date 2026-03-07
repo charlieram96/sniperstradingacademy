@@ -7,8 +7,12 @@ import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-
 import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
 import { spring } from "@/lib/motion"
+import { LanguageToggle } from "@/components/language-toggle"
+import { useTranslation } from "@/components/language-provider"
+import type { TranslationKey } from "@/lib/i18n"
 
 export function Navbar() {
+  const { t } = useTranslation()
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const { scrollY } = useScroll()
@@ -27,10 +31,10 @@ export function Navbar() {
   }, [mobileOpen])
 
   const navLinks = [
-    { href: "#features", label: "Features" },
-    { href: "#curriculum", label: "Curriculum" },
-    { href: "#pricing", label: "Pricing" },
-    { href: "#faq", label: "FAQ" },
+    { href: "#features", labelKey: "landing.navbar.features" as TranslationKey },
+    { href: "#curriculum", labelKey: "landing.navbar.curriculum" as TranslationKey },
+    { href: "#pricing", labelKey: "landing.navbar.pricing" as TranslationKey },
+    { href: "#faq", labelKey: "landing.navbar.faq" as TranslationKey },
   ]
 
   return (
@@ -53,22 +57,23 @@ export function Navbar() {
                 className="w-10 h-10"
               />
               <span className="text-xl font-bold bg-gradient-to-r from-gold-200 to-gold-400 bg-clip-text text-transparent">
-                Snipers Trading Academy
+                {t("common.academyName")}
               </span>
             </Link>
             <div className="hidden md:flex items-center gap-6">
               {navLinks.map((link) => (
                 <Link key={link.href} href={link.href}>
                   <Button variant="ghost" className="text-foreground-tertiary hover:text-gold-300 transition-colors">
-                    {link.label}
+                    {t(link.labelKey)}
                   </Button>
                 </Link>
               ))}
+              <LanguageToggle />
               <Link href="/login">
-                <Button variant="premium">Login</Button>
+                <Button variant="premium">{t("landing.navbar.login")}</Button>
               </Link>
               <Link href="/register">
-                <Button>Get Started</Button>
+                <Button>{t("landing.navbar.getStarted")}</Button>
               </Link>
             </div>
             <button
@@ -103,7 +108,7 @@ export function Navbar() {
             >
               <div className="flex items-center justify-between mb-8">
                 <span className="text-lg font-bold bg-gradient-to-r from-gold-200 to-gold-400 bg-clip-text text-transparent">
-                  Menu
+                  {t("nav.menu")}
                 </span>
                 <button
                   onClick={() => setMobileOpen(false)}
@@ -121,16 +126,19 @@ export function Navbar() {
                     onClick={() => setMobileOpen(false)}
                     className="px-4 py-3 rounded-[8px] text-foreground-secondary hover:text-gold-300 hover:bg-gold-400/5 transition-colors font-medium"
                   >
-                    {link.label}
+                    {t(link.labelKey)}
                   </Link>
                 ))}
               </div>
               <div className="mt-auto flex flex-col gap-3">
+                <div className="flex justify-center mb-2">
+                  <LanguageToggle />
+                </div>
                 <Link href="/login" onClick={() => setMobileOpen(false)}>
-                  <Button variant="premium" className="w-full">Login</Button>
+                  <Button variant="premium" className="w-full">{t("landing.navbar.login")}</Button>
                 </Link>
                 <Link href="/register" onClick={() => setMobileOpen(false)}>
-                  <Button className="w-full">Get Started</Button>
+                  <Button className="w-full">{t("landing.navbar.getStarted")}</Button>
                 </Link>
               </div>
             </motion.div>

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { CheckCircle, ArrowRight, Lock } from "lucide-react"
 import { fadeInUp, staggerContainerSlow, staggerItem, viewportOnce } from "@/lib/motion"
+import { useTranslation } from "@/components/language-provider"
 
 function AnimatedPrice({ target, prefix = "$" }: { target: number; prefix?: string }) {
   const ref = useRef<HTMLSpanElement>(null)
@@ -33,19 +34,20 @@ function AnimatedPrice({ target, prefix = "$" }: { target: number; prefix?: stri
   return <span ref={ref}>{prefix}0</span>
 }
 
-const features = [
-  "Complete video course library",
-  "Live daily trading sessions",
-  "1-on-1 mentorship",
-  "Advanced trading tools",
-  "Private Discord community",
-  "Weekly strategy workshops",
-  "Real-time trade alerts",
-  "Certification program",
-  "Priority support",
-]
-
 export function Pricing() {
+  const { t } = useTranslation()
+
+  const features = [
+    t("landing.pricing.feature1"),
+    t("landing.pricing.feature2"),
+    t("landing.pricing.feature3"),
+    t("landing.pricing.feature4"),
+    t("landing.pricing.feature5"),
+    t("landing.pricing.feature6"),
+    t("landing.pricing.feature7"),
+    t("landing.pricing.feature8"),
+    t("landing.pricing.feature9"),
+  ]
   return (
     <section id="pricing" className="py-24 px-4 relative">
       <div className="absolute inset-0 bg-gradient-to-b from-gold-800/3 via-transparent to-gold-800/3" />
@@ -58,12 +60,12 @@ export function Pricing() {
           viewport={viewportOnce}
           className="text-center mb-16"
         >
-          <Badge className="mb-4">PRICING</Badge>
+          <Badge className="mb-4">{t("landing.pricing.badge")}</Badge>
           <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-            Invest in Your Future
+            {t("landing.pricing.heading")}
           </h2>
           <p className="text-xl text-foreground-tertiary">
-            One membership. Complete access. Unlimited potential.
+            {t("landing.pricing.subheading")}
           </p>
         </motion.div>
 
@@ -82,12 +84,12 @@ export function Pricing() {
             <div className="relative">
               <CardHeader>
                 <div className="text-center pt-6">
-                  <Badge className="mb-4 animate-gentle-pulse">MOST POPULAR</Badge>
+                  <Badge className="mb-4 animate-gentle-pulse">{t("landing.pricing.mostPopular")}</Badge>
                   <h3 className="text-3xl font-bold mb-3 text-foreground">
-                    Full Access
+                    {t("landing.pricing.fullAccess")}
                   </h3>
                   <p className="text-lg text-foreground-secondary mb-8">
-                    Everything you need to become a professional trader
+                    {t("landing.pricing.fullAccessDesc")}
                   </p>
                   <div className="space-y-4">
                     <div>
@@ -95,7 +97,7 @@ export function Pricing() {
                         <AnimatedPrice target={499} />
                       </span>
                       <span className="text-foreground-tertiary text-lg">
-                        {" "}one-time
+                        {" "}{t("landing.pricing.oneTime")}
                       </span>
                     </div>
                     <div className="text-2xl">
@@ -106,7 +108,7 @@ export function Pricing() {
                         <AnimatedPrice target={199} />
                       </span>
                       <span className="text-foreground-tertiary text-lg">
-                        /month
+                        {t("landing.pricing.perMonth")}
                       </span>
                     </div>
                   </div>
@@ -116,7 +118,7 @@ export function Pricing() {
                 <div className="space-y-6">
                   <div className="bg-gold-400/8 rounded-[8px] p-4 border border-border-accent">
                     <p className="text-gold-300 font-semibold text-center">
-                      + Earn passive income through referrals
+                      {t("landing.pricing.earnReferrals")}
                     </p>
                   </div>
 
@@ -143,13 +145,13 @@ export function Pricing() {
                 </div>
                 <Link href="/register">
                   <Button className="w-full mt-8 h-14 text-lg group" size="lg">
-                    Start Trading Today
+                    {t("landing.pricing.ctaButton")}
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
                 <p className="text-center text-sm text-foreground-quaternary mt-4 flex items-center justify-center gap-2">
                   <Lock className="h-3 w-3" />
-                  Cancel your monthly subscription anytime
+                  {t("landing.pricing.cancelAnytime")}
                 </p>
               </CardContent>
             </div>

@@ -12,8 +12,10 @@ import {
   UserCheck,
 } from "lucide-react"
 import { staggerContainer, staggerItem } from "@/lib/motion"
+import { useTranslation } from "@/components/language-provider"
 
 export function Hero() {
+  const { t } = useTranslation()
   const { scrollY } = useScroll()
   const parallaxY1 = useTransform(scrollY, [0, 800], [0, 240])
   const parallaxY2 = useTransform(scrollY, [0, 800], [0, 180])
@@ -53,7 +55,7 @@ export function Hero() {
           >
             <Sparkles className="h-4 w-4 text-gold-300/80" />
             <span className="text-sm font-medium text-gold-200/80">
-              Master Options Trading - Start Today
+              {t("landing.hero.badge")}
             </span>
           </motion.div>
 
@@ -65,11 +67,11 @@ export function Hero() {
             className="text-6xl md:text-8xl xl:text-9xl font-bold mb-8 leading-tight"
           >
             <span className="bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
-              Learn to Trade
+              {t("landing.hero.headingLine1")}
             </span>
             <br />
             <span className="relative bg-gradient-to-r from-gold-300 via-gold-400 to-gold-500 bg-clip-text text-transparent">
-              Like a Sniper
+              {t("landing.hero.headingLine2")}
               <span className="absolute inset-0 animate-shimmer bg-clip-text text-transparent pointer-events-none" />
             </span>
           </motion.h1>
@@ -81,8 +83,7 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.35 }}
             className="text-xl md:text-2xl text-foreground-tertiary mb-12 max-w-3xl mx-auto leading-relaxed"
           >
-            Join the elite. Master professional options trading strategies and
-            earn passive income through our comprehensive education platform.
+            {t("landing.hero.subheading")}
           </motion.p>
 
           {/* CTA Buttons */}
@@ -95,7 +96,7 @@ export function Hero() {
             <Link href="/register">
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <Button size="lg" className="gap-2 text-lg px-10 py-7 relative overflow-hidden group">
-                  <span className="relative z-10">Start Your Journey</span>
+                  <span className="relative z-10">{t("landing.hero.ctaPrimary")}</span>
                   <ArrowRight className="h-5 w-5 relative z-10 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </motion.div>
@@ -103,7 +104,7 @@ export function Hero() {
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
               <Button size="lg" variant="premium" className="gap-2 text-lg px-10 py-7">
                 <Rocket className="h-5 w-5" />
-                View Demo
+                {t("landing.hero.ctaSecondary")}
               </Button>
             </motion.div>
           </motion.div>
@@ -116,9 +117,9 @@ export function Hero() {
             className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto"
           >
             {[
-              { icon: BookOpen, value: "6+", label: "Modules" },
-              { icon: Video, value: "3", label: "Weekly Classes" },
-              { icon: UserCheck, value: "1-on-1", label: "Mentorship" },
+              { icon: BookOpen, value: "6+", label: t("landing.hero.statModules") },
+              { icon: Video, value: "3", label: t("landing.hero.statClasses") },
+              { icon: UserCheck, value: "1-on-1", label: t("landing.hero.statMentorship") },
             ].map((stat) => (
               <motion.div
                 key={stat.label}

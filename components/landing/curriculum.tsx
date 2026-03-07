@@ -4,16 +4,18 @@ import { motion } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle, LineChart, Trophy } from "lucide-react"
 import { fadeInUp, pathDraw, viewportOnce } from "@/lib/motion"
-
-const steps = [
-  { title: "Options Fundamentals", desc: "Calls, puts, Greeks, and pricing strategies" },
-  { title: "Technical Analysis", desc: "Chart patterns and high-probability setups" },
-  { title: "Strategy Development", desc: "Build profitable trading systems" },
-  { title: "Risk Management", desc: "Professional capital protection techniques" },
-  { title: "Portfolio Management", desc: "Diversification and position sizing" },
-]
+import { useTranslation } from "@/components/language-provider"
 
 export function Curriculum() {
+  const { t } = useTranslation()
+
+  const steps = [
+    { title: t("landing.curriculum.step1Title"), desc: t("landing.curriculum.step1Desc") },
+    { title: t("landing.curriculum.step2Title"), desc: t("landing.curriculum.step2Desc") },
+    { title: t("landing.curriculum.step3Title"), desc: t("landing.curriculum.step3Desc") },
+    { title: t("landing.curriculum.step4Title"), desc: t("landing.curriculum.step4Desc") },
+    { title: t("landing.curriculum.step5Title"), desc: t("landing.curriculum.step5Desc") },
+  ]
   return (
     <section id="curriculum" className="py-24 px-4">
       <div className="container mx-auto max-w-6xl">
@@ -24,9 +26,9 @@ export function Curriculum() {
             whileInView="visible"
             viewport={viewportOnce}
           >
-            <Badge className="mb-4">CURRICULUM</Badge>
+            <Badge className="mb-4">{t("landing.curriculum.badge")}</Badge>
             <h2 className="text-4xl md:text-5xl font-bold mb-8 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-              Master the Markets
+              {t("landing.curriculum.heading")}
             </h2>
             <div className="space-y-6">
               {steps.map((item, index) => (
@@ -92,9 +94,9 @@ export function Curriculum() {
             <div className="absolute -bottom-6 -right-6 bg-gradient-to-br from-gold-400 to-gold-500 rounded-[12px] p-6 shadow-[var(--shadow-gold-lg)] border border-gold-300/20 animate-float">
               <Trophy className="h-10 w-10 mb-2 text-primary-foreground" />
               <p className="font-bold text-lg text-primary-foreground">
-                Certification
+                {t("landing.curriculum.certification")}
               </p>
-              <p className="text-sm text-gold-800">Upon completion</p>
+              <p className="text-sm text-gold-800">{t("landing.curriculum.uponCompletion")}</p>
             </div>
           </motion.div>
         </div>

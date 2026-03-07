@@ -4,6 +4,7 @@ import { Wallet } from "lucide-react"
 import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { useTranslation } from "@/components/language-provider"
 
 interface MissingWalletBannerProps {
   payoutWalletAddress: string | null
@@ -16,6 +17,7 @@ export function MissingWalletBanner({
   bypassSubscription = false,
   isAdmin = false,
 }: MissingWalletBannerProps) {
+  const { t } = useTranslation()
   // Admins and bypassed subscription users don't need the warning
   const shouldShow = !payoutWalletAddress && !bypassSubscription && !isAdmin
 
@@ -49,7 +51,7 @@ export function MissingWalletBanner({
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <Wallet className="h-5 w-5 flex-shrink-0" />
           <p className="text-sm font-medium truncate">
-            Set up your payout wallet to receive earnings. You won&apos;t be able to receive commissions without a configured wallet.
+            {t("banners.missingWallet.message")}
           </p>
         </div>
 
@@ -61,7 +63,7 @@ export function MissingWalletBanner({
               className="bg-white text-amber-600 hover:bg-amber-50"
             >
               <Wallet className="h-4 w-4 mr-1" />
-              Set Up Wallet
+              {t("banners.missingWallet.setupWallet")}
             </Button>
           </Link>
         </div>

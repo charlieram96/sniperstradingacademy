@@ -18,6 +18,7 @@ import { ConfirmReferralModal } from "@/components/referral/confirm-referral-mod
 import { staggerContainer, staggerItem } from "@/lib/motion"
 import { AnimatedNumber } from "@/components/motion/animated-number"
 import { PageHeader } from "@/components/page-header"
+import { useTranslation } from "@/components/language-provider"
 
 const ROOT_USER_ID = 'b10f0367-0471-4eab-9d15-db68b1ac4556'
 
@@ -106,6 +107,7 @@ export function DashboardClient({
   bypassBannerDismissed?: boolean
   referredBy?: string | null
 }) {
+  const { t } = useTranslation()
   const [selectedStructure, setSelectedStructure] = useState("1")
   const [academyClasses, setAcademyClasses] = useState<AcademyClass[]>([])
   const [classesLoading, setClassesLoading] = useState(true)
@@ -187,15 +189,15 @@ export function DashboardClient({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-                DEMO MODE
+                {t("dashboard.demoMode")}
               </Badge>
               <span className="font-medium">
-                You&apos;re using a test account with sample data
+                {t("dashboard.demoMessage")}
               </span>
             </div>
             <NavigationLink href="/register">
               <Button size="sm" variant="secondary">
-                Create Real Account
+                {t("dashboard.createRealAccount")}
               </Button>
             </NavigationLink>
           </div>
@@ -220,9 +222,9 @@ export function DashboardClient({
             <div className="flex items-center gap-3">
               <Lock className="h-6 w-6 text-amber-600 dark:text-amber-400" />
               <div>
-                <CardTitle className="text-amber-900 dark:text-amber-200">Account Activation Required</CardTitle>
+                <CardTitle className="text-amber-900 dark:text-amber-200">{t("dashboard.activationRequired")}</CardTitle>
                 <CardDescription className="text-amber-700 dark:text-amber-300 mt-1">
-                  Your account is currently locked. Complete the initial payment to unlock all platform features.
+                  {t("dashboard.activationDesc")}
                 </CardDescription>
               </div>
             </div>
@@ -230,30 +232,30 @@ export function DashboardClient({
           <CardContent>
             <div className="space-y-4">
               <div className="p-4 bg-white dark:bg-gray-900 rounded-lg border border-amber-200 dark:border-amber-800">
-                <h3 className="font-semibold text-amber-900 dark:text-amber-200 mb-2">What you&apos;ll unlock:</h3>
+                <h3 className="font-semibold text-amber-900 dark:text-amber-200 mb-2">{t("dashboard.whatYouUnlock")}</h3>
                 <ul className="space-y-2 text-sm text-amber-800 dark:text-amber-300">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
-                    Access to Trading Academy and live classes
+                    {t("dashboard.unlockAcademy")}
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
-                    Ability to refer others and earn commissions
+                    {t("dashboard.unlockReferrals")}
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
-                    View your team and network statistics
+                    {t("dashboard.unlockTeam")}
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
-                    Access to financial dashboard and earnings
+                    {t("dashboard.unlockFinance")}
                   </li>
                 </ul>
               </div>
               <NavigationLink href="/payments">
                 <Button size="lg" className="w-full bg-amber-600 hover:bg-amber-700 text-white">
                   <Unlock className="h-5 w-5 mr-2" />
-                  Activate Account - Pay $499
+                  {t("dashboard.activateAccount")}
                 </Button>
               </NavigationLink>
             </div>
@@ -262,8 +264,8 @@ export function DashboardClient({
       )}
 
       <PageHeader
-        title="Dashboard"
-        description={`Welcome back, ${data.user?.name || session.user.email}`}
+        title={t("dashboard.title")}
+        description={t("dashboard.welcome", { name: data.user?.name || session.user.email })}
       />
 
       {/* Academy + Payout side by side */}
@@ -276,16 +278,16 @@ export function DashboardClient({
             <div>
               <CardTitle className="flex items-center gap-2">
                 <GraduationCap className="h-5 w-5 text-primary" />
-                Trading Academy Schedule
+                {t("dashboard.academySchedule")}
               </CardTitle>
               <CardDescription className="mt-1">
-                Upcoming live trading sessions and classes
+                {t("dashboard.academyScheduleDesc")}
               </CardDescription>
             </div>
             <NavigationLink href="/academy">
               <Button variant="default">
                 <BookOpen className="h-4 w-4 mr-2" />
-                Go to Academy
+                {t("dashboard.goToAcademy")}
               </Button>
             </NavigationLink>
           </div>
@@ -294,12 +296,12 @@ export function DashboardClient({
           {classesLoading ? (
             <div className="flex items-center justify-center py-8 text-muted-foreground">
               <Clock className="h-4 w-4 animate-pulse mr-2" />
-              Loading classes...
+              {t("dashboard.loadingClasses")}
             </div>
           ) : academyClasses.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <PlayCircle className="h-12 w-12 text-muted-foreground/30 mb-4" />
-              <p className="text-sm text-muted-foreground">No classes scheduled yet</p>
+              <p className="text-sm text-muted-foreground">{t("dashboard.noClasses")}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -326,7 +328,7 @@ export function DashboardClient({
                   >
                     <div className="flex items-center justify-between mb-2">
                       <Badge className={isFirst ? "bg-[#D4A853] text-white" : "bg-surface-2"}>
-                        {isFirst ? "Next Class" : "Upcoming"}
+                        {isFirst ? t("dashboard.nextClass") : t("dashboard.upcoming")}
                       </Badge>
                       <PlayCircle className={`h-5 w-5 ${isFirst ? "text-[#D4A853]" : "text-muted-foreground"}`} />
                     </div>
@@ -351,7 +353,7 @@ export function DashboardClient({
                         variant={isFirst ? "default" : "outline"}
                       >
                         <ExternalLink className="h-4 w-4 mr-2" />
-                        {isFirst ? "Join Class" : "View Details"}
+                        {isFirst ? t("dashboard.joinClass") : t("dashboard.viewDetails")}
                       </Button>
                     </a>
                   </div>
@@ -370,23 +372,23 @@ export function DashboardClient({
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Wallet className={`h-5 w-5 ${data.payoutWalletAddress ? 'text-[#D4A853]' : 'text-amber-600'}`} />
-                  Payout Wallet (Polygon)
+                  {t("dashboard.payoutWallet")}
                 </CardTitle>
                 <CardDescription className="mt-1">
                   {data.payoutWalletAddress
-                    ? 'Your wallet is configured to receive USDC commission payouts'
-                    : 'Set up your Polygon wallet to receive USDC commission payouts'}
+                    ? t("dashboard.walletConfigured")
+                    : t("dashboard.walletNotConfigured")}
                 </CardDescription>
               </div>
               {data.payoutWalletAddress ? (
                 <Badge className="bg-[#D4A853] text-white">
                   <CheckCircle2 className="h-3 w-3 mr-1" />
-                  Configured
+                  {t("dashboard.configured")}
                 </Badge>
               ) : (
                 <Badge className="bg-amber-500 text-white">
                   <AlertTriangle className="h-3 w-3 mr-1" />
-                  Not Set
+                  {t("dashboard.notSet")}
                 </Badge>
               )}
             </div>
@@ -396,30 +398,30 @@ export function DashboardClient({
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="p-3 rounded-lg bg-surface-1">
-                    <p className="text-sm text-muted-foreground">Wallet Address</p>
+                    <p className="text-sm text-muted-foreground">{t("dashboard.walletAddress")}</p>
                     <p className="text-sm font-medium font-mono mt-1">
                       {data.payoutWalletAddress.slice(0, 6)}...{data.payoutWalletAddress.slice(-4)}
                     </p>
                   </div>
                   <div className="p-3 rounded-lg bg-surface-1">
-                    <p className="text-sm text-muted-foreground">Network</p>
+                    <p className="text-sm text-muted-foreground">{t("dashboard.network")}</p>
                     <p className="text-sm font-medium mt-1">Polygon (MATIC)</p>
                   </div>
                   <div className="p-3 rounded-lg bg-surface-1">
-                    <p className="text-sm text-muted-foreground">Estimated Commission</p>
+                    <p className="text-sm text-muted-foreground">{t("dashboard.estimatedCommission")}</p>
                     <p className="text-sm font-medium mt-1 text-primary">{formatCurrency(data.monthlyCommission)} USDC</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 p-3 bg-[#D4A853]/10 rounded-lg">
                   <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
                   <p className="text-sm">
-                    Your wallet is ready to receive payouts. Commissions are paid in USDC on the Polygon network around the 15th of each month.
+                    {t("dashboard.walletReady")}
                   </p>
                 </div>
                 <NavigationLink href="/finance">
                   <Button variant="outline">
                     <Wallet className="h-4 w-4 mr-2" />
-                    Update Wallet
+                    {t("dashboard.updateWallet")}
                   </Button>
                 </NavigationLink>
               </div>
@@ -429,34 +431,34 @@ export function DashboardClient({
                   <div className="flex items-start gap-2">
                     <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-foreground">Payout wallet not configured</p>
+                      <p className="text-sm font-medium text-foreground">{t("dashboard.walletNotConfiguredTitle")}</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Set up your Polygon wallet to receive your commission payouts in USDC. This only takes a minute.
+                        {t("dashboard.walletNotConfiguredDesc")}
                       </p>
                     </div>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">How it works:</p>
+                  <p className="text-sm font-medium">{t("dashboard.howItWorks")}</p>
                   <ul className="space-y-1 text-sm text-muted-foreground">
                     <li className="flex items-center gap-2">
                       <div className="w-1 h-1 rounded-full bg-muted-foreground" />
-                      Enter your Polygon wallet address (MetaMask, Trust Wallet, etc.)
+                      {t("dashboard.howStep1")}
                     </li>
                     <li className="flex items-center gap-2">
                       <div className="w-1 h-1 rounded-full bg-muted-foreground" />
-                      Receive USDC payouts directly to your wallet
+                      {t("dashboard.howStep2")}
                     </li>
                     <li className="flex items-center gap-2">
                       <div className="w-1 h-1 rounded-full bg-muted-foreground" />
-                      Monthly payouts around the 15th
+                      {t("dashboard.howStep3")}
                     </li>
                   </ul>
                 </div>
                 <NavigationLink href="/finance">
                   <Button className="w-full md:w-auto bg-amber-600 hover:bg-amber-700">
                     <Wallet className="h-4 w-4 mr-2" />
-                    Set Up Payout Wallet
+                    {t("dashboard.setupPayoutWallet")}
                   </Button>
                 </NavigationLink>
               </div>
@@ -473,17 +475,17 @@ export function DashboardClient({
           <CardHeader>
             <div className="flex items-center gap-2">
               <Lock className="h-5 w-5 text-destructive" />
-              <CardTitle className="text-foreground">Unlock Your Membership</CardTitle>
+              <CardTitle className="text-foreground">{t("dashboard.unlockMembership")}</CardTitle>
             </div>
             <CardDescription className="text-muted-foreground">
-              Pay the one-time $499 membership fee to unlock your 3 referral slots and start building your team
+              {t("dashboard.unlockMembershipDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <NavigationLink href="/payments">
               <Button variant="destructive">
                 <Unlock className="h-4 w-4 mr-2" />
-                Unlock Membership ($499)
+                {t("dashboard.unlockMembershipButton")}
               </Button>
             </NavigationLink>
           </CardContent>
@@ -496,17 +498,17 @@ export function DashboardClient({
           <CardHeader>
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-yellow-600" />
-              <CardTitle className="text-foreground">Activate Monthly Subscription</CardTitle>
+              <CardTitle className="text-foreground">{t("dashboard.activateSubscription")}</CardTitle>
             </div>
             <CardDescription className="text-muted-foreground">
-              Subscribe for $199/month to earn commissions from your team pool
+              {t("dashboard.activateSubscriptionDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <NavigationLink href="/payments">
               <Button className="bg-amber-600 hover:bg-amber-700 text-white">
                 <CreditCard className="h-4 w-4 mr-2" />
-                Start Monthly Subscription ($199/mo)
+                {t("dashboard.startSubscription")}
               </Button>
             </NavigationLink>
           </CardContent>
@@ -518,44 +520,44 @@ export function DashboardClient({
         <>
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Structure Overview</CardTitle>
+              <CardTitle>{t("dashboard.structureOverview")}</CardTitle>
               <CardDescription>
-                Complete structures and add direct referrals to unlock higher commission rates
+                {t("dashboard.structureOverviewDesc")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   <div className="p-3 rounded-lg bg-surface-2">
-                    <p className="text-sm text-muted-foreground">Current Rank</p>
+                    <p className="text-sm text-muted-foreground">{t("dashboard.currentRank")}</p>
                     <div className="flex items-center gap-2">
                       <rankInfo.icon className={`h-5 w-5 ${rankInfo.color}`} />
                       <p className="text-lg font-bold">{rankInfo.name}</p>
                     </div>
                   </div>
                   <div className="p-3 rounded-lg bg-surface-2">
-                    <p className="text-sm text-muted-foreground">Active Structures</p>
+                    <p className="text-sm text-muted-foreground">{t("dashboard.activeStructures")}</p>
                     <p className="text-2xl font-bold">{data.unlockedStructures}/6</p>
                   </div>
                   <div className="p-3 rounded-lg bg-surface-2">
-                    <p className="text-sm text-muted-foreground">Commission Rate</p>
+                    <p className="text-sm text-muted-foreground">{t("dashboard.commissionRate")}</p>
                     <p className="text-2xl font-bold">
                       {10 + data.completedStructures}%
                     </p>
                   </div>
                   <div className={`p-3 rounded-lg ${data.directReferrals >= 3 ? 'bg-[#D4A853]/20 border-2 border-[#D4A853]' : 'bg-red-500/20 border-2 border-red-500'}`}>
-                    <p className="text-sm text-muted-foreground">Active Direct Referrals</p>
+                    <p className="text-sm text-muted-foreground">{t("dashboard.activeDirectReferrals")}</p>
                     <p className={`text-2xl font-bold ${data.directReferrals >= 3 ? 'text-[#D4A853]' : 'text-red-600'}`}>{data.directReferrals}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-surface-2">
-                    <p className="text-sm text-muted-foreground">Total Team</p>
+                    <p className="text-sm text-muted-foreground">{t("dashboard.totalTeam")}</p>
                     <p className="text-2xl font-bold">{data.totalTeamSize}/{data.unlockedStructures * 1092}</p>
                   </div>
                 </div>
                 
                 {/* Structure Selector */}
                 <div className="p-4 bg-surface-2 rounded-lg">
-                  <p className="text-sm font-medium mb-3">Select Structure to View</p>
+                  <p className="text-sm font-medium mb-3">{t("dashboard.selectStructure")}</p>
                   <div className="grid grid-cols-3 md:grid-cols-7 gap-3">
                     <RadioGroup 
                       value={selectedStructure} 
@@ -596,15 +598,15 @@ export function DashboardClient({
                                 <structureRank.icon className="h-6 w-6 text-white" />
                               </div>
                               <div className="text-center">
-                                <div className="font-bold text-sm">Structure {structureNum}</div>
+                                <div className="font-bold text-sm">{t("dashboard.structure", { num: structureNum })}</div>
                                 <div className="text-xs text-muted-foreground">
-                                  {isComplete ? 10 + structureNum : 10 + Math.max(0, structureNum - 1)}% Commission
+                                  {isComplete ? 10 + structureNum : 10 + Math.max(0, structureNum - 1)}% {t("dashboard.commission")}
                                 </div>
                                 <div className="text-xs font-medium mt-1">
                                   {structureRank.name}
                                 </div>
                                 {isComplete && (
-                                  <Badge className="mt-1 text-xs bg-[#D4A853] text-white">Complete</Badge>
+                                  <Badge className="mt-1 text-xs bg-[#D4A853] text-white">{t("dashboard.complete")}</Badge>
                                 )}
                                 {isUnlocked && !isComplete && (
                                   <div className="text-xs mt-1 text-muted-foreground">
@@ -612,7 +614,7 @@ export function DashboardClient({
                                   </div>
                                 )}
                                 {!isUnlocked && (
-                                  <Badge variant="outline" className="mt-1 text-xs">Locked</Badge>
+                                  <Badge variant="outline" className="mt-1 text-xs">{t("dashboard.locked")}</Badge>
                                 )}
                               </div>
                             </div>
@@ -634,17 +636,17 @@ export function DashboardClient({
                             <Crown className="h-6 w-6 text-white" />
                           </div>
                           <div className="text-center">
-                            <div className="font-bold text-sm">Ultimate</div>
+                            <div className="font-bold text-sm">{t("dashboard.ultimate")}</div>
                             <div className="text-xs text-muted-foreground">
-                              16% Commission
+                              16% {t("dashboard.commission")}
                             </div>
                             <div className="text-xs font-medium mt-1 text-yellow-500">
                               Lion Master Sniper
                             </div>
                             {data.completedStructures >= 6 ? (
-                              <Badge className="mt-1 text-xs bg-yellow-500 text-white">ACHIEVED</Badge>
+                              <Badge className="mt-1 text-xs bg-yellow-500 text-white">{t("dashboard.achieved")}</Badge>
                             ) : (
-                              <Badge variant="outline" className="mt-1 text-xs">Complete 6 Structures</Badge>
+                              <Badge variant="outline" className="mt-1 text-xs">{t("dashboard.completeStructures")}</Badge>
                             )}
                           </div>
                         </div>
@@ -667,23 +669,23 @@ export function DashboardClient({
                       <>
                         <div className="flex items-center justify-between mb-3">
                           <div>
-                            <h3 className="font-semibold">Structure {structureNum}</h3>
+                            <h3 className="font-semibold">{t("dashboard.structure", { num: structureNum })}</h3>
                             <p className="text-sm text-muted-foreground">
-                              Commission Rate: {structureNum <= data.completedStructures ? 10 + structureNum : 10 + Math.max(0, structureNum - 1)}% • Requires {requiredDirectReferrals} direct referrals
+                              {t("dashboard.commissionRateDesc", { rate: structureNum <= data.completedStructures ? 10 + structureNum : 10 + Math.max(0, structureNum - 1) })} • {t("dashboard.requires", { count: requiredDirectReferrals })}
                             </p>
                           </div>
                           {isUnlocked ? (
-                            <Badge variant="success">Active</Badge>
+                            <Badge variant="success">{t("dashboard.active")}</Badge>
                           ) : data.directReferrals >= requiredDirectReferrals && structureNum === data.unlockedStructures + 1 ? (
-                            <Badge variant="outline" className="border-yellow-500 text-yellow-500">Ready to Unlock</Badge>
+                            <Badge variant="outline" className="border-yellow-500 text-yellow-500">{t("dashboard.readyToUnlock")}</Badge>
                           ) : (
-                            <Badge variant="outline">Locked</Badge>
+                            <Badge variant="outline">{t("dashboard.locked")}</Badge>
                           )}
                         </div>
                         {isUnlocked && (
                           <div>
                             <div className="flex justify-between text-sm mb-1">
-                              <span className="text-muted-foreground">Members</span>
+                              <span className="text-muted-foreground">{t("dashboard.members")}</span>
                               <span>{membersInStructure}/1092</span>
                             </div>
                             <Progress value={progress} className="h-2" />
@@ -712,14 +714,14 @@ export function DashboardClient({
               <DollarSign className="h-12 w-12" />
             </div>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-b-0">
-              <CardTitle className="text-[13px] font-medium text-foreground-secondary">Team Pool</CardTitle>
+              <CardTitle className="text-[13px] font-medium text-foreground-secondary">{t("dashboard.teamPool")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 <AnimatedNumber value={data.teamPool} prefix="$" decimals={2} />
               </div>
               <p className="text-[12px] text-foreground-tertiary mt-1">
-                Monthly team revenue
+                {t("dashboard.monthlyTeamRevenue")}
               </p>
             </CardContent>
           </Card>
@@ -731,14 +733,14 @@ export function DashboardClient({
               <TrendingUp className="h-12 w-12" />
             </div>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-b-0">
-              <CardTitle className="text-[13px] font-medium text-foreground-secondary">Your Commission</CardTitle>
+              <CardTitle className="text-[13px] font-medium text-foreground-secondary">{t("dashboard.yourCommission")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-gold-400">
                 <AnimatedNumber value={data.monthlyCommission} prefix="$" decimals={2} />
               </div>
               <p className="text-[12px] text-foreground-tertiary mt-1">
-                {10 + data.completedStructures}% of team pool
+                {t("dashboard.ofTeamPool", { rate: 10 + data.completedStructures })}
               </p>
             </CardContent>
           </Card>
@@ -750,14 +752,14 @@ export function DashboardClient({
               <UserPlus className="h-12 w-12" />
             </div>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-b-0">
-              <CardTitle className="text-[13px] font-medium text-foreground-secondary">Active Direct Referrals</CardTitle>
+              <CardTitle className="text-[13px] font-medium text-foreground-secondary">{t("dashboard.activeDirectReferrals")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className={`text-2xl font-bold ${data.directReferrals >= 3 ? 'text-gold-400' : 'text-red-400'}`}>
                 {data.directReferrals}/{data.unlockedStructures * 3}
               </div>
               <p className="text-[12px] text-foreground-tertiary mt-1">
-                Across {data.unlockedStructures} structures
+                {t("dashboard.acrossStructures", { count: data.unlockedStructures })}
               </p>
             </CardContent>
           </Card>
@@ -769,14 +771,14 @@ export function DashboardClient({
               <Users className="h-12 w-12" />
             </div>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-b-0">
-              <CardTitle className="text-[13px] font-medium text-foreground-secondary">Total Team</CardTitle>
+              <CardTitle className="text-[13px] font-medium text-foreground-secondary">{t("dashboard.totalTeam")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 <AnimatedNumber value={data.totalTeamSize} />
               </div>
               <p className="text-[12px] text-foreground-tertiary mt-1">
-                Your entire network
+                {t("dashboard.yourEntireNetwork")}
               </p>
             </CardContent>
           </Card>

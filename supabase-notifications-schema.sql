@@ -518,7 +518,7 @@ INSERT INTO notification_templates (template_key, template_name, channel, body_t
   ('sms_referral_signup', 'Referral Signup SMS', 'sms', '🎉 {{referredName}} just joined using your referral code! Welcome them to the network.', '{"referredName": "string"}', 'Notify user when someone signs up with their referral code'),
   ('sms_direct_bonus', 'Direct Bonus Earned SMS', 'sms', '💰 You earned ${{amount}}! {{referredName}} completed their initial payment. Check your Finance page.', '{"amount": "number", "referredName": "string"}', 'Notify user when they earn a direct referral bonus'),
   ('sms_payout_processed', 'Payout Processed SMS', 'sms', '✅ Your ${{amount}} payout has been transferred to your bank account. It should arrive in 2-7 business days.', '{"amount": "number"}', 'Notify user when payout is processed'),
-  ('sms_payout_failed', 'Payout Failed SMS', 'sms', '❌ Your ${{amount}} payout failed. Please update your Stripe Connect account at {{dashboardUrl}}', '{"amount": "number", "dashboardUrl": "string"}', 'Notify user when payout fails'),
+  ('sms_payout_failed', 'Payout Failed SMS', 'sms', '❌ Your ${{amount}} payout failed. Please check your wallet settings at {{dashboardUrl}}', '{"amount": "number", "dashboardUrl": "string"}', 'Notify user when payout fails'),
   ('sms_payment_failed', 'Payment Failed SMS', 'sms', '⚠️ Your subscription payment of ${{amount}} failed. Update your payment method to keep your account active: {{paymentUrl}}', '{"amount": "number", "paymentUrl": "string"}', 'Notify user when subscription payment fails')
 ON CONFLICT (template_key) DO NOTHING;
 

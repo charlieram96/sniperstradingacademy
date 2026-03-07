@@ -2,15 +2,17 @@
 
 import { motion } from "framer-motion"
 import { staggerContainerSlow, staggerItem, viewportOnce } from "@/lib/motion"
-
-const stats = [
-  { value: "500+", label: "Active Traders" },
-  { value: "3", label: "Live Sessions Weekly" },
-  { value: "95%", label: "Student Satisfaction" },
-  { value: "24/7", label: "Community Access" },
-]
+import { useTranslation } from "@/components/language-provider"
 
 export function SocialProof() {
+  const { t } = useTranslation()
+
+  const stats = [
+    { value: "500+", label: t("landing.socialProof.activeTraders") },
+    { value: "3", label: t("landing.socialProof.liveSessions") },
+    { value: "95%", label: t("landing.socialProof.satisfaction") },
+    { value: "24/7", label: t("landing.socialProof.communityAccess") },
+  ]
   return (
     <section className="border-t border-border-subtle py-12 px-4">
       <div className="container mx-auto">
@@ -21,7 +23,7 @@ export function SocialProof() {
           transition={{ duration: 0.5 }}
           className="text-center text-xs font-medium uppercase tracking-widest text-foreground-quaternary mb-8"
         >
-          Trusted by traders worldwide
+          {t("landing.socialProof.trusted")}
         </motion.p>
         <motion.div
           variants={staggerContainerSlow}
