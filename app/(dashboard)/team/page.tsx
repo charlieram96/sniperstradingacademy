@@ -615,8 +615,8 @@ export default function TeamPage() {
             </div>
             <div className="p-4 rounded-lg bg-surface-2">
               <p className="text-sm text-muted-foreground">Monthly Earnings</p>
-              <p className="text-3xl font-bold text-primary">${(teamStats.activeMembers * 19.9).toFixed(0)}</p>
-              <p className="text-xs text-muted-foreground mt-1">19.9 × active count</p>
+              <p className="text-3xl font-bold text-primary">${(teamStats.activeMembers * 199 * teamStats.commissionRate).toFixed(0)}</p>
+              <p className="text-xs text-muted-foreground mt-1">{(teamStats.commissionRate * 100).toFixed(0)}% of $199 × active count</p>
             </div>
           </div>
         </CardContent>

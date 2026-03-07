@@ -342,8 +342,8 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
               {selectedUser.tree_parent_network_position_id && (() => {
                 const parentUser = findParentUser(selectedUser.tree_parent_network_position_id)
                 return parentUser ? (
-                  <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border-2 border-blue-200 dark:border-blue-900">
-                    <h3 className="font-semibold text-sm mb-2 text-blue-700 dark:text-blue-400">Direct Parent</h3>
+                  <div className="p-4 bg-blue-500/10 rounded-lg border-2 border-blue-500/20">
+                    <h3 className="font-semibold text-sm mb-2 text-blue-400">Direct Parent</h3>
                     <div className="space-y-1 text-sm">
                       <div>
                         <span className="font-medium">{parentUser.name || parentUser.email}</span>
@@ -404,25 +404,25 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
 
               {/* Network Stats */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border-2 border-blue-200 dark:border-blue-900">
-                  <div className="text-sm text-blue-600 dark:text-blue-400 font-medium mb-1">
+                <div className="p-4 bg-blue-500/10 rounded-lg border-2 border-blue-500/20">
+                  <div className="text-sm text-blue-400 font-medium mb-1">
                     Total Network
                   </div>
-                  <div className="text-2xl font-bold text-blue-900 dark:text-blue-300">
+                  <div className="text-2xl font-bold text-blue-300">
                     {selectedUser.total_network_count}
                   </div>
-                  <div className="text-xs text-blue-600/80 dark:text-blue-400/80 mt-1">
+                  <div className="text-xs text-blue-400/80 mt-1">
                     members in downline
                   </div>
                 </div>
-                <div className="p-4 bg-[#D4A853]/10 dark:bg-[#D4A853]/10 rounded-lg border-2 border-[#D4A853]/20 dark:border-[#D4A853]/30">
-                  <div className="text-sm text-[#D4A853] dark:text-[#D4A853] font-medium mb-1">
+                <div className="p-4 bg-[#D4A853]/10 rounded-lg border-2 border-[#D4A853]/20">
+                  <div className="text-sm text-[#D4A853] font-medium mb-1">
                     Active Members
                   </div>
-                  <div className="text-2xl font-bold text-[#C49B3E] dark:text-[#D4A853]">
+                  <div className="text-2xl font-bold text-[#D4A853]">
                     {selectedUser.active_network_count}
                   </div>
-                  <div className="text-xs text-[#D4A853]/80 dark:text-[#D4A853]/80 mt-1">
+                  <div className="text-xs text-[#D4A853]/80 mt-1">
                     active in downline
                   </div>
                 </div>
@@ -430,8 +430,8 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
 
               {/* Referred By */}
               {selectedUser.referrer && selectedUser.referrer.length > 0 && (
-                <div className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border-2 border-amber-200 dark:border-amber-900">
-                  <h3 className="font-semibold text-sm mb-2 text-amber-700 dark:text-amber-400">Referred By</h3>
+                <div className="p-4 bg-gold-400/10 rounded-lg border-2 border-gold-400/20">
+                  <h3 className="font-semibold text-sm mb-2 text-gold-400">Referred By</h3>
                   <div className="space-y-1 text-sm">
                     <div>
                       <span className="font-medium">{selectedUser.referrer[0].name || "Unknown"}</span>
@@ -532,12 +532,12 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
           <AlertDialogHeader>
             <AlertDialogTitle>Delete User - Confirmation Required</AlertDialogTitle>
             <AlertDialogDescription className="space-y-4">
-              <div className="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg border border-red-200 dark:border-red-900">
+              <div className="bg-destructive/10 p-4 rounded-lg border border-destructive/20">
                 <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <AlertTriangle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-semibold text-red-900 dark:text-red-400">Warning: This action is permanent</p>
-                    <p className="text-sm text-red-800 dark:text-red-300 mt-1">
+                    <p className="font-semibold text-red-400">Warning: This action is permanent</p>
+                    <p className="text-sm text-red-300 mt-1">
                       You are about to delete {selectedUser?.name || selectedUser?.email}
                     </p>
                   </div>
@@ -597,14 +597,14 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
           <AlertDialogHeader>
             <AlertDialogTitle>Cannot Delete User</AlertDialogTitle>
             <AlertDialogDescription className="space-y-4">
-              <div className="bg-yellow-50 dark:bg-yellow-950/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-900">
+              <div className="bg-yellow-500/10 p-4 rounded-lg border border-yellow-500/20">
                 <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <AlertTriangle className="h-5 w-5 text-yellow-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-semibold text-yellow-900 dark:text-yellow-400">
+                    <p className="font-semibold text-yellow-400">
                       User has downline members
                     </p>
-                    <p className="text-sm text-yellow-800 dark:text-yellow-300 mt-1">
+                    <p className="text-sm text-yellow-300 mt-1">
                       You must delete these users first before deleting {selectedUser?.name || selectedUser?.email}
                     </p>
                   </div>
