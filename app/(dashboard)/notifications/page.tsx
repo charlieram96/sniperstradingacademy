@@ -14,6 +14,7 @@ import { Bell, BellOff, Mail, MessageSquare, Clock, CheckCircle2, XCircle, Alert
 import { motion } from "framer-motion"
 import { PageHeader } from "@/components/page-header"
 import { SectionHeader } from "@/components/section-header"
+import { useTranslation } from "@/components/language-provider"
 
 // Common timezones for the select
 const COMMON_TIMEZONES = [
@@ -78,6 +79,7 @@ interface NotificationHealth {
 }
 
 export default function NotificationsPage() {
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null)
@@ -269,19 +271,19 @@ export default function NotificationsPage() {
   }
 
   const notificationTypes = [
-    { id: 'referral_signups', label: 'Referral Signups', description: 'When someone uses your referral code' },
-    { id: 'direct_bonus', label: 'Direct Bonuses', description: 'When you earn a $249.50 direct bonus' },
-    { id: 'monthly_commission', label: 'Monthly Commissions', description: 'Monthly residual commission notifications' },
-    { id: 'payouts', label: 'Payouts', description: 'When your commission is paid out' },
-    { id: 'payment_failed', label: 'Payment Failures', description: 'When your subscription payment fails' },
-    { id: 'structure_milestones', label: 'Network Milestones', description: 'When you achieve network goals' }
+    { id: 'referral_signups', label: t("notifications.typeReferralSignups"), description: t("notifications.typeReferralSignupsDesc") },
+    { id: 'direct_bonus', label: t("notifications.typeDirectBonuses"), description: t("notifications.typeDirectBonusesDesc") },
+    { id: 'monthly_commission', label: t("notifications.typeMonthlyCommissions"), description: t("notifications.typeMonthlyCommissionsDesc") },
+    { id: 'payouts', label: t("notifications.typePayouts"), description: t("notifications.typePayoutsDesc") },
+    { id: 'payment_failed', label: t("notifications.typePaymentFailures"), description: t("notifications.typePaymentFailuresDesc") },
+    { id: 'structure_milestones', label: t("notifications.typeNetworkMilestones"), description: t("notifications.typeNetworkMilestonesDesc") }
   ]
 
   return (
     <div>
       <PageHeader
-        title="Notification Preferences"
-        description="Manage how you receive notifications about your account activity"
+        title={t("notifications.title")}
+        description={t("notifications.description")}
       />
 
       {message && (
@@ -324,13 +326,13 @@ export default function NotificationsPage() {
       )}
 
       {/* Channels & Types */}
-      <SectionHeader title="Channels & Types" />
+      <SectionHeader title={t("notifications.channelsAndTypes")} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
       <Card>
         <CardHeader>
-          <CardTitle>Notification Channels</CardTitle>
+          <CardTitle>{t("notifications.channels")}</CardTitle>
           <CardDescription>
-            Choose how you want to receive notifications
+            {t("notifications.channelsDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -339,9 +341,9 @@ export default function NotificationsPage() {
             <div className="flex items-center gap-3">
               <Mail className="h-5 w-5 text-muted-foreground" />
               <div>
-                <Label className="text-base font-medium">Email Notifications</Label>
+                <Label className="text-base font-medium">{t("notifications.emailNotifications")}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Receive notifications via email
+                  {t("notifications.receiveViaEmail")}
                 </p>
               </div>
             </div>
@@ -360,9 +362,9 @@ export default function NotificationsPage() {
               <div className="flex items-center gap-3">
                 <MessageSquare className="h-5 w-5 text-muted-foreground" />
                 <div>
-                  <Label className="text-base font-medium">SMS Notifications</Label>
+                  <Label className="text-base font-medium">{t("notifications.smsNotifications")}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Receive notifications via text message
+                    {t("notifications.receiveViaSms")}
                   </p>
                 </div>
               </div>
@@ -373,7 +375,7 @@ export default function NotificationsPage() {
                   disabled={notificationHealth?.sms_disabled}
                 />
               ) : (
-                <Badge variant="outline">Not Set Up</Badge>
+                <Badge variant="outline">{t("notifications.notSetUp")}</Badge>
               )}
             </div>
 
@@ -390,7 +392,7 @@ export default function NotificationsPage() {
                       variant="outline"
                       size="sm"
                     >
-                      Enable SMS Notifications
+                      {t("notifications.enableSms")}
                     </Button>
                   </div>
                 )}
@@ -464,9 +466,9 @@ export default function NotificationsPage() {
       {/* Notification Types - side by side with Channels */}
       <Card>
         <CardHeader>
-          <CardTitle>Notification Types</CardTitle>
+          <CardTitle>{t("notifications.notificationTypes")}</CardTitle>
           <CardDescription>
-            Choose which events trigger notifications
+            {t("notifications.notificationTypesDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -504,22 +506,22 @@ export default function NotificationsPage() {
       </div>{/* end Channels & Types grid */}
 
       {/* Schedule */}
-      <SectionHeader title="Schedule" />
+      <SectionHeader title={t("notifications.schedule")} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
       {/* Quiet Hours */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
-            Quiet Hours
+            {t("notifications.quietHours")}
           </CardTitle>
           <CardDescription>
-            Pause notifications during specific hours
+            {t("notifications.quietHoursDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label htmlFor="quiet-hours-toggle">Enable Quiet Hours</Label>
+            <Label htmlFor="quiet-hours-toggle">{t("notifications.enableQuietHours")}</Label>
             <Switch
               id="quiet-hours-toggle"
               checked={preferences?.quiet_hours.enabled || false}
@@ -532,7 +534,7 @@ export default function NotificationsPage() {
               <Separator />
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="quiet-start">Start Time</Label>
+                  <Label htmlFor="quiet-start">{t("notifications.startTime")}</Label>
                   <Input
                     id="quiet-start"
                     type="time"
@@ -541,7 +543,7 @@ export default function NotificationsPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="quiet-end">End Time</Label>
+                  <Label htmlFor="quiet-end">{t("notifications.endTime")}</Label>
                   <Input
                     id="quiet-end"
                     type="time"
@@ -561,9 +563,9 @@ export default function NotificationsPage() {
       {/* Timezone - side by side with Quiet Hours */}
       <Card>
         <CardHeader>
-          <CardTitle>Timezone</CardTitle>
+          <CardTitle>{t("notifications.timezone")}</CardTitle>
           <CardDescription>
-            Set your timezone for quiet hours and notification scheduling
+            {t("notifications.timezoneDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -591,7 +593,7 @@ export default function NotificationsPage() {
           onClick={() => fetchPreferences()}
           disabled={saving}
         >
-          Reset
+          {t("notifications.reset")}
         </Button>
         <Button
           onClick={updatePreferences}
@@ -600,10 +602,10 @@ export default function NotificationsPage() {
           {saving ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Saving...
+              {t("notifications.savingPreferences")}
             </>
           ) : (
-            'Save Preferences'
+            t("notifications.savePreferences")
           )}
         </Button>
       </div>
@@ -612,34 +614,34 @@ export default function NotificationsPage() {
       {notificationHealth && (
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle className="text-sm">Delivery Health</CardTitle>
+            <CardTitle className="text-sm">{t("notifications.deliveryHealth")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-muted-foreground">Email Bounces</p>
+                <p className="text-muted-foreground">{t("notifications.emailBounces")}</p>
                 <p className="font-medium">{notificationHealth.email_bounces}</p>
               </div>
               <div>
-                <p className="text-muted-foreground">Email Complaints</p>
+                <p className="text-muted-foreground">{t("notifications.emailComplaints")}</p>
                 <p className="font-medium">{notificationHealth.email_complaints}</p>
               </div>
               <div>
-                <p className="text-muted-foreground">SMS Failures</p>
+                <p className="text-muted-foreground">{t("notifications.smsFailures")}</p>
                 <p className="font-medium">{notificationHealth.sms_failures}</p>
               </div>
               <div>
-                <p className="text-muted-foreground">Status</p>
+                <p className="text-muted-foreground">{t("notifications.statusLabel")}</p>
                 <div className="flex items-center gap-2">
                   {!notificationHealth.email_disabled && !notificationHealth.sms_disabled ? (
                     <>
                       <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
-                      <span className="text-[#D4A853] font-medium">Healthy</span>
+                      <span className="text-[#D4A853] font-medium">{t("notifications.healthy")}</span>
                     </>
                   ) : (
                     <>
                       <AlertCircle className="h-4 w-4 text-yellow-600" />
-                      <span className="text-yellow-600 font-medium">Issues Detected</span>
+                      <span className="text-yellow-600 font-medium">{t("notifications.issuesDetected")}</span>
                     </>
                   )}
                 </div>

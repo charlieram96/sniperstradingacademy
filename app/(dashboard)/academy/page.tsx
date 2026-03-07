@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client"
 import { motion } from "framer-motion"
 import { fadeInUp } from "@/lib/motion"
 import { PageHeader } from "@/components/page-header"
+import { useTranslation } from "@/components/language-provider"
 import { AcademySidebar } from "@/components/academy/academy-sidebar"
 import { LessonContent } from "@/components/academy/lesson-content"
 import { LiveClassCard } from "@/components/academy/live-class-card"
@@ -60,6 +61,7 @@ interface DBLesson {
 }
 
 export default function AcademyPage() {
+  const { t } = useTranslation()
   const [academyClasses, setAcademyClasses] = useState<AcademyClass[]>([])
   const [classesLoading, setClassesLoading] = useState(true)
   const [progressLoading, setProgressLoading] = useState(true)
@@ -242,8 +244,8 @@ export default function AcademyPage() {
       {/* Header row */}
       <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
         <PageHeader
-          title="Trading Academy"
-          description="Master options trading with our comprehensive course"
+          title={t("academy.title")}
+          description={t("academy.description")}
           className="flex-1 min-w-0 !border-b-0 !pb-0 !mb-0"
         />
         {!classesLoading && <LiveClassCard classes={academyClasses} />}

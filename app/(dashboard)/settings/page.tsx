@@ -16,8 +16,10 @@ import { MFAEnrollment } from "@/components/mfa/mfa-enrollment"
 import { MFAFactorsList } from "@/components/mfa/mfa-factors-list"
 import { PageHeader } from "@/components/page-header"
 import { SectionHeader } from "@/components/section-header"
+import { useTranslation } from "@/components/language-provider"
 
 export default function SettingsPage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const [user, setUser] = useState<{
     id: string
@@ -381,7 +383,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">Loading...</div>
+        <div className="text-muted-foreground">{t("common.loading")}</div>
       </div>
     )
   }
@@ -389,8 +391,8 @@ export default function SettingsPage() {
   return (
     <div>
       <PageHeader
-        title="Settings"
-        description="Manage your account settings and preferences"
+        title={t("settings.title")}
+        description={t("settings.description")}
       />
 
       <motion.div
@@ -400,7 +402,7 @@ export default function SettingsPage() {
         animate="visible"
       >
         {/* Profile & Account */}
-        <SectionHeader title="Profile & Account" />
+        <SectionHeader title={t("settings.profileAndAccount")} />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Profile Information */}
@@ -408,29 +410,29 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5 text-primary" />
-              Profile Information
+              {t("settings.profileInformation")}
             </CardTitle>
             <CardDescription>
-              Update your personal information
+              {t("settings.updatePersonalInfo")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <form onSubmit={updateName} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name">{t("settings.fullName")}</Label>
                 <Input
                   id="name"
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Your full name"
+                  placeholder={t("settings.fullNamePlaceholder")}
                   disabled={updating}
                   className="max-w-md"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+                <Label htmlFor="email">{t("settings.emailAddress")}</Label>
                 <div className="flex items-center gap-2">
                   <Input
                     id="email"
@@ -442,12 +444,12 @@ export default function SettingsPage() {
                   {user?.email_confirmed_at && (
                     <div className="flex items-center gap-1 text-[#D4A853] text-sm">
                       <CheckCircle className="h-4 w-4" />
-                      <span>Verified</span>
+                      <span>{t("settings.verified")}</span>
                     </div>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Email cannot be changed. Contact support if needed.
+                  {t("settings.emailCannotChange")}
                 </p>
               </div>
 
@@ -467,7 +469,7 @@ export default function SettingsPage() {
               )}
 
               <Button type="submit" disabled={updating || name === user?.user_metadata?.name}>
-                {updating ? "Updating..." : "Update Profile"}
+                {updating ? t("settings.updating") : t("settings.updateProfile")}
               </Button>
             </form>
           </CardContent>
@@ -478,10 +480,10 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Hash className="h-5 w-5 text-primary" />
-              Account Details
+              {t("settings.accountDetails")}
             </CardTitle>
             <CardDescription>
-              View your account information
+              {t("settings.viewAccountInfo")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -489,7 +491,7 @@ export default function SettingsPage() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Calendar className="h-4 w-4" />
-                  <span>Member Since</span>
+                  <span>{t("settings.memberSince")}</span>
                 </div>
                 <p className="text-sm font-medium">
                   {user?.created_at ? new Date(user.created_at).toLocaleDateString("en-US", {
@@ -503,7 +505,7 @@ export default function SettingsPage() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Hash className="h-4 w-4" />
-                  <span>Referral Code</span>
+                  <span>{t("settings.referralCode")}</span>
                 </div>
                 <p className="text-sm font-medium font-mono">
                   {userData?.referral_code || "N/A"}
@@ -513,17 +515,17 @@ export default function SettingsPage() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Mail className="h-4 w-4" />
-                  <span>Email Verified</span>
+                  <span>{t("settings.emailVerified")}</span>
                 </div>
                 <p className="text-sm font-medium">
-                  {user?.email_confirmed_at ? "Yes" : "No"}
+                  {user?.email_confirmed_at ? t("common.yes") : t("common.no")}
                 </p>
               </div>
 
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <User className="h-4 w-4" />
-                  <span>Account Type</span>
+                  <span>{t("settings.accountType")}</span>
                 </div>
                 <p className="text-sm font-medium capitalize">
                   {userData?.role || "User"}
@@ -536,7 +538,7 @@ export default function SettingsPage() {
         </div>{/* end Profile & Account grid */}
 
         {/* Security */}
-        <SectionHeader title="Security" />
+        <SectionHeader title={t("settings.security")} />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Password & Security */}
@@ -544,23 +546,23 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Lock className="h-5 w-5 text-primary" />
-              Password & Security
+              {t("settings.passwordAndSecurity")}
             </CardTitle>
             <CardDescription>
-              Change your password to keep your account secure
+              {t("settings.changePasswordDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={changePassword} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="currentPassword">Current Password</Label>
+                <Label htmlFor="currentPassword">{t("settings.currentPassword")}</Label>
                 <div className="relative">
                   <Input
                     id="currentPassword"
                     type={showCurrentPassword ? "text" : "password"}
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="Enter current password"
+                    placeholder={t("settings.enterCurrentPassword")}
                     disabled={changingPassword}
                     className="max-w-md pr-10"
                   />
@@ -581,14 +583,14 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
+                <Label htmlFor="newPassword">{t("settings.newPassword")}</Label>
                 <div className="relative">
                   <Input
                     id="newPassword"
                     type={showNewPassword ? "text" : "password"}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter new password"
+                    placeholder={t("settings.enterNewPassword")}
                     disabled={changingPassword}
                     className="max-w-md pr-10"
                   />
@@ -607,19 +609,19 @@ export default function SettingsPage() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Must be at least 8 characters long
+                  {t("settings.passwordMinLength")}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                <Label htmlFor="confirmPassword">{t("settings.confirmNewPassword")}</Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm new password"
+                    placeholder={t("settings.confirmNewPasswordPlaceholder")}
                     disabled={changingPassword}
                     className="max-w-md pr-10"
                   />
@@ -658,7 +660,7 @@ export default function SettingsPage() {
                 type="submit"
                 disabled={changingPassword || !currentPassword || !newPassword || !confirmPassword}
               >
-                {changingPassword ? "Changing Password..." : "Change Password"}
+                {changingPassword ? t("settings.changingPassword") : t("settings.changePassword")}
               </Button>
             </form>
           </CardContent>
@@ -669,10 +671,10 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
-              Two-Factor Authentication
+              {t("settings.twoFactorAuth")}
             </CardTitle>
             <CardDescription>
-              Add an extra layer of security to your account with 2FA
+              {t("settings.twoFactorAuthDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -681,7 +683,7 @@ export default function SettingsPage() {
                 <div className="p-4 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-lg">
                   <p className="text-sm text-[#D4A853] flex items-center gap-2">
                     <CheckCircle className="h-4 w-4" />
-                    2FA is enabled on your account
+                    {t("settings.twoFactorEnabled")}
                   </p>
                 </div>
 
@@ -692,24 +694,24 @@ export default function SettingsPage() {
                     variant="outline"
                     onClick={() => setShowMFAEnrollment(true)}
                   >
-                    Add Another Device
+                    {t("settings.addAnotherDevice")}
                   </Button>
                 )}
               </>
             ) : (
               <div className="space-y-4">
                 <div className="p-4 bg-surface-2 rounded-lg">
-                  <p className="text-sm font-medium mb-2">Why enable 2FA?</p>
+                  <p className="text-sm font-medium mb-2">{t("settings.whyEnable2FA")}</p>
                   <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• Protect your account from unauthorized access</li>
-                    <li>• Required for accessing sensitive features</li>
-                    <li>• Industry-standard security best practice</li>
+                    <li>• {t("settings.twoFactorReason1")}</li>
+                    <li>• {t("settings.twoFactorReason2")}</li>
+                    <li>• {t("settings.twoFactorReason3")}</li>
                   </ul>
                 </div>
 
                 {!showMFAEnrollment && (
                   <Button onClick={() => setShowMFAEnrollment(true)}>
-                    Enable 2FA
+                    {t("settings.enable2FA")}
                   </Button>
                 )}
               </div>
@@ -729,7 +731,7 @@ export default function SettingsPage() {
         </div>{/* end Security grid */}
 
         {/* Additional Settings */}
-        <SectionHeader title="Additional Settings" />
+        <SectionHeader title={t("settings.additionalSettings")} />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Beneficiary Information */}
@@ -737,10 +739,10 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Heart className="h-5 w-5 text-primary" />
-              Beneficiary Information
+              {t("settings.beneficiaryInfo")}
             </CardTitle>
             <CardDescription>
-              Set up beneficiary details in case of account member passing away. You can add multiple beneficiaries.
+              {t("settings.beneficiaryInfoDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -775,7 +777,7 @@ export default function SettingsPage() {
                           {beneficiary.is_primary && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-primary-foreground">
                               <Star className="h-3 w-3" />
-                              Primary
+                              {t("settings.primary")}
                             </span>
                           )}
                         </div>
@@ -831,7 +833,7 @@ export default function SettingsPage() {
               <form onSubmit={saveBeneficiary} className="space-y-4 p-4 border border-border rounded-lg bg-surface-2">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium">
-                    {editingBeneficiary ? "Edit Beneficiary" : "Add New Beneficiary"}
+                    {editingBeneficiary ? t("settings.editBeneficiary") : t("settings.addNewBeneficiary")}
                   </h4>
                   <Button
                     type="button"
@@ -844,13 +846,13 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="beneficiary-name">Full Name *</Label>
+                  <Label htmlFor="beneficiary-name">{t("settings.fullName")} *</Label>
                   <Input
                     id="beneficiary-name"
                     type="text"
                     value={beneficiaryFullName}
                     onChange={(e) => setBeneficiaryFullName(e.target.value)}
-                    placeholder="Beneficiary's full name"
+                    placeholder={t("settings.beneficiaryNamePlaceholder")}
                     disabled={beneficiaryUpdating}
                     className="max-w-md"
                     required
@@ -858,13 +860,13 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="beneficiary-relationship">Relationship to You *</Label>
+                  <Label htmlFor="beneficiary-relationship">{t("settings.relationship")} *</Label>
                   <Input
                     id="beneficiary-relationship"
                     type="text"
                     value={beneficiaryRelationship}
                     onChange={(e) => setBeneficiaryRelationship(e.target.value)}
-                    placeholder="e.g., Spouse, Child, Sibling, Parent"
+                    placeholder={t("settings.relationshipPlaceholder")}
                     disabled={beneficiaryUpdating}
                     className="max-w-md"
                     required
@@ -872,7 +874,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="beneficiary-email">Email Address</Label>
+                  <Label htmlFor="beneficiary-email">{t("settings.emailAddress")}</Label>
                   <Input
                     id="beneficiary-email"
                     type="email"
@@ -885,7 +887,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="beneficiary-phone">Telephone Number</Label>
+                  <Label htmlFor="beneficiary-phone">{t("settings.telephoneNumber")}</Label>
                   <Input
                     id="beneficiary-phone"
                     type="tel"
@@ -898,12 +900,12 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="beneficiary-address">Address</Label>
+                  <Label htmlFor="beneficiary-address">{t("settings.address")}</Label>
                   <Textarea
                     id="beneficiary-address"
                     value={beneficiaryAddress}
                     onChange={(e) => setBeneficiaryAddress(e.target.value)}
-                    placeholder="Street address, City, State, ZIP"
+                    placeholder={t("settings.addressPlaceholder")}
                     disabled={beneficiaryUpdating}
                     className="max-w-md"
                     rows={2}
@@ -912,10 +914,10 @@ export default function SettingsPage() {
 
                 <div className="flex gap-2">
                   <Button type="submit" disabled={beneficiaryUpdating}>
-                    {beneficiaryUpdating ? "Saving..." : editingBeneficiary ? "Update Beneficiary" : "Add Beneficiary"}
+                    {beneficiaryUpdating ? t("settings.saving") : editingBeneficiary ? t("settings.updateBeneficiary") : t("settings.addBeneficiary")}
                   </Button>
                   <Button type="button" variant="outline" onClick={resetBeneficiaryForm}>
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                 </div>
               </form>
@@ -926,13 +928,13 @@ export default function SettingsPage() {
                 className="w-full"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add Beneficiary
+                {t("settings.addBeneficiary")}
               </Button>
             )}
 
             {beneficiaries.length === 0 && !showBeneficiaryForm && (
               <p className="text-sm text-muted-foreground text-center py-4">
-                No beneficiaries added yet. Add a beneficiary to ensure your account details are handled properly.
+                {t("settings.noBeneficiaries")}
               </p>
             )}
           </CardContent>
@@ -944,15 +946,15 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <LifeBuoy className="h-5 w-5 text-primary" />
-              Support & Help
+              {t("settings.supportAndHelp")}
             </CardTitle>
             <CardDescription>
-              Reach out to us for any questions, concerns, feature requests, or problems
+              {t("settings.supportAndHelpDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Support Email</Label>
+              <Label>{t("settings.supportEmail")}</Label>
               <div className="flex items-center gap-2">
                 <Input
                   type="email"
@@ -966,29 +968,29 @@ export default function SettingsPage() {
                   onClick={() => copyToClipboard("support@sniperstradingacademy.com")}
                 >
                   <Copy className="h-4 w-4 mr-2" />
-                  {supportCopied ? "Copied!" : "Copy"}
+                  {supportCopied ? t("referrals.copied") : t("settings.copy")}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Our support team typically responds within 24 hours
+                {t("settings.supportResponseTime")}
               </p>
             </div>
 
             <div className="p-4 bg-surface-2 rounded-lg">
-              <p className="text-sm font-medium mb-2">How can we help?</p>
+              <p className="text-sm font-medium mb-2">{t("settings.howCanWeHelp")}</p>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Technical issues or bugs</li>
-                <li>• Account questions</li>
-                <li>• Feature requests</li>
-                <li>• Payment concerns</li>
-                <li>• General inquiries</li>
+                <li>• {t("settings.helpTechnical")}</li>
+                <li>• {t("settings.helpAccount")}</li>
+                <li>• {t("settings.helpFeatures")}</li>
+                <li>• {t("settings.helpPayment")}</li>
+                <li>• {t("settings.helpGeneral")}</li>
               </ul>
             </div>
 
             <a href="mailto:support@sniperstradingacademy.com">
               <Button className="w-full md:w-auto">
                 <Mail className="h-4 w-4 mr-2" />
-                Email Support
+                {t("settings.emailSupport")}
               </Button>
             </a>
           </CardContent>

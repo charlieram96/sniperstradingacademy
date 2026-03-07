@@ -31,6 +31,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useTranslation } from "@/components/language-provider"
 
 interface TeamMember {
   id: string
@@ -65,6 +66,7 @@ interface TreeChild {
 }
 
 export default function TeamPage() {
+  const { t } = useTranslation()
   const [userId, setUserId] = useState<string | null>(null)
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [directReferrals, setDirectReferrals] = useState<TeamMember[]>([])
@@ -235,7 +237,7 @@ export default function TeamPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">Loading team data...</div>
+        <div className="text-muted-foreground">{t("team.loadingTeamData")}</div>
       </div>
     )
   }
@@ -252,8 +254,8 @@ export default function TeamPage() {
   return (
     <div>
       <PageHeader
-        title="My Team"
-        description="Build and manage your 3-wide, 6-deep trading network"
+        title={t("team.title")}
+        description={t("team.description")}
       />
 
       {/* Qualification Status + Tree Positions side by side */}
@@ -274,8 +276,8 @@ export default function TeamPage() {
             <div className="flex-1">
               <CardTitle className={isQualifiedForCurrentStructure ? 'text-[#C49B3E] dark:text-[#D4A853]' : 'text-foreground'}>
                 {isQualifiedForCurrentStructure
-                  ? `✓ Qualified for Structure ${teamStats.structures} Payouts!`
-                  : 'Qualification Status'}
+                  ? `✓ ${t("team.qualifiedForStructure")} ${teamStats.structures} ${t("team.payouts")}!`
+                  : t("team.qualificationStatus")}
               </CardTitle>
               <CardDescription className="mt-2">
                 {hasPremiumBypass ? (
@@ -309,10 +311,10 @@ export default function TeamPage() {
                 ) : (
                   <XCircle className="h-4 w-4 text-destructive" />
                 )}
-                <span className="text-sm font-medium">Your Active Status</span>
+                <span className="text-sm font-medium">{t("team.yourActiveStatus")}</span>
               </div>
               <Badge variant={isUserActive ? 'success' : 'destructive'}>
-                {isUserActive ? 'Active' : 'Inactive'}
+                {isUserActive ? t("team.active") : t("team.inactive")}
               </Badge>
             </div>
 
@@ -320,7 +322,7 @@ export default function TeamPage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium">
-                  Active Direct Referrals (Structure {teamStats.structures})
+                  {t("team.activeDirectReferrals")} ({t("team.structure")} {teamStats.structures})
                 </span>
                 <span className={`text-sm font-bold ${
                   activeDirectCount >= requiredActiveReferrals ? 'text-[#D4A853]' : 'text-muted-foreground'
@@ -358,10 +360,10 @@ export default function TeamPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Share2 className="h-5 w-5" />
-            Your Tree Positions
+            {t("team.yourTreePositions")}
           </CardTitle>
           <CardDescription>
-            These are your 3 direct positions in the network tree (different from direct referrals)
+            {t("team.treePositionsDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -386,16 +388,16 @@ export default function TeamPage() {
                     >
                       {child.child_slot_number}
                     </div>
-                    <span className="text-xs text-muted-foreground">Slot {child.child_slot_number}</span>
+                    <span className="text-xs text-muted-foreground">{t("team.slot")} {child.child_slot_number}</span>
                   </div>
                   {child.is_filled && child.is_direct_referral && (
                     <Badge variant="default" className="text-xs">
-                      Your Referral
+                      {t("team.yourReferral")}
                     </Badge>
                   )}
                   {child.is_filled && !child.is_direct_referral && (
                     <Badge variant="secondary" className="text-xs">
-                      Spillover
+                      {t("team.spillover")}
                     </Badge>
                   )}
                 </div>
@@ -413,9 +415,9 @@ export default function TeamPage() {
                 ) : (
                   <div className="text-center py-4">
                     <UserPlus className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
-                    <p className="text-sm text-muted-foreground">Empty Slot</p>
+                    <p className="text-sm text-muted-foreground">{t("team.emptySlot")}</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Will auto-fill with your next referral
+                      {t("team.willAutoFill")}
                     </p>
                   </div>
                 )}
@@ -431,18 +433,18 @@ export default function TeamPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UserCheck className="h-5 w-5 text-primary" />
-            Your Direct Referrals
+            {t("team.yourDirectReferrals")}
           </CardTitle>
           <CardDescription>
-            People you personally referred - click to view their team details
+            {t("team.directReferralsDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {directReferrals.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <UserPlus className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-              <p>No direct referrals yet</p>
-              <p className="text-sm mt-2">Share your referral link to start building your team</p>
+              <p>{t("team.noDirectReferrals")}</p>
+              <p className="text-sm mt-2">{t("team.shareReferralLink")}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -502,10 +504,10 @@ export default function TeamPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UserCheck className="h-5 w-5" />
-              {selectedMember?.name}&apos;s Team Details
+              {selectedMember?.name} - {t("team.teamDetails")}
             </DialogTitle>
             <DialogDescription>
-              View statistics and network information for this direct referral
+              {t("team.viewStatsDesc")}
             </DialogDescription>
           </DialogHeader>
           {selectedMember && (
@@ -513,9 +515,9 @@ export default function TeamPage() {
               {/* Member Info */}
               <div className="p-4 rounded-lg bg-surface-2">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Status</span>
+                  <span className="text-sm font-medium">{t("team.status")}</span>
                   <Badge variant={selectedMember.is_active ? 'success' : 'secondary'}>
-                    {selectedMember.is_active ? 'Active' : 'Inactive'}
+                    {selectedMember.is_active ? t("team.active") : t("team.inactive")}
                   </Badge>
                 </div>
                 <div className="text-sm text-muted-foreground">{selectedMember.email}</div>
@@ -526,14 +528,14 @@ export default function TeamPage() {
 
               {/* Referral Stats */}
               <div>
-                <h4 className="text-sm font-semibold mb-3">Referral Statistics</h4>
+                <h4 className="text-sm font-semibold mb-3">{t("team.referralStatistics")}</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 rounded-lg bg-surface-2">
-                    <div className="text-xs text-muted-foreground">Total Direct Referrals</div>
+                    <div className="text-xs text-muted-foreground">{t("team.totalDirectReferrals")}</div>
                     <div className="text-2xl font-bold mt-1">{selectedMember.referrals_count || 0}</div>
                   </div>
                   <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-                    <div className="text-xs text-muted-foreground">Active Direct Referrals</div>
+                    <div className="text-xs text-muted-foreground">{t("team.activeDirectReferrals")}</div>
                     <div className="text-2xl font-bold text-primary mt-1">{selectedMember.active_direct_referrals_count || 0}</div>
                   </div>
                 </div>
@@ -541,17 +543,17 @@ export default function TeamPage() {
 
               {/* Network Stats */}
               <div>
-                <h4 className="text-sm font-semibold mb-3">Network Structure</h4>
+                <h4 className="text-sm font-semibold mb-3">{t("team.networkStructure")}</h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 rounded-lg bg-surface-2">
-                    <div className="text-xs text-muted-foreground">Total Members</div>
+                    <div className="text-xs text-muted-foreground">{t("team.totalMembers")}</div>
                     <div className="text-2xl font-bold mt-1">{selectedMember.total_network_count || 0}</div>
-                    <div className="text-xs text-muted-foreground mt-1">All members in structure</div>
+                    <div className="text-xs text-muted-foreground mt-1">{t("team.allMembersInStructure")}</div>
                   </div>
                   <div className="p-3 rounded-lg bg-[#D4A853]/5 border border-[#D4A853]/20">
-                    <div className="text-xs text-muted-foreground">Active Members</div>
+                    <div className="text-xs text-muted-foreground">{t("team.activeMembers")}</div>
                     <div className="text-2xl font-bold text-[#D4A853] mt-1">{selectedMember.active_network_count || 0}</div>
-                    <div className="text-xs text-muted-foreground mt-1">With subscription</div>
+                    <div className="text-xs text-muted-foreground mt-1">{t("team.withSubscription")}</div>
                   </div>
                 </div>
               </div>
@@ -559,7 +561,7 @@ export default function TeamPage() {
               {/* Qualification Status */}
               <div className="p-3 rounded-lg bg-background border">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Qualified for Payouts</span>
+                  <span className="text-sm font-medium">{t("team.qualifiedForPayouts")}</span>
                   {selectedMember.is_active && (selectedMember.active_direct_referrals_count || 0) >= 3 ? (
                     <div className="flex items-center gap-1 text-[#D4A853]">
                       <CheckCircle className="h-4 w-4" />
@@ -573,7 +575,7 @@ export default function TeamPage() {
                   )}
                 </div>
                 {!selectedMember.is_active ? (
-                  <p className="text-xs text-muted-foreground mt-2">Member is not active</p>
+                  <p className="text-xs text-muted-foreground mt-2">{t("team.memberNotActive")}</p>
                 ) : (selectedMember.active_direct_referrals_count || 0) < 3 ? (
                   <p className="text-xs text-muted-foreground mt-2">
                     Needs {3 - (selectedMember.active_direct_referrals_count || 0)} more active direct referrals
@@ -594,27 +596,27 @@ export default function TeamPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-xl">
             <Crown className="h-6 w-6 text-primary" />
-            Current Structure Progress
+            {t("team.currentStructureProgress")}
           </CardTitle>
           <CardDescription className="text-base">
-            Build your 3-wide unlimited depth structure to maximize earnings
+            {t("team.buildStructureDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {/* Current Structure Stats */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-              <p className="text-sm text-muted-foreground">Active Members</p>
+              <p className="text-sm text-muted-foreground">{t("team.activeMembers")}</p>
               <p className="text-3xl font-bold text-primary">{teamStats.activeMembers}/{1092 * teamStats.structures}</p>
               <Progress value={(teamStats.activeMembers / (1092 * teamStats.structures)) * 100} className="h-2 mt-2" />
             </div>
             <div className="p-4 rounded-lg bg-surface-2">
-              <p className="text-sm text-muted-foreground">Total Members</p>
+              <p className="text-sm text-muted-foreground">{t("team.totalMembers")}</p>
               <p className="text-3xl font-bold">{teamStats.totalMembers}</p>
-              <p className="text-xs text-muted-foreground mt-1">Informational only</p>
+              <p className="text-xs text-muted-foreground mt-1">{t("team.informationalOnly")}</p>
             </div>
             <div className="p-4 rounded-lg bg-surface-2">
-              <p className="text-sm text-muted-foreground">Monthly Earnings</p>
+              <p className="text-sm text-muted-foreground">{t("team.monthlyEarnings")}</p>
               <p className="text-3xl font-bold text-primary">${(teamStats.activeMembers * 199 * teamStats.commissionRate).toFixed(0)}</p>
               <p className="text-xs text-muted-foreground mt-1">{(teamStats.commissionRate * 100).toFixed(0)}% of $199 × active count</p>
             </div>
@@ -627,28 +629,28 @@ export default function TeamPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            Structure Overview
+            {t("team.structureOverview")}
           </CardTitle>
           <CardDescription>
-            Build multiple structures to increase your commission rate up to 16%
+            {t("team.structureOverviewDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <div className="p-3 rounded-lg bg-surface-2">
-              <p className="text-sm text-muted-foreground">Active Structures</p>
+              <p className="text-sm text-muted-foreground">{t("team.activeStructures")}</p>
               <p className="text-2xl font-bold">{teamStats.structures}/6</p>
             </div>
             <div className="p-3 rounded-lg bg-surface-2">
-              <p className="text-sm text-muted-foreground">Commission Rate</p>
+              <p className="text-sm text-muted-foreground">{t("team.commissionRate")}</p>
               <p className="text-2xl font-bold text-primary">{(teamStats.commissionRate * 100).toFixed(0)}%</p>
             </div>
             <div className="p-3 rounded-lg bg-surface-2">
-              <p className="text-sm text-muted-foreground">Completed Structures</p>
+              <p className="text-sm text-muted-foreground">{t("team.completedStructures")}</p>
               <p className="text-2xl font-bold">{teamStats.completedStructures}</p>
             </div>
             <div className="p-3 rounded-lg bg-surface-2">
-              <p className="text-sm text-muted-foreground">Next Structure At</p>
+              <p className="text-sm text-muted-foreground">{t("team.nextStructureAt")}</p>
               <p className="text-2xl font-bold">{1092 - teamStats.currentStructureProgress}</p>
             </div>
           </div>
@@ -702,7 +704,7 @@ export default function TeamPage() {
             <Users className="absolute top-3 right-3 h-10 w-10 text-foreground/5" />
             <CardHeader className="pb-3">
               <CardTitle className="text-[11px] uppercase tracking-wide font-semibold text-foreground-tertiary">
-                Total Team
+                {t("team.totalTeam")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -717,13 +719,13 @@ export default function TeamPage() {
             <UserCheck className="absolute top-3 right-3 h-10 w-10 text-foreground/5" />
             <CardHeader className="pb-3">
               <CardTitle className="text-[11px] uppercase tracking-wide font-semibold text-foreground-tertiary">
-                Direct Referrals
+                {t("team.directReferrals")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{teamStats.directReferralsCount}/3</div>
               <p className="text-xs text-foreground-tertiary">
-                {teamStats.qualificationStatus ? "Qualified" : "Not qualified"}
+                {teamStats.qualificationStatus ? t("team.qualified") : t("team.notQualified")}
               </p>
             </CardContent>
           </Card>
@@ -734,12 +736,12 @@ export default function TeamPage() {
             <UserPlus className="absolute top-3 right-3 h-10 w-10 text-foreground/5" />
             <CardHeader className="pb-3">
               <CardTitle className="text-[11px] uppercase tracking-wide font-semibold text-foreground-tertiary">
-                Active Members
+                {t("team.activeMembers")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{teamStats.activeMembers}</div>
-              <p className="text-xs text-foreground-tertiary">with subscription</p>
+              <p className="text-xs text-foreground-tertiary">{t("team.withSubscription")}</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -749,14 +751,14 @@ export default function TeamPage() {
             <DollarSign className="absolute top-3 right-3 h-10 w-10 text-emerald-500/5" />
             <CardHeader className="pb-3">
               <CardTitle className="text-[11px] uppercase tracking-wide font-semibold text-foreground-tertiary">
-                Sniper Volume
+                {t("team.sniperVolume")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 ${teamStats.totalMonthlyVolume.toLocaleString()}
               </div>
-              <p className="text-xs text-foreground-tertiary">monthly team volume</p>
+              <p className="text-xs text-foreground-tertiary">{t("team.monthlyTeamVolume")}</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -766,7 +768,7 @@ export default function TeamPage() {
             <TrendingUp className="absolute top-3 right-3 h-10 w-10 text-gold-400/5" />
             <CardHeader className="pb-3">
               <CardTitle className="text-[11px] uppercase tracking-wide font-semibold text-foreground-tertiary">
-                Your Residual
+                {t("team.yourResidual")}
               </CardTitle>
             </CardHeader>
             <CardContent>

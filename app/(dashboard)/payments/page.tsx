@@ -31,6 +31,7 @@ import {
 import { UnifiedTransactionHistory } from "@/components/crypto/UnifiedTransactionHistory"
 import PayoutWalletSetup from "@/components/crypto/PayoutWalletSetup"
 import QRCode from "qrcode"
+import { useTranslation } from "@/components/language-provider"
 
 interface PaymentInfo {
   depositAddress: string
@@ -50,6 +51,7 @@ interface PaymentStatus {
 }
 
 function PaymentsContent() {
+  const { t } = useTranslation()
   const [userId, setUserId] = useState<string | null>(null)
   const searchParams = useSearchParams()
   const [initialPaymentCompleted, setInitialPaymentCompleted] = useState(false)
@@ -295,7 +297,7 @@ function PaymentsContent() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">Loading...</div>
+        <div className="text-muted-foreground">{t("common.loading")}</div>
       </div>
     )
   }
@@ -307,8 +309,8 @@ function PaymentsContent() {
   return (
     <div>
       <PageHeader
-        title="Payments"
-        description="Manage your subscription and view payment history"
+        title={t("payments.title")}
+        description={t("payments.description")}
       />
 
       {/* Activation Required Banner */}
@@ -318,7 +320,7 @@ function PaymentsContent() {
             <div className="flex items-center gap-3">
               <Lock className="h-6 w-6 text-red-600 dark:text-red-400" />
               <div>
-                <CardTitle className="text-red-900 dark:text-red-200">Account Locked - Activation Required</CardTitle>
+                <CardTitle className="text-red-900 dark:text-red-200">{t("payments.accountLocked")}</CardTitle>
                 <CardDescription className="text-red-700 dark:text-red-300 mt-1">
                   Complete the initial payment below to activate your account and unlock all platform features.
                 </CardDescription>
@@ -346,7 +348,7 @@ function PaymentsContent() {
           <CardHeader>
             <CardTitle className="text-foreground flex items-center">
               <CheckCircle className="h-5 w-5 mr-2 text-[#D4A853]" />
-              Payment Successful!
+              {t("payments.paymentSuccessful")}
             </CardTitle>
             <CardDescription className="text-muted-foreground">
               Your payment has been confirmed. You can start earning commissions from referrals.
@@ -360,7 +362,7 @@ function PaymentsContent() {
           <CardHeader>
             <CardTitle className="text-foreground flex items-center">
               <XCircle className="h-5 w-5 mr-2 text-yellow-500" />
-              Payment Canceled
+              {t("payments.paymentCanceled")}
             </CardTitle>
             <CardDescription className="text-muted-foreground">
               Your payment process was canceled. You can try again anytime.
@@ -375,7 +377,7 @@ function PaymentsContent() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Lock className="h-5 w-5 text-primary" />
-              <CardTitle className="text-foreground">Unlock Your Membership</CardTitle>
+              <CardTitle className="text-foreground">{t("payments.unlockMembership")}</CardTitle>
             </div>
             <CardDescription className="text-muted-foreground">
               One-time payment to unlock your 3 referral slots and start building your team
@@ -410,7 +412,7 @@ function PaymentsContent() {
       {/* Subscription Status */}
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>Subscription Status</CardTitle>
+          <CardTitle>{t("payments.subscriptionStatus")}</CardTitle>
           <CardDescription>
             {paymentSchedule === 'weekly' ? 'Weekly' : 'Monthly'} subscription for Trading Hub network access
           </CardDescription>
@@ -582,7 +584,7 @@ function PaymentsContent() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wallet className="h-5 w-5" />
-              Complete Your Payment
+              {t("payments.completePayment")}
             </DialogTitle>
             <DialogDescription>
               Pay ${currentAmount} USDC to complete your {currentPaymentType === 'initial_unlock' ? 'membership activation' : 'subscription'}
@@ -708,7 +710,7 @@ function PaymentsContent() {
                 ) : (
                   <>
                     <RefreshCw className="h-4 w-4 mr-2" />
-                    Check Payment Status
+                    {t("payments.checkPaymentStatus")}
                   </>
                 )}
               </Button>
@@ -741,7 +743,7 @@ export default function PaymentsPage() {
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">Loading payment data...</div>
+        <div className="text-muted-foreground">{t("payments.loadingPaymentData")}</div>
       </div>
     }>
       <PaymentsContent />
