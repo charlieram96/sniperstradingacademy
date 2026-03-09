@@ -1,7 +1,7 @@
 /**
- * PAYOUT PROCESSED EMAIL TEMPLATE
+ * NETWORK JOIN EMAIL TEMPLATE
  *
- * Sent when a commission payout is successfully transferred to user's bank account
+ * Sent when someone joins the user's network (deeper than direct referral)
  */
 
 import {
@@ -18,30 +18,23 @@ import {
 } from '@react-email/components'
 import * as React from 'react'
 
-interface PayoutProcessedEmailProps {
+interface NetworkJoinEmailProps {
   userName?: string
-  amount?: number
-  commissionType?: string
-  arrivalDate?: string
+  newMemberName?: string
+  depth?: number
   dashboardUrl?: string
 }
 
-export const PayoutProcessedEmail = ({
+export const NetworkJoinEmail = ({
   userName = 'Member',
-  amount = 249.50,
-  commissionType = 'Direct Bonus',
-  arrivalDate = '2-7 business days',
+  newMemberName = 'New Member',
+  depth = 2,
   dashboardUrl = 'https://sniperstradingacademy.com/dashboard'
-}: PayoutProcessedEmailProps) => {
-  const formattedAmount = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD'
-  }).format(amount)
-
+}: NetworkJoinEmailProps) => {
   return (
     <Html>
       <Head />
-      <Preview>Your ${formattedAmount} payout is on the way!</Preview>
+      <Preview>👥 {newMemberName} joined your network!</Preview>
       <Body style={main}>
         <Container style={container}>
           {/* Logo */}
@@ -49,70 +42,49 @@ export const PayoutProcessedEmail = ({
             <Heading style={h1}>Snipers Trading Academy</Heading>
           </Section>
 
-          {/* Success Icon */}
+          {/* Icon */}
           <Section style={iconSection}>
-            <Text style={successIcon}>✅</Text>
+            <Text style={successIcon}>👥</Text>
           </Section>
 
           {/* Main Content */}
-          <Heading style={h2}>Payout Processed!</Heading>
+          <Heading style={h2}>Your Network is Growing!</Heading>
 
           <Text style={text}>
             Hi {userName},
           </Text>
 
           <Text style={text}>
-            Great news! Your commission payout has been successfully transferred to your connected bank account.
+            Great news! <strong>{newMemberName}</strong> has joined your network at level {depth}. Your team is expanding and your earning potential is increasing!
           </Text>
 
-          {/* Amount Box */}
-          <Section style={amountBox}>
-            <Text style={amountLabel}>Amount</Text>
-            <Text style={amountValue}>{formattedAmount}</Text>
-            <Text style={commissionTypeText}>{commissionType}</Text>
+          {/* Info Box */}
+          <Section style={infoBox}>
+            <Text style={infoLabel}>New Network Member</Text>
+            <Text style={infoValue}>{newMemberName}</Text>
+            <Text style={depthText}>Level {depth} in your network</Text>
           </Section>
 
           <Text style={text}>
-            Your payout should arrive in your bank account within {arrivalDate}.
-            The exact timing depends on your bank&apos;s processing schedule.
+            As your network grows, so does your monthly residual commission. Every active member in your network contributes to your sniper volume.
           </Text>
 
           {/* CTA Button */}
           <Section style={buttonSection}>
-            <Button style={button} href={dashboardUrl}>
-              View Your Dashboard
+            <Button style={button} href={`${dashboardUrl}/team`}>
+              View Your Network
             </Button>
-          </Section>
-
-          {/* Info Section */}
-          <Section style={infoBox}>
-            <Text style={infoTitle}>What&apos;s Next?</Text>
-            <Text style={infoText}>
-              • Check your bank account in 2-7 business days
-              <br />
-              • View your payout history in the Finance page
-              <br />
-              • Continue growing your network to earn more
-            </Text>
           </Section>
 
           {/* Footer */}
           <Section style={footer}>
             <Text style={footerText}>
-              Questions about your payout?{' '}
-              <Link href={`${dashboardUrl}/settings`} style={link}>
-                Contact Support
-              </Link>
-            </Text>
-            <Text style={footerText}>
-              You&apos;re receiving this email because a payout was processed on your Snipers Trading Academy account.
-              <br />
               <Link href={`${dashboardUrl}/notifications`} style={link}>
                 Manage notification preferences
               </Link>
             </Text>
             <Text style={footerCopyright}>
-              © {new Date().getFullYear()} Snipers Trading Academy. All rights reserved.
+              &copy; {new Date().getFullYear()} Snipers Trading Academy. All rights reserved.
             </Text>
           </Section>
         </Container>
@@ -121,13 +93,12 @@ export const PayoutProcessedEmail = ({
   )
 }
 
-export default PayoutProcessedEmail
+export default NetworkJoinEmail
 
 // Styles
 const main = {
   backgroundColor: '#f6f9fc',
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif'
+  fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif'
 }
 
 const container = {
@@ -176,33 +147,33 @@ const text = {
   margin: '16px 20px'
 }
 
-const amountBox = {
-  backgroundColor: '#f0fdf4',
-  border: '2px solid #10b981',
+const infoBox = {
+  backgroundColor: '#eff6ff',
+  border: '2px solid #3b82f6',
   borderRadius: '8px',
   margin: '32px 20px',
   padding: '24px',
   textAlign: 'center' as const
 }
 
-const amountLabel = {
-  color: '#059669',
-  fontSize: '14px',
+const infoLabel = {
+  color: '#1e40af',
+  fontSize: '12px',
   fontWeight: '600',
   margin: '0 0 8px 0',
   textTransform: 'uppercase' as const,
   letterSpacing: '0.5px'
 }
 
-const amountValue = {
-  color: '#047857',
-  fontSize: '36px',
+const infoValue = {
+  color: '#1e3a8a',
+  fontSize: '24px',
   fontWeight: '700',
   margin: '0'
 }
 
-const commissionTypeText = {
-  color: '#059669',
+const depthText = {
+  color: '#3b82f6',
   fontSize: '14px',
   margin: '8px 0 0 0'
 }
@@ -222,27 +193,6 @@ const button = {
   textAlign: 'center' as const,
   display: 'inline-block',
   padding: '12px 32px'
-}
-
-const infoBox = {
-  backgroundColor: '#f3f4f6',
-  borderRadius: '8px',
-  margin: '32px 20px',
-  padding: '20px'
-}
-
-const infoTitle = {
-  color: '#1f2937',
-  fontSize: '16px',
-  fontWeight: '600',
-  margin: '0 0 12px 0'
-}
-
-const infoText = {
-  color: '#4b5563',
-  fontSize: '14px',
-  lineHeight: '1.6',
-  margin: '0'
 }
 
 const footer = {

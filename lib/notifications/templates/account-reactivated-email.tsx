@@ -1,7 +1,7 @@
 /**
- * PAYOUT PROCESSED EMAIL TEMPLATE
+ * ACCOUNT REACTIVATED EMAIL TEMPLATE
  *
- * Sent when a commission payout is successfully transferred to user's bank account
+ * Sent when a user's account becomes active again after payment
  */
 
 import {
@@ -18,30 +18,19 @@ import {
 } from '@react-email/components'
 import * as React from 'react'
 
-interface PayoutProcessedEmailProps {
+interface AccountReactivatedEmailProps {
   userName?: string
-  amount?: number
-  commissionType?: string
-  arrivalDate?: string
   dashboardUrl?: string
 }
 
-export const PayoutProcessedEmail = ({
+export const AccountReactivatedEmail = ({
   userName = 'Member',
-  amount = 249.50,
-  commissionType = 'Direct Bonus',
-  arrivalDate = '2-7 business days',
   dashboardUrl = 'https://sniperstradingacademy.com/dashboard'
-}: PayoutProcessedEmailProps) => {
-  const formattedAmount = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD'
-  }).format(amount)
-
+}: AccountReactivatedEmailProps) => {
   return (
     <Html>
       <Head />
-      <Preview>Your ${formattedAmount} payout is on the way!</Preview>
+      <Preview>Welcome back! Your account is active again</Preview>
       <Body style={main}>
         <Container style={container}>
           {/* Logo */}
@@ -55,64 +44,48 @@ export const PayoutProcessedEmail = ({
           </Section>
 
           {/* Main Content */}
-          <Heading style={h2}>Payout Processed!</Heading>
+          <Heading style={h2}>Welcome Back!</Heading>
 
           <Text style={text}>
             Hi {userName},
           </Text>
 
           <Text style={text}>
-            Great news! Your commission payout has been successfully transferred to your connected bank account.
+            Great news! Your account has been reactivated and you&apos;re back in action. All your benefits have been restored:
           </Text>
 
-          {/* Amount Box */}
-          <Section style={amountBox}>
-            <Text style={amountLabel}>Amount</Text>
-            <Text style={amountValue}>{formattedAmount}</Text>
-            <Text style={commissionTypeText}>{commissionType}</Text>
+          {/* Success Box */}
+          <Section style={successBox}>
+            <Text style={successTitle}>Account Restored</Text>
+            <Text style={successText}>
+              • Commission earnings resumed
+              <br />
+              • Network position fully active
+              <br />
+              • You&apos;re counted as active for your upline again
+            </Text>
           </Section>
 
           <Text style={text}>
-            Your payout should arrive in your bank account within {arrivalDate}.
-            The exact timing depends on your bank&apos;s processing schedule.
+            Your team missed you! Get back to building your network and growing your earnings.
           </Text>
 
           {/* CTA Button */}
           <Section style={buttonSection}>
             <Button style={button} href={dashboardUrl}>
-              View Your Dashboard
+              Go to Dashboard
             </Button>
-          </Section>
-
-          {/* Info Section */}
-          <Section style={infoBox}>
-            <Text style={infoTitle}>What&apos;s Next?</Text>
-            <Text style={infoText}>
-              • Check your bank account in 2-7 business days
-              <br />
-              • View your payout history in the Finance page
-              <br />
-              • Continue growing your network to earn more
-            </Text>
           </Section>
 
           {/* Footer */}
           <Section style={footer}>
             <Text style={footerText}>
-              Questions about your payout?{' '}
-              <Link href={`${dashboardUrl}/settings`} style={link}>
-                Contact Support
-              </Link>
-            </Text>
-            <Text style={footerText}>
-              You&apos;re receiving this email because a payout was processed on your Snipers Trading Academy account.
-              <br />
               <Link href={`${dashboardUrl}/notifications`} style={link}>
                 Manage notification preferences
               </Link>
             </Text>
             <Text style={footerCopyright}>
-              © {new Date().getFullYear()} Snipers Trading Academy. All rights reserved.
+              &copy; {new Date().getFullYear()} Snipers Trading Academy. All rights reserved.
             </Text>
           </Section>
         </Container>
@@ -121,13 +94,12 @@ export const PayoutProcessedEmail = ({
   )
 }
 
-export default PayoutProcessedEmail
+export default AccountReactivatedEmail
 
 // Styles
 const main = {
   backgroundColor: '#f6f9fc',
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif'
+  fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif'
 }
 
 const container = {
@@ -161,7 +133,7 @@ const successIcon = {
 }
 
 const h2 = {
-  color: '#1f2937',
+  color: '#059669',
   fontSize: '24px',
   fontWeight: '600',
   lineHeight: '1.3',
@@ -176,35 +148,26 @@ const text = {
   margin: '16px 20px'
 }
 
-const amountBox = {
+const successBox = {
   backgroundColor: '#f0fdf4',
   border: '2px solid #10b981',
   borderRadius: '8px',
   margin: '32px 20px',
-  padding: '24px',
-  textAlign: 'center' as const
+  padding: '24px'
 }
 
-const amountLabel = {
+const successTitle = {
   color: '#059669',
-  fontSize: '14px',
-  fontWeight: '600',
-  margin: '0 0 8px 0',
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.5px'
-}
-
-const amountValue = {
-  color: '#047857',
-  fontSize: '36px',
+  fontSize: '18px',
   fontWeight: '700',
-  margin: '0'
+  margin: '0 0 12px 0'
 }
 
-const commissionTypeText = {
-  color: '#059669',
-  fontSize: '14px',
-  margin: '8px 0 0 0'
+const successText = {
+  color: '#065f46',
+  fontSize: '15px',
+  lineHeight: '1.8',
+  margin: '0'
 }
 
 const buttonSection = {
@@ -213,7 +176,7 @@ const buttonSection = {
 }
 
 const button = {
-  backgroundColor: '#3b82f6',
+  backgroundColor: '#059669',
   borderRadius: '6px',
   color: '#fff',
   fontSize: '16px',
@@ -222,27 +185,6 @@ const button = {
   textAlign: 'center' as const,
   display: 'inline-block',
   padding: '12px 32px'
-}
-
-const infoBox = {
-  backgroundColor: '#f3f4f6',
-  borderRadius: '8px',
-  margin: '32px 20px',
-  padding: '20px'
-}
-
-const infoTitle = {
-  color: '#1f2937',
-  fontSize: '16px',
-  fontWeight: '600',
-  margin: '0 0 12px 0'
-}
-
-const infoText = {
-  color: '#4b5563',
-  fontSize: '14px',
-  lineHeight: '1.6',
-  margin: '0'
 }
 
 const footer = {

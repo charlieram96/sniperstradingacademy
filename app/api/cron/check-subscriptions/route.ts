@@ -205,6 +205,18 @@ export async function GET(req: NextRequest) {
         });
 
         console.log(`[CheckSubscriptions] Deactivated user ${user.email} (${daysOverdue} days past due date)`);
+
+        // Send account inactive notification
+        try {
+          const { notifyAccountInactive } = await import('@/lib/notifications/notification-service');
+          await notifyAccountInactive({
+            userId: user.id,
+            daysOverdue,
+          });
+          console.log(`[CheckSubscriptions] Sent inactive notification to ${user.email}`);
+        } catch (notifError) {
+          console.error(`[CheckSubscriptions] Error sending inactive notification:`, notifError);
+        }
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Unknown error';
         results.push({

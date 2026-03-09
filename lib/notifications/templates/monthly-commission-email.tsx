@@ -29,7 +29,7 @@ export const MonthlyCommissionEmail = ({
   userName = 'Member',
   amount = 149.50,
   month = 'November 2025',
-  dashboardUrl = 'https://tradinghub.com/dashboard'
+  dashboardUrl = 'https://sniperstradingacademy.com/dashboard'
 }: MonthlyCommissionEmailProps) => {
   const formattedAmount = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -44,7 +44,7 @@ export const MonthlyCommissionEmail = ({
         <Container style={container}>
           {/* Logo */}
           <Section style={logoSection}>
-            <Heading style={h1}>Trading Hub</Heading>
+            <Heading style={h1}>Snipers Trading Academy</Heading>
           </Section>
 
           {/* Success Icon */}
@@ -121,7 +121,7 @@ export const MonthlyCommissionEmail = ({
               </Link>
             </Text>
             <Text style={footerCopyright}>
-              © {new Date().getFullYear()} Trading Hub. All rights reserved.
+              © {new Date().getFullYear()} Snipers Trading Academy. All rights reserved.
             </Text>
           </Section>
         </Container>

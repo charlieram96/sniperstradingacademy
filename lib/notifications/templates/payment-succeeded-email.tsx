@@ -1,7 +1,7 @@
 /**
- * PAYOUT PROCESSED EMAIL TEMPLATE
+ * PAYMENT SUCCEEDED EMAIL TEMPLATE
  *
- * Sent when a commission payout is successfully transferred to user's bank account
+ * Sent when a subscription payment is successfully processed
  */
 
 import {
@@ -18,21 +18,17 @@ import {
 } from '@react-email/components'
 import * as React from 'react'
 
-interface PayoutProcessedEmailProps {
+interface PaymentSucceededEmailProps {
   userName?: string
   amount?: number
-  commissionType?: string
-  arrivalDate?: string
   dashboardUrl?: string
 }
 
-export const PayoutProcessedEmail = ({
+export const PaymentSucceededEmail = ({
   userName = 'Member',
-  amount = 249.50,
-  commissionType = 'Direct Bonus',
-  arrivalDate = '2-7 business days',
+  amount = 199,
   dashboardUrl = 'https://sniperstradingacademy.com/dashboard'
-}: PayoutProcessedEmailProps) => {
+}: PaymentSucceededEmailProps) => {
   const formattedAmount = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD'
@@ -41,7 +37,7 @@ export const PayoutProcessedEmail = ({
   return (
     <Html>
       <Head />
-      <Preview>Your ${formattedAmount} payout is on the way!</Preview>
+      <Preview>Payment of {formattedAmount} confirmed</Preview>
       <Body style={main}>
         <Container style={container}>
           {/* Logo */}
@@ -55,64 +51,39 @@ export const PayoutProcessedEmail = ({
           </Section>
 
           {/* Main Content */}
-          <Heading style={h2}>Payout Processed!</Heading>
+          <Heading style={h2}>Payment Confirmed!</Heading>
 
           <Text style={text}>
             Hi {userName},
           </Text>
 
           <Text style={text}>
-            Great news! Your commission payout has been successfully transferred to your connected bank account.
+            Your subscription payment has been successfully processed. Your account remains active and your network benefits continue.
           </Text>
 
           {/* Amount Box */}
           <Section style={amountBox}>
-            <Text style={amountLabel}>Amount</Text>
+            <Text style={amountLabel}>Payment Amount</Text>
             <Text style={amountValue}>{formattedAmount}</Text>
-            <Text style={commissionTypeText}>{commissionType}</Text>
+            <Text style={statusText}>&#10003; Payment Successful</Text>
           </Section>
-
-          <Text style={text}>
-            Your payout should arrive in your bank account within {arrivalDate}.
-            The exact timing depends on your bank&apos;s processing schedule.
-          </Text>
 
           {/* CTA Button */}
           <Section style={buttonSection}>
             <Button style={button} href={dashboardUrl}>
-              View Your Dashboard
+              View Dashboard
             </Button>
-          </Section>
-
-          {/* Info Section */}
-          <Section style={infoBox}>
-            <Text style={infoTitle}>What&apos;s Next?</Text>
-            <Text style={infoText}>
-              • Check your bank account in 2-7 business days
-              <br />
-              • View your payout history in the Finance page
-              <br />
-              • Continue growing your network to earn more
-            </Text>
           </Section>
 
           {/* Footer */}
           <Section style={footer}>
             <Text style={footerText}>
-              Questions about your payout?{' '}
-              <Link href={`${dashboardUrl}/settings`} style={link}>
-                Contact Support
-              </Link>
-            </Text>
-            <Text style={footerText}>
-              You&apos;re receiving this email because a payout was processed on your Snipers Trading Academy account.
-              <br />
               <Link href={`${dashboardUrl}/notifications`} style={link}>
                 Manage notification preferences
               </Link>
             </Text>
             <Text style={footerCopyright}>
-              © {new Date().getFullYear()} Snipers Trading Academy. All rights reserved.
+              &copy; {new Date().getFullYear()} Snipers Trading Academy. All rights reserved.
             </Text>
           </Section>
         </Container>
@@ -121,13 +92,12 @@ export const PayoutProcessedEmail = ({
   )
 }
 
-export default PayoutProcessedEmail
+export default PaymentSucceededEmail
 
 // Styles
 const main = {
   backgroundColor: '#f6f9fc',
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif'
+  fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif'
 }
 
 const container = {
@@ -161,7 +131,7 @@ const successIcon = {
 }
 
 const h2 = {
-  color: '#1f2937',
+  color: '#059669',
   fontSize: '24px',
   fontWeight: '600',
   lineHeight: '1.3',
@@ -201,10 +171,11 @@ const amountValue = {
   margin: '0'
 }
 
-const commissionTypeText = {
+const statusText = {
   color: '#059669',
   fontSize: '14px',
-  margin: '8px 0 0 0'
+  margin: '12px 0 0 0',
+  fontWeight: '600'
 }
 
 const buttonSection = {
@@ -222,27 +193,6 @@ const button = {
   textAlign: 'center' as const,
   display: 'inline-block',
   padding: '12px 32px'
-}
-
-const infoBox = {
-  backgroundColor: '#f3f4f6',
-  borderRadius: '8px',
-  margin: '32px 20px',
-  padding: '20px'
-}
-
-const infoTitle = {
-  color: '#1f2937',
-  fontSize: '16px',
-  fontWeight: '600',
-  margin: '0 0 12px 0'
-}
-
-const infoText = {
-  color: '#4b5563',
-  fontSize: '14px',
-  lineHeight: '1.6',
-  margin: '0'
 }
 
 const footer = {

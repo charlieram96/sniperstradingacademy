@@ -29,7 +29,7 @@ export const PayoutFailedEmail = ({
   userName = 'Member',
   amount = 149.50,
   reason = 'Wallet address not configured',
-  settingsUrl = 'https://tradinghub.com/settings'
+  settingsUrl = 'https://sniperstradingacademy.com/settings'
 }: PayoutFailedEmailProps) => {
   const formattedAmount = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -44,7 +44,7 @@ export const PayoutFailedEmail = ({
         <Container style={container}>
           {/* Logo */}
           <Section style={logoSection}>
-            <Heading style={h1}>Trading Hub</Heading>
+            <Heading style={h1}>Snipers Trading Academy</Heading>
           </Section>
 
           {/* Warning Icon */}
@@ -126,7 +126,7 @@ export const PayoutFailedEmail = ({
               </Link>
             </Text>
             <Text style={footerCopyright}>
-              © {new Date().getFullYear()} Trading Hub. All rights reserved.
+              © {new Date().getFullYear()} Snipers Trading Academy. All rights reserved.
             </Text>
           </Section>
         </Container>

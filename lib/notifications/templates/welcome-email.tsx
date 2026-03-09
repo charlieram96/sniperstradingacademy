@@ -1,7 +1,7 @@
 /**
- * REFERRAL SIGNUP EMAIL TEMPLATE
+ * WELCOME EMAIL TEMPLATE
  *
- * Sent when someone signs up using the user's referral code
+ * Sent when a new user signs up and is assigned a network position
  */
 
 import {
@@ -18,25 +18,19 @@ import {
 } from '@react-email/components'
 import * as React from 'react'
 
-interface ReferralSignupEmailProps {
+interface WelcomeEmailProps {
   userName?: string
-  referredName?: string
-  referredEmail?: string
-  referralCode?: string
   dashboardUrl?: string
 }
 
-export const ReferralSignupEmail = ({
+export const WelcomeEmail = ({
   userName = 'Member',
-  referredName = 'New Member',
-  referredEmail = 'newmember@example.com',
-  referralCode = 'YOUR-CODE',
   dashboardUrl = 'https://sniperstradingacademy.com/dashboard'
-}: ReferralSignupEmailProps) => {
+}: WelcomeEmailProps) => {
   return (
     <Html>
       <Head />
-      <Preview>🎉 {referredName} just joined your network!</Preview>
+      <Preview>Welcome to Snipers Trading Academy!</Preview>
       <Body style={main}>
         <Container style={container}>
           {/* Logo */}
@@ -44,70 +38,56 @@ export const ReferralSignupEmail = ({
             <Heading style={h1}>Snipers Trading Academy</Heading>
           </Section>
 
-          {/* Success Icon */}
+          {/* Welcome Icon */}
           <Section style={iconSection}>
             <Text style={successIcon}>🎉</Text>
           </Section>
 
           {/* Main Content */}
-          <Heading style={h2}>New Referral Joined!</Heading>
+          <Heading style={h2}>Welcome to the Team!</Heading>
 
           <Text style={text}>
             Hi {userName},
           </Text>
 
           <Text style={text}>
-            Great news! Someone just signed up using your referral code and has been added to your network.
+            Welcome to Snipers Trading Academy! Your account has been created and you&apos;re ready to get started on your journey.
           </Text>
 
-          {/* Info Box */}
+          {/* Steps Box */}
           <Section style={infoBox}>
-            <Text style={infoLabel}>New Member</Text>
-            <Text style={infoValue}>{referredName}</Text>
-            <Text style={infoEmail}>{referredEmail}</Text>
-            <Text style={infoCode}>
-              Referral Code: <strong>{referralCode}</strong>
+            <Text style={infoTitle}>🚀 Getting Started</Text>
+            <Text style={infoText}>
+              <strong>1. Complete your $499 activation payment</strong> to unlock the full platform
+              <br />
+              <strong>2. Explore your dashboard</strong> to see your network and earnings
+              <br />
+              <strong>3. Share your referral link</strong> to start building your team
+              <br />
+              <strong>4. Earn $249.50</strong> for every referral who activates
             </Text>
           </Section>
-
-          <Text style={text}>
-            When {referredName} completes their initial $499 payment, you&apos;ll automatically receive a <strong>$249.50 direct referral bonus</strong>. We&apos;ll notify you as soon as that happens!
-          </Text>
 
           {/* CTA Button */}
           <Section style={buttonSection}>
-            <Button style={button} href={`${dashboardUrl}/team`}>
-              View Your Team
+            <Button style={button} href={dashboardUrl}>
+              Go to Dashboard
             </Button>
           </Section>
 
-          {/* Tips Section */}
-          <Section style={tipsBox}>
-            <Text style={tipsTitle}>💡 Help Them Get Started</Text>
-            <Text style={tipsText}>
-              • Reach out to welcome them to the network
-              <br />
-              • Share tips on how to activate their account
-              <br />
-              • Guide them through the initial payment process
-              <br />
-              • Encourage them to start building their own team
-            </Text>
-          </Section>
+          <Text style={text}>
+            If you have any questions, our support team is here to help. We&apos;re excited to have you on board!
+          </Text>
 
           {/* Footer */}
           <Section style={footer}>
             <Text style={footerText}>
-              <Link href={`${dashboardUrl}/referrals`} style={link}>
-                View all your referrals
-              </Link>
-              {' · '}
               <Link href={`${dashboardUrl}/notifications`} style={link}>
-                Manage notifications
+                Manage notification preferences
               </Link>
             </Text>
             <Text style={footerCopyright}>
-              © {new Date().getFullYear()} Snipers Trading Academy. All rights reserved.
+              &copy; {new Date().getFullYear()} Snipers Trading Academy. All rights reserved.
             </Text>
           </Section>
         </Container>
@@ -116,7 +96,7 @@ export const ReferralSignupEmail = ({
   )
 }
 
-export default ReferralSignupEmail
+export default WelcomeEmail
 
 // Styles
 const main = {
@@ -172,42 +152,23 @@ const text = {
 
 const infoBox = {
   backgroundColor: '#eff6ff',
-  border: '2px solid #3b82f6',
   borderRadius: '8px',
   margin: '32px 20px',
-  padding: '24px',
-  textAlign: 'center' as const
+  padding: '20px'
 }
 
-const infoLabel = {
+const infoTitle = {
   color: '#1e40af',
-  fontSize: '12px',
+  fontSize: '16px',
   fontWeight: '600',
-  margin: '0 0 8px 0',
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.5px'
+  margin: '0 0 12px 0'
 }
 
-const infoValue = {
+const infoText = {
   color: '#1e3a8a',
-  fontSize: '24px',
-  fontWeight: '700',
+  fontSize: '14px',
+  lineHeight: '1.8',
   margin: '0'
-}
-
-const infoEmail = {
-  color: '#3b82f6',
-  fontSize: '14px',
-  margin: '4px 0 16px 0'
-}
-
-const infoCode = {
-  color: '#1e40af',
-  fontSize: '14px',
-  margin: '0',
-  padding: '12px',
-  backgroundColor: '#dbeafe',
-  borderRadius: '4px'
 }
 
 const buttonSection = {
@@ -225,28 +186,6 @@ const button = {
   textAlign: 'center' as const,
   display: 'inline-block',
   padding: '12px 32px'
-}
-
-const tipsBox = {
-  backgroundColor: '#fef3c7',
-  borderLeft: '4px solid #f59e0b',
-  borderRadius: '8px',
-  margin: '32px 20px',
-  padding: '20px'
-}
-
-const tipsTitle = {
-  color: '#92400e',
-  fontSize: '16px',
-  fontWeight: '600',
-  margin: '0 0 12px 0'
-}
-
-const tipsText = {
-  color: '#78350f',
-  fontSize: '14px',
-  lineHeight: '1.6',
-  margin: '0'
 }
 
 const footer = {

@@ -1,7 +1,7 @@
 /**
- * PAYMENT FAILED EMAIL TEMPLATE
+ * ACCOUNT INACTIVE EMAIL TEMPLATE
  *
- * Sent when subscription payment fails (critical notification)
+ * Sent when a user's account is deactivated due to missed payment
  */
 
 import {
@@ -18,26 +18,21 @@ import {
 } from '@react-email/components'
 import * as React from 'react'
 
-interface PaymentFailedEmailProps {
+interface AccountInactiveEmailProps {
   userName?: string
-  amount?: number
-  paymentUrl?: string
+  daysOverdue?: number
+  reactivateUrl?: string
 }
 
-export const PaymentFailedEmail = ({
+export const AccountInactiveEmail = ({
   userName = 'Member',
-  amount = 199,
-  paymentUrl = 'https://sniperstradingacademy.com/payments'
-}: PaymentFailedEmailProps) => {
-  const formattedAmount = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD'
-  }).format(amount)
-
+  daysOverdue = 3,
+  reactivateUrl = 'https://sniperstradingacademy.com/payments'
+}: AccountInactiveEmailProps) => {
   return (
     <Html>
       <Head />
-      <Preview>⚠️ Payment failed - Action required to keep your account active</Preview>
+      <Preview>Your Snipers Trading Academy account has been deactivated</Preview>
       <Body style={main}>
         <Container style={container}>
           {/* Logo */}
@@ -51,70 +46,51 @@ export const PaymentFailedEmail = ({
           </Section>
 
           {/* Main Content */}
-          <Heading style={h2}>Payment Failed</Heading>
+          <Heading style={h2}>Account Deactivated</Heading>
 
           <Text style={text}>
             Hi {userName},
           </Text>
 
           <Text style={text}>
-            We were unable to process your subscription payment of <strong>{formattedAmount}</strong>. Your account will remain active for the next <strong>33 days</strong>, but action is required to avoid service interruption.
+            Your account has been deactivated because your subscription payment is {daysOverdue} days overdue. While your account is inactive:
           </Text>
 
           {/* Alert Box */}
           <Section style={alertBox}>
-            <Text style={alertTitle}>⏰ Action Required</Text>
+            <Text style={alertTitle}>What&apos;s Affected</Text>
             <Text style={alertText}>
-              Please update your payment method within 33 days to keep your account active and maintain your position in the network.
+              • Commission earnings are paused
+              <br />
+              • Your network position is preserved
+              <br />
+              • You are not counted as active for your upline
             </Text>
           </Section>
 
           <Text style={text}>
-            <strong>Common reasons for payment failure:</strong>
+            The good news is that your network position and history are saved. You can reactivate your account at any time by updating your payment method.
           </Text>
-
-          <Section style={reasonsList}>
-            <Text style={reasonItem}>• Insufficient funds in your account</Text>
-            <Text style={reasonItem}>• Expired or invalid credit card</Text>
-            <Text style={reasonItem}>• Card limit reached</Text>
-            <Text style={reasonItem}>• Bank declined the transaction</Text>
-          </Section>
 
           {/* CTA Button */}
           <Section style={buttonSection}>
-            <Button style={button} href={paymentUrl}>
-              Update Payment Method
+            <Button style={button} href={reactivateUrl}>
+              Reactivate My Account
             </Button>
           </Section>
-
-          {/* Info Section */}
-          <Section style={infoBox}>
-            <Text style={infoTitle}>What Happens Next?</Text>
-            <Text style={infoText}>
-              <strong>Now - Day 33:</strong> Your account remains active
-              <br />
-              <strong>After Day 33:</strong> Account becomes inactive
-              <br />
-              <strong>After Inactive:</strong> Commission earnings paused until reactivation
-            </Text>
-          </Section>
-
-          <Text style={text}>
-            To avoid any interruption to your earnings and maintain your network position, please update your payment method as soon as possible.
-          </Text>
 
           {/* Footer */}
           <Section style={footer}>
             <Text style={footerText}>
-              Need help? <Link href={`${paymentUrl}/../settings`} style={link}>Contact Support</Link>
+              Questions? <Link href="https://sniperstradingacademy.com/settings" style={link}>Contact Support</Link>
             </Text>
             <Text style={footerText}>
-              <Link href={`${paymentUrl}/../notifications`} style={link}>
+              <Link href="https://sniperstradingacademy.com/notifications" style={link}>
                 Manage notification preferences
               </Link>
             </Text>
             <Text style={footerCopyright}>
-              © {new Date().getFullYear()} Snipers Trading Academy. All rights reserved.
+              &copy; {new Date().getFullYear()} Snipers Trading Academy. All rights reserved.
             </Text>
           </Section>
         </Container>
@@ -123,7 +99,7 @@ export const PaymentFailedEmail = ({
   )
 }
 
-export default PaymentFailedEmail
+export default AccountInactiveEmail
 
 // Styles
 const main = {
@@ -182,8 +158,7 @@ const alertBox = {
   border: '2px solid #ef4444',
   borderRadius: '8px',
   margin: '32px 20px',
-  padding: '24px',
-  textAlign: 'center' as const
+  padding: '24px'
 }
 
 const alertTitle = {
@@ -196,19 +171,8 @@ const alertTitle = {
 const alertText = {
   color: '#991b1b',
   fontSize: '15px',
-  lineHeight: '1.6',
-  margin: '0'
-}
-
-const reasonsList = {
-  margin: '16px 40px'
-}
-
-const reasonItem = {
-  color: '#4b5563',
-  fontSize: '15px',
   lineHeight: '1.8',
-  margin: '4px 0'
+  margin: '0'
 }
 
 const buttonSection = {
@@ -226,27 +190,6 @@ const button = {
   textAlign: 'center' as const,
   display: 'inline-block',
   padding: '14px 36px'
-}
-
-const infoBox = {
-  backgroundColor: '#fef3c7',
-  borderRadius: '8px',
-  margin: '32px 20px',
-  padding: '20px'
-}
-
-const infoTitle = {
-  color: '#92400e',
-  fontSize: '16px',
-  fontWeight: '600',
-  margin: '0 0 12px 0'
-}
-
-const infoText = {
-  color: '#78350f',
-  fontSize: '14px',
-  lineHeight: '1.8',
-  margin: '0'
 }
 
 const footer = {

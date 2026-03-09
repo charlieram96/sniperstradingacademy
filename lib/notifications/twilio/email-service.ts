@@ -12,8 +12,8 @@
 import sgMail from '@sendgrid/mail'
 
 const sendGridApiKey = process.env.SENDGRID_API_KEY
-const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'notifications@tradinghub.com'
-const fromName = process.env.SENDGRID_FROM_NAME || 'Trading Hub'
+const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'info@sniperstradingacademy.com'
+const fromName = process.env.SENDGRID_FROM_NAME || 'Snipers Trading Academy'
 
 if (!sendGridApiKey) {
   console.warn('SendGrid API key not configured. Email service will not work.')
@@ -252,11 +252,11 @@ export function addUnsubscribeFooter(html: string, unsubscribeUrl: string): stri
   const footer = `
     <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #6b7280;">
       <p>
-        You're receiving this email because you have an account with Trading Hub.<br>
+        You're receiving this email because you have an account with Snipers Trading Academy.<br>
         <a href="${unsubscribeUrl}" style="color: #3b82f6; text-decoration: underline;">Manage notification preferences</a>
       </p>
       <p style="margin-top: 10px;">
-        Trading Hub<br>
+        Snipers Trading Academy<br>
         &copy; ${new Date().getFullYear()} All rights reserved.
       </p>
     </div>

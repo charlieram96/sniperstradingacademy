@@ -529,6 +529,15 @@ export async function POST(req: NextRequest) {
             } catch (err) {
               console.error('❌ Exception incrementing active count:', err)
             }
+
+            // Send account reactivated notification
+            try {
+              const { notifyAccountReactivated } = await import('@/lib/notifications/notification-service')
+              await notifyAccountReactivated({ userId: subData.user_id })
+              console.log(`✅ Sent account reactivated notification to ${subData.user_id}`)
+            } catch (notifError) {
+              console.error('❌ Error sending reactivated notification:', notifError)
+            }
           }
         }
 
@@ -558,6 +567,15 @@ export async function POST(req: NextRequest) {
           const distributionAmount = isWeekly ? 49.75 : 199.00
 
           console.log(`💰 Processing ${paymentType} payment of $${actualAmount} for user ${user.id}`)
+
+          // Send payment succeeded notification
+          try {
+            const { notifyPaymentSucceeded } = await import('@/lib/notifications/notification-service')
+            await notifyPaymentSucceeded({ userId: user.id, amount: actualAmount })
+            console.log(`✅ Sent payment succeeded notification to ${user.id}`)
+          } catch (notifError) {
+            console.error('❌ Error sending payment succeeded notification:', notifError)
+          }
 
           // 1. Record payment
           await supabase
@@ -609,6 +627,15 @@ export async function POST(req: NextRequest) {
               .single()
 
             if (updatedUser) {
+              // Get current structure number before update
+              const { data: currentUser } = await supabase
+                .from("users")
+                .select("current_structure_number")
+                .eq("id", user.id)
+                .single()
+
+              const previousStructureNumber = currentUser?.current_structure_number || 0
+
               // Calculate commission rate and structure number
               const { data: commissionRate } = await supabase
                 .rpc('calculate_commission_rate', {
@@ -630,9 +657,56 @@ export async function POST(req: NextRequest) {
                 .eq("id", user.id)
 
               console.log(`✅ Updated commission rate (${commissionRate}) and structure (${structureNumber}) for user ${user.id}`)
+
+              // Send structure milestone notification if structure number changed
+              if (structureNumber && structureNumber > previousStructureNumber) {
+                try {
+                  const { notifyStructureMilestone } = await import('@/lib/notifications/notification-service')
+                  await notifyStructureMilestone({
+                    userId: user.id,
+                    structureNumber,
+                    activeMembers: updatedUser.active_network_count,
+                    newRate: commissionRate || 0,
+                    maxCommission: 0,
+                  })
+                  console.log(`✅ Sent structure milestone notification to ${user.id} (structure ${previousStructureNumber} → ${structureNumber})`)
+                } catch (notifError) {
+                  console.error('❌ Error sending structure milestone notification:', notifError)
+                }
+              }
             }
           } catch (err) {
             console.error('❌ Error updating commission rate:', err)
+          }
+
+          // Check for volume milestone (4.8)
+          try {
+            const { data: volumeData } = await supabase
+              .from("users")
+              .select("sniper_volume_current_month")
+              .eq("id", user.id)
+              .single()
+
+            if (volumeData) {
+              const newVolume = volumeData.sniper_volume_current_month || 0
+              const oldVolume = newVolume - distributionAmount
+              const thresholds = [1000, 5000, 10000, 25000, 50000, 100000]
+              const crossedThreshold = thresholds.find(t => oldVolume < t && newVolume >= t)
+
+              if (crossedThreshold) {
+                const { notifyVolumeUpdate } = await import('@/lib/notifications/notification-service')
+                const now = new Date()
+                const month = `${now.toLocaleString('en-US', { month: 'long' })} ${now.getFullYear()}`
+                await notifyVolumeUpdate({
+                  userId: user.id,
+                  newVolume,
+                  month,
+                })
+                console.log(`✅ Sent volume milestone notification to ${user.id} (crossed $${crossedThreshold})`)
+              }
+            }
+          } catch (volError) {
+            console.error('❌ Error checking volume milestones:', volError)
           }
         }
         break
@@ -1110,7 +1184,8 @@ export async function POST(req: NextRequest) {
           }
 
           // If user was inactive, reactivate them
-          if (!user.is_active) {
+          const wasInactive = !user.is_active
+          if (wasInactive) {
             updateData.is_active = true
             console.log(`🔄 Reactivating user ${user.id}`)
           }
@@ -1122,8 +1197,19 @@ export async function POST(req: NextRequest) {
 
           console.log(`✅ ${paymentType.charAt(0).toUpperCase() + paymentType.slice(1)} payment ($${amount}) recorded for user ${user.id}`)
 
+          // Send account reactivated notification
+          if (wasInactive) {
+            try {
+              const { notifyAccountReactivated } = await import('@/lib/notifications/notification-service')
+              await notifyAccountReactivated({ userId: user.id })
+              console.log(`✅ Sent account reactivated notification to ${user.id}`)
+            } catch (notifError) {
+              console.error('❌ Error sending reactivated notification:', notifError)
+            }
+          }
+
           // If user was reactivated, increment upchain active count
-          if (!user.is_active && user.network_position_id) {
+          if (wasInactive && user.network_position_id) {
             try {
               const { data: ancestorsIncremented, error: incrementError } = await supabase
                 .rpc('increment_upchain_active_count', {

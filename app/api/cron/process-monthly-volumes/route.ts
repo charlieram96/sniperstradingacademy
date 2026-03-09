@@ -101,6 +101,45 @@ export async function GET(req: NextRequest) {
         }
 
         console.log(`[ProcessMonthlyVolumes] Wallet creation complete. Created ${walletsCreated} wallets for ${uniqueUserIds.length} users`);
+
+        // Send monthly commission notifications
+        try {
+          const { notifyMonthlyCommission } = await import('@/lib/notifications/notification-service');
+
+          // Get commission details per user
+          const { data: commissionDetails } = await serviceSupabase
+            .from('commissions')
+            .select('referrer_id, amount')
+            .eq('commission_type', 'residual_monthly')
+            .eq('status', 'pending')
+            .gte('created_at', new Date(Date.now() - 120000).toISOString());
+
+          if (commissionDetails) {
+            // Aggregate per user
+            const userCommissions = new Map<string, number>();
+            for (const c of commissionDetails) {
+              userCommissions.set(c.referrer_id, (userCommissions.get(c.referrer_id) || 0) + c.amount);
+            }
+
+            for (const [userId, totalAmount] of userCommissions) {
+              try {
+                await notifyMonthlyCommission({
+                  userId,
+                  month: monthPeriod,
+                  amount: totalAmount,
+                  memberCount: 0,
+                  totalVolume: 0,
+                  commissionRate: 0,
+                });
+              } catch {
+                // Don't block on notification failures
+              }
+            }
+            console.log(`[ProcessMonthlyVolumes] Sent commission notifications to ${userCommissions.size} users`);
+          }
+        } catch (notifError) {
+          console.error('[ProcessMonthlyVolumes] Error sending commission notifications:', notifError);
+        }
       }
     } catch (walletError) {
       console.error('[ProcessMonthlyVolumes] Non-blocking wallet creation failed:', walletError);

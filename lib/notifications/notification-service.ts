@@ -415,3 +415,97 @@ export async function notifyStructureMilestone(params: {
     priority: 'high'
   })
 }
+
+export async function notifyWelcome(params: {
+  userId: string
+  userName: string
+  dashboardUrl?: string
+}) {
+  return sendNotification({
+    userId: params.userId,
+    type: 'welcome',
+    data: {
+      userName: params.userName,
+      dashboardUrl: params.dashboardUrl || `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard`,
+      eventId: `welcome_${params.userId}`
+    }
+  })
+}
+
+export async function notifyNetworkJoin(params: {
+  userId: string
+  newMemberName: string
+  depth: number
+}) {
+  return sendNotification({
+    userId: params.userId,
+    type: 'network_join',
+    data: {
+      newMemberName: params.newMemberName,
+      depth: params.depth,
+      eventId: `network_join_${params.userId}_${Date.now()}`
+    }
+  })
+}
+
+export async function notifyAccountInactive(params: {
+  userId: string
+  daysOverdue: number
+  reactivateUrl?: string
+}) {
+  return sendNotification({
+    userId: params.userId,
+    type: 'account_inactive',
+    data: {
+      daysOverdue: params.daysOverdue,
+      reactivateUrl: params.reactivateUrl || `${process.env.NEXT_PUBLIC_SITE_URL}/payments`,
+      eventId: `account_inactive_${params.userId}_${Date.now()}`
+    },
+    priority: 'high',
+    forceSkipQuietHours: true
+  })
+}
+
+export async function notifyAccountReactivated(params: {
+  userId: string
+}) {
+  return sendNotification({
+    userId: params.userId,
+    type: 'account_reactivated',
+    data: {
+      dashboardUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard`,
+      eventId: `account_reactivated_${params.userId}_${Date.now()}`
+    }
+  })
+}
+
+export async function notifyPaymentSucceeded(params: {
+  userId: string
+  amount: number
+}) {
+  return sendNotification({
+    userId: params.userId,
+    type: 'payment_succeeded',
+    channel: ['email'],
+    data: {
+      amount: params.amount,
+      eventId: `payment_succeeded_${params.userId}_${Date.now()}`
+    }
+  })
+}
+
+export async function notifyVolumeUpdate(params: {
+  userId: string
+  newVolume: number
+  month: string
+}) {
+  return sendNotification({
+    userId: params.userId,
+    type: 'volume_update',
+    data: {
+      newVolume: params.newVolume,
+      month: params.month,
+      eventId: `volume_update_${params.userId}_${params.newVolume}`
+    }
+  })
+}

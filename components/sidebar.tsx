@@ -40,6 +40,7 @@ import {
   Menu,
   X,
   MoreVertical,
+  AlertTriangle,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
@@ -258,6 +259,15 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
               >
                 <Activity className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
                 <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t("nav.transactionLogs")}</span>
+              </NavigationLink>
+            )}
+            {isSuperAdminPlus && (
+              <NavigationLink
+                href="/admin/flagged-reviews"
+                className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+              >
+                <AlertTriangle className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
+                <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t("nav.flaggedReviews")}</span>
               </NavigationLink>
             )}
             {isSuperAdmin && (

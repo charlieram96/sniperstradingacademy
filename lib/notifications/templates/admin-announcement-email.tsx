@@ -28,8 +28,8 @@ interface AdminAnnouncementEmailProps {
 export const AdminAnnouncementEmail = ({
   userName = 'Member',
   subject = 'Message from Admin',
-  message = 'This is an important announcement from the Trading Hub team.',
-  senderName = 'Trading Hub Team'
+  message = 'This is an important announcement from the Snipers Trading Academy team.',
+  senderName = 'Snipers Trading Academy Team'
 }: AdminAnnouncementEmailProps) => {
   return (
     <Html>
@@ -39,7 +39,7 @@ export const AdminAnnouncementEmail = ({
         <Container style={container}>
           {/* Logo */}
           <Section style={logoSection}>
-            <Heading style={h1}>Trading Hub</Heading>
+            <Heading style={h1}>Snipers Trading Academy</Heading>
           </Section>
 
           {/* Subject */}

@@ -285,4 +285,4 @@ export const START_RESPONSE = 'You have been resubscribed to SMS notifications. 
 /**
  * HELP command response
  */
-export const HELP_RESPONSE = 'Trading Hub SMS notifications. Reply STOP to unsubscribe or START to resubscribe. For support, visit your account dashboard. Msg&data rates may apply.'
+export const HELP_RESPONSE = 'Snipers Trading Academy SMS notifications. Reply STOP to unsubscribe or START to resubscribe. For support, visit your account dashboard. Msg&data rates may apply.'
