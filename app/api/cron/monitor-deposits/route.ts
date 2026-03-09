@@ -554,6 +554,20 @@ async function processInitialUnlock(
 
   console.log(`[MonitorDeposits] Created direct bonus of $${directBonusAmount} for referrer ${referrerId}`);
 
+  // Send direct bonus notification to referrer
+  try {
+    const { notifyDirectBonus } = await import('@/lib/notifications/notification-service')
+    const { data: newUser } = await supabase.from('users').select('name').eq('id', userId).single()
+    await notifyDirectBonus({
+      referrerId,
+      referredName: newUser?.name || 'New Member',
+      amount: directBonusAmount,
+      commissionId: `direct_bonus_${userId}`,
+    })
+  } catch (notifError) {
+    console.error('[MonitorDeposits] Error sending direct bonus notification:', notifError)
+  }
+
   console.log(`[MonitorDeposits] Initial unlock completed for user ${userId}`);
 }
 
@@ -615,6 +629,10 @@ async function processSubscriptionPayment(
   // Early payments (before due date) cover the current period
   const isLatePayment = now >= currentNextDueDate;
 
+  // Check if user was inactive before update (for reactivation notification)
+  const { data: userBefore } = await supabase.from('users').select('is_active').eq('id', userId).single()
+  const wasInactive = !userBefore?.is_active
+
   // Update user status (only reached if no duplicate payment found)
   await supabase
     .from('users')
@@ -627,6 +645,24 @@ async function processSubscriptionPayment(
       next_payment_due_date: newNextDueDate.toISOString(),
     })
     .eq('id', userId);
+
+  // Send payment succeeded notification
+  try {
+    const { notifyPaymentSucceeded } = await import('@/lib/notifications/notification-service')
+    await notifyPaymentSucceeded({ userId, amount: parseFloat(amountUsdc) })
+  } catch (notifError) {
+    console.error('[MonitorDeposits] Error sending payment succeeded notification:', notifError)
+  }
+
+  // Send account reactivated notification if user was inactive
+  if (wasInactive) {
+    try {
+      const { notifyAccountReactivated } = await import('@/lib/notifications/notification-service')
+      await notifyAccountReactivated({ userId })
+    } catch (notifError) {
+      console.error('[MonitorDeposits] Error sending reactivated notification:', notifError)
+    }
+  }
 
   // Create payment record (link to first transaction if available)
   const { data: paymentRecord } = await supabase
@@ -657,6 +693,31 @@ async function processSubscriptionPayment(
     p_user_id: userId,
     p_amount: amountUsdc,
   });
+
+  // Check for volume milestone
+  try {
+    const { data: volumeData } = await supabase
+      .from('users')
+      .select('sniper_volume_current_month')
+      .eq('id', userId)
+      .single()
+
+    if (volumeData) {
+      const newVolume = volumeData.sniper_volume_current_month || 0
+      const oldVolume = newVolume - parseFloat(amountUsdc)
+      const thresholds = [1000, 5000, 10000, 25000, 50000, 100000]
+      const crossedThreshold = thresholds.find(t => oldVolume < t && newVolume >= t)
+
+      if (crossedThreshold) {
+        const { notifyVolumeUpdate } = await import('@/lib/notifications/notification-service')
+        const now = new Date()
+        const month = `${now.toLocaleString('en-US', { month: 'long' })} ${now.getFullYear()}`
+        await notifyVolumeUpdate({ userId, newVolume, month })
+      }
+    }
+  } catch (volError) {
+    console.error('[MonitorDeposits] Error checking volume milestones:', volError)
+  }
 
   console.log(`[MonitorDeposits] Subscription payment completed for user ${userId}`);
 }
