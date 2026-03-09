@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { TrendingUp, DollarSign, ArrowDownCircle, ArrowUpCircle, Users, Search, Wallet, Settings, CheckCircle2, AlertCircle, Loader2, AlertTriangle, RefreshCw, Calendar, Play, Eye, ArrowRightLeft } from "lucide-react"
 import { formatDollars } from "@/lib/utils"
+import { useTranslation } from "@/components/language-provider"
 import {
   Select,
   SelectContent,
@@ -167,6 +168,7 @@ interface CommissionData {
 }
 
 export default function AdminFinancialsPage() {
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [stats, setStats] = useState<FinancialStats>({
@@ -601,7 +603,7 @@ export default function AdminFinancialsPage() {
       if (data.success) {
         setMonthlyProcessResult({
           success: true,
-          message: "Monthly processing completed successfully!",
+          message: t("admin.financials.monthlyProcessingSuccess"),
           details: {
             archiveStep: data.archiveStep,
             commissionStep: data.commissionStep,
@@ -613,7 +615,7 @@ export default function AdminFinancialsPage() {
       } else {
         setMonthlyProcessResult({
           success: false,
-          message: data.error || "Processing failed",
+          message: data.error || t("admin.financials.processingFailed"),
           details: data.details,
         })
       }
@@ -621,7 +623,7 @@ export default function AdminFinancialsPage() {
       console.error("Failed to execute monthly processing:", error)
       setMonthlyProcessResult({
         success: false,
-        message: "Failed to execute monthly processing",
+        message: t("admin.financials.monthlyProcessingFailed"),
       })
     } finally {
       setMonthlyProcessing(false)
@@ -714,7 +716,7 @@ export default function AdminFinancialsPage() {
       console.error("Failed to execute sweep:", error)
       setSweepResult({
         success: false,
-        message: "Failed to execute sweep",
+        message: t("admin.financials.sweepFailed"),
       })
     } finally {
       setSweeping(false)
@@ -820,7 +822,7 @@ export default function AdminFinancialsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">Loading...</div>
+        <div className="text-muted-foreground">{t("common.loading")}</div>
       </div>
     )
   }
@@ -828,7 +830,7 @@ export default function AdminFinancialsPage() {
   if (!isSuperAdmin) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">Access Denied</div>
+        <div className="text-muted-foreground">{t("admin.accessDenied")}</div>
       </div>
     )
   }
@@ -838,9 +840,9 @@ export default function AdminFinancialsPage() {
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-2">
           <TrendingUp className="h-6 w-6 text-primary" />
-          <h1 className="text-3xl font-bold text-foreground">Financial Overview</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t("admin.financials.title")}</h1>
         </div>
-        <p className="text-muted-foreground">Complete financial view of Trading Hub network revenue and payouts</p>
+        <p className="text-muted-foreground">{t("admin.financials.description")}</p>
       </div>
 
       {/* Treasury Settings */}
@@ -848,10 +850,10 @@ export default function AdminFinancialsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Wallet className="h-5 w-5 text-primary" />
-            Treasury Wallet Configuration
+            {t("admin.financials.treasuryWalletConfig")}
           </CardTitle>
           <CardDescription>
-            Configure the treasury wallet for receiving payments. Users will send USDC to unique deposit addresses derived from this wallet.
+            {t("admin.financials.treasuryWalletConfigDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -866,12 +868,12 @@ export default function AdminFinancialsPage() {
                 {treasurySettings?.isConfigured ? (
                   <>
                     <CheckCircle2 className="h-5 w-5 text-[#D4A853]" />
-                    <span className="text-sm text-[#D4A853] font-medium">Treasury configured and ready</span>
+                    <span className="text-sm text-[#D4A853] font-medium">{t("admin.financials.treasuryConfiguredReady")}</span>
                   </>
                 ) : (
                   <>
                     <AlertCircle className="h-5 w-5 text-amber-500" />
-                    <span className="text-sm text-amber-600 font-medium">Treasury not configured - payments disabled</span>
+                    <span className="text-sm text-amber-600 font-medium">{t("admin.financials.treasuryNotConfigured")}</span>
                   </>
                 )}
               </div>
@@ -880,7 +882,7 @@ export default function AdminFinancialsPage() {
               {treasurySettings?.treasuryWalletAddress && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground">Wallet Balances</p>
+                    <p className="text-sm text-muted-foreground">{t("admin.financials.walletBalances")}</p>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -892,7 +894,7 @@ export default function AdminFinancialsPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-3 bg-surface-2 rounded-lg">
-                      <p className="text-xs text-muted-foreground">USDC Balance</p>
+                      <p className="text-xs text-muted-foreground">{t("admin.financials.usdcBalance")}</p>
                       {treasuryBalanceLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin mt-1" />
                       ) : (
@@ -902,7 +904,7 @@ export default function AdminFinancialsPage() {
                       )}
                     </div>
                     <div className="p-3 bg-surface-2 rounded-lg">
-                      <p className="text-xs text-muted-foreground">MATIC (Gas)</p>
+                      <p className="text-xs text-muted-foreground">{t("admin.financials.maticGas")}</p>
                       {treasuryBalanceLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin mt-1" />
                       ) : (
@@ -917,7 +919,7 @@ export default function AdminFinancialsPage() {
 
               {/* Treasury wallet address */}
               <div className="space-y-2">
-                <Label htmlFor="treasuryAddress">Treasury Wallet Address</Label>
+                <Label htmlFor="treasuryAddress">{t("admin.financials.treasuryWalletAddress")}</Label>
                 <Input
                   id="treasuryAddress"
                   placeholder="0x..."
@@ -926,13 +928,13 @@ export default function AdminFinancialsPage() {
                   className="font-mono"
                 />
                 <p className="text-xs text-muted-foreground">
-                  This is the main wallet address where funds will be collected. All derived deposit addresses funnel here.
+                  {t("admin.financials.treasuryWalletAddressDesc")}
                 </p>
               </div>
 
               {/* Master wallet xpub */}
               <div className="space-y-2">
-                <Label htmlFor="masterXpub">Master Wallet Extended Public Key (xpub)</Label>
+                <Label htmlFor="masterXpub">{t("admin.financials.masterXpub")}</Label>
                 {treasurySettings?.masterWalletXpub && !showXpubInput ? (
                   <div className="flex items-center gap-2">
                     <code className="bg-surface-2 px-3 py-2 rounded text-sm flex-1 font-mono">
@@ -943,7 +945,7 @@ export default function AdminFinancialsPage() {
                       size="sm"
                       onClick={() => setShowXpubInput(true)}
                     >
-                      Change
+                      {t("admin.financials.change")}
                     </Button>
                   </div>
                 ) : (
@@ -956,18 +958,18 @@ export default function AdminFinancialsPage() {
                   />
                 )}
                 <p className="text-xs text-muted-foreground">
-                  Used to derive unique deposit addresses for each payment. Get this from your HD wallet.
+                  {t("admin.financials.masterXpubDesc")}
                 </p>
               </div>
 
               {/* Master wallet xprv (for sweeping) */}
               <div className="space-y-2">
-                <Label htmlFor="masterXprv">Master Wallet Extended Private Key (xprv)</Label>
+                <Label htmlFor="masterXprv">{t("admin.financials.masterXprv")}</Label>
                 <div className="flex items-center gap-2">
                   {treasurySettings?.hasMasterXprv && (
                     <Badge variant="outline" className="text-[#D4A853] border-[#D4A853]/30">
                       <CheckCircle2 className="h-3 w-3 mr-1" />
-                      Configured
+                      {t("admin.financials.configured")}
                     </Badge>
                   )}
                 </div>
@@ -981,15 +983,15 @@ export default function AdminFinancialsPage() {
                 />
                 <p className="text-xs text-muted-foreground">
                   {treasurySettings?.hasMasterXprv
-                    ? "Private key is set. Enter a new value to update it."
-                    : "Required for sweeping funds from deposit addresses to treasury. This is the private version of your xpub."}
+                    ? t("admin.financials.xprvSetUpdate")
+                    : t("admin.financials.xprvRequired")}
                 </p>
                 {!treasurySettings?.hasMasterXprv && (
                   <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                     <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
                     <div className="text-sm text-amber-700">
-                      <p className="font-medium">Sweep Disabled</p>
-                      <p>Without the xprv, funds cannot be swept from deposit addresses to treasury.</p>
+                      <p className="font-medium">{t("admin.financials.sweepDisabled")}</p>
+                      <p>{t("admin.financials.sweepDisabledDesc")}</p>
                     </div>
                   </div>
                 )}
@@ -1000,7 +1002,7 @@ export default function AdminFinancialsPage() {
                 <div className="flex items-center gap-4 p-3 bg-surface-2 rounded-lg">
                   <Settings className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium">Current Derivation Index</p>
+                    <p className="text-sm font-medium">{t("admin.financials.currentDerivationIndex")}</p>
                     <p className="text-xs text-muted-foreground">
                       {treasurySettings.currentDerivationIndex} addresses generated
                     </p>
@@ -1019,7 +1021,7 @@ export default function AdminFinancialsPage() {
               {treasurySuccess && (
                 <div className="flex items-center gap-2 p-3 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-lg">
                   <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
-                  <span className="text-sm text-[#D4A853]">Treasury settings saved successfully</span>
+                  <span className="text-sm text-[#D4A853]">{t("admin.financials.treasurySavedSuccess")}</span>
                 </div>
               )}
 
@@ -1031,10 +1033,10 @@ export default function AdminFinancialsPage() {
                 {treasurySaving ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
+                    {t("admin.financials.saving")}
                   </>
                 ) : (
-                  "Save Treasury Settings"
+                  t("admin.financials.saveTreasurySettings")
                 )}
               </Button>
             </div>
@@ -1047,10 +1049,10 @@ export default function AdminFinancialsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ArrowDownCircle className="h-5 w-5 text-red-600" />
-            Payout Wallet Configuration
+            {t("admin.financials.payoutWalletConfig")}
           </CardTitle>
           <CardDescription>
-            Configure the hot wallet used to send commission payouts to users. This wallet should hold USDC and MATIC for gas.
+            {t("admin.financials.payoutWalletConfigDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -1065,12 +1067,12 @@ export default function AdminFinancialsPage() {
                 {treasurySettings?.isPayoutWalletConfigured ? (
                   <>
                     <CheckCircle2 className="h-5 w-5 text-[#D4A853]" />
-                    <span className="text-sm text-[#D4A853] font-medium">Payout wallet configured and ready</span>
+                    <span className="text-sm text-[#D4A853] font-medium">{t("admin.financials.payoutWalletConfiguredReady")}</span>
                   </>
                 ) : (
                   <>
                     <AlertCircle className="h-5 w-5 text-amber-500" />
-                    <span className="text-sm text-amber-600 font-medium">Payout wallet not configured - payouts disabled</span>
+                    <span className="text-sm text-amber-600 font-medium">{t("admin.financials.payoutWalletNotConfigured")}</span>
                   </>
                 )}
               </div>
@@ -1103,7 +1105,7 @@ export default function AdminFinancialsPage() {
 
               {/* Payout wallet address */}
               <div className="space-y-2">
-                <Label htmlFor="payoutAddress">Payout Wallet Address</Label>
+                <Label htmlFor="payoutAddress">{t("admin.financials.payoutWalletAddress")}</Label>
                 <Input
                   id="payoutAddress"
                   placeholder="0x..."
@@ -1112,13 +1114,13 @@ export default function AdminFinancialsPage() {
                   className="font-mono"
                 />
                 <p className="text-xs text-muted-foreground">
-                  The wallet address that will send USDC payouts to users.
+                  {t("admin.financials.payoutWalletAddressDesc")}
                 </p>
               </div>
 
               {/* Private key input */}
               <div className="space-y-2">
-                <Label htmlFor="payoutPrivateKey">Private Key</Label>
+                <Label htmlFor="payoutPrivateKey">{t("admin.financials.privateKey")}</Label>
                 <Input
                   id="payoutPrivateKey"
                   type="password"
@@ -1129,8 +1131,8 @@ export default function AdminFinancialsPage() {
                 />
                 <p className="text-xs text-muted-foreground">
                   {treasurySettings?.hasPayoutPrivateKey
-                    ? "Private key is set. Enter a new value to update it."
-                    : "Required for signing payout transactions. Get this from MetaMask."}
+                    ? t("admin.financials.privateKeySetUpdate")
+                    : t("admin.financials.privateKeyRequired")}
                 </p>
               </div>
 
@@ -1138,8 +1140,8 @@ export default function AdminFinancialsPage() {
               <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                 <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
                 <div className="text-sm text-amber-700">
-                  <p className="font-medium">Security Notice</p>
-                  <p>The private key is stored encrypted in the database. Only keep sufficient funds for payouts in this hot wallet.</p>
+                  <p className="font-medium">{t("admin.financials.securityNotice")}</p>
+                  <p>{t("admin.financials.securityNoticeDesc")}</p>
                 </div>
               </div>
 
@@ -1154,7 +1156,7 @@ export default function AdminFinancialsPage() {
               {payoutSuccess && (
                 <div className="flex items-center gap-2 p-3 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-lg">
                   <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
-                  <span className="text-sm text-[#D4A853]">Payout wallet settings saved successfully</span>
+                  <span className="text-sm text-[#D4A853]">{t("admin.financials.payoutSavedSuccess")}</span>
                 </div>
               )}
 
@@ -1166,10 +1168,10 @@ export default function AdminFinancialsPage() {
                 {payoutSaving ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
+                    {t("admin.financials.saving")}
                   </>
                 ) : (
-                  "Save Payout Wallet Settings"
+                  t("admin.financials.savePayoutWalletSettings")
                 )}
               </Button>
             </div>
@@ -1183,7 +1185,7 @@ export default function AdminFinancialsPage() {
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ArrowRightLeft className="h-5 w-5 text-primary" />
-              <span>Treasury Sweep</span>
+              <span>{t("admin.financials.treasurySweep")}</span>
             </div>
             <Button
               variant="ghost"
@@ -1195,7 +1197,7 @@ export default function AdminFinancialsPage() {
             </Button>
           </CardTitle>
           <CardDescription>
-            Consolidate USDC from user deposit addresses to the treasury wallet
+            {t("admin.financials.treasurySweepDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -1210,12 +1212,12 @@ export default function AdminFinancialsPage() {
                 {sweepStatus?.configured ? (
                   <>
                     <CheckCircle2 className="h-5 w-5 text-[#D4A853]" />
-                    <span className="text-sm text-[#D4A853] font-medium">Sweep configured and ready</span>
+                    <span className="text-sm text-[#D4A853] font-medium">{t("admin.financials.sweepConfiguredReady")}</span>
                   </>
                 ) : (
                   <>
                     <AlertCircle className="h-5 w-5 text-amber-500" />
-                    <span className="text-sm text-amber-600 font-medium">Sweep not configured - set master_wallet_xprv in treasury settings</span>
+                    <span className="text-sm text-amber-600 font-medium">{t("admin.financials.sweepNotConfigured")}</span>
                   </>
                 )}
               </div>
@@ -1223,19 +1225,19 @@ export default function AdminFinancialsPage() {
               {/* Stats Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-4 bg-surface-2 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Pending Deposits</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.financials.pendingDeposits")}</p>
                   <p className="text-2xl font-semibold">{sweepStatus?.pendingCount || 0}</p>
-                  <p className="text-xs text-muted-foreground">addresses to sweep</p>
+                  <p className="text-xs text-muted-foreground">{t("admin.financials.addressesToSweep")}</p>
                 </div>
                 <div className="p-4 bg-surface-2 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Pending USDC</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.financials.pendingUsdc")}</p>
                   <p className="text-2xl font-semibold text-[#D4A853]">
                     ${(sweepStatus?.pendingUsdc || 0).toFixed(2)}
                   </p>
-                  <p className="text-xs text-muted-foreground">waiting to sweep</p>
+                  <p className="text-xs text-muted-foreground">{t("admin.financials.waitingToSweep")}</p>
                 </div>
                 <div className="p-4 bg-surface-2 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Last Sweep</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.financials.lastSweep")}</p>
                   {sweepStatus?.lastSweep ? (
                     <>
                       <p className="text-lg font-semibold">
@@ -1246,7 +1248,7 @@ export default function AdminFinancialsPage() {
                       </p>
                     </>
                   ) : (
-                    <p className="text-lg font-semibold">Never</p>
+                    <p className="text-lg font-semibold">{t("admin.financials.never")}</p>
                   )}
                 </div>
               </div>
@@ -1272,9 +1274,9 @@ export default function AdminFinancialsPage() {
                       </p>
                       {sweepResult.details && sweepResult.success && (
                         <div className="mt-2 text-sm text-[#D4A853] space-y-1">
-                          <p>Successful: {sweepResult.details.successful} deposits</p>
-                          <p>Failed: {sweepResult.details.failed} deposits</p>
-                          <p>Total swept: ${sweepResult.details.totalSweptUsdc.toFixed(2)} USDC</p>
+                          <p>{t("admin.financials.successful")}: {sweepResult.details.successful} {t("admin.financials.deposits")}</p>
+                          <p>{t("admin.payouts.failed")}: {sweepResult.details.failed} {t("admin.financials.deposits")}</p>
+                          <p>{t("admin.financials.totalSwept")}: ${sweepResult.details.totalSweptUsdc.toFixed(2)} USDC</p>
                         </div>
                       )}
                     </div>
@@ -1285,7 +1287,7 @@ export default function AdminFinancialsPage() {
                     onClick={() => setSweepResult(null)}
                     className="mt-3"
                   >
-                    Close
+                    {t("common.close")}
                   </Button>
                 </div>
               )}
@@ -1300,12 +1302,12 @@ export default function AdminFinancialsPage() {
                   {sweeping ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sweeping...
+                      {t("admin.financials.sweeping")}
                     </>
                   ) : (
                     <>
                       <ArrowRightLeft className="mr-2 h-4 w-4" />
-                      Sweep {sweepStatus?.pendingCount || 0} Deposits to Treasury
+                      {t("admin.financials.sweepDeposits").replace("{count}", String(sweepStatus?.pendingCount || 0))}
                     </>
                   )}
                 </Button>
@@ -1316,32 +1318,32 @@ export default function AdminFinancialsPage() {
                 <div className="border rounded-lg p-4 space-y-3">
                   <h4 className="text-sm font-semibold flex items-center gap-2">
                     <RefreshCw className="h-4 w-4" />
-                    Pipeline Status
+                    {t("admin.financials.pipelineStatus")}
                   </h4>
                   <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
                     <div className="p-2 bg-gray-50 rounded text-center">
                       <p className="text-lg font-semibold">{sweepPipelineStats.idle}</p>
-                      <p className="text-xs text-muted-foreground">Idle</p>
+                      <p className="text-xs text-muted-foreground">{t("admin.financials.idle")}</p>
                     </div>
                     <div className="p-2 bg-amber-50 rounded text-center">
                       <p className="text-lg font-semibold text-amber-600">{sweepPipelineStats.needs_funding}</p>
-                      <p className="text-xs text-amber-600">Needs Funding</p>
+                      <p className="text-xs text-amber-600">{t("admin.financials.needsFunding")}</p>
                     </div>
                     <div className="p-2 bg-blue-50 rounded text-center">
                       <p className="text-lg font-semibold text-blue-600">{sweepPipelineStats.funding_sent}</p>
-                      <p className="text-xs text-blue-600">Funding Sent</p>
+                      <p className="text-xs text-blue-600">{t("admin.financials.fundingSent")}</p>
                     </div>
                     <div className="p-2 bg-[#D4A853]/10 rounded text-center">
                       <p className="text-lg font-semibold text-[#D4A853]">{sweepPipelineStats.ready}</p>
-                      <p className="text-xs text-[#D4A853]">Ready</p>
+                      <p className="text-xs text-[#D4A853]">{t("admin.financials.ready")}</p>
                     </div>
                     <div className="p-2 bg-purple-50 rounded text-center">
                       <p className="text-lg font-semibold text-purple-600">{sweepPipelineStats.sweeping}</p>
-                      <p className="text-xs text-purple-600">Sweeping</p>
+                      <p className="text-xs text-purple-600">{t("admin.financials.sweepingStatus")}</p>
                     </div>
                     <div className="p-2 bg-red-50 rounded text-center">
                       <p className="text-lg font-semibold text-red-600">{sweepPipelineStats.failed}</p>
-                      <p className="text-xs text-red-600">Failed</p>
+                      <p className="text-xs text-red-600">{t("admin.transactionLogs.failed")}</p>
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -1367,7 +1369,7 @@ export default function AdminFinancialsPage() {
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-primary" />
-              <span>Monthly Volume Processing</span>
+              <span>{t("admin.financials.monthlyVolumeProcessing")}</span>
             </div>
             <Button
               variant="ghost"
@@ -1379,7 +1381,7 @@ export default function AdminFinancialsPage() {
             </Button>
           </CardTitle>
           <CardDescription>
-            Archive sniper volumes, create commissions, and reset counters for the new month
+            {t("admin.financials.monthlyVolumeProcessingDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -1392,9 +1394,9 @@ export default function AdminFinancialsPage() {
               {/* Status Overview */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-4 bg-surface-2 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Last Processed</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.financials.lastProcessed")}</p>
                   <p className="text-lg font-semibold">
-                    {monthlyStatus?.lastExecution?.details?.month_period || "Never"}
+                    {monthlyStatus?.lastExecution?.details?.month_period || t("admin.financials.never")}
                   </p>
                   {monthlyStatus?.lastExecution && (
                     <p className="text-xs text-muted-foreground">
@@ -1403,7 +1405,7 @@ export default function AdminFinancialsPage() {
                   )}
                 </div>
                 <div className="p-4 bg-surface-2 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Users with Volume</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.financials.usersWithVolume")}</p>
                   <p className="text-lg font-semibold">
                     {monthlyStatus?.currentPeriodStats?.usersWithVolume || 0}
                   </p>
@@ -1412,7 +1414,7 @@ export default function AdminFinancialsPage() {
                   </p>
                 </div>
                 <div className="p-4 bg-surface-2 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Current Month Volume</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.financials.currentMonthVolume")}</p>
                   <p className="text-lg font-semibold">
                     {formatDollars(parseFloat(monthlyStatus?.currentPeriodStats?.totalCurrentMonthVolume || "0"))}
                   </p>
@@ -1429,12 +1431,12 @@ export default function AdminFinancialsPage() {
                   {monthlyPreviewLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating Preview...
+                      {t("admin.financials.generatingPreview")}
                     </>
                   ) : (
                     <>
                       <Eye className="mr-2 h-4 w-4" />
-                      Preview Monthly Reset
+                      {t("admin.financials.previewMonthlyReset")}
                     </>
                   )}
                 </Button>
@@ -1446,9 +1448,9 @@ export default function AdminFinancialsPage() {
                   <div className="flex items-center justify-between">
                     <h4 className="font-semibold flex items-center gap-2">
                       <Eye className="h-4 w-4" />
-                      Preview for {monthlyPreview.monthPeriod}
+                      {t("admin.financials.previewFor").replace("{period}", monthlyPreview.monthPeriod)}
                     </h4>
-                    <Badge variant="outline">Dry Run</Badge>
+                    <Badge variant="outline">{t("admin.financials.dryRun")}</Badge>
                   </div>
 
                   {/* Warnings */}
@@ -1466,25 +1468,25 @@ export default function AdminFinancialsPage() {
                   {/* Summary Stats */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="p-3 bg-blue-50 rounded-lg">
-                      <p className="text-xs text-blue-600">Volume to Archive</p>
+                      <p className="text-xs text-blue-600">{t("admin.financials.volumeToArchive")}</p>
                       <p className="text-lg font-semibold text-blue-700">
                         {formatDollars(monthlyPreview.totalVolumeToArchive)}
                       </p>
                     </div>
                     <div className="p-3 bg-[#D4A853]/10 rounded-lg">
-                      <p className="text-xs text-[#D4A853]">Commissions</p>
+                      <p className="text-xs text-[#D4A853]">{t("admin.financials.commissions")}</p>
                       <p className="text-lg font-semibold text-[#C49B3E]">
                         {monthlyPreview.commissionsToCreate.count}
                       </p>
                     </div>
                     <div className="p-3 bg-[#D4A853]/10 rounded-lg">
-                      <p className="text-xs text-[#D4A853]">Total Payout</p>
+                      <p className="text-xs text-[#D4A853]">{t("admin.financials.totalPayout")}</p>
                       <p className="text-lg font-semibold text-[#C49B3E]">
                         {formatDollars(monthlyPreview.commissionsToCreate.totalAmount)}
                       </p>
                     </div>
                     <div className="p-3 bg-gray-50 rounded-lg">
-                      <p className="text-xs text-gray-600">Ineligible</p>
+                      <p className="text-xs text-gray-600">{t("admin.financials.ineligible")}</p>
                       <p className="text-lg font-semibold text-gray-700">
                         {monthlyPreview.ineligibleUsers.count}
                       </p>
@@ -1501,11 +1503,11 @@ export default function AdminFinancialsPage() {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>User</TableHead>
-                              <TableHead className="text-center">Qualified</TableHead>
-                              <TableHead className="text-right">Volume</TableHead>
-                              <TableHead className="text-right">Rate</TableHead>
-                              <TableHead className="text-right">Commission</TableHead>
+                              <TableHead>{t("common.user")}</TableHead>
+                              <TableHead className="text-center">{t("admin.financials.qualified")}</TableHead>
+                              <TableHead className="text-right">{t("admin.financials.volume")}</TableHead>
+                              <TableHead className="text-right">{t("admin.financials.rate")}</TableHead>
+                              <TableHead className="text-right">{t("admin.financials.commission")}</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -1581,7 +1583,7 @@ export default function AdminFinancialsPage() {
                       className="flex-1"
                       disabled={monthlyProcessing}
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </Button>
                     <Button
                       onClick={executeMonthlyProcessing}
@@ -1591,12 +1593,12 @@ export default function AdminFinancialsPage() {
                       {monthlyProcessing ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Processing...
+                          {t("admin.financials.processing")}
                         </>
                       ) : (
                         <>
                           <Play className="mr-2 h-4 w-4" />
-                          Confirm & Process
+                          {t("admin.financials.confirmAndProcess")}
                         </>
                       )}
                     </Button>
@@ -1625,9 +1627,9 @@ export default function AdminFinancialsPage() {
                       </p>
                       {monthlyProcessResult.details && monthlyProcessResult.success && (
                         <div className="mt-2 text-sm text-[#D4A853] space-y-1">
-                          <p>Archived: {(monthlyProcessResult.details.archiveStep as { usersProcessed?: number })?.usersProcessed || 0} users</p>
-                          <p>Commissions created: {(monthlyProcessResult.details.commissionStep as { commissionsCreated?: number })?.commissionsCreated || 0}</p>
-                          <p>Total payout: {formatDollars((monthlyProcessResult.details.commissionStep as { totalPayoutAmount?: number })?.totalPayoutAmount || 0)}</p>
+                          <p>{t("admin.financials.archived")}: {(monthlyProcessResult.details.archiveStep as { usersProcessed?: number })?.usersProcessed || 0}</p>
+                          <p>{t("admin.financials.commissionsCreated")}: {(monthlyProcessResult.details.commissionStep as { commissionsCreated?: number })?.commissionsCreated || 0}</p>
+                          <p>{t("admin.financials.totalPayout")}: {formatDollars((monthlyProcessResult.details.commissionStep as { totalPayoutAmount?: number })?.totalPayoutAmount || 0)}</p>
                         </div>
                       )}
                     </div>
@@ -1638,7 +1640,7 @@ export default function AdminFinancialsPage() {
                     onClick={cancelPreview}
                     className="mt-3"
                   >
-                    Close
+                    {t("common.close")}
                   </Button>
                 </div>
               )}
@@ -1654,7 +1656,7 @@ export default function AdminFinancialsPage() {
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-amber-600" />
-                <span>Overpayments Requiring Review ({reviewQueue.length})</span>
+                <span>{t("admin.financials.overpaymentsRequiringReview").replace("{count}", String(reviewQueue.length))}</span>
               </div>
               <Button
                 variant="ghost"
@@ -1666,7 +1668,7 @@ export default function AdminFinancialsPage() {
               </Button>
             </CardTitle>
             <CardDescription>
-              These payments received more than expected and need admin decision
+              {t("admin.financials.overpaymentsDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -1679,13 +1681,13 @@ export default function AdminFinancialsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Expected</TableHead>
-                      <TableHead>Received</TableHead>
-                      <TableHead>Overpayment</TableHead>
-                      <TableHead>Flags</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead>{t("common.user")}</TableHead>
+                      <TableHead>{t("admin.financials.expected")}</TableHead>
+                      <TableHead>{t("admin.financials.received")}</TableHead>
+                      <TableHead>{t("admin.financials.overpayment")}</TableHead>
+                      <TableHead>{t("admin.financials.flags")}</TableHead>
+                      <TableHead>{t("admin.transactionLogs.date")}</TableHead>
+                      <TableHead>{t("admin.directBonuses.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1710,12 +1712,12 @@ export default function AdminFinancialsPage() {
                           <div className="flex flex-col gap-1">
                             {item.isOverpaid && (
                               <Badge variant="outline" className="text-amber-600 border-amber-300 w-fit">
-                                Overpaid
+                                {t("admin.financials.overpaid")}
                               </Badge>
                             )}
                             {item.isLate && (
                               <Badge variant="outline" className="text-blue-600 border-blue-300 w-fit">
-                                Late
+                                {t("admin.financials.late")}
                               </Badge>
                             )}
                           </div>
@@ -1735,7 +1737,7 @@ export default function AdminFinancialsPage() {
                               {resolvingId === item.id ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
                               ) : (
-                                "Refund"
+                                t("admin.financials.refund")
                               )}
                             </Button>
                             <Button
@@ -1748,7 +1750,7 @@ export default function AdminFinancialsPage() {
                               {resolvingId === item.id ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
                               ) : (
-                                "Credit User"
+                                t("admin.financials.creditUser")
                               )}
                             </Button>
                             <Button
@@ -1761,7 +1763,7 @@ export default function AdminFinancialsPage() {
                               {resolvingId === item.id ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
                               ) : (
-                                "Ignore"
+                                t("admin.financials.ignore")
                               )}
                             </Button>
                           </div>
@@ -1780,7 +1782,7 @@ export default function AdminFinancialsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.financials.totalRevenue")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
@@ -1791,7 +1793,7 @@ export default function AdminFinancialsPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Payouts</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.financials.totalPayouts")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
@@ -1802,7 +1804,7 @@ export default function AdminFinancialsPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Net Profit</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.financials.netProfit")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
@@ -1813,7 +1815,7 @@ export default function AdminFinancialsPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Active Subscriptions</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.financials.activeSubscriptions")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
@@ -1832,10 +1834,10 @@ export default function AdminFinancialsPage() {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <AlertTriangle className="h-5 w-5 text-amber-500" />
-                  Users Without Payout Wallets
+                  {t("admin.financials.usersWithoutPayoutWallets")}
                 </CardTitle>
                 <CardDescription>
-                  These users cannot receive commission payouts until they configure a wallet address
+                  {t("admin.financials.usersWithoutPayoutWalletsDesc")}
                 </CardDescription>
               </div>
               <Badge variant="outline" className="text-amber-600 border-amber-600">
@@ -1848,11 +1850,11 @@ export default function AdminFinancialsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Joined</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-center">Referrals</TableHead>
-                    <TableHead className="text-right">Volume</TableHead>
+                    <TableHead>{t("common.user")}</TableHead>
+                    <TableHead>{t("admin.financials.joined")}</TableHead>
+                    <TableHead>{t("admin.transactionLogs.status")}</TableHead>
+                    <TableHead className="text-center">{t("admin.financials.referrals")}</TableHead>
+                    <TableHead className="text-right">{t("admin.financials.volume")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1899,16 +1901,16 @@ export default function AdminFinancialsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ArrowUpCircle className="h-5 w-5 text-[#D4A853]" />
-            Incoming Payments ({filteredPayments.length})
+            {t("admin.financials.incomingPayments").replace("{count}", String(filteredPayments.length))}
           </CardTitle>
-          <CardDescription>All payments received from users</CardDescription>
+          <CardDescription>{t("admin.financials.incomingPaymentsDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by user..."
+                placeholder={t("admin.financials.searchByUser")}
                 value={paymentSearch}
                 onChange={(e) => setPaymentSearch(e.target.value)}
                 className="pl-9"
@@ -1919,11 +1921,11 @@ export default function AdminFinancialsPage() {
                 <SelectValue placeholder="Filter by type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="initial">Initial Payment</SelectItem>
-                <SelectItem value="weekly">Weekly Payment</SelectItem>
-                <SelectItem value="monthly">Monthly Payment</SelectItem>
-                <SelectItem value="commission">Commission</SelectItem>
+                <SelectItem value="all">{t("admin.financials.allTypes")}</SelectItem>
+                <SelectItem value="initial">{t("admin.financials.initialPayment")}</SelectItem>
+                <SelectItem value="weekly">{t("admin.financials.weeklyPayment")}</SelectItem>
+                <SelectItem value="monthly">{t("admin.financials.monthlyPayment")}</SelectItem>
+                <SelectItem value="commission">{t("admin.financials.commission")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={paymentStatusFilter} onValueChange={(value: "all" | "succeeded" | "bypassed" | "pending" | "failed") => setPaymentStatusFilter(value)}>
@@ -1931,11 +1933,11 @@ export default function AdminFinancialsPage() {
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="succeeded">Succeeded</SelectItem>
-                <SelectItem value="bypassed">Bypassed</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="failed">Failed</SelectItem>
+                <SelectItem value="all">{t("admin.financials.allStatus")}</SelectItem>
+                <SelectItem value="succeeded">{t("admin.financials.succeeded")}</SelectItem>
+                <SelectItem value="bypassed">{t("admin.financials.bypassed")}</SelectItem>
+                <SelectItem value="pending">{t("admin.payouts.pending")}</SelectItem>
+                <SelectItem value="failed">{t("admin.payouts.failed")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -1944,18 +1946,18 @@ export default function AdminFinancialsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead>{t("common.user")}</TableHead>
+                  <TableHead>{t("admin.transactionLogs.amount")}</TableHead>
+                  <TableHead>{t("admin.transactionLogs.type")}</TableHead>
+                  <TableHead>{t("admin.transactionLogs.status")}</TableHead>
+                  <TableHead>{t("admin.transactionLogs.date")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredPayments.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                      No payments match your filters
+                      {t("admin.financials.noPaymentsMatch")}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -2003,16 +2005,16 @@ export default function AdminFinancialsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ArrowDownCircle className="h-5 w-5 text-red-600" />
-            Outgoing Payouts ({filteredCommissions.length})
+            {t("admin.financials.outgoingPayouts").replace("{count}", String(filteredCommissions.length))}
           </CardTitle>
-          <CardDescription>All commission payouts to users</CardDescription>
+          <CardDescription>{t("admin.financials.outgoingPayoutsDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by referrer or referred..."
+                placeholder={t("admin.financials.searchByReferrer")}
                 value={commissionSearch}
                 onChange={(e) => setCommissionSearch(e.target.value)}
                 className="pl-9"
@@ -2023,10 +2025,10 @@ export default function AdminFinancialsPage() {
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="paid">Paid</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="all">{t("admin.financials.allStatus")}</SelectItem>
+                <SelectItem value="pending">{t("admin.payouts.pending")}</SelectItem>
+                <SelectItem value="paid">{t("admin.financials.paid")}</SelectItem>
+                <SelectItem value="cancelled">{t("admin.financials.cancelled")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -2035,18 +2037,18 @@ export default function AdminFinancialsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Referrer</TableHead>
-                  <TableHead>Referred</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead>{t("admin.directBonuses.referrer")}</TableHead>
+                  <TableHead>{t("admin.directBonuses.referrer")}</TableHead>
+                  <TableHead>{t("admin.transactionLogs.amount")}</TableHead>
+                  <TableHead>{t("admin.transactionLogs.status")}</TableHead>
+                  <TableHead>{t("admin.transactionLogs.date")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredCommissions.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                      No commissions match your filters
+                      {t("admin.financials.noCommissionsMatch")}
                     </TableCell>
                   </TableRow>
                 ) : (

@@ -743,7 +743,7 @@ export default function PaymentsPage() {
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">{t("payments.loadingPaymentData")}</div>
+        <div className="text-muted-foreground">Loading payment data...</div>
       </div>
     }>
       <PaymentsContent />

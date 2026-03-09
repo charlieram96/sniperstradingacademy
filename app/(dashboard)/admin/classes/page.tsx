@@ -143,7 +143,7 @@ export default function AdminClassesPage() {
       .eq("id", classItem.id)
 
     if (error) {
-      alert("Error updating class: " + error.message)
+      alert(t("admin.classes.errorUpdatingClass") + error.message)
       return
     }
 
@@ -174,7 +174,7 @@ export default function AdminClassesPage() {
       .eq("id", classToComplete.id)
 
     if (error) {
-      alert("Error marking class complete: " + error.message)
+      alert(t("admin.classes.errorCompletingClass") + error.message)
       return
     }
 
@@ -203,7 +203,7 @@ export default function AdminClassesPage() {
       .eq("id", classToDelete.id)
 
     if (error) {
-      alert("Error deleting class: " + error.message)
+      alert(t("admin.classes.errorDeletingClass") + error.message)
       return
     }
 
@@ -227,14 +227,14 @@ export default function AdminClassesPage() {
     const { error } = await supabase
       .from("academy_classes")
       .insert({
-        title: "New Class",
-        description: "Description for new class",
+        title: t("admin.classes.newClassTitle"),
+        description: t("admin.classes.newClassDescription"),
         meeting_link: "https://zoom.us/j/example",
         scheduled_at: futureDate.toISOString()
       })
 
     if (error) {
-      alert("Error creating class: " + error.message)
+      alert(t("admin.classes.errorCreatingClass") + error.message)
       return
     }
 
@@ -260,7 +260,7 @@ export default function AdminClassesPage() {
       .eq("setting_key", "global_banner")
 
     if (error) {
-      alert("Error saving banner: " + error.message)
+      alert(t("admin.classes.errorSavingBanner") + error.message)
       return
     }
 
@@ -327,7 +327,7 @@ export default function AdminClassesPage() {
                   id="banner"
                   value={bannerText}
                   onChange={(e) => setBannerText(e.target.value)}
-                  placeholder="Enter banner message (e.g., 'System maintenance scheduled for Dec 25th')"
+                  placeholder={t("admin.classes.bannerPlaceholder")}
                   rows={3}
                   className="mt-2"
                 />
@@ -338,37 +338,37 @@ export default function AdminClassesPage() {
                   <Label htmlFor="bannerColor">{t("admin.classes.bannerColor")}</Label>
                   <Select value={bannerColor} onValueChange={setBannerColor}>
                     <SelectTrigger id="bannerColor" className="mt-2">
-                      <SelectValue placeholder="Select color" />
+                      <SelectValue placeholder={t("admin.classes.selectColor")} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="green">
                         <div className="flex items-center gap-2">
                           <div className="w-4 h-4 rounded bg-[#D4A853]"></div>
-                          <span>Green</span>
+                          <span>{t("admin.classes.colorGreen")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="red">
                         <div className="flex items-center gap-2">
                           <div className="w-4 h-4 rounded bg-red-600"></div>
-                          <span>Red</span>
+                          <span>{t("admin.classes.colorRed")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="purple">
                         <div className="flex items-center gap-2">
                           <div className="w-4 h-4 rounded bg-gradient-to-r from-purple-600 to-purple-700"></div>
-                          <span>Purple</span>
+                          <span>{t("admin.classes.colorPurple")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="gray">
                         <div className="flex items-center gap-2">
                           <div className="w-4 h-4 rounded bg-gray-700"></div>
-                          <span>Gray</span>
+                          <span>{t("admin.classes.colorGray")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="black">
                         <div className="flex items-center gap-2">
                           <div className="w-4 h-4 rounded bg-black border border-gray-600"></div>
-                          <span>Black</span>
+                          <span>{t("admin.classes.colorBlack")}</span>
                         </div>
                       </SelectItem>
                     </SelectContent>
@@ -379,67 +379,67 @@ export default function AdminClassesPage() {
                   <Label htmlFor="bannerIcon">{t("admin.classes.bannerIcon")}</Label>
                   <Select value={bannerIcon} onValueChange={setBannerIcon}>
                     <SelectTrigger id="bannerIcon" className="mt-2">
-                      <SelectValue placeholder="Select icon" />
+                      <SelectValue placeholder={t("admin.classes.selectIcon")} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="AlertCircle">
                         <div className="flex items-center gap-2">
                           <AlertCircle className="h-4 w-4" />
-                          <span>Alert Circle</span>
+                          <span>{t("admin.classes.iconAlertCircle")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="Info">
                         <div className="flex items-center gap-2">
                           <Info className="h-4 w-4" />
-                          <span>Info</span>
+                          <span>{t("admin.classes.iconInfo")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="Bell">
                         <div className="flex items-center gap-2">
                           <Bell className="h-4 w-4" />
-                          <span>Bell</span>
+                          <span>{t("admin.classes.iconBell")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="AlertTriangle">
                         <div className="flex items-center gap-2">
                           <AlertTriangle className="h-4 w-4" />
-                          <span>Alert Triangle</span>
+                          <span>{t("admin.classes.iconAlertTriangle")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="Megaphone">
                         <div className="flex items-center gap-2">
                           <Megaphone className="h-4 w-4" />
-                          <span>Megaphone</span>
+                          <span>{t("admin.classes.iconMegaphone")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="Sparkles">
                         <div className="flex items-center gap-2">
                           <Sparkles className="h-4 w-4" />
-                          <span>Sparkles</span>
+                          <span>{t("admin.classes.iconSparkles")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="Star">
                         <div className="flex items-center gap-2">
                           <Star className="h-4 w-4" />
-                          <span>Star</span>
+                          <span>{t("admin.classes.iconStar")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="Zap">
                         <div className="flex items-center gap-2">
                           <Zap className="h-4 w-4" />
-                          <span>Zap</span>
+                          <span>{t("admin.classes.iconZap")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="Clock">
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4" />
-                          <span>Clock</span>
+                          <span>{t("admin.classes.iconClock")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="CheckCircle">
                         <div className="flex items-center gap-2">
                           <CheckCircle className="h-4 w-4" />
-                          <span>Check Circle</span>
+                          <span>{t("admin.classes.iconCheckCircle")}</span>
                         </div>
                       </SelectItem>
                     </SelectContent>
@@ -560,7 +560,7 @@ export default function AdminClassesPage() {
                           value={editData.title}
                           onChange={(e) => setEditData({ ...editData, title: e.target.value })}
                           className="mt-1.5"
-                          placeholder="Class title"
+                          placeholder={t("admin.classes.classTitlePlaceholder")}
                         />
                       </div>
                       <div>
@@ -570,7 +570,7 @@ export default function AdminClassesPage() {
                           onChange={(e) => setEditData({ ...editData, description: e.target.value })}
                           rows={2}
                           className="mt-1.5"
-                          placeholder="Brief description"
+                          placeholder={t("admin.classes.classDescPlaceholder")}
                         />
                       </div>
                       <div>
@@ -579,7 +579,7 @@ export default function AdminClassesPage() {
                           value={editData.meeting_link}
                           onChange={(e) => setEditData({ ...editData, meeting_link: e.target.value })}
                           className="mt-1.5"
-                          placeholder="https://zoom.us/j/..."
+                          placeholder={t("admin.classes.meetingLinkPlaceholder")}
                         />
                       </div>
                       <div>
@@ -623,7 +623,7 @@ export default function AdminClassesPage() {
                                   }}
                                 >
                                   <SelectTrigger className="w-[70px]">
-                                    <SelectValue placeholder="Hour" />
+                                    <SelectValue placeholder={t("admin.classes.hourPlaceholder")} />
                                   </SelectTrigger>
                                   <SelectContent>
                                     {Array.from({ length: 24 }, (_, i) => (
@@ -643,7 +643,7 @@ export default function AdminClassesPage() {
                                   }}
                                 >
                                   <SelectTrigger className="w-[70px]">
-                                    <SelectValue placeholder="Min" />
+                                    <SelectValue placeholder={t("admin.classes.minPlaceholder")} />
                                   </SelectTrigger>
                                   <SelectContent>
                                     {Array.from({ length: 60 }, (_, i) => (

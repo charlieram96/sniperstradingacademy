@@ -72,6 +72,37 @@ const NOTIFICATION_LABELS: Record<string, string> = {
 
 export default function AdminNotificationsPage() {
   const { t } = useTranslation()
+
+  const getCategoryLabel = (key: string): string => {
+    const labels: Record<string, string> = {
+      financial: t("admin.notificationsManager.financial"),
+      network: t("admin.notificationsManager.network"),
+      account: t("admin.notificationsManager.account"),
+      admin: t("admin.notificationsManager.adminCategory"),
+    }
+    return labels[key] || key
+  }
+
+  const getNotificationLabel = (type: string): string => {
+    const labels: Record<string, string> = {
+      referral_signup: t("admin.notificationsManager.referralSignups"),
+      network_join: t("admin.notificationsManager.networkJoins"),
+      direct_bonus: t("admin.notificationsManager.directBonuses"),
+      monthly_commission: t("admin.notificationsManager.monthlyCommissions"),
+      payout_processed: t("admin.notificationsManager.payoutSuccess"),
+      payout_failed: t("admin.notificationsManager.payoutFailures"),
+      payment_failed: t("admin.notificationsManager.paymentFailures"),
+      payment_succeeded: t("admin.notificationsManager.paymentSuccess"),
+      structure_milestone: t("admin.notificationsManager.networkMilestones"),
+      volume_update: t("admin.notificationsManager.volumeUpdates"),
+      account_inactive: t("admin.notificationsManager.accountInactiveWarnings"),
+      account_reactivated: t("admin.notificationsManager.accountReactivations"),
+      admin_announcement: t("admin.notificationsManager.adminAnnouncements"),
+      welcome: t("admin.notificationsManager.welcomeMessages"),
+    }
+    return labels[type] || type
+  }
+
   const [settings, setSettings] = useState<GlobalSetting[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
@@ -100,11 +131,11 @@ export default function AdminNotificationsPage() {
       if (response.ok) {
         setSettings(data.settings)
       } else {
-        setMessage({ type: 'error', text: data.error || 'Failed to fetch settings' })
+        setMessage({ type: 'error', text: data.error || t("admin.notificationsManager.failedToFetchSettings") })
       }
     } catch (error) {
       console.error('Error fetching settings:', error)
-      setMessage({ type: 'error', text: 'An error occurred' })
+      setMessage({ type: 'error', text: t("admin.notificationsManager.anErrorOccurred") })
     } finally {
       setLoading(false)
     }
@@ -125,17 +156,19 @@ export default function AdminNotificationsPage() {
       if (response.ok) {
         setMessage({
           type: 'success',
-          text: `${NOTIFICATION_LABELS[type]} ${!currentlyEnabled ? 'enabled' : 'disabled'} successfully`
+          text: !currentlyEnabled
+            ? t("admin.notificationsManager.enabledSuccess").replace("{type}", getNotificationLabel(type))
+            : t("admin.notificationsManager.disabledSuccess").replace("{type}", getNotificationLabel(type))
         })
         setTimeout(() => setMessage(null), 3000)
         fetchSettings()
       } else {
         const data = await response.json()
-        setMessage({ type: 'error', text: data.error || 'Failed to update setting' })
+        setMessage({ type: 'error', text: data.error || t("admin.notificationsManager.failedToUpdateSetting") })
       }
     } catch (error) {
       console.error('Error updating setting:', error)
-      setMessage({ type: 'error', text: 'An error occurred' })
+      setMessage({ type: 'error', text: t("admin.notificationsManager.anErrorOccurred") })
     } finally {
       setUpdating(null)
     }
@@ -184,7 +217,7 @@ export default function AdminNotificationsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userIds: selectedUsers.map(u => u.id),
-          subject: subject.trim() || 'Message from Admin',
+          subject: subject.trim() || t("admin.notificationsManager.subjectPlaceholder"),
           message: messageBody.trim(),
           channels: selectedChannels
         })
@@ -195,7 +228,7 @@ export default function AdminNotificationsPage() {
       if (response.ok) {
         setMessage({
           type: 'success',
-          text: `Message sent to ${data.sent} user${data.sent !== 1 ? 's' : ''}${data.failed > 0 ? `, ${data.failed} failed` : ''}`
+          text: t("admin.notificationsManager.messageSent").replace("{sent}", String(data.sent))
         })
         setTimeout(() => setMessage(null), 5000)
         // Reset form
@@ -204,11 +237,11 @@ export default function AdminNotificationsPage() {
         setMessageBody('')
         setShowManualDialog(false)
       } else {
-        setMessage({ type: 'error', text: data.error || 'Failed to send message' })
+        setMessage({ type: 'error', text: data.error || t("admin.notificationsManager.failedToSendMessage") })
       }
     } catch (error) {
       console.error('Error sending message:', error)
-      setMessage({ type: 'error', text: 'An error occurred' })
+      setMessage({ type: 'error', text: t("admin.notificationsManager.anErrorOccurred") })
     } finally {
       setSending(false)
     }
@@ -255,11 +288,11 @@ export default function AdminNotificationsPage() {
             <div className="space-y-4">
               {/* User Search */}
               <div>
-                <Label htmlFor="user-search">Select Users</Label>
+                <Label htmlFor="user-search">{t("admin.notificationsManager.selectUsers")}</Label>
                 <Input
                   id="user-search"
                   type="text"
-                  placeholder="Search by name or email..."
+                  placeholder={t("admin.notificationsManager.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value)
@@ -269,7 +302,7 @@ export default function AdminNotificationsPage() {
                 />
                 {searchLoading && (
                   <div className="mt-2 text-sm text-muted-foreground">
-                    Searching...
+                    {t("admin.notificationsManager.searching")}
                   </div>
                 )}
                 {userOptions.length > 0 && (
@@ -294,7 +327,7 @@ export default function AdminNotificationsPage() {
               {/* Selected Users */}
               {selectedUsers.length > 0 && (
                 <div>
-                  <Label>Selected ({selectedUsers.length})</Label>
+                  <Label>{t("admin.notificationsManager.selectedCount").replace("{count}", String(selectedUsers.length))}</Label>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {selectedUsers.map((user) => (
                       <Badge key={user.id} variant="secondary" className="flex items-center gap-1">
@@ -313,7 +346,7 @@ export default function AdminNotificationsPage() {
 
               {/* Channels */}
               <div>
-                <Label>Channels</Label>
+                <Label>{t("admin.notificationsManager.channels")}</Label>
                 <div className="mt-2 flex gap-4">
                   <label className="flex items-center gap-2">
                     <input
@@ -327,7 +360,7 @@ export default function AdminNotificationsPage() {
                         }
                       }}
                     />
-                    <span className="text-sm">Email</span>
+                    <span className="text-sm">{t("admin.notificationsManager.emailChannel")}</span>
                   </label>
                   <label className="flex items-center gap-2">
                     <input
@@ -341,18 +374,18 @@ export default function AdminNotificationsPage() {
                         }
                       }}
                     />
-                    <span className="text-sm">SMS</span>
+                    <span className="text-sm">{t("admin.notificationsManager.smsChannel")}</span>
                   </label>
                 </div>
               </div>
 
               {/* Subject */}
               <div>
-                <Label htmlFor="subject">Subject (Email only)</Label>
+                <Label htmlFor="subject">{t("admin.notificationsManager.subjectEmail")}</Label>
                 <Input
                   id="subject"
                   type="text"
-                  placeholder="Message from Admin"
+                  placeholder={t("admin.notificationsManager.subjectPlaceholder")}
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   disabled={sending}
@@ -361,10 +394,10 @@ export default function AdminNotificationsPage() {
 
               {/* Message */}
               <div>
-                <Label htmlFor="message">Message</Label>
+                <Label htmlFor="message">{t("admin.notificationsManager.message")}</Label>
                 <Textarea
                   id="message"
-                  placeholder="Enter your message here..."
+                  placeholder={t("admin.notificationsManager.messagePlaceholder")}
                   value={messageBody}
                   onChange={(e) => setMessageBody(e.target.value)}
                   disabled={sending}
@@ -379,7 +412,7 @@ export default function AdminNotificationsPage() {
                 onClick={() => setShowManualDialog(false)}
                 disabled={sending}
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 onClick={sendManualMessage}
@@ -388,12 +421,12 @@ export default function AdminNotificationsPage() {
                 {sending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
+                    {t("admin.notificationsManager.sending")}
                   </>
                 ) : (
                   <>
                     <Send className="mr-2 h-4 w-4" />
-                    Send to {selectedUsers.length} User{selectedUsers.length !== 1 ? 's' : ''}
+                    {t("admin.notificationsManager.sendToUsers").replace("{count}", String(selectedUsers.length))}
                   </>
                 )}
               </Button>
@@ -419,7 +452,7 @@ export default function AdminNotificationsPage() {
       <div className="grid grid-cols-3 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Types</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.notificationsManager.totalTypes")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
@@ -427,7 +460,7 @@ export default function AdminNotificationsPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Enabled</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.notificationsManager.enabled")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-[#D4A853]">{stats.enabled}</div>
@@ -435,7 +468,7 @@ export default function AdminNotificationsPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Disabled</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.notificationsManager.disabled")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">{stats.disabled}</div>
@@ -448,10 +481,10 @@ export default function AdminNotificationsPage() {
         <CardHeader>
           <div className="flex items-center gap-2">
             <Bell className="h-5 w-5" />
-            <CardTitle>Global Notification Toggles</CardTitle>
+            <CardTitle>{t("admin.notificationsManager.globalToggles")}</CardTitle>
           </div>
           <CardDescription>
-            Enable or disable notification types system-wide. This overrides individual user preferences.
+            {t("admin.notificationsManager.globalTogglesDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -462,7 +495,7 @@ export default function AdminNotificationsPage() {
 
             return (
               <div key={categoryKey} className="mb-6 last:mb-0">
-                <h3 className="text-lg font-semibold mb-3">{category.label}</h3>
+                <h3 className="text-lg font-semibold mb-3">{getCategoryLabel(categoryKey)}</h3>
                 <div className="space-y-3">
                   {categorySettings.map((setting) => (
                     <div key={setting.notification_type} className="border rounded-lg p-4">
@@ -470,21 +503,21 @@ export default function AdminNotificationsPage() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <Label className="text-base font-medium">
-                              {NOTIFICATION_LABELS[setting.notification_type] || setting.notification_type}
+                              {getNotificationLabel(setting.notification_type)}
                             </Label>
                             {setting.enabled ? (
                               <Badge variant="outline" className="bg-[#D4A853]/10 text-[#C49B3E] border-[#D4A853]/20">
-                                Enabled
+                                {t("admin.notificationsManager.enabledBadge")}
                               </Badge>
                             ) : (
                               <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                                Disabled
+                                {t("admin.notificationsManager.disabledBadge")}
                               </Badge>
                             )}
                           </div>
                           {!setting.enabled && setting.disabled_by_user && (
                             <p className="text-sm text-muted-foreground">
-                              Disabled by {setting.disabled_by_user.name} on {new Date(setting.disabled_at!).toLocaleString()}
+                              {t("admin.notificationsManager.disabledBy").replace("{name}", setting.disabled_by_user.name).replace("{date}", new Date(setting.disabled_at!).toLocaleString())}
                               {setting.disabled_reason && ` - ${setting.disabled_reason}`}
                             </p>
                           )}

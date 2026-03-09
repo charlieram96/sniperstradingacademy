@@ -41,6 +41,7 @@ import {
   Upload,
 } from "lucide-react"
 import { fadeInUp, staggerContainer, staggerItem } from "@/lib/motion"
+import { useTranslation } from "@/components/language-provider"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -75,6 +76,7 @@ interface Lesson {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function AcademyManagerPage() {
+  const { t } = useTranslation()
   const [modules, setModules] = useState<Module[]>([])
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [loading, setLoading] = useState(true)
@@ -472,7 +474,7 @@ export default function AcademyManagerPage() {
     if (currentType === "link") return null
     return (
       <div className="space-y-2">
-        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Upload File</label>
+        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.academyManager.uploadFile")}</label>
         <input
           ref={fileInputRef}
           type="file"
@@ -489,7 +491,7 @@ export default function AcademyManagerPage() {
         {uploadFile && !fileSizeError && (
           <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
             <Info className="h-3.5 w-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
-            <p className="text-xs text-amber-300">Large files may take several minutes to upload.</p>
+            <p className="text-xs text-amber-300">{t("admin.academyManager.largeFilesWarning")}</p>
           </div>
         )}
       </div>
@@ -503,7 +505,7 @@ export default function AcademyManagerPage() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-gold-400" />
-          <p className="text-sm text-muted-foreground">Loading academy data...</p>
+          <p className="text-sm text-muted-foreground">{t("admin.academyManager.loadingData")}</p>
         </div>
       </div>
     )
@@ -525,8 +527,8 @@ export default function AcademyManagerPage() {
             <GraduationCap className="h-5 w-5 text-gold-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Academy Manager</h1>
-            <p className="text-sm text-muted-foreground">Manage modules, lessons, and content</p>
+            <h1 className="text-2xl font-bold text-foreground">{t("admin.academyManager.title")}</h1>
+            <p className="text-sm text-muted-foreground">{t("admin.academyManager.description")}</p>
           </div>
         </div>
       </div>
@@ -539,10 +541,10 @@ export default function AcademyManagerPage() {
         className="grid grid-cols-2 sm:grid-cols-4 gap-3"
       >
         {[
-          { label: "Modules", value: modules.length, icon: BookOpen, accent: "text-gold-400 bg-gold-400/10" },
-          { label: "Videos", value: videoCount, icon: Video, accent: "text-blue-400 bg-blue-500/10" },
-          { label: "PDFs", value: pdfCount, icon: FileText, accent: "text-red-400 bg-red-500/10" },
-          { label: "Links", value: linkCount, icon: ExternalLink, accent: "text-emerald-400 bg-emerald-500/10" },
+          { label: t("admin.academyManager.modules"), value: modules.length, icon: BookOpen, accent: "text-gold-400 bg-gold-400/10" },
+          { label: t("admin.academyManager.videos"), value: videoCount, icon: Video, accent: "text-blue-400 bg-blue-500/10" },
+          { label: t("admin.academyManager.pdfs"), value: pdfCount, icon: FileText, accent: "text-red-400 bg-red-500/10" },
+          { label: t("admin.academyManager.links"), value: linkCount, icon: ExternalLink, accent: "text-emerald-400 bg-emerald-500/10" },
         ].map((stat) => (
           <motion.div
             key={stat.label}
@@ -582,7 +584,7 @@ export default function AcademyManagerPage() {
               {isEditing ? (
                 <div className="p-5 space-y-4 border-l-2 border-gold-400">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-medium text-gold-400 uppercase tracking-wider">Editing Module</p>
+                    <p className="text-xs font-medium text-gold-400 uppercase tracking-wider">{t("admin.academyManager.editingModule")}</p>
                     <div className="flex items-center gap-2">
                       <Button size="sm" variant="ghost" onClick={cancelEditModule} className="h-8 px-3 text-muted-foreground hover:text-foreground">
                         <X className="h-3.5 w-3.5 mr-1" /> Cancel
@@ -594,7 +596,7 @@ export default function AcademyManagerPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Module #</label>
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.academyManager.moduleNumber")}</label>
                       <Input
                         type="number"
                         value={editModuleForm.number}
@@ -603,7 +605,7 @@ export default function AcademyManagerPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Display Order</label>
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.academyManager.displayOrder")}</label>
                       <Input
                         type="number"
                         value={editModuleForm.display_order}
@@ -613,7 +615,7 @@ export default function AcademyManagerPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Title</label>
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.academyManager.fieldTitle")}</label>
                     <Input
                       value={editModuleForm.title}
                       onChange={(e) => setEditModuleForm({ ...editModuleForm, title: e.target.value })}
@@ -621,7 +623,7 @@ export default function AcademyManagerPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Description</label>
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.academyManager.fieldDescription")}</label>
                     <Textarea
                       value={editModuleForm.description}
                       onChange={(e) => setEditModuleForm({ ...editModuleForm, description: e.target.value })}
@@ -648,7 +650,7 @@ export default function AcademyManagerPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <Badge variant={mod.is_published ? "default" : "secondary"} className="text-xs">
-                      {mod.is_published ? <><Eye className="h-3 w-3 mr-1" />Published</> : <><EyeOff className="h-3 w-3 mr-1" />Draft</>}
+                      {mod.is_published ? <><Eye className="h-3 w-3 mr-1" />{t("admin.academyManager.published")}</> : <><EyeOff className="h-3 w-3 mr-1" />{t("admin.academyManager.draft")}</>}
                     </Badge>
                     <Badge variant="outline" className="text-xs tabular-nums">
                       {moduleLessons.length} lesson{moduleLessons.length !== 1 ? "s" : ""}
@@ -691,27 +693,27 @@ export default function AcademyManagerPage() {
                           return (
                             <div key={lesson.id} className="rounded-xl border border-gold-400/30 bg-surface-0 p-4 space-y-3 border-l-2 border-l-gold-400">
                               <div className="flex items-center justify-between">
-                                <p className="text-xs font-medium text-gold-400 uppercase tracking-wider">Editing Lesson</p>
+                                <p className="text-xs font-medium text-gold-400 uppercase tracking-wider">{t("admin.academyManager.editingLesson")}</p>
                                 <div className="flex items-center gap-2">
                                   <Button size="sm" variant="ghost" onClick={cancelEditLesson} disabled={uploading} className="h-7 px-2 text-xs text-muted-foreground">
                                     <X className="h-3 w-3 mr-1" /> Cancel
                                   </Button>
                                   <Button size="sm" onClick={saveEditLesson} disabled={uploading || !!fileSizeError} className="h-7 px-2 text-xs bg-gold-400 hover:bg-gold-500 text-primary-foreground">
-                                    {uploading ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Uploading...</> : <><Check className="h-3 w-3 mr-1" />Save</>}
+                                    {uploading ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" />{t("admin.academyManager.uploading")}</> : <><Check className="h-3 w-3 mr-1" />{t("common.save")}</>}
                                   </Button>
                                 </div>
                               </div>
                               <div className="grid grid-cols-3 gap-3">
                                 <div>
-                                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Lesson ID</label>
+                                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.academyManager.lessonId")}</label>
                                   <Input value={editLessonForm.lesson_id} onChange={(e) => setEditLessonForm({ ...editLessonForm, lesson_id: e.target.value })} className="mt-1 h-8 text-sm bg-surface-1 border-border" placeholder="1.1" />
                                 </div>
                                 <div>
-                                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Title</label>
+                                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.academyManager.fieldTitle")}</label>
                                   <Input value={editLessonForm.title} onChange={(e) => setEditLessonForm({ ...editLessonForm, title: e.target.value })} className="mt-1 h-8 text-sm bg-surface-1 border-border" />
                                 </div>
                                 <div>
-                                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Type</label>
+                                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.academyManager.type")}</label>
                                   <Select value={editLessonForm.type} onValueChange={(v: "video" | "pdf" | "link") => setEditLessonForm({ ...editLessonForm, type: v })}>
                                     <SelectTrigger className="mt-1 h-8 text-sm bg-surface-1 border-border"><SelectValue /></SelectTrigger>
                                     <SelectContent>
@@ -724,7 +726,7 @@ export default function AcademyManagerPage() {
                               </div>
                               {editLessonForm.type === "link" ? (
                                 <div>
-                                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">URL</label>
+                                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.academyManager.url")}</label>
                                   <Input value={editLessonForm.link_url} onChange={(e) => setEditLessonForm({ ...editLessonForm, link_url: e.target.value })} className="mt-1 h-8 text-sm bg-surface-1 border-border" placeholder="https://..." />
                                 </div>
                               ) : (
@@ -732,7 +734,7 @@ export default function AcademyManagerPage() {
                                   {fileUploadSection(editLessonForm.type, handleFileChange)}
                                   {editLessonForm.type === "video" && (
                                     <div>
-                                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Duration</label>
+                                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.academyManager.duration")}</label>
                                       <Input value={editLessonForm.duration} onChange={(e) => setEditLessonForm({ ...editLessonForm, duration: e.target.value })} className="mt-1 h-8 text-sm bg-surface-1 border-border" placeholder="15:30" />
                                     </div>
                                   )}
@@ -780,34 +782,34 @@ export default function AcademyManagerPage() {
                       })}
 
                       {moduleLessons.length === 0 && !addingLessonModuleId && (
-                        <p className="text-sm text-muted-foreground text-center py-4">No lessons yet</p>
+                        <p className="text-sm text-muted-foreground text-center py-4">{t("admin.academyManager.noLessons")}</p>
                       )}
 
                       {/* Add Lesson inline form */}
                       {addingLessonModuleId === mod.id ? (
                         <div className="rounded-xl border border-dashed border-gold-400/30 bg-surface-0 p-4 space-y-3">
                           <div className="flex items-center justify-between">
-                            <p className="text-xs font-medium text-gold-400 uppercase tracking-wider">New Lesson</p>
+                            <p className="text-xs font-medium text-gold-400 uppercase tracking-wider">{t("admin.academyManager.newLesson")}</p>
                             <div className="flex items-center gap-2">
                               <Button size="sm" variant="ghost" onClick={cancelAddLesson} disabled={uploading} className="h-7 px-2 text-xs text-muted-foreground">
                                 <X className="h-3 w-3 mr-1" /> Cancel
                               </Button>
                               <Button size="sm" onClick={saveNewLesson} disabled={uploading || !!fileSizeError} className="h-7 px-2 text-xs bg-gold-400 hover:bg-gold-500 text-primary-foreground">
-                                {uploading ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Uploading...</> : <><Check className="h-3 w-3 mr-1" />Create</>}
+                                {uploading ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" />{t("admin.academyManager.uploading")}</> : <><Check className="h-3 w-3 mr-1" />{t("admin.academyManager.create")}</>}
                               </Button>
                             </div>
                           </div>
                           <div className="grid grid-cols-3 gap-3">
                             <div>
-                              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Lesson ID</label>
+                              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.academyManager.lessonId")}</label>
                               <Input value={newLessonForm.lesson_id} onChange={(e) => setNewLessonForm({ ...newLessonForm, lesson_id: e.target.value })} className="mt-1 h-8 text-sm bg-surface-1 border-border" placeholder="1.1" />
                             </div>
                             <div>
-                              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Title</label>
+                              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.academyManager.fieldTitle")}</label>
                               <Input value={newLessonForm.title} onChange={(e) => setNewLessonForm({ ...newLessonForm, title: e.target.value })} className="mt-1 h-8 text-sm bg-surface-1 border-border" placeholder="Getting Started" />
                             </div>
                             <div>
-                              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Type</label>
+                              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.academyManager.type")}</label>
                               <Select value={newLessonForm.type} onValueChange={(v: "video" | "pdf" | "link") => setNewLessonForm({ ...newLessonForm, type: v })}>
                                 <SelectTrigger className="mt-1 h-8 text-sm bg-surface-1 border-border"><SelectValue /></SelectTrigger>
                                 <SelectContent>
@@ -820,7 +822,7 @@ export default function AcademyManagerPage() {
                           </div>
                           {newLessonForm.type === "link" ? (
                             <div>
-                              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">URL</label>
+                              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.academyManager.url")}</label>
                               <Input value={newLessonForm.link_url} onChange={(e) => setNewLessonForm({ ...newLessonForm, link_url: e.target.value })} className="mt-1 h-8 text-sm bg-surface-1 border-border" placeholder="https://..." />
                             </div>
                           ) : (
@@ -828,7 +830,7 @@ export default function AcademyManagerPage() {
                               {fileUploadSection(newLessonForm.type, handleFileChange)}
                               {newLessonForm.type === "video" && (
                                 <div>
-                                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Duration</label>
+                                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.academyManager.duration")}</label>
                                   <Input value={newLessonForm.duration} onChange={(e) => setNewLessonForm({ ...newLessonForm, duration: e.target.value })} className="mt-1 h-8 text-sm bg-surface-1 border-border" placeholder="15:30" />
                                 </div>
                               )}
@@ -841,7 +843,7 @@ export default function AcademyManagerPage() {
                           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-border-subtle hover:border-gold-400/30 hover:bg-gold-400/5 text-muted-foreground hover:text-gold-400 transition-all text-sm"
                         >
                           <Plus className="h-3.5 w-3.5" />
-                          Add Lesson
+                          {t("admin.academyManager.addLesson")}
                         </button>
                       )}
                     </div>
@@ -856,13 +858,13 @@ export default function AcademyManagerPage() {
         {addingModule ? (
           <motion.div variants={staggerItem} className="bg-surface-1 border border-dashed border-gold-400/30 rounded-xl p-5 space-y-4">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-gold-400 uppercase tracking-wider">New Module</p>
+              <p className="text-xs font-medium text-gold-400 uppercase tracking-wider">{t("admin.academyManager.newModule")}</p>
               <div className="flex items-center gap-2">
                 <Button size="sm" variant="ghost" onClick={cancelAddModule} className="h-8 px-3 text-muted-foreground hover:text-foreground">
                   <X className="h-3.5 w-3.5 mr-1" /> Cancel
                 </Button>
                 <Button size="sm" onClick={saveNewModule} className="h-8 px-3 bg-gold-400 hover:bg-gold-500 text-primary-foreground">
-                  <Check className="h-3.5 w-3.5 mr-1" /> Create
+                  <Check className="h-3.5 w-3.5 mr-1" /> {t("admin.academyManager.create")}
                 </Button>
               </div>
             </div>
@@ -889,7 +891,7 @@ export default function AcademyManagerPage() {
               </div>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Title</label>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.academyManager.fieldTitle")}</label>
               <Input
                 value={newModuleForm.title}
                 onChange={(e) => setNewModuleForm({ ...newModuleForm, title: e.target.value })}
@@ -898,7 +900,7 @@ export default function AcademyManagerPage() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Description</label>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.academyManager.fieldDescription")}</label>
               <Textarea
                 value={newModuleForm.description}
                 onChange={(e) => setNewModuleForm({ ...newModuleForm, description: e.target.value })}
@@ -915,7 +917,7 @@ export default function AcademyManagerPage() {
             className="w-full flex items-center justify-center gap-3 p-6 rounded-xl border-2 border-dashed border-border-subtle hover:border-gold-400/30 hover:bg-gold-400/5 text-muted-foreground hover:text-gold-400 transition-all"
           >
             <Plus className="h-5 w-5" />
-            <span className="text-sm font-medium">Add Module</span>
+            <span className="text-sm font-medium">{t("admin.academyManager.addModule")}</span>
           </motion.button>
         )}
 
@@ -924,10 +926,10 @@ export default function AcademyManagerPage() {
             <div className="w-16 h-16 rounded-2xl bg-gold-400/10 flex items-center justify-center mx-auto mb-4">
               <GraduationCap className="h-8 w-8 text-gold-400" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">No modules yet</h3>
-            <p className="text-sm text-muted-foreground mb-4">Get started by creating your first academy module</p>
+            <h3 className="text-lg font-semibold text-foreground mb-2">{t("admin.academyManager.noModules")}</h3>
+            <p className="text-sm text-muted-foreground mb-4">{t("admin.academyManager.getStarted")}</p>
             <Button onClick={startAddModule} className="bg-gold-400 hover:bg-gold-500 text-primary-foreground">
-              <Plus className="h-4 w-4 mr-2" /> Create First Module
+              <Plus className="h-4 w-4 mr-2" /> {t("admin.academyManager.createFirstModule")}
             </Button>
           </div>
         )}
@@ -937,20 +939,20 @@ export default function AcademyManagerPage() {
       <Dialog open={!!deleteDialog} onOpenChange={() => setDeleteDialog(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete {deleteDialog?.type === "module" ? "Module" : "Lesson"}</DialogTitle>
+            <DialogTitle>{t("common.delete")} {deleteDialog?.type === "module" ? t("admin.academyManager.module") : t("admin.academyManager.lesson")}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete <span className="font-medium text-foreground">{deleteDialog?.title}</span>?
-              {deleteDialog?.type === "module" && " All associated lessons will also be deleted."}
-              {" "}This action cannot be undone.
+              {t("admin.academyManager.deleteConfirmDesc")} <span className="font-medium text-foreground">{deleteDialog?.title}</span>?
+              {deleteDialog?.type === "module" && ` ${t("admin.academyManager.allLessonsDeleted")}`}
+              {" "}{t("admin.academyManager.cannotBeUndone")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialog(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDeleteDialog(null)}>{t("common.cancel")}</Button>
             <Button
               variant="destructive"
               onClick={deleteDialog?.type === "module" ? confirmDeleteModule : confirmDeleteLesson}
             >
-              <Trash2 className="h-4 w-4 mr-2" /> Delete
+              <Trash2 className="h-4 w-4 mr-2" /> {t("common.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

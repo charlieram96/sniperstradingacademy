@@ -33,6 +33,7 @@ import {
 } from "lucide-react"
 import { formatDollars } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
+import { useTranslation } from "@/components/language-provider"
 
 interface TransactionLog {
   id: string
@@ -87,6 +88,21 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 export default function TransactionLogsPage() {
+  const { t } = useTranslation()
+
+  const getTypeLabel = (type: string): string => {
+    const typeLabels: Record<string, string> = {
+      initial: t("admin.transactionLogs.initialPayment"),
+      weekly: t("admin.transactionLogs.weeklySubscription"),
+      monthly: t("admin.transactionLogs.monthlySubscription"),
+      direct_bonus: t("admin.transactionLogs.directBonus"),
+      residual: t("admin.transactionLogs.residualCommission"),
+      residual_monthly: t("admin.transactionLogs.monthlyResidual"),
+      crypto_deposit: t("admin.transactionLogs.cryptoDeposit"),
+    }
+    return typeLabels[type] || type
+  }
+
   const [loading, setLoading] = useState(true)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [transactions, setTransactions] = useState<TransactionLog[]>([])
@@ -174,7 +190,7 @@ export default function TransactionLogsPage() {
   if (!isSuperAdmin) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">Access Denied</div>
+        <div className="text-muted-foreground">{t("admin.accessDenied")}</div>
       </div>
     )
   }
@@ -185,7 +201,7 @@ export default function TransactionLogsPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 mb-2">
             <Receipt className="h-6 w-6 text-primary" />
-            <h1 className="text-3xl font-bold text-foreground">Transaction Logs</h1>
+            <h1 className="text-3xl font-bold text-foreground">{t("admin.transactionLogs.title")}</h1>
           </div>
           <Button
             variant="outline"
@@ -194,10 +210,10 @@ export default function TransactionLogsPage() {
             disabled={refreshing}
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
-            Refresh
+            {t("admin.transactionLogs.refresh")}
           </Button>
         </div>
-        <p className="text-muted-foreground">View all incoming payments and outgoing commission payouts</p>
+        <p className="text-muted-foreground">{t("admin.transactionLogs.description")}</p>
       </div>
 
       {/* Stats Cards */}
@@ -205,14 +221,14 @@ export default function TransactionLogsPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Incoming</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.transactionLogs.totalIncoming")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2">
                 <ArrowDownCircle className="h-5 w-5 text-[#D4A853]" />
                 <div>
                   <p className="text-2xl font-bold text-[#D4A853]">{formatDollars(stats.totalIncomingAmount)}</p>
-                  <p className="text-xs text-muted-foreground">{stats.totalIncoming} transactions</p>
+                  <p className="text-xs text-muted-foreground">{t("admin.transactionLogs.transactionsCount").replace("{count}", String(stats.totalIncoming))}</p>
                 </div>
               </div>
             </CardContent>
@@ -220,14 +236,14 @@ export default function TransactionLogsPage() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Outgoing</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.transactionLogs.totalOutgoing")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2">
                 <ArrowUpCircle className="h-5 w-5 text-red-600" />
                 <div>
                   <p className="text-2xl font-bold text-red-600">{formatDollars(stats.totalOutgoingAmount)}</p>
-                  <p className="text-xs text-muted-foreground">{stats.totalOutgoing} transactions</p>
+                  <p className="text-xs text-muted-foreground">{t("admin.transactionLogs.transactionsCount").replace("{count}", String(stats.totalOutgoing))}</p>
                 </div>
               </div>
             </CardContent>
@@ -235,14 +251,14 @@ export default function TransactionLogsPage() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Pending Payouts</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.transactionLogs.pendingPayouts")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-yellow-600" />
                 <div>
                   <p className="text-2xl font-bold text-yellow-600">{formatDollars(stats.pendingPayoutsAmount)}</p>
-                  <p className="text-xs text-muted-foreground">{stats.pendingPayouts} pending</p>
+                  <p className="text-xs text-muted-foreground">{t("admin.transactionLogs.pendingCount").replace("{count}", String(stats.pendingPayouts))}</p>
                 </div>
               </div>
             </CardContent>
@@ -250,14 +266,14 @@ export default function TransactionLogsPage() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Failed</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.transactionLogs.failed")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-5 w-5 text-red-500" />
                 <div>
                   <p className="text-2xl font-bold">{stats.failedTransactions}</p>
-                  <p className="text-xs text-muted-foreground">transactions</p>
+                  <p className="text-xs text-muted-foreground">{t("admin.transactionLogs.transactions")}</p>
                 </div>
               </div>
             </CardContent>
@@ -268,54 +284,54 @@ export default function TransactionLogsPage() {
       {/* Filters */}
       <Card className="mb-6">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg">Filters</CardTitle>
+          <CardTitle className="text-lg">{t("admin.transactionLogs.filters")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="text-sm font-medium text-muted-foreground mb-2 block">Direction</label>
+              <label className="text-sm font-medium text-muted-foreground mb-2 block">{t("admin.transactionLogs.direction")}</label>
               <Select value={directionFilter} onValueChange={setDirectionFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All Directions" />
+                  <SelectValue placeholder={t("admin.transactionLogs.allDirections")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Directions</SelectItem>
-                  <SelectItem value="incoming">Incoming Only</SelectItem>
-                  <SelectItem value="outgoing">Outgoing Only</SelectItem>
+                  <SelectItem value="all">{t("admin.transactionLogs.allDirections")}</SelectItem>
+                  <SelectItem value="incoming">{t("admin.transactionLogs.incomingOnly")}</SelectItem>
+                  <SelectItem value="outgoing">{t("admin.transactionLogs.outgoingOnly")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-muted-foreground mb-2 block">Status</label>
+              <label className="text-sm font-medium text-muted-foreground mb-2 block">{t("admin.transactionLogs.status")}</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All Statuses" />
+                  <SelectValue placeholder={t("admin.transactionLogs.allStatuses")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
+                  <SelectItem value="all">{t("admin.transactionLogs.allStatuses")}</SelectItem>
+                  <SelectItem value="completed">{t("admin.transactionLogs.completed")}</SelectItem>
+                  <SelectItem value="pending">{t("admin.transactionLogs.pending")}</SelectItem>
+                  <SelectItem value="failed">{t("admin.transactionLogs.failed2")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-muted-foreground mb-2 block">Type</label>
+              <label className="text-sm font-medium text-muted-foreground mb-2 block">{t("admin.transactionLogs.type")}</label>
               <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All Types" />
+                  <SelectValue placeholder={t("admin.transactionLogs.allTypes")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="crypto_deposit">Crypto Deposit</SelectItem>
-                  <SelectItem value="initial">Initial Payment</SelectItem>
-                  <SelectItem value="weekly">Weekly Subscription</SelectItem>
-                  <SelectItem value="monthly">Monthly Subscription</SelectItem>
-                  <SelectItem value="direct_bonus">Direct Bonus</SelectItem>
-                  <SelectItem value="residual">Residual Commission</SelectItem>
-                  <SelectItem value="residual_monthly">Monthly Residual</SelectItem>
+                  <SelectItem value="all">{t("admin.transactionLogs.allTypes")}</SelectItem>
+                  <SelectItem value="crypto_deposit">{t("admin.transactionLogs.cryptoDeposit")}</SelectItem>
+                  <SelectItem value="initial">{t("admin.transactionLogs.initialPayment")}</SelectItem>
+                  <SelectItem value="weekly">{t("admin.transactionLogs.weeklySubscription")}</SelectItem>
+                  <SelectItem value="monthly">{t("admin.transactionLogs.monthlySubscription")}</SelectItem>
+                  <SelectItem value="direct_bonus">{t("admin.transactionLogs.directBonus")}</SelectItem>
+                  <SelectItem value="residual">{t("admin.transactionLogs.residualCommission")}</SelectItem>
+                  <SelectItem value="residual_monthly">{t("admin.transactionLogs.monthlyResidual")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -328,7 +344,7 @@ export default function TransactionLogsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Receipt className="h-5 w-5" />
-            Transactions
+            {t("admin.transactionLogs.transactions")}
             {pagination && (
               <span className="text-sm font-normal text-muted-foreground">
                 ({pagination.total} total)
@@ -336,7 +352,7 @@ export default function TransactionLogsPage() {
             )}
           </CardTitle>
           <CardDescription>
-            All payment and commission transactions
+            {t("admin.transactionLogs.allTransactions")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -344,20 +360,20 @@ export default function TransactionLogsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Direction</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>TX Hash</TableHead>
+                  <TableHead>{t("admin.transactionLogs.date")}</TableHead>
+                  <TableHead>{t("admin.transactionLogs.direction")}</TableHead>
+                  <TableHead>{t("admin.transactionLogs.type")}</TableHead>
+                  <TableHead>{t("admin.transactionLogs.user")}</TableHead>
+                  <TableHead className="text-right">{t("admin.transactionLogs.amount")}</TableHead>
+                  <TableHead>{t("admin.transactionLogs.status")}</TableHead>
+                  <TableHead>{t("admin.transactionLogs.txHash")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {transactions.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                      No transactions found
+                      {t("admin.transactionLogs.noTransactions")}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -370,23 +386,23 @@ export default function TransactionLogsPage() {
                         {tx.direction === "incoming" ? (
                           <div className="flex items-center gap-1">
                             <ArrowDownCircle className="h-4 w-4 text-[#D4A853]" />
-                            <span className="text-sm text-[#D4A853]">In</span>
+                            <span className="text-sm text-[#D4A853]">{t("admin.transactionLogs.in")}</span>
                           </div>
                         ) : (
                           <div className="flex items-center gap-1">
                             <ArrowUpCircle className="h-4 w-4 text-red-600" />
-                            <span className="text-sm text-red-600">Out</span>
+                            <span className="text-sm text-red-600">{t("admin.transactionLogs.out")}</span>
                           </div>
                         )}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">
-                          {TYPE_LABELS[tx.type] || tx.type}
+                          {getTypeLabel(tx.type)}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium text-sm">{tx.userName || "No name"}</p>
+                          <p className="font-medium text-sm">{tx.userName || t("common.noName")}</p>
                           <p className="text-xs text-muted-foreground">{tx.userEmail}</p>
                         </div>
                       </TableCell>
@@ -426,7 +442,7 @@ export default function TransactionLogsPage() {
           {pagination && pagination.totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <p className="text-sm text-muted-foreground">
-                Page {pagination.page} of {pagination.totalPages}
+                {t("admin.transactionLogs.pageOf").replace("{page}", String(pagination.page)).replace("{total}", String(pagination.totalPages))}
               </p>
               <div className="flex items-center gap-2">
                 <Button
@@ -436,7 +452,7 @@ export default function TransactionLogsPage() {
                   disabled={page <= 1}
                 >
                   <ChevronLeft className="h-4 w-4" />
-                  Previous
+                  {t("admin.transactionLogs.previous")}
                 </Button>
                 <Button
                   variant="outline"
@@ -444,7 +460,7 @@ export default function TransactionLogsPage() {
                   onClick={() => setPage(page + 1)}
                   disabled={!pagination.hasMore}
                 >
-                  Next
+                  {t("admin.transactionLogs.next")}
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
