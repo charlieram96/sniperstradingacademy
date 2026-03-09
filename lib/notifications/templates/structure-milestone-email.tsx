@@ -33,7 +33,7 @@ export const StructureMilestoneEmail = ({
   leftLegCount = 10,
   rightLegCount = 10,
   totalNetworkCount = 25,
-  dashboardUrl = 'https://tradinghub.com/dashboard'
+  dashboardUrl = 'https://sniperstradingacademy.com/dashboard'
 }: StructureMilestoneEmailProps) => {
   return (
     <Html>
@@ -43,7 +43,7 @@ export const StructureMilestoneEmail = ({
         <Container style={container}>
           {/* Logo */}
           <Section style={logoSection}>
-            <Heading style={h1}>Trading Hub</Heading>
+            <Heading style={h1}>Snipers Trading Academy</Heading>
           </Section>
 
           {/* Trophy Icon */}
@@ -59,7 +59,7 @@ export const StructureMilestoneEmail = ({
           </Text>
 
           <Text style={text}>
-            Congratulations! You&apos;ve just reached a significant milestone in building your Trading Hub network: <strong>{milestoneName}</strong>
+            Congratulations! You&apos;ve just reached a significant milestone in building your Snipers Trading Academy network: <strong>{milestoneName}</strong>
           </Text>
 
           {/* Milestone Box */}
@@ -123,7 +123,7 @@ export const StructureMilestoneEmail = ({
           </Section>
 
           <Text style={text}>
-            Your success is inspiring! Keep up the great work and continue building your Trading Hub empire.
+            Your success is inspiring! Keep up the great work and continue building your Snipers Trading Academy empire.
           </Text>
 
           {/* Footer */}
@@ -137,7 +137,7 @@ export const StructureMilestoneEmail = ({
               </Link>
             </Text>
             <Text style={footerCopyright}>
-              © {new Date().getFullYear()} Trading Hub. All rights reserved.
+              © {new Date().getFullYear()} Snipers Trading Academy. All rights reserved.
             </Text>
           </Section>
         </Container>

@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select"
 import { DollarSign, AlertCircle, CheckCircle, XCircle, Loader2, RefreshCw, Wallet, Plus, ExternalLink } from "lucide-react"
 import { ManualPayoutDialog } from "@/components/admin/manual-payout-dialog"
+import { useTranslation } from "@/components/language-provider"
 import { PayoutUser } from "@/components/admin/user-search-combobox"
 
 interface Commission {
@@ -71,6 +72,7 @@ interface ProcessResult {
 }
 
 export default function AdminPayoutsPage() {
+  const { t } = useTranslation()
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
   const [commissions, setCommissions] = useState<Commission[]>([])
@@ -167,14 +169,14 @@ export default function AdminPayoutsPage() {
       const data = await response.json()
 
       if (data.success) {
-        alert(`Success! $${data.amount} transferred to ${data.userName}`)
+        alert(t("admin.payouts.successTransfer").replace("{amount}", data.amount).replace("{name}", data.userName))
       } else {
-        alert(`Failed: ${data.error || "Unknown error"}`)
+        alert(`Failed: ${data.error || t("common.unknown")}`)
       }
 
       await fetchData()
     } catch (error) {
-      alert("Error processing payout")
+      alert(t("admin.payouts.errorProcessingPayout"))
       console.error(error)
     } finally {
       setProcessingId(null)
@@ -182,7 +184,7 @@ export default function AdminPayoutsPage() {
   }
 
   const handleMarkCompleted = async (commissionId: string) => {
-    if (!confirm("Mark this commission as completed? Use this only if payment was made outside the platform (check, cash, wire, etc.).")) {
+    if (!confirm(t("admin.payouts.markCompletedConfirm"))) {
       return
     }
 
@@ -197,14 +199,14 @@ export default function AdminPayoutsPage() {
       const data = await response.json()
 
       if (data.success) {
-        alert(`Success! Commission marked as completed (manual payment)`)
+        alert(t("admin.payouts.successMarkCompleted"))
       } else {
-        alert(`Failed: ${data.error || "Unknown error"}`)
+        alert(`Failed: ${data.error || t("common.unknown")}`)
       }
 
       await fetchData()
     } catch (error) {
-      alert("Error marking commission as completed")
+      alert(t("admin.payouts.errorMarkingCompleted"))
       console.error(error)
     } finally {
       setProcessingId(null)
@@ -232,7 +234,7 @@ export default function AdminPayoutsPage() {
         alert(`Error: ${data.error}`)
       }
     } catch (error) {
-      alert("Error processing bulk payouts")
+      alert(t("admin.payouts.errorBulkPayouts"))
       console.error(error)
     } finally {
       setProcessing(false)
@@ -250,7 +252,7 @@ export default function AdminPayoutsPage() {
 
   // Truncate wallet address for display
   const truncateAddress = (address: string | null) => {
-    if (!address) return "Not set"
+    if (!address) return t("admin.payouts.notSet")
     return `${address.slice(0, 6)}...${address.slice(-4)}`
   }
 
@@ -267,8 +269,8 @@ export default function AdminPayoutsPage() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
-          <p className="text-muted-foreground">This page is only accessible to superadmins.</p>
+          <h2 className="text-2xl font-bold mb-2">{t("admin.accessDenied")}</h2>
+          <p className="text-muted-foreground">{t("admin.superadminOnly")}</p>
         </div>
       </div>
     )
@@ -279,40 +281,40 @@ export default function AdminPayoutsPage() {
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-2">
           <DollarSign className="h-6 w-6 text-primary" />
-          <h1 className="text-3xl font-bold text-foreground">Commission Payouts (USDC)</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t("admin.payouts.title")}</h1>
         </div>
-        <p className="text-muted-foreground">Process residual commissions and direct bonuses via Polygon USDC</p>
+        <p className="text-muted-foreground">{t("admin.payouts.description")}</p>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Amount</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.payouts.totalAmount")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${summary.totalAmount.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">USDC to pay out</p>
+            <p className="text-xs text-muted-foreground">{t("admin.payouts.usdcToPayOut")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.payouts.pending")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-amber-500">{summary.pending}</div>
-            <p className="text-xs text-muted-foreground">Not processed</p>
+            <p className="text-xs text-muted-foreground">{t("admin.payouts.notProcessed")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Failed</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.payouts.failed")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-500">{summary.failed}</div>
-            <p className="text-xs text-muted-foreground">Needs retry</p>
+            <p className="text-xs text-muted-foreground">{t("admin.payouts.needsRetry")}</p>
           </CardContent>
         </Card>
 
@@ -321,7 +323,7 @@ export default function AdminPayoutsPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Wallet className="h-4 w-4" />
-                Payout Wallet Balance
+                {t("admin.payouts.payoutWalletBalance")}
               </div>
             </CardTitle>
           </CardHeader>
@@ -330,9 +332,9 @@ export default function AdminPayoutsPage() {
               ${payoutWalletBalance?.toFixed(2) || "0.00"}
             </div>
             {balanceWarning && (
-              <p className="text-xs text-red-500 mt-1">⚠️ Insufficient balance</p>
+              <p className="text-xs text-red-500 mt-1">{t("admin.payouts.insufficientBalance")}</p>
             )}
-            <p className="text-xs text-muted-foreground">USDC on Polygon</p>
+            <p className="text-xs text-muted-foreground">{t("admin.payouts.usdcOnPolygon")}</p>
           </CardContent>
         </Card>
       </div>
@@ -344,12 +346,12 @@ export default function AdminPayoutsPage() {
             <div className="flex items-center gap-4">
               <Select value={filter} onValueChange={setFilter}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter" />
+                  <SelectValue placeholder={t("admin.payouts.filter")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All ({commissions.length})</SelectItem>
-                  <SelectItem value="pending">Pending ({summary.pending})</SelectItem>
-                  <SelectItem value="failed">Failed ({summary.failed})</SelectItem>
+                  <SelectItem value="all">{t("admin.payouts.allCount").replace("{count}", String(commissions.length))}</SelectItem>
+                  <SelectItem value="pending">{t("admin.payouts.pendingCount").replace("{count}", String(summary.pending))}</SelectItem>
+                  <SelectItem value="failed">{t("admin.payouts.failedCount").replace("{count}", String(summary.failed))}</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -360,7 +362,7 @@ export default function AdminPayoutsPage() {
                 disabled={processing}
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
+                {t("admin.payouts.refresh")}
               </Button>
             </div>
 
@@ -371,7 +373,7 @@ export default function AdminPayoutsPage() {
                 disabled={processing}
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Create Manual Payout
+                {t("admin.payouts.createManualPayout")}
               </Button>
 
               <Button
@@ -382,12 +384,12 @@ export default function AdminPayoutsPage() {
                 {processing ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Processing...
+                    {t("admin.payouts.processing")}
                   </>
                 ) : (
                   <>
                     <DollarSign className="h-4 w-4 mr-2" />
-                    Process All Pending ({summary.pending})
+                    {t("admin.payouts.processAllPending").replace("{count}", String(summary.pending))}
                   </>
                 )}
               </Button>
@@ -399,29 +401,29 @@ export default function AdminPayoutsPage() {
       {/* Commissions Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Commission Details</CardTitle>
-          <CardDescription>Individual payout status and controls</CardDescription>
+          <CardTitle>{t("admin.payouts.commissionDetails")}</CardTitle>
+          <CardDescription>{t("admin.payouts.commissionDetailsDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Wallet</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Tx Hash</TableHead>
-                  <TableHead>Error</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t("admin.payouts.user")}</TableHead>
+                  <TableHead>{t("admin.payouts.type")}</TableHead>
+                  <TableHead>{t("admin.payouts.amount")}</TableHead>
+                  <TableHead>{t("admin.payouts.wallet")}</TableHead>
+                  <TableHead>{t("admin.payouts.status")}</TableHead>
+                  <TableHead>{t("admin.payouts.txHash")}</TableHead>
+                  <TableHead>{t("admin.payouts.error")}</TableHead>
+                  <TableHead className="text-right">{t("admin.payouts.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredCommissions.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      No commissions to display
+                      {t("admin.payouts.noCommissions")}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -433,7 +435,7 @@ export default function AdminPayoutsPage() {
                           <p className="text-sm text-muted-foreground">{commission.userEmail}</p>
                           {!commission.qualified && (
                             <Badge variant="outline" className="text-xs text-amber-600 border-amber-600 mt-1">
-                              Not Qualified
+                              {t("admin.payouts.notQualified")}
                             </Badge>
                           )}
                         </div>
@@ -441,15 +443,15 @@ export default function AdminPayoutsPage() {
                       <TableCell>
                         {commission.commissionType === "direct_bonus" ? (
                           <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/20">
-                            Direct Bonus
+                            {t("admin.payouts.directBonus")}
                           </Badge>
                         ) : commission.commissionType === "manual_payout" ? (
                           <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/20">
-                            Manual Payout
+                            {t("admin.payouts.manualPayout")}
                           </Badge>
                         ) : (
                           <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20">
-                            Residual
+                            {t("admin.payouts.residual")}
                           </Badge>
                         )}
                       </TableCell>
@@ -462,21 +464,21 @@ export default function AdminPayoutsPage() {
                             {truncateAddress(commission.payoutWalletAddress)}
                           </code>
                         ) : (
-                          <span className="text-xs text-amber-600">Not set</span>
+                          <span className="text-xs text-amber-600">{t("admin.payouts.notSet")}</span>
                         )}
                       </TableCell>
                       <TableCell>
                         {commission.status === "pending" ? (
                           <Badge variant="outline" className="text-amber-600 border-amber-600">
-                            ⏸️ Pending
+                            {t("admin.payouts.pendingStatus")}
                           </Badge>
                         ) : commission.status === "failed" ? (
                           <Badge variant="destructive">
-                            ❌ Failed
+                            {t("admin.payouts.failedStatus")}
                           </Badge>
                         ) : commission.status === "paid" ? (
                           <Badge className="bg-[#D4A853]">
-                            ✅ Paid
+                            {t("admin.payouts.paidStatus")}
                           </Badge>
                         ) : (
                           <Badge variant="secondary">
@@ -516,17 +518,17 @@ export default function AdminPayoutsPage() {
                               variant="outline"
                               onClick={() => handleProcessSingle(commission.id)}
                               disabled={processing || processingId === commission.id || !commission.payoutWalletAddress}
-                              title={!commission.payoutWalletAddress ? "User has no payout wallet" : ""}
+                              title={!commission.payoutWalletAddress ? t("admin.payouts.noPayoutWallet") : ""}
                             >
                               {processingId === commission.id ? (
                                 <>
                                   <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                  Processing
+                                  {t("admin.payouts.processingStatus")}
                                 </>
                               ) : commission.status === "failed" ? (
-                                "Retry"
+                                t("admin.payouts.retry")
                               ) : (
-                                "Process"
+                                t("admin.payouts.process")
                               )}
                             </Button>
                             <Button
@@ -536,13 +538,13 @@ export default function AdminPayoutsPage() {
                               disabled={processing || processingId === commission.id}
                             >
                               <CheckCircle className="h-3 w-3 mr-1" />
-                              Mark Complete
+                              {t("admin.payouts.markComplete")}
                             </Button>
                           </div>
                         ) : (
                           <Badge className="bg-[#D4A853]">
                             <CheckCircle className="h-3 w-3 mr-1" />
-                            Completed
+                            {t("admin.payouts.completed")}
                           </Badge>
                         )}
                       </TableCell>
@@ -559,22 +561,22 @@ export default function AdminPayoutsPage() {
       <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirm Bulk Payout</DialogTitle>
+            <DialogTitle>{t("admin.payouts.confirmBulkPayout")}</DialogTitle>
             <DialogDescription>
-              You are about to process USDC payouts for all pending commissions.
+              {t("admin.payouts.confirmBulkPayoutDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="flex items-center justify-between p-4 bg-surface-2 rounded-lg">
-              <span className="text-sm font-medium">Total Users:</span>
+              <span className="text-sm font-medium">{t("admin.payouts.totalUsers")}:</span>
               <span className="text-lg font-bold">{summary.pending}</span>
             </div>
             <div className="flex items-center justify-between p-4 bg-surface-2 rounded-lg">
-              <span className="text-sm font-medium">Total Amount:</span>
+              <span className="text-sm font-medium">{t("admin.payouts.totalAmount")}:</span>
               <span className="text-lg font-bold text-primary">${summary.totalAmount.toFixed(2)} USDC</span>
             </div>
             <div className="flex items-center justify-between p-4 bg-surface-2 rounded-lg">
-              <span className="text-sm font-medium">Payout Wallet Balance:</span>
+              <span className="text-sm font-medium">{t("admin.payouts.payoutWalletBalance")}:</span>
               <span className={`text-lg font-bold ${balanceWarning ? 'text-red-500' : 'text-[#D4A853]'}`}>
                 ${payoutWalletBalance?.toFixed(2) || "0.00"} USDC
               </span>
@@ -583,17 +585,17 @@ export default function AdminPayoutsPage() {
               <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
                 <AlertCircle className="h-5 w-5 text-red-500" />
                 <p className="text-sm text-red-500">
-                  Warning: Insufficient payout wallet balance. Some transfers may fail.
+                  {t("admin.payouts.insufficientBalanceWarning")}
                 </p>
               </div>
             )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowConfirmModal(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button onClick={handleProcessBulk}>
-              Confirm & Process
+              {t("admin.payouts.confirmAndProcess")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -603,9 +605,9 @@ export default function AdminPayoutsPage() {
       <Dialog open={showResultsModal} onOpenChange={setShowResultsModal}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Payout Results</DialogTitle>
+            <DialogTitle>{t("admin.payouts.payoutResults")}</DialogTitle>
             <DialogDescription>
-              Summary of bulk payout processing
+              {t("admin.payouts.payoutResultsDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 max-h-[400px] overflow-y-auto">
@@ -631,7 +633,7 @@ export default function AdminPayoutsPage() {
                       rel="noopener noreferrer"
                       className="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1"
                     >
-                      View on PolygonScan
+                      {t("admin.payouts.viewOnPolygonScan")}
                       <ExternalLink className="h-3 w-3" />
                     </a>
                   )}
@@ -640,7 +642,7 @@ export default function AdminPayoutsPage() {
                   {result.success ? (
                     <CheckCircle className="h-5 w-5 text-[#D4A853]" />
                   ) : result.skipped ? (
-                    <Badge variant="outline">Skipped</Badge>
+                    <Badge variant="outline">{t("admin.payouts.skipped")}</Badge>
                   ) : (
                     <XCircle className="h-5 w-5 text-red-600" />
                   )}
@@ -650,7 +652,7 @@ export default function AdminPayoutsPage() {
           </div>
           <DialogFooter>
             <Button onClick={() => setShowResultsModal(false)}>
-              Close
+              {t("common.close")}
             </Button>
           </DialogFooter>
         </DialogContent>

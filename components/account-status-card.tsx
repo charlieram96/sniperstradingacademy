@@ -176,9 +176,8 @@ export function AccountStatusCard({
             {getStatusIcon()}
             <CardTitle className="text-xl">{getStatusText()}</CardTitle>
           </div>
-          <Badge 
-            variant={accountActive ? "default" : "destructive"}
-            className={accountActive ? "bg-[#D4A853]" : ""}
+          <Badge
+            variant={accountActive ? "success" : "destructive"}
           >
             {accountActive ? "Active" : "Inactive"}
           </Badge>

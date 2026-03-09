@@ -31,7 +31,7 @@ export const ReferralSignupEmail = ({
   referredName = 'New Member',
   referredEmail = 'newmember@example.com',
   referralCode = 'YOUR-CODE',
-  dashboardUrl = 'https://tradinghub.com/dashboard'
+  dashboardUrl = 'https://sniperstradingacademy.com/dashboard'
 }: ReferralSignupEmailProps) => {
   return (
     <Html>
@@ -41,7 +41,7 @@ export const ReferralSignupEmail = ({
         <Container style={container}>
           {/* Logo */}
           <Section style={logoSection}>
-            <Heading style={h1}>Trading Hub</Heading>
+            <Heading style={h1}>Snipers Trading Academy</Heading>
           </Section>
 
           {/* Success Icon */}
@@ -107,7 +107,7 @@ export const ReferralSignupEmail = ({
               </Link>
             </Text>
             <Text style={footerCopyright}>
-              © {new Date().getFullYear()} Trading Hub. All rights reserved.
+              © {new Date().getFullYear()} Snipers Trading Academy. All rights reserved.
             </Text>
           </Section>
         </Container>

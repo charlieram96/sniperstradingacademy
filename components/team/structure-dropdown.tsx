@@ -81,7 +81,7 @@ export function StructureDropdown({
       >
         <div className="flex items-center gap-2">
           <span className="font-medium">Structure {structureNum}</span>
-          <Badge variant={isComplete ? "default" : isActive ? "secondary" : "outline"}>
+          <Badge variant={isComplete ? "default" : isActive ? "success" : "outline"}>
             {isComplete ? "Complete" : isActive ? "Active" : "Locked"}
           </Badge>
         </div>
@@ -255,7 +255,7 @@ export function StructureDropdown({
                   </CardHeader>
                   <CardContent className="p-0">
                     <p className="text-2xl font-bold text-primary">
-                      ${selectedMember.subscription_status === 'active' ? '19.90' : '0'}
+                      ${selectedMember.subscription_status === 'active' ? (199 * commissionRate / 100).toFixed(2) : '0'}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">To your residual</p>
                   </CardContent>
@@ -307,7 +307,7 @@ export function StructureDropdown({
                     <div className="flex-1">
                       <p className="font-medium text-primary">Active Network Contributor</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        This member&apos;s subscription generates $19.90/month in residual income and helps grow your network through their referrals.
+                        This member&apos;s subscription generates ${(199 * commissionRate / 100).toFixed(2)}/month in residual income at your {commissionRate}% commission rate.
                       </p>
                     </div>
                   </div>

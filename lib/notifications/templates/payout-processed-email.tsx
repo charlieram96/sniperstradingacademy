@@ -31,7 +31,7 @@ export const PayoutProcessedEmail = ({
   amount = 249.50,
   commissionType = 'Direct Bonus',
   arrivalDate = '2-7 business days',
-  dashboardUrl = 'https://tradinghub.com/dashboard'
+  dashboardUrl = 'https://sniperstradingacademy.com/dashboard'
 }: PayoutProcessedEmailProps) => {
   const formattedAmount = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -46,7 +46,7 @@ export const PayoutProcessedEmail = ({
         <Container style={container}>
           {/* Logo */}
           <Section style={logoSection}>
-            <Heading style={h1}>Trading Hub</Heading>
+            <Heading style={h1}>Snipers Trading Academy</Heading>
           </Section>
 
           {/* Success Icon */}
@@ -105,14 +105,14 @@ export const PayoutProcessedEmail = ({
               </Link>
             </Text>
             <Text style={footerText}>
-              You&apos;re receiving this email because a payout was processed on your Trading Hub account.
+              You&apos;re receiving this email because a payout was processed on your Snipers Trading Academy account.
               <br />
               <Link href={`${dashboardUrl}/notifications`} style={link}>
                 Manage notification preferences
               </Link>
             </Text>
             <Text style={footerCopyright}>
-              © {new Date().getFullYear()} Trading Hub. All rights reserved.
+              © {new Date().getFullYear()} Snipers Trading Academy. All rights reserved.
             </Text>
           </Section>
         </Container>

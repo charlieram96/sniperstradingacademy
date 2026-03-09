@@ -6,8 +6,11 @@
  */
 
 import { createServiceRoleClient } from '@/lib/supabase/server'
+import { render } from '@react-email/render'
+import { createElement } from 'react'
 import { sendEmail } from './twilio/email-service'
 import { sendSMS } from './twilio/sms-service'
+import { getEmailTemplate } from './templates'
 import type { SendNotificationParams, NotificationResult, NotificationChannel } from './notification-types'
 
 /**
@@ -108,29 +111,55 @@ export async function sendNotificationDirectly(
           continue
         }
 
-        // Get email template
-        const { data: template } = await supabase
-          .from('notification_templates')
-          .select('*')
-          .eq('template_key', `email_${type}`)
-          .eq('channel', 'email')
-          .eq('is_active', true)
-          .single()
+        // Try React Email template first, fall back to DB template
+        const ReactEmailComponent = getEmailTemplate(type)
+        let subject: string
+        let body: string
 
-        if (!template) {
-          console.warn(`No email template found for ${type}`)
-          results.push({
-            success: false,
-            error: `No email template found for ${type}`,
-            status: 'failed',
-            channel: 'email'
-          })
-          continue
+        if (ReactEmailComponent) {
+          // Render branded React Email template
+          const templateProps = {
+            userName: user.name || 'Member',
+            ...data,
+          }
+          body = await render(createElement(ReactEmailComponent, templateProps))
+
+          // Get subject from DB template (or use a sensible default)
+          const { data: template } = await supabase
+            .from('notification_templates')
+            .select('subject_template')
+            .eq('template_key', `email_${type}`)
+            .eq('channel', 'email')
+            .eq('is_active', true)
+            .single()
+
+          subject = template?.subject_template
+            ? formatTemplate(template.subject_template, data)
+            : formatDefaultSubject(type, data)
+        } else {
+          // Fall back to DB template
+          const { data: template } = await supabase
+            .from('notification_templates')
+            .select('*')
+            .eq('template_key', `email_${type}`)
+            .eq('channel', 'email')
+            .eq('is_active', true)
+            .single()
+
+          if (!template) {
+            console.warn(`No email template found for ${type}`)
+            results.push({
+              success: false,
+              error: `No email template found for ${type}`,
+              status: 'failed',
+              channel: 'email'
+            })
+            continue
+          }
+
+          subject = formatTemplate(template.subject_template || '', data)
+          body = template.html_template || formatTemplate(template.body_template, data)
         }
-
-        // Format subject and body with variables
-        const subject = formatTemplate(template.subject_template || '', data)
-        const body = template.html_template || formatTemplate(template.body_template, data)
 
         // Send email
         const emailResult = await sendEmail({
@@ -307,4 +336,28 @@ export async function sendNotificationDirectly(
       channel: channel?.[0] || 'email'
     }]
   }
+}
+
+/**
+ * Generate a default subject line when no DB template subject exists
+ */
+function formatDefaultSubject(type: string, data: Record<string, unknown>): string {
+  const subjects: Record<string, string> = {
+    referral_signup: `🎉 ${data.referredName || 'Someone'} joined your network!`,
+    direct_bonus: `💰 You earned a $${data.amount || '249.50'} referral bonus!`,
+    monthly_commission: `📊 Your ${data.month || 'monthly'} commission is ready`,
+    payout_processed: `✅ Your $${data.amount || ''} payout has been sent`,
+    payout_failed: `⚠️ Your payout needs attention`,
+    payment_failed: `⚠️ Your subscription payment failed`,
+    structure_milestone: `🏆 You reached a new milestone!`,
+    admin_announcement: `📢 ${data.subject || 'Important announcement'}`,
+    welcome: `🎉 Welcome to Snipers Trading Academy!`,
+    network_join: `👥 ${data.newMemberName || 'Someone'} joined your network`,
+    account_inactive: `⚠️ Your account has been deactivated`,
+    account_reactivated: `✅ Welcome back! Your account is active again`,
+    payment_succeeded: `✅ Payment of $${data.amount || ''} confirmed`,
+    volume_update: `📈 Your sniper volume milestone reached!`,
+  }
+
+  return subjects[type] || 'Notification from Snipers Trading Academy'
 }

@@ -11,8 +11,10 @@ import { Copy, Check, Share2, Users, Globe, Link2, Edit } from "lucide-react"
 import { motion } from "framer-motion"
 import { isTestUser, mockReferrals } from "@/lib/mock-data"
 import { PageHeader } from "@/components/page-header"
+import { useTranslation } from "@/components/language-provider"
 
 export default function ReferralsPage() {
+  const { t } = useTranslation()
   const [userId, setUserId] = useState<string | null>(null)
   const [referralCode, setReferralCode] = useState("")
   const [copied, setCopied] = useState(false)
@@ -153,7 +155,7 @@ export default function ReferralsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">Loading...</div>
+        <div className="text-muted-foreground">{t("common.loading")}</div>
       </div>
     )
   }
@@ -161,8 +163,8 @@ export default function ReferralsPage() {
   return (
     <div>
       <PageHeader
-        title="Referrals"
-        description="Share your referral link and earn 10% commission"
+        title={t("referrals.title")}
+        description={t("referrals.description")}
       />
 
       {/* Referrer + Links side by side */}
@@ -171,7 +173,7 @@ export default function ReferralsPage() {
       {/* Who Referred Me Card */}
       <Card>
         <CardHeader>
-          <CardTitle>Your Referrer</CardTitle>
+          <CardTitle>{t("referrals.yourReferrer")}</CardTitle>
           <CardDescription>
             The person who invited you to Snipers Trading Academy
           </CardDescription>
@@ -186,7 +188,7 @@ export default function ReferralsPage() {
                   Referral Code: <span className="font-mono">{referredBy.referral_code}</span>
                 </p>
               </div>
-              <Badge variant="secondary">Your Sponsor</Badge>
+              <Badge variant="secondary">{t("referrals.yourSponsor")}</Badge>
             </div>
           ) : (
             <div className="p-4 bg-surface-2 rounded-lg">
@@ -199,7 +201,7 @@ export default function ReferralsPage() {
       {/* Referral Links Card - wider column */}
       <Card>
         <CardHeader>
-          <CardTitle>Your Referral Links</CardTitle>
+          <CardTitle>{t("referrals.yourReferralLinks")}</CardTitle>
           <CardDescription>
             Share your personalized links to earn $250 per referral + 10% monthly residual
           </CardDescription>
@@ -207,15 +209,15 @@ export default function ReferralsPage() {
         <CardContent>
           <Tabs defaultValue="direct" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="direct">Direct Link</TabsTrigger>
-              <TabsTrigger value="landing">Landing Page</TabsTrigger>
+              <TabsTrigger value="direct">{t("referrals.directLink")}</TabsTrigger>
+              <TabsTrigger value="landing">{t("referrals.landingPage")}</TabsTrigger>
             </TabsList>
             
             <TabsContent value="direct" className="space-y-4">
               <div>
                 <label className="text-sm font-medium flex items-center gap-2 mb-2">
                   <Link2 className="h-4 w-4" />
-                  Quick Signup Link
+                  {t("referrals.quickSignupLink")}
                 </label>
                 <div className="flex gap-2">
                   <Input
@@ -239,7 +241,7 @@ export default function ReferralsPage() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Direct link to registration with your referral code
+                  {t("referrals.directLinkDesc")}
                 </p>
               </div>
 
@@ -259,7 +261,7 @@ export default function ReferralsPage() {
               <div>
                 <label className="text-sm font-medium flex items-center gap-2 mb-2">
                   <Globe className="h-4 w-4" />
-                  Your Personal Landing Page
+                  {t("referrals.personalLandingPage")}
                 </label>
                 <div className="flex gap-2">
                   <Input
@@ -283,7 +285,7 @@ export default function ReferralsPage() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Professional landing page with your personal branding
+                  {t("referrals.landingPageDesc")}
                 </p>
               </div>
               
@@ -296,12 +298,12 @@ export default function ReferralsPage() {
                 >
                   <Button variant="outline" className="w-full">
                     <Globe className="h-4 w-4 mr-2" />
-                    Preview Your Page
+                    {t("referrals.previewPage")}
                   </Button>
                 </a>
                 <Button variant="outline" className="w-full" disabled>
                   <Edit className="h-4 w-4 mr-2" />
-                  Customize URL (Coming Soon)
+                  {t("referrals.customizeUrl")}
                 </Button>
               </div>
 
@@ -320,18 +322,18 @@ export default function ReferralsPage() {
       {/* Referrals List - full width */}
       <Card>
         <CardHeader>
-          <CardTitle>Your Referrals</CardTitle>
+          <CardTitle>{t("referrals.yourReferrals")}</CardTitle>
           <CardDescription>
-            People who have signed up using your referral link
+            {t("referrals.referralsListDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {referrals.length === 0 ? (
             <div className="text-center py-12">
               <Users className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-              <p className="text-muted-foreground">No referrals yet</p>
+              <p className="text-muted-foreground">{t("referrals.noReferrals")}</p>
               <p className="text-sm text-muted-foreground/70 mt-2">
-                Share your referral link to start earning commissions
+                {t("referrals.shareToEarn")}
               </p>
             </div>
           ) : (

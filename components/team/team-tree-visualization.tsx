@@ -136,7 +136,7 @@ function TeamMemberNode({ data }: { data: NodeData }) {
           </div>
           {level <= 4 && (
             <Badge 
-              variant={member.subscription_status === 'active' ? 'default' : 'outline'}
+              variant={member.subscription_status === 'active' ? 'success' : 'outline'}
               className={sizes.badge}
             >
               {member.subscription_status === 'active' ? 'Active' : 'Inactive'}

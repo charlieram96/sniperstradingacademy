@@ -17,13 +17,14 @@ import {
   BookOpen
 } from "lucide-react"
 
-export default async function MemberLandingPage({ 
-  params 
-}: { 
-  params: { slug: string } 
+export default async function MemberLandingPage({
+  params
+}: {
+  params: Promise<{ slug: string }>
 }) {
+  const { slug } = await params
   // Handle demo/test cases
-  if (params.slug === "demo-trader") {
+  if (slug === "demo-trader") {
     const demoMember = {
       id: "demo-user",
       name: "Demo Trader",
@@ -45,7 +46,7 @@ export default async function MemberLandingPage({
   const { data: member, error } = await supabase
     .from("member_public_profile")
     .select("*")
-    .eq("referral_code", params.slug.toUpperCase())
+    .eq("referral_code", slug.toUpperCase())
     .single()
 
   if (error || !member) {

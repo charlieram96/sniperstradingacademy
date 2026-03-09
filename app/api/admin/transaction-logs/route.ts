@@ -37,8 +37,8 @@ export async function GET(req: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (!['admin', 'superadmin', 'superadmin+'].includes(userData?.role || '')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (userData?.role !== 'superadmin+') {
+      return NextResponse.json({ error: 'Unauthorized - superadmin+ only' }, { status: 403 });
     }
 
     // Parse query parameters

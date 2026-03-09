@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Pencil, Save, X, PlayCircle, Shield, CheckCircle, Bell, Calendar as CalendarIcon, AlertTriangle, Trash2, Plus, AlertCircle, Info, Megaphone, Sparkles, Star, Zap, Clock } from "lucide-react"
+import { useTranslation } from "@/components/language-provider"
 import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
@@ -40,6 +41,7 @@ interface EditData {
 }
 
 export default function AdminClassesPage() {
+  const { t } = useTranslation()
   const [classes, setClasses] = useState<AcademyClass[]>([])
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -141,7 +143,7 @@ export default function AdminClassesPage() {
       .eq("id", classItem.id)
 
     if (error) {
-      alert("Error updating class: " + error.message)
+      alert(t("admin.classes.errorUpdatingClass") + error.message)
       return
     }
 
@@ -172,7 +174,7 @@ export default function AdminClassesPage() {
       .eq("id", classToComplete.id)
 
     if (error) {
-      alert("Error marking class complete: " + error.message)
+      alert(t("admin.classes.errorCompletingClass") + error.message)
       return
     }
 
@@ -201,7 +203,7 @@ export default function AdminClassesPage() {
       .eq("id", classToDelete.id)
 
     if (error) {
-      alert("Error deleting class: " + error.message)
+      alert(t("admin.classes.errorDeletingClass") + error.message)
       return
     }
 
@@ -225,14 +227,14 @@ export default function AdminClassesPage() {
     const { error } = await supabase
       .from("academy_classes")
       .insert({
-        title: "New Class",
-        description: "Description for new class",
+        title: t("admin.classes.newClassTitle"),
+        description: t("admin.classes.newClassDescription"),
         meeting_link: "https://zoom.us/j/example",
         scheduled_at: futureDate.toISOString()
       })
 
     if (error) {
-      alert("Error creating class: " + error.message)
+      alert(t("admin.classes.errorCreatingClass") + error.message)
       return
     }
 
@@ -258,7 +260,7 @@ export default function AdminClassesPage() {
       .eq("setting_key", "global_banner")
 
     if (error) {
-      alert("Error saving banner: " + error.message)
+      alert(t("admin.classes.errorSavingBanner") + error.message)
       return
     }
 
@@ -274,7 +276,7 @@ export default function AdminClassesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">Loading...</div>
+        <div className="text-muted-foreground">{t("common.loading")}</div>
       </div>
     )
   }
@@ -282,7 +284,7 @@ export default function AdminClassesPage() {
   if (!isAdmin) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">Loading...</div>
+        <div className="text-muted-foreground">{t("common.loading")}</div>
       </div>
     )
   }
@@ -292,9 +294,9 @@ export default function AdminClassesPage() {
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-2">
           <Shield className="h-6 w-6 text-primary" />
-          <h1 className="text-3xl font-bold text-foreground">Admin Panel</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t("admin.classes.title")}</h1>
         </div>
-        <p className="text-muted-foreground">Manage Trading Academy schedule and site settings</p>
+        <p className="text-muted-foreground">{t("admin.classes.description")}</p>
       </div>
 
       {/* Banner Management */}
@@ -304,14 +306,14 @@ export default function AdminClassesPage() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Bell className="h-5 w-5 text-primary" />
-                Global Banner
+                {t("admin.classes.globalBanner")}
               </CardTitle>
-              <CardDescription>Set a banner message visible to all users at the top of the page</CardDescription>
+              <CardDescription>{t("admin.classes.globalBannerDesc")}</CardDescription>
             </div>
             {!editingBanner && (
               <Button onClick={startBannerEdit} variant="outline">
                 <Pencil className="h-4 w-4 mr-2" />
-                Edit Banner
+                {t("admin.classes.editBanner")}
               </Button>
             )}
           </div>
@@ -320,12 +322,12 @@ export default function AdminClassesPage() {
           {editingBanner ? (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="banner">Banner Text (leave empty to hide banner)</Label>
+                <Label htmlFor="banner">{t("admin.classes.bannerTextLabel")}</Label>
                 <Textarea
                   id="banner"
                   value={bannerText}
                   onChange={(e) => setBannerText(e.target.value)}
-                  placeholder="Enter banner message (e.g., 'System maintenance scheduled for Dec 25th')"
+                  placeholder={t("admin.classes.bannerPlaceholder")}
                   rows={3}
                   className="mt-2"
                 />
@@ -333,40 +335,40 @@ export default function AdminClassesPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="bannerColor">Banner Color</Label>
+                  <Label htmlFor="bannerColor">{t("admin.classes.bannerColor")}</Label>
                   <Select value={bannerColor} onValueChange={setBannerColor}>
                     <SelectTrigger id="bannerColor" className="mt-2">
-                      <SelectValue placeholder="Select color" />
+                      <SelectValue placeholder={t("admin.classes.selectColor")} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="green">
                         <div className="flex items-center gap-2">
                           <div className="w-4 h-4 rounded bg-[#D4A853]"></div>
-                          <span>Green</span>
+                          <span>{t("admin.classes.colorGreen")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="red">
                         <div className="flex items-center gap-2">
                           <div className="w-4 h-4 rounded bg-red-600"></div>
-                          <span>Red</span>
+                          <span>{t("admin.classes.colorRed")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="purple">
                         <div className="flex items-center gap-2">
                           <div className="w-4 h-4 rounded bg-gradient-to-r from-purple-600 to-purple-700"></div>
-                          <span>Purple</span>
+                          <span>{t("admin.classes.colorPurple")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="gray">
                         <div className="flex items-center gap-2">
                           <div className="w-4 h-4 rounded bg-gray-700"></div>
-                          <span>Gray</span>
+                          <span>{t("admin.classes.colorGray")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="black">
                         <div className="flex items-center gap-2">
                           <div className="w-4 h-4 rounded bg-black border border-gray-600"></div>
-                          <span>Black</span>
+                          <span>{t("admin.classes.colorBlack")}</span>
                         </div>
                       </SelectItem>
                     </SelectContent>
@@ -374,70 +376,70 @@ export default function AdminClassesPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="bannerIcon">Banner Icon</Label>
+                  <Label htmlFor="bannerIcon">{t("admin.classes.bannerIcon")}</Label>
                   <Select value={bannerIcon} onValueChange={setBannerIcon}>
                     <SelectTrigger id="bannerIcon" className="mt-2">
-                      <SelectValue placeholder="Select icon" />
+                      <SelectValue placeholder={t("admin.classes.selectIcon")} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="AlertCircle">
                         <div className="flex items-center gap-2">
                           <AlertCircle className="h-4 w-4" />
-                          <span>Alert Circle</span>
+                          <span>{t("admin.classes.iconAlertCircle")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="Info">
                         <div className="flex items-center gap-2">
                           <Info className="h-4 w-4" />
-                          <span>Info</span>
+                          <span>{t("admin.classes.iconInfo")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="Bell">
                         <div className="flex items-center gap-2">
                           <Bell className="h-4 w-4" />
-                          <span>Bell</span>
+                          <span>{t("admin.classes.iconBell")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="AlertTriangle">
                         <div className="flex items-center gap-2">
                           <AlertTriangle className="h-4 w-4" />
-                          <span>Alert Triangle</span>
+                          <span>{t("admin.classes.iconAlertTriangle")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="Megaphone">
                         <div className="flex items-center gap-2">
                           <Megaphone className="h-4 w-4" />
-                          <span>Megaphone</span>
+                          <span>{t("admin.classes.iconMegaphone")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="Sparkles">
                         <div className="flex items-center gap-2">
                           <Sparkles className="h-4 w-4" />
-                          <span>Sparkles</span>
+                          <span>{t("admin.classes.iconSparkles")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="Star">
                         <div className="flex items-center gap-2">
                           <Star className="h-4 w-4" />
-                          <span>Star</span>
+                          <span>{t("admin.classes.iconStar")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="Zap">
                         <div className="flex items-center gap-2">
                           <Zap className="h-4 w-4" />
-                          <span>Zap</span>
+                          <span>{t("admin.classes.iconZap")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="Clock">
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4" />
-                          <span>Clock</span>
+                          <span>{t("admin.classes.iconClock")}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="CheckCircle">
                         <div className="flex items-center gap-2">
                           <CheckCircle className="h-4 w-4" />
-                          <span>Check Circle</span>
+                          <span>{t("admin.classes.iconCheckCircle")}</span>
                         </div>
                       </SelectItem>
                     </SelectContent>
@@ -448,7 +450,7 @@ export default function AdminClassesPage() {
               {/* Live Preview */}
               {bannerText && (
                 <div>
-                  <Label>Preview</Label>
+                  <Label>{t("admin.classes.preview")}</Label>
                   <div className={`mt-2 p-3 rounded-lg border flex items-center justify-center gap-2 ${
                     bannerColor === "green" ? "bg-[#D4A853] border-[#D4A853]/30" :
                     bannerColor === "red" ? "bg-red-600 border-red-700" :
@@ -474,10 +476,10 @@ export default function AdminClassesPage() {
               <div className="flex gap-2">
                 <Button onClick={saveBanner}>
                   <Save className="h-4 w-4 mr-2" />
-                  Save Banner
+                  {t("admin.classes.saveBanner")}
                 </Button>
                 <Button variant="outline" onClick={() => setEditingBanner(false)}>
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </div>
             </div>
@@ -504,7 +506,7 @@ export default function AdminClassesPage() {
                   <p className="text-sm text-white">{banner}</p>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">No banner set. Click Edit Banner to add one.</p>
+                <p className="text-sm text-muted-foreground">{t("admin.classes.noBannerSet")}</p>
               )}
             </div>
           )}
@@ -516,12 +518,12 @@ export default function AdminClassesPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Trading Academy Schedule</CardTitle>
-              <CardDescription>Upcoming classes - Edit inline or mark first class as complete</CardDescription>
+              <CardTitle>{t("admin.classes.academySchedule")}</CardTitle>
+              <CardDescription>{t("admin.classes.academyScheduleDesc")}</CardDescription>
             </div>
             <Button onClick={createEmptyClass} size="sm">
               <Plus className="h-4 w-4 mr-2" />
-              Add Class
+              {t("admin.classes.addClass")}
             </Button>
           </div>
         </CardHeader>
@@ -529,10 +531,10 @@ export default function AdminClassesPage() {
           {classes.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <PlayCircle className="h-12 w-12 text-muted-foreground/30 mb-4" />
-              <p className="text-sm text-muted-foreground mb-4">No classes scheduled yet</p>
+              <p className="text-sm text-muted-foreground mb-4">{t("admin.classes.noClasses")}</p>
               <Button onClick={createEmptyClass} variant="outline">
                 <Plus className="h-4 w-4 mr-2" />
-                Add First Class
+                {t("admin.classes.addFirstClass")}
               </Button>
             </div>
           ) : (
@@ -553,37 +555,37 @@ export default function AdminClassesPage() {
                   {isEditing && editData ? (
                     <div className="space-y-4 flex-1 flex flex-col">
                       <div>
-                        <Label className="text-xs font-semibold text-foreground">Title</Label>
+                        <Label className="text-xs font-semibold text-foreground">{t("admin.classes.fieldTitle")}</Label>
                         <Input
                           value={editData.title}
                           onChange={(e) => setEditData({ ...editData, title: e.target.value })}
                           className="mt-1.5"
-                          placeholder="Class title"
+                          placeholder={t("admin.classes.classTitlePlaceholder")}
                         />
                       </div>
                       <div>
-                        <Label className="text-xs font-semibold text-foreground">Description</Label>
+                        <Label className="text-xs font-semibold text-foreground">{t("admin.classes.fieldDescription")}</Label>
                         <Textarea
                           value={editData.description}
                           onChange={(e) => setEditData({ ...editData, description: e.target.value })}
                           rows={2}
                           className="mt-1.5"
-                          placeholder="Brief description"
+                          placeholder={t("admin.classes.classDescPlaceholder")}
                         />
                       </div>
                       <div>
-                        <Label className="text-xs font-semibold text-foreground">Meeting Link</Label>
+                        <Label className="text-xs font-semibold text-foreground">{t("admin.classes.fieldMeetingLink")}</Label>
                         <Input
                           value={editData.meeting_link}
                           onChange={(e) => setEditData({ ...editData, meeting_link: e.target.value })}
                           className="mt-1.5"
-                          placeholder="https://zoom.us/j/..."
+                          placeholder={t("admin.classes.meetingLinkPlaceholder")}
                         />
                       </div>
                       <div>
                         <Label className="text-xs font-semibold text-foreground flex items-center gap-1 mb-2">
                           <CalendarIcon className="h-3 w-3" />
-                          Scheduled Date & Time (EST)
+                          {t("admin.classes.scheduledDateTime")}
                         </Label>
                         <Popover open={openCalendarIndex === index} onOpenChange={(open) => setOpenCalendarIndex(open ? index : null)}>
                           <PopoverTrigger asChild>
@@ -610,7 +612,7 @@ export default function AdminClassesPage() {
                               initialFocus
                             />
                             <div className="p-3 border-t">
-                              <Label className="text-xs font-semibold mb-2 block">Time (EST)</Label>
+                              <Label className="text-xs font-semibold mb-2 block">{t("admin.classes.timeEST")}</Label>
                               <div className="flex gap-2">
                                 <Select
                                   value={editData.scheduledDate.getHours().toString()}
@@ -621,7 +623,7 @@ export default function AdminClassesPage() {
                                   }}
                                 >
                                   <SelectTrigger className="w-[70px]">
-                                    <SelectValue placeholder="Hour" />
+                                    <SelectValue placeholder={t("admin.classes.hourPlaceholder")} />
                                   </SelectTrigger>
                                   <SelectContent>
                                     {Array.from({ length: 24 }, (_, i) => (
@@ -641,7 +643,7 @@ export default function AdminClassesPage() {
                                   }}
                                 >
                                   <SelectTrigger className="w-[70px]">
-                                    <SelectValue placeholder="Min" />
+                                    <SelectValue placeholder={t("admin.classes.minPlaceholder")} />
                                   </SelectTrigger>
                                   <SelectContent>
                                     {Array.from({ length: 60 }, (_, i) => (
@@ -660,11 +662,11 @@ export default function AdminClassesPage() {
                         <div className="flex flex-col gap-2">
                           <Button size="sm" onClick={() => saveEdit(classItem)} className="w-full">
                             <Save className="h-3.5 w-3.5 mr-1.5" />
-                            Save Changes
+                            {t("admin.classes.saveChanges")}
                           </Button>
                           <Button size="sm" variant="outline" onClick={cancelEdit} className="w-full">
                             <X className="h-3.5 w-3.5 mr-1.5" />
-                            Cancel
+                            {t("common.cancel")}
                           </Button>
                         </div>
                       </div>
@@ -673,7 +675,7 @@ export default function AdminClassesPage() {
                     <div className="flex flex-col h-full">
                       <div className="flex items-center justify-between mb-3">
                         <Badge className={isFirst ? "bg-[#D4A853] text-white" : "bg-surface-2"}>
-                          {isFirst ? "Next Class" : "Upcoming"}
+                          {isFirst ? t("admin.classes.nextClass") : t("admin.classes.upcoming")}
                         </Badge>
                         <PlayCircle className={`h-5 w-5 ${isFirst ? "text-[#D4A853]" : "text-muted-foreground"}`} />
                       </div>
@@ -703,7 +705,7 @@ export default function AdminClassesPage() {
                             onClick={() => startEdit(index, classItem)}
                           >
                             <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                            Edit Class
+                            {t("admin.classes.editClass")}
                           </Button>
                           {isFirst && (
                             <Button
@@ -712,7 +714,7 @@ export default function AdminClassesPage() {
                               onClick={() => openCompleteDialog(classItem)}
                             >
                               <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
-                              Mark Complete
+                              {t("admin.classes.markComplete")}
                             </Button>
                           )}
                           <Button
@@ -722,7 +724,7 @@ export default function AdminClassesPage() {
                             onClick={() => openDeleteDialog(classItem)}
                           >
                             <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                            Delete Class
+                            {t("admin.classes.deleteClass")}
                           </Button>
                         </div>
                       </div>
@@ -742,10 +744,10 @@ export default function AdminClassesPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-500" />
-              Confirm Mark Complete
+              {t("admin.classes.confirmMarkComplete")}
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to mark this class as complete? This action cannot be undone.
+              {t("admin.classes.confirmMarkCompleteDesc")}
             </DialogDescription>
           </DialogHeader>
 
@@ -771,14 +773,14 @@ export default function AdminClassesPage() {
 
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={cancelComplete}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               className="bg-[#D4A853] hover:bg-[#B38A30] text-white"
               onClick={confirmMarkComplete}
             >
               <CheckCircle className="h-4 w-4 mr-2" />
-              Mark Complete
+              {t("admin.classes.markComplete")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -790,10 +792,10 @@ export default function AdminClassesPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-500" />
-              Confirm Delete Class
+              {t("admin.classes.confirmDeleteClass")}
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this class? This action cannot be undone.
+              {t("admin.classes.confirmDeleteClassDesc")}
             </DialogDescription>
           </DialogHeader>
 
@@ -819,11 +821,11 @@ export default function AdminClassesPage() {
 
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={cancelDelete}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button variant="destructive" onClick={confirmDeleteClass}>
               <Trash2 className="h-4 w-4 mr-2" />
-              Delete Class
+              {t("admin.classes.deleteClass")}
             </Button>
           </DialogFooter>
         </DialogContent>

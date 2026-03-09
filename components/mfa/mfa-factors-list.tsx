@@ -145,7 +145,7 @@ export function MFAFactorsList({ onFactorsChange }: MFAFactorsListProps) {
                     {factor.friendly_name || "Authenticator App"}
                   </p>
                   {factor.status === "verified" ? (
-                    <Badge variant="default" className="bg-[#D4A853]">
+                    <Badge variant="success">
                       Active
                     </Badge>
                   ) : (

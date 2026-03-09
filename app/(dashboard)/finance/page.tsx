@@ -8,13 +8,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
   DollarSign,
   TrendingUp,
   Users,
@@ -24,7 +17,6 @@ import {
   CreditCard,
   Download,
   Wallet,
-  ExternalLink,
   AlertCircle
 } from "lucide-react"
 import { AccountStatusCard } from "@/components/account-status-card"
@@ -33,6 +25,7 @@ import { motion } from "framer-motion"
 import { staggerContainer, staggerItem } from "@/lib/motion"
 import { AnimatedNumber } from "@/components/motion/animated-number"
 import { PageHeader } from "@/components/page-header"
+import { useTranslation } from "@/components/language-provider"
 
 interface DirectBonus {
   id: string
@@ -56,6 +49,7 @@ interface MonthlyEarning {
 }
 
 export default function FinancePage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const [userId, setUserId] = useState<string | null>(null)
   const [directBonuses, setDirectBonuses] = useState<DirectBonus[]>([])
@@ -89,10 +83,6 @@ export default function FinancePage() {
     commissionRate: 0.10
   })
   const [loading, setLoading] = useState(true)
-  const [stripeConnected, setStripeConnected] = useState(false)
-  const [loadingDashboard, setLoadingDashboard] = useState(false)
-  const [dashboardError, setDashboardError] = useState<string | null>(null)
-  const [showDashboardError, setShowDashboardError] = useState(false)
 
   useEffect(() => {
     async function getUser() {
@@ -115,12 +105,9 @@ export default function FinancePage() {
         // Fetch user account data
         const { data: userData } = await supabase
           .from('users')
-          .select('is_active, previous_payment_due_date, next_payment_due_date, initial_payment_date, qualified_at, direct_referrals_count, active_network_count, current_commission_rate, bypass_direct_referrals, bypass_subscription, bypass_initial_payment, stripe_connect_account_id, payment_schedule, payout_wallet_address')
+          .select('is_active, previous_payment_due_date, next_payment_due_date, initial_payment_date, qualified_at, direct_referrals_count, active_network_count, current_commission_rate, bypass_direct_referrals, bypass_subscription, bypass_initial_payment, payment_schedule, payout_wallet_address')
           .eq('id', userId)
           .single()
-
-        // Check if user has completed Stripe Connect onboarding
-        setStripeConnected(!!userData?.stripe_connect_account_id)
 
         // Get payment schedule and next payment due date directly from database
         const paymentSchedule = userData?.payment_schedule || 'monthly'
@@ -271,7 +258,7 @@ export default function FinancePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">Loading financial data...</div>
+        <div className="text-muted-foreground">{t("finance.loadingFinancialData")}</div>
       </div>
     )
   }
@@ -280,38 +267,11 @@ export default function FinancePage() {
     router.push('/payments')
   }
 
-  const handleOpenStripeDashboard = async () => {
-    setLoadingDashboard(true)
-    setDashboardError(null)
-    try {
-      const response = await fetch('/api/stripe/connect/dashboard', {
-        method: 'POST',
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        setDashboardError(data.error || 'Failed to access dashboard')
-        setShowDashboardError(true)
-        return
-      }
-
-      // Open Stripe dashboard in new tab
-      window.open(data.url, '_blank')
-    } catch (error) {
-      console.error('Error opening Stripe dashboard:', error)
-      setDashboardError('Failed to open dashboard. Please try again.')
-      setShowDashboardError(true)
-    } finally {
-      setLoadingDashboard(false)
-    }
-  }
-
   return (
     <div>
       <PageHeader
-        title="Finance Dashboard"
-        description="Track your earnings, bonuses, and team volume"
+        title={t("finance.title")}
+        description={t("finance.description")}
       />
 
       {/* Account Status + Payout Wallet side by side */}
@@ -442,14 +402,14 @@ export default function FinancePage() {
             <DollarSign className="absolute top-3 right-3 h-12 w-12 text-emerald-500/5" />
             <CardHeader className="pb-3">
               <CardTitle className="text-[11px] uppercase tracking-wide font-semibold text-foreground-tertiary">
-                Lifetime Earnings
+                {t("finance.lifetimeEarnings")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 <AnimatedNumber value={financialStats.lifetimeEarnings} prefix="$" />
               </div>
-              <p className="text-xs text-foreground-tertiary">All time total</p>
+              <p className="text-xs text-foreground-tertiary">{t("finance.allTimeTotal")}</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -459,7 +419,7 @@ export default function FinancePage() {
             <TrendingUp className="absolute top-3 right-3 h-12 w-12 text-blue-500/5" />
             <CardHeader className="pb-3">
               <CardTitle className="text-[11px] uppercase tracking-wide font-semibold text-foreground-tertiary">
-                Current Month Residual
+                {t("finance.currentMonthResidual")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -476,7 +436,7 @@ export default function FinancePage() {
             <Users className="absolute top-3 right-3 h-12 w-12 text-purple-500/5" />
             <CardHeader className="pb-3">
               <CardTitle className="text-[11px] uppercase tracking-wide font-semibold text-foreground-tertiary">
-                Direct Bonuses
+                {t("finance.directBonuses")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -495,7 +455,7 @@ export default function FinancePage() {
             <Wallet className="absolute top-3 right-3 h-12 w-12 text-gold-400/5" />
             <CardHeader className="pb-3">
               <CardTitle className="text-[11px] uppercase tracking-wide font-semibold text-gold-400">
-                Next Payout
+                {t("finance.nextPayout")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -511,17 +471,17 @@ export default function FinancePage() {
       {/* Main Content Tabs */}
       <Tabs defaultValue="residual" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="residual">Residual Income</TabsTrigger>
-          <TabsTrigger value="bonuses">Direct Bonuses</TabsTrigger>
-          <TabsTrigger value="history">Earnings History</TabsTrigger>
-          <TabsTrigger value="settings">Payout Settings</TabsTrigger>
+          <TabsTrigger value="residual">{t("finance.residualIncome")}</TabsTrigger>
+          <TabsTrigger value="bonuses">{t("finance.directBonuses")}</TabsTrigger>
+          <TabsTrigger value="history">{t("finance.earningsHistory")}</TabsTrigger>
+          <TabsTrigger value="settings">{t("finance.payoutSettings")}</TabsTrigger>
         </TabsList>
 
         {/* Residual Income Tab */}
         <TabsContent value="residual" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Team Volume & Residual Income</CardTitle>
+              <CardTitle>{t("finance.teamVolumeAndResidual")}</CardTitle>
               <CardDescription>
                 Your {(financialStats.commissionRate * 100).toFixed(0)}% commission from total active team monthly subscriptions
               </CardDescription>
@@ -531,7 +491,7 @@ export default function FinancePage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 border rounded-lg">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-muted-foreground">Current Month Volume</span>
+                      <span className="text-sm text-muted-foreground">{t("finance.currentMonthVolume")}</span>
                       <Badge variant="outline">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</Badge>
                     </div>
                     <div className="text-3xl font-bold">
@@ -539,7 +499,7 @@ export default function FinancePage() {
                     </div>
                     <div className="flex items-center gap-2 mt-2">
                       <Users className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">{financialStats.activeMembers} active members</span>
+                      <span className="text-sm text-muted-foreground">{financialStats.activeMembers} {t("finance.activeMembersLabel")}</span>
                     </div>
                   </div>
 
@@ -562,19 +522,19 @@ export default function FinancePage() {
                 </div>
 
                 <div className="border rounded-lg p-4">
-                  <h4 className="font-medium mb-3">Volume Breakdown</h4>
+                  <h4 className="font-medium mb-3">{t("finance.volumeBreakdown")}</h4>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Active Members</span>
+                      <span className="text-sm text-muted-foreground">{t("finance.activeMembersLabel")}</span>
                       <span className="font-medium">{financialStats.activeMembers} × $19.9 = ${financialStats.currentMonthVolume.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Your Commission Rate</span>
+                      <span className="text-sm text-muted-foreground">{t("finance.yourCommissionRate")}</span>
                       <span className="font-medium">{(financialStats.commissionRate * 100).toFixed(0)}%</span>
                     </div>
                     <div className="border-t pt-2 mt-2">
                       <div className="flex items-center justify-between">
-                        <span className="font-medium">Monthly Residual Income</span>
+                        <span className="font-medium">{t("finance.monthlyResidualIncome")}</span>
                         <span className="font-bold text-primary">
                           ${financialStats.currentMonthResidual.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                         </span>
@@ -591,9 +551,9 @@ export default function FinancePage() {
         <TabsContent value="bonuses" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Direct Referral Bonuses</CardTitle>
+              <CardTitle>{t("finance.directReferralBonuses")}</CardTitle>
               <CardDescription>
-                Earn $249.50 (50% of $499) for each person you directly refer. Bonuses are paid monthly around the 15th alongside residual commissions. A 3.5% Stripe transaction fee applies to all payouts.
+                Earn $249.50 (50% of $499) for each person you directly refer. Bonuses are paid monthly around the 15th alongside residual commissions.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -614,22 +574,22 @@ export default function FinancePage() {
                 {directBonuses.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Users className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-                    <p>No direct referral bonuses yet</p>
-                    <p className="text-sm mt-2">Share your referral link to earn $249.50 per person who pays $499</p>
+                    <p>{t("finance.noDirectBonuses")}</p>
+                    <p className="text-sm mt-2">{t("finance.shareToEarnBonuses")}</p>
                   </div>
                 ) : (
                   <>
                     <div className="grid grid-cols-3 gap-4 mb-6">
                       <div className="p-4 border rounded-lg">
-                        <div className="text-sm text-muted-foreground mb-1">Total Bonuses</div>
+                        <div className="text-sm text-muted-foreground mb-1">{t("finance.totalBonuses")}</div>
                         <div className="text-2xl font-bold">${financialStats.totalDirectBonuses}</div>
                       </div>
                       <div className="p-4 border rounded-lg">
-                        <div className="text-sm text-muted-foreground mb-1">Paid</div>
+                        <div className="text-sm text-muted-foreground mb-1">{t("finance.paid")}</div>
                         <div className="text-2xl font-bold text-primary">${financialStats.paidBonuses}</div>
                       </div>
                       <div className="p-4 border rounded-lg">
-                        <div className="text-sm text-muted-foreground mb-1">Pending</div>
+                        <div className="text-sm text-muted-foreground mb-1">{t("payments.pending")}</div>
                         <div className="text-2xl font-bold text-amber-400">${financialStats.pendingBonuses}</div>
                       </div>
                     </div>
@@ -648,9 +608,6 @@ export default function FinancePage() {
                               </div>
                               <div className="text-right">
                                 <div className="text-xl font-bold">${bonus.bonusAmount.toFixed(2)}</div>
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  After 3.5% fee: ${(bonus.bonusAmount * 0.965).toFixed(2)}
-                                </div>
                               </div>
                             </div>
 
@@ -694,9 +651,9 @@ export default function FinancePage() {
         <TabsContent value="history" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Monthly Earnings History</CardTitle>
+              <CardTitle>{t("finance.monthlyEarningsHistory")}</CardTitle>
               <CardDescription>
-                Track your income over time
+                {t("finance.trackIncomeOverTime")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -734,7 +691,7 @@ export default function FinancePage() {
                 
                 <Button variant="outline" className="w-full">
                   <Download className="h-4 w-4 mr-2" />
-                  Download Full History (CSV)
+                  {t("finance.downloadHistory")}
                 </Button>
               </div>
             </CardContent>
@@ -745,28 +702,28 @@ export default function FinancePage() {
         <TabsContent value="settings" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Payout Settings</CardTitle>
+              <CardTitle>{t("finance.payoutSettings")}</CardTitle>
               <CardDescription>
-                Configure how you receive your earnings
+                {t("finance.configureEarnings")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
                 <div className="border rounded-lg p-4">
-                  <h4 className="font-medium mb-3">Payment Method</h4>
+                  <h4 className="font-medium mb-3">{t("finance.paymentMethod")}</h4>
                   <div className="space-y-3">
                     <div className="p-3 border border-border rounded-lg bg-surface-2">
                       <div className="flex items-center gap-3 mb-2">
-                        <CreditCard className="h-5 w-5 text-muted-foreground" />
+                        <Wallet className="h-5 w-5 text-muted-foreground" />
                         <div className="flex-1">
-                          <div className="font-medium">Stripe Connect</div>
+                          <div className="font-medium">Crypto Wallet (Polygon)</div>
                           <div className="text-sm text-muted-foreground">
-                            {stripeConnected
-                              ? 'Your bank account is connected'
-                              : 'Connect your bank account to receive payouts'}
+                            {accountStatus.payoutWalletAddress
+                              ? `Wallet: ${accountStatus.payoutWalletAddress.slice(0, 6)}...${accountStatus.payoutWalletAddress.slice(-4)}`
+                              : 'Set up your Polygon wallet to receive payouts'}
                           </div>
                         </div>
-                        {stripeConnected && (
+                        {accountStatus.payoutWalletAddress && (
                           <Badge className="bg-[#D4A853] text-white">
                             <CheckCircle className="h-3 w-3 mr-1" />
                             Connected
@@ -774,42 +731,27 @@ export default function FinancePage() {
                         )}
                       </div>
                     </div>
-                    {stripeConnected ? (
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={handleOpenStripeDashboard}
-                        disabled={loadingDashboard}
-                      >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        {loadingDashboard ? 'Opening...' : 'View Stripe Dashboard'}
-                      </Button>
-                    ) : (
-                      <>
-                        <Button variant="outline" className="w-full" disabled>
-                          Configure Payout Method
-                        </Button>
-                        <p className="text-xs text-muted-foreground text-center">
-                          Complete initial payment and onboarding to connect your bank account
-                        </p>
-                      </>
+                    {!accountStatus.payoutWalletAddress && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        Set up your payout wallet in the Payout Wallet section above
+                      </p>
                     )}
                   </div>
                 </div>
 
                 <div className="border rounded-lg p-4">
-                  <h4 className="font-medium mb-3">Payout Schedule</h4>
+                  <h4 className="font-medium mb-3">{t("finance.payoutSchedule")}</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Frequency</span>
-                      <span className="font-medium">Monthly</span>
+                      <span className="text-muted-foreground">{t("finance.frequency")}</span>
+                      <span className="font-medium">{t("finance.monthly")}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Next Payout Date</span>
+                      <span className="text-muted-foreground">{t("finance.nextPayoutDate")}</span>
                       <span className="font-medium">{financialStats.nextPayoutDate}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Minimum Payout</span>
+                      <span className="text-muted-foreground">{t("finance.minimumPayout")}</span>
                       <span className="font-medium">$100</span>
                     </div>
                   </div>
@@ -819,42 +761,24 @@ export default function FinancePage() {
                   <div className="flex items-start gap-3">
                     <AlertCircle className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="font-medium mb-2">Transaction Fees</h4>
+                      <h4 className="font-medium mb-2">{t("finance.transactionFees")}</h4>
                       <p className="text-sm text-muted-foreground">
-                        All payouts include a <strong>3.5% transaction fee</strong> charged by Stripe for processing
-                        bank transfers. This fee covers Stripe&apos;s costs for securely transferring funds
-                        to your bank account. We pass this fee through at cost and do not add any
-                        additional markup.
+                        Payouts are sent via the Polygon network. Network gas fees are minimal
+                        (typically under $0.01) and are covered by the platform. You receive the
+                        full payout amount in your connected wallet.
                       </p>
-                      <div className="mt-3 p-3 bg-background rounded border">
-                        <div className="text-xs font-medium mb-1">Example:</div>
-                        <div className="text-sm space-y-1">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Gross Earnings:</span>
-                            <span>$100.00</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Stripe Fee (3.5%):</span>
-                            <span className="text-red-500">-$3.50</span>
-                          </div>
-                          <div className="flex justify-between font-semibold pt-1 border-t">
-                            <span>Net Transfer:</span>
-                            <span className="text-primary">$96.50</span>
-                          </div>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="border rounded-lg p-4">
-                  <h4 className="font-medium mb-3">Tax Information</h4>
+                  <h4 className="font-medium mb-3">{t("finance.taxInformation")}</h4>
                   <p className="text-sm text-muted-foreground mb-3">
-                    Download your earnings statements for tax purposes
+                    {t("finance.downloadEarningsStatements")}
                   </p>
                   <Button variant="outline">
                     <Download className="h-4 w-4 mr-2" />
-                    Download 1099 Form
+                    {t("finance.download1099")}
                   </Button>
                 </div>
               </div>
@@ -863,25 +787,6 @@ export default function FinancePage() {
         </TabsContent>
       </Tabs>
 
-      {/* Error Dialog for Stripe Dashboard */}
-      <Dialog open={showDashboardError} onOpenChange={setShowDashboardError}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
-              <AlertCircle className="h-5 w-5" />
-              Dashboard Access Error
-            </DialogTitle>
-            <DialogDescription>
-              {dashboardError}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end pt-4">
-            <Button onClick={() => setShowDashboardError(false)}>
-              Close
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

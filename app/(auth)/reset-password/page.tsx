@@ -10,9 +10,11 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, Lock, Eye, EyeOff, CheckCircle } from "lucide-react"
 import Image from "next/image"
+import { useTranslation } from "@/components/language-provider"
 
 export default function ResetPasswordPage() {
   const router = useRouter()
+  const { t } = useTranslation()
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -27,14 +29,14 @@ export default function ResetPasswordPage() {
 
     // Validate passwords match
     if (password !== confirmPassword) {
-      setError("Passwords do not match")
+      setError(t("auth.resetPassword.passwordsDoNotMatch"))
       setIsLoading(false)
       return
     }
 
     // Validate password length
     if (password.length < 8) {
-      setError("Password must be at least 8 characters long")
+      setError(t("auth.resetPassword.passwordTooShort"))
       setIsLoading(false)
       return
     }
@@ -54,7 +56,7 @@ export default function ResetPasswordPage() {
         router.push("/login?message=Password reset successfully. Please login with your new password.")
       }
     } catch {
-      setError("An error occurred. Please try again.")
+      setError(t("auth.resetPassword.errorOccurred"))
     } finally {
       setIsLoading(false)
     }
@@ -66,34 +68,34 @@ export default function ResetPasswordPage() {
       <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-[#0F1629]/80 via-[#162044]/80 to-[#1A2550]/80 p-12 flex-col justify-between">
         <NavigationLink href="/" className="flex items-center space-x-3">
           <Image src="/gold-logo.svg" alt="Trading Hub" width={48} height={48} className="w-12 h-12" />
-          <span className="font-bold text-2xl text-white">Trading Hub</span>
+          <span className="font-bold text-2xl text-white">{t("common.brandName")}</span>
         </NavigationLink>
 
         <div className="space-y-6 text-white">
           <h1 className="text-4xl font-bold leading-tight">
-            Create a new password
+            {t("auth.resetPassword.sideTitle")}
           </h1>
           <p className="text-lg text-white/90">
-            Choose a strong password to keep your Trading Hub account secure.
+            {t("auth.resetPassword.sideDesc")}
           </p>
           <div className="space-y-3 pt-8">
             <div className="flex items-center gap-3">
               <CheckCircle className="h-6 w-6" />
-              <span>At least 8 characters long</span>
+              <span>{t("auth.resetPassword.tipLength")}</span>
             </div>
             <div className="flex items-center gap-3">
               <CheckCircle className="h-6 w-6" />
-              <span>Mix of letters and numbers</span>
+              <span>{t("auth.resetPassword.tipMix")}</span>
             </div>
             <div className="flex items-center gap-3">
               <CheckCircle className="h-6 w-6" />
-              <span>Avoid common words</span>
+              <span>{t("auth.resetPassword.tipCommon")}</span>
             </div>
           </div>
         </div>
 
         <div className="text-sm text-white/60">
-          © 2024 Trading Hub. All rights reserved.
+          {t("common.copyright", { year: "2024" })}
         </div>
       </div>
 
@@ -104,7 +106,7 @@ export default function ResetPasswordPage() {
           <div className="lg:hidden mb-8 text-center">
             <NavigationLink href="/" className="inline-flex items-center space-x-3">
               <Image src="/gold-logo.svg" alt="Trading Hub" width={40} height={40} className="w-10 h-10" />
-              <span className="font-bold text-xl text-foreground">Trading Hub</span>
+              <span className="font-bold text-xl text-foreground">{t("common.brandName")}</span>
             </NavigationLink>
           </div>
 
@@ -115,15 +117,15 @@ export default function ResetPasswordPage() {
                   <Lock className="h-6 w-6 text-primary" />
                 </div>
               </div>
-              <CardTitle className="text-3xl font-bold text-center">Reset your password</CardTitle>
+              <CardTitle className="text-3xl font-bold text-center">{t("auth.resetPassword.title")}</CardTitle>
               <CardDescription className="text-base text-center">
-                Enter your new password below
+                {t("auth.resetPassword.subtitle")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={onSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="password">New Password</Label>
+                  <Label htmlFor="password">{t("auth.resetPassword.newPassword")}</Label>
                   <div className="relative">
                     <Input
                       id="password"
@@ -131,7 +133,7 @@ export default function ResetPasswordPage() {
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter new password"
+                      placeholder={t("auth.resetPassword.newPasswordPlaceholder")}
                       minLength={8}
                       required
                       disabled={isLoading}
@@ -152,12 +154,12 @@ export default function ResetPasswordPage() {
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Must be at least 8 characters long
+                    {t("auth.resetPassword.passwordMinLength")}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <Label htmlFor="confirmPassword">{t("auth.resetPassword.confirmNewPassword")}</Label>
                   <div className="relative">
                     <Input
                       id="confirmPassword"
@@ -165,7 +167,7 @@ export default function ResetPasswordPage() {
                       type={showConfirmPassword ? "text" : "password"}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirm new password"
+                      placeholder={t("auth.resetPassword.confirmNewPasswordPlaceholder")}
                       minLength={8}
                       required
                       disabled={isLoading}
@@ -187,7 +189,7 @@ export default function ResetPasswordPage() {
                   </div>
                   {confirmPassword && password !== confirmPassword && (
                     <p className="text-xs text-red-400">
-                      Passwords do not match
+                      {t("auth.resetPassword.passwordsDoNotMatch")}
                     </p>
                   )}
                 </div>
@@ -206,19 +208,19 @@ export default function ResetPasswordPage() {
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Resetting password...
+                      {t("auth.resetPassword.resetting")}
                     </>
                   ) : (
-                    "Reset password"
+                    t("auth.resetPassword.resetButton")
                   )}
                 </Button>
               </form>
             </CardContent>
             <CardFooter className="flex-col space-y-4">
               <p className="text-sm text-center w-full text-muted-foreground">
-                Remember your password?{" "}
+                {t("auth.resetPassword.rememberPassword")}{" "}
                 <NavigationLink href="/login" className="font-semibold text-primary hover:underline">
-                  Sign in
+                  {t("auth.resetPassword.signIn")}
                 </NavigationLink>
               </p>
             </CardFooter>

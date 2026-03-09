@@ -150,6 +150,49 @@ export async function POST(request: Request) {
       }
     }
 
+    // Send welcome notification to new user
+    try {
+      const { notifyWelcome } = await import('@/lib/notifications/notification-service')
+      await notifyWelcome({
+        userId: userId,
+        userName: existingUser.name || 'New Member',
+      })
+      console.log(`✅ Sent welcome notification to new user ${userId}`)
+    } catch (notifError) {
+      console.error('❌ Error sending welcome notification:', notifError)
+    }
+
+    // Send network_join notification to upchain ancestors (beyond direct referrer)
+    if (updatedUser?.network_position_id) {
+      try {
+        const { data: upchain, error: upchainErr } = await supabase
+          .rpc('get_upline_chain', { start_position_id: updatedUser.network_position_id })
+
+        if (!upchainErr && upchain && upchain.length > 0) {
+          const { notifyNetworkJoin } = await import('@/lib/notifications/notification-service')
+          const ancestors = (upchain as Array<{ user_id: string }>).filter((a) => a.user_id !== userId)
+
+          // Skip direct referrer (depth 1) - they already get referral_signup notification
+          for (let i = 1; i < ancestors.length; i++) {
+            try {
+              await notifyNetworkJoin({
+                userId: ancestors[i].user_id,
+                newMemberName: existingUser.name || 'New Member',
+                depth: i + 1,
+              })
+            } catch {
+              // Don't block on notification failures
+            }
+          }
+          if (ancestors.length > 1) {
+            console.log(`✅ Sent network_join notifications to ${ancestors.length - 1} upchain ancestors`)
+          }
+        }
+      } catch (notifError) {
+        console.error('❌ Error sending network join notifications:', notifError)
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Network position assigned successfully',

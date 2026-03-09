@@ -4,6 +4,7 @@ import { AlertTriangle, CreditCard, X } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { useTranslation } from "@/components/language-provider"
 
 // 33 days = 30 day subscription + 3 day grace period
 const ACTIVE_THRESHOLD_DAYS = 33
@@ -19,6 +20,7 @@ export function InactiveAccountBanner({
   bypassSubscription = false,
   isAdmin = false,
 }: InactiveAccountBannerProps) {
+  const { t } = useTranslation()
   const [dismissed, setDismissed] = useState(false)
   const [inactivityInfo, setInactivityInfo] = useState<{
     isInactive: boolean
@@ -81,18 +83,18 @@ export function InactiveAccountBanner({
 
   const getMessage = () => {
     if (!lastPaymentDate) {
-      return "Your account is inactive. Complete your first payment to activate your account and start earning."
+      return t("banners.inactiveAccount.noPayment")
     }
 
     if (inactivityInfo.daysOverdue === 1) {
-      return `Your account became inactive yesterday. Pay now to reactivate and continue earning.`
+      return t("banners.inactiveAccount.inactiveYesterday")
     }
 
     if (inactivityInfo.daysOverdue <= 7) {
-      return `Your account has been inactive for ${inactivityInfo.daysOverdue} days. Pay now to reactivate and continue earning.`
+      return t("banners.inactiveAccount.inactiveDays", { days: inactivityInfo.daysOverdue })
     }
 
-    return `Your account has been inactive for ${inactivityInfo.daysOverdue} days (since ${inactivityInfo.inactiveSince?.toLocaleDateString()}). Pay now to reactivate.`
+    return t("banners.inactiveAccount.inactiveSince", { days: inactivityInfo.daysOverdue, date: inactivityInfo.inactiveSince?.toLocaleDateString() ?? "" })
   }
 
   return (
@@ -116,7 +118,7 @@ export function InactiveAccountBanner({
               className="bg-white text-red-600 hover:bg-red-50"
             >
               <CreditCard className="h-4 w-4 mr-1" />
-              Pay Now
+              {t("banners.inactiveAccount.payNow")}
             </Button>
           </Link>
           <button

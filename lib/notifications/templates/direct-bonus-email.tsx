@@ -29,7 +29,7 @@ export const DirectBonusEmail = ({
   userName = 'Member',
   referredName = 'New Member',
   amount = 249.50,
-  dashboardUrl = 'https://tradinghub.com/dashboard'
+  dashboardUrl = 'https://sniperstradingacademy.com/dashboard'
 }: DirectBonusEmailProps) => {
   const formattedAmount = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -44,7 +44,7 @@ export const DirectBonusEmail = ({
         <Container style={container}>
           {/* Logo */}
           <Section style={logoSection}>
-            <Heading style={h1}>Trading Hub</Heading>
+            <Heading style={h1}>Snipers Trading Academy</Heading>
           </Section>
 
           {/* Success Icon */}
@@ -113,7 +113,7 @@ export const DirectBonusEmail = ({
               </Link>
             </Text>
             <Text style={footerCopyright}>
-              © {new Date().getFullYear()} Trading Hub. All rights reserved.
+              © {new Date().getFullYear()} Snipers Trading Academy. All rights reserved.
             </Text>
           </Section>
         </Container>

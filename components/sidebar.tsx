@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
+import Image from "next/image"
+import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { NavigationLink } from "@/components/navigation-link"
 import { sidebarAnimation, sidebarMobile, sidebarOverlay } from "@/lib/motion"
@@ -38,9 +40,12 @@ import {
   Menu,
   X,
   MoreVertical,
+  AlertTriangle,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { useTranslation } from "@/components/language-provider"
+import type { TranslationKey } from "@/lib/i18n"
 
 interface SidebarProps {
   user: {
@@ -56,23 +61,24 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, requiresActive: true },
-  { href: "/academy", label: "Academy", icon: GraduationCap, requiresActive: true },
-  { href: "/team", label: "My Team", icon: Users, requiresActive: true },
-  { href: "/finance", label: "Finance", icon: DollarSign, requiresActive: true },
-  { href: "/payments", label: "Payments", icon: CreditCard, requiresActive: false },
-  { href: "/referrals", label: "Referrals", icon: Share2, requiresActive: true },
+  { href: "/dashboard", labelKey: "nav.dashboard" as TranslationKey, icon: LayoutDashboard, requiresActive: true },
+  { href: "/academy", labelKey: "nav.academy" as TranslationKey, icon: GraduationCap, requiresActive: true },
+  { href: "/team", labelKey: "nav.myTeam" as TranslationKey, icon: Users, requiresActive: true },
+  { href: "/finance", labelKey: "nav.finance" as TranslationKey, icon: DollarSign, requiresActive: true },
+  { href: "/payments", labelKey: "nav.payments" as TranslationKey, icon: CreditCard, requiresActive: false },
+  { href: "/referrals", labelKey: "nav.referrals" as TranslationKey, icon: Share2, requiresActive: true },
 ]
 
 const secondaryItems = [
-  { href: "/notifications", label: "Notifications", icon: Bell, requiresActive: true },
-  { href: "/settings", label: "Settings", icon: Settings, requiresActive: false },
+  { href: "/notifications", labelKey: "nav.notifications" as TranslationKey, icon: Bell, requiresActive: true },
+  { href: "/settings", labelKey: "nav.settings" as TranslationKey, icon: Settings, requiresActive: false },
 ]
 
 export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperAdminPlus }: SidebarProps) {
   const [hovered, setHovered] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const router = useRouter()
+  const { t } = useTranslation()
   const leaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const isExpanded = hovered
@@ -111,10 +117,8 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
 
   const sidebarContent = (
     <nav className="flex-1 py-4 overflow-y-auto">
-      <div className="px-2">
-        {isExpanded && (
-          <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground/50 px-3 mb-2">Navigation</p>
-        )}
+      <div className="px-2 pb-[5px]">
+        <p className={`text-[10px] uppercase tracking-[0.15em] text-muted-foreground/50 px-3 whitespace-nowrap h-4 mb-px transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>{t("nav.navigation")}</p>
         {navItems.map((item) => (
           <NavigationLink
             key={item.href}
@@ -123,17 +127,15 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
             className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer relative whitespace-nowrap"
           >
             <item.icon className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
-            {isExpanded && <span className="text-sm font-medium">{item.label}</span>}
+            <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t(item.labelKey)}</span>
           </NavigationLink>
         ))}
       </div>
 
-      <div className="mx-3 my-3 border-t border-border-subtle" />
+      <div className={`mx-3 border-t border-border-subtle my-3`} />
 
-      <div className="px-2">
-        {isExpanded && (
-          <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground/50 px-3 mb-2">General</p>
-        )}
+      <div className="px-2 pb-[5px]">
+        <p className={`text-[10px] uppercase tracking-[0.15em] text-muted-foreground/50 px-3 whitespace-nowrap h-4 mb-px transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>{t("nav.general")}</p>
         {secondaryItems.map((item) => (
           <NavigationLink
             key={item.href}
@@ -142,7 +144,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
             className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
           >
             <item.icon className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
-            {isExpanded && <span className="text-sm font-medium">{item.label}</span>}
+            <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t(item.labelKey)}</span>
           </NavigationLink>
         ))}
       </div>
@@ -150,160 +152,132 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
       {/* Admin Section */}
       {isAdminOrSuper && (
         <>
-          <div className="mx-3 my-3 border-t border-border-subtle" />
-          <div className="px-2">
-            {isExpanded ? (
-              <>
-                <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground/50 px-3 mb-2">Admin</p>
+          <div className={`mx-3 border-t border-border-subtle my-3`} />
+          <div className="px-2 pb-[5px]">
+            <p className={`text-[10px] uppercase tracking-[0.15em] text-muted-foreground/50 px-3 whitespace-nowrap h-4 mb-px transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>{t("nav.admin")}</p>
 
-                <Accordion type="multiple" className="mx-1">
-                  <AccordionItem value="notifiers" className="border-b-0">
-                    <AccordionTrigger className="flex items-center gap-[10px] px-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-gold-400 transition-all duration-150 hover:no-underline whitespace-nowrap">
-                      <div className="flex items-center gap-[10px] flex-1">
-                        <Bell className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Notifiers</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="pb-0">
+            <Accordion type="multiple" className="mx-1">
+              <AccordionItem value="notifiers" className="border-b-0">
+                <AccordionTrigger className={`flex items-center gap-[10px] pl-4 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-gold-400 transition-all duration-150 hover:no-underline whitespace-nowrap ${!isExpanded ? '[&>svg]:hidden pointer-events-none' : ''}`}>
+                  <div className="flex items-center gap-[10px] flex-1">
+                    <Bell className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t("nav.notifiers")}</span>
+                  </div>
+                </AccordionTrigger>
+                {isExpanded && (
+                  <AccordionContent className="pb-0">
+                    <NavigationLink
+                      href="/admin/classes"
+                      className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+                    >
+                      <Shield className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+                      <span className="text-sm font-medium">{t("nav.adminPanel")}</span>
+                    </NavigationLink>
+                    {isSuperAdmin && (
                       <NavigationLink
-                        href="/admin/classes"
+                        href="/admin/notifications"
                         className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
                       >
-                        <Shield className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                        <span className="text-sm font-medium">Admin Panel</span>
+                        <Bell className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+                        <span className="text-sm font-medium">{t("nav.notificationsManager")}</span>
                       </NavigationLink>
-                      {isSuperAdmin && (
-                        <NavigationLink
-                          href="/admin/notifications"
-                          className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
-                        >
-                          <Bell className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                          <span className="text-sm font-medium">Notifications Manager</span>
-                        </NavigationLink>
-                      )}
-                    </AccordionContent>
-                  </AccordionItem>
+                    )}
+                  </AccordionContent>
+                )}
+              </AccordionItem>
 
-                  <AccordionItem value="network" className="border-b-0">
-                    <AccordionTrigger className="flex items-center gap-[10px] px-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-gold-400 transition-all duration-150 hover:no-underline whitespace-nowrap">
-                      <div className="flex items-center gap-[10px] flex-1">
-                        <Network className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Network</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="pb-0">
+              <AccordionItem value="network" className="border-b-0">
+                <AccordionTrigger className={`flex items-center gap-[10px] pl-4 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-gold-400 transition-all duration-150 hover:no-underline whitespace-nowrap ${!isExpanded ? '[&>svg]:hidden pointer-events-none' : ''}`}>
+                  <div className="flex items-center gap-[10px] flex-1">
+                    <Network className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t("nav.network")}</span>
+                  </div>
+                </AccordionTrigger>
+                {isExpanded && (
+                  <AccordionContent className="pb-0">
+                    <NavigationLink
+                      href="/admin/network"
+                      className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+                    >
+                      <Network className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+                      <span className="text-sm font-medium">{t("nav.networkView")}</span>
+                    </NavigationLink>
+                    {isSuperAdmin && (
                       <NavigationLink
-                        href="/admin/network"
+                        href="/admin/network-visualizer"
                         className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
                       >
-                        <Network className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                        <span className="text-sm font-medium">Network View</span>
+                        <GitBranch className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+                        <span className="text-sm font-medium">{t("nav.networkVisualizer")}</span>
                       </NavigationLink>
-                      {isSuperAdmin && (
-                        <NavigationLink
-                          href="/admin/network-visualizer"
-                          className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
-                        >
-                          <GitBranch className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                          <span className="text-sm font-medium">Network Visualizer</span>
-                        </NavigationLink>
-                      )}
-                    </AccordionContent>
-                  </AccordionItem>
+                    )}
+                  </AccordionContent>
+                )}
+              </AccordionItem>
 
-                  {isSuperAdminPlus && (
-                    <AccordionItem value="payments" className="border-b-0">
-                      <AccordionTrigger className="flex items-center gap-[10px] px-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-gold-400 transition-all duration-150 hover:no-underline whitespace-nowrap">
-                        <div className="flex items-center gap-[10px] flex-1">
-                          <Wallet className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium">Payments</span>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="pb-0">
-                        <NavigationLink
-                          href="/admin/financials"
-                          className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
-                        >
-                          <TrendingUp className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                          <span className="text-sm font-medium">Financials</span>
-                        </NavigationLink>
-                        <NavigationLink
-                          href="/admin/payouts"
-                          className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
-                        >
-                          <Wallet className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                          <span className="text-sm font-medium">Payouts</span>
-                        </NavigationLink>
-                        <NavigationLink
-                          href="/admin/direct-bonuses"
-                          className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
-                        >
-                          <Gift className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                          <span className="text-sm font-medium">Direct Bonuses</span>
-                        </NavigationLink>
-                      </AccordionContent>
-                    </AccordionItem>
+              {isSuperAdminPlus && (
+                <AccordionItem value="payments" className="border-b-0">
+                  <AccordionTrigger className={`flex items-center gap-[10px] pl-4 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-gold-400 transition-all duration-150 hover:no-underline whitespace-nowrap ${!isExpanded ? '[&>svg]:hidden pointer-events-none' : ''}`}>
+                    <div className="flex items-center gap-[10px] flex-1">
+                      <Wallet className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t("nav.payments")}</span>
+                    </div>
+                  </AccordionTrigger>
+                  {isExpanded && (
+                    <AccordionContent className="pb-0">
+                      <NavigationLink
+                        href="/admin/financials"
+                        className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+                      >
+                        <TrendingUp className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+                        <span className="text-sm font-medium">{t("nav.financials")}</span>
+                      </NavigationLink>
+                      <NavigationLink
+                        href="/admin/payouts"
+                        className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+                      >
+                        <Wallet className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+                        <span className="text-sm font-medium">{t("nav.payouts")}</span>
+                      </NavigationLink>
+                      <NavigationLink
+                        href="/admin/direct-bonuses"
+                        className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+                      >
+                        <Gift className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
+                        <span className="text-sm font-medium">{t("nav.directBonuses")}</span>
+                      </NavigationLink>
+                    </AccordionContent>
                   )}
-                </Accordion>
+                </AccordionItem>
+              )}
+            </Accordion>
 
-                {isSuperAdmin && (
-                  <>
-                    <NavigationLink
-                      href="/admin/transaction-logs"
-                      className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
-                    >
-                      <Activity className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                      <span className="text-sm font-medium">Transaction Logs</span>
-                    </NavigationLink>
-                    <NavigationLink
-                      href="/admin/academy-manager"
-                      className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
-                    >
-                      <BookOpen className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
-                      <span className="text-sm font-medium">Academy Manager</span>
-                    </NavigationLink>
-                  </>
-                )}
-              </>
-            ) : (
-              <>
-                <NavigationLink
-                  href="/admin/classes"
-                  className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
-                >
-                  <Shield className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
-                </NavigationLink>
-                <NavigationLink
-                  href="/admin/network"
-                  className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
-                >
-                  <Network className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
-                </NavigationLink>
-                {isSuperAdminPlus && (
-                  <NavigationLink
-                    href="/admin/financials"
-                    className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
-                  >
-                    <Wallet className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
-                  </NavigationLink>
-                )}
-                {isSuperAdmin && (
-                  <>
-                    <NavigationLink
-                      href="/admin/transaction-logs"
-                      className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
-                    >
-                      <Activity className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
-                    </NavigationLink>
-                    <NavigationLink
-                      href="/admin/academy-manager"
-                      className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
-                    >
-                      <BookOpen className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
-                    </NavigationLink>
-                  </>
-                )}
-              </>
+            {isSuperAdminPlus && (
+              <NavigationLink
+                href="/admin/transaction-logs"
+                className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+              >
+                <Activity className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
+                <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t("nav.transactionLogs")}</span>
+              </NavigationLink>
+            )}
+            {isSuperAdminPlus && (
+              <NavigationLink
+                href="/admin/flagged-reviews"
+                className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+              >
+                <AlertTriangle className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
+                <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t("nav.flaggedReviews")}</span>
+              </NavigationLink>
+            )}
+            {isSuperAdmin && (
+              <NavigationLink
+                href="/admin/academy-manager"
+                className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+              >
+                <BookOpen className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
+                <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t("nav.academyManager")}</span>
+              </NavigationLink>
             )}
           </div>
         </>
@@ -319,35 +293,31 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gold-400 to-gold-500 flex items-center justify-center text-primary-foreground text-sm font-medium shadow-[var(--shadow-gold-sm)] flex-shrink-0">
               {user.email?.[0]?.toUpperCase() || "U"}
             </div>
-            {isExpanded && (
-              <>
-                <div className="flex-1 min-w-0 text-left">
-                  <p className="text-sm font-medium text-sidebar-foreground truncate">
-                    {user.user_metadata?.name || "User"}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground truncate">
-                    {user.email}
-                  </p>
-                </div>
-                <MoreVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              </>
-            )}
+            <div className={`flex-1 min-w-0 text-left whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>
+              <p className="text-sm font-medium text-sidebar-foreground truncate">
+                {user.user_metadata?.name || t("common.user")}
+              </p>
+              <p className="text-[11px] text-muted-foreground truncate">
+                {user.email}
+              </p>
+            </div>
+            <MoreVertical className={`h-4 w-4 text-muted-foreground flex-shrink-0 transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`} />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" side="top" className="w-56">
           <div className="px-2 py-1.5">
-            <p className="text-sm font-medium">{user.user_metadata?.name || "User"}</p>
+            <p className="text-sm font-medium">{user.user_metadata?.name || t("common.user")}</p>
             <p className="text-[11px] text-muted-foreground">{user.email}</p>
           </div>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => router.push("/settings")}>
             <Settings className="h-4 w-4 mr-2" />
-            Settings
+            {t("header.settings")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut} className="text-red-400">
             <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
+            {t("header.signOut")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -385,7 +355,10 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
               className="fixed top-0 left-0 bottom-0 z-[60] w-[260px] flex flex-col bg-[#080C1A] border-r border-border-subtle lg:hidden"
               style={{ paddingTop: 'calc(var(--banner-height, 0px) + var(--inactive-banner-height, 0px) + var(--wallet-banner-height, 0px))' }}
             >
-              <div className="flex items-center justify-end p-3">
+              <div className="flex items-center justify-between px-3 h-14 flex-shrink-0">
+                <Link href="/dashboard" className="flex items-center justify-center hover:opacity-80 transition-opacity">
+                  <Image src="/gold-logo.svg" alt="Logo" width={28} height={28} />
+                </Link>
                 <button onClick={() => setMobileOpen(false)} className="p-1 rounded-[4px] hover:bg-white/[0.06]">
                   <X className="h-5 w-5" />
                 </button>
@@ -403,9 +376,9 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
         animate={!isExpanded ? "collapsed" : "expanded"}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        className="hidden lg:flex flex-col fixed left-0 bottom-0 z-40 bg-[#080C1A] overflow-hidden"
+        className="hidden lg:flex flex-col fixed left-0 bottom-0 z-50 bg-[#080C1A] overflow-hidden"
         style={{
-          top: 'calc(var(--banner-height, 0px) + var(--inactive-banner-height, 0px) + var(--wallet-banner-height, 0px) + 56px)',
+          top: 'calc(var(--banner-height, 0px) + var(--inactive-banner-height, 0px) + var(--wallet-banner-height, 0px))',
           borderRight: '1px solid transparent',
           backgroundImage: 'linear-gradient(#080C1A, #080C1A), linear-gradient(to bottom, rgba(212,168,83,0.15), transparent 60%)',
           backgroundOrigin: 'border-box',
@@ -413,6 +386,12 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
           boxShadow: isExpanded ? 'var(--shadow-xl)' : 'none',
         }}
       >
+        <Link
+          href="/dashboard"
+          className="flex items-center justify-center h-14 flex-shrink-0"
+        >
+          <Image src="/gold-logo.svg" alt="Logo" width={28} height={28} />
+        </Link>
         {sidebarContent}
         {userSection}
       </motion.aside>

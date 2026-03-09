@@ -27,7 +27,7 @@ interface PaymentFailedEmailProps {
 export const PaymentFailedEmail = ({
   userName = 'Member',
   amount = 199,
-  paymentUrl = 'https://tradinghub.com/payments'
+  paymentUrl = 'https://sniperstradingacademy.com/payments'
 }: PaymentFailedEmailProps) => {
   const formattedAmount = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -42,7 +42,7 @@ export const PaymentFailedEmail = ({
         <Container style={container}>
           {/* Logo */}
           <Section style={logoSection}>
-            <Heading style={h1}>Trading Hub</Heading>
+            <Heading style={h1}>Snipers Trading Academy</Heading>
           </Section>
 
           {/* Warning Icon */}
@@ -114,7 +114,7 @@ export const PaymentFailedEmail = ({
               </Link>
             </Text>
             <Text style={footerCopyright}>
-              © {new Date().getFullYear()} Trading Hub. All rights reserved.
+              © {new Date().getFullYear()} Snipers Trading Academy. All rights reserved.
             </Text>
           </Section>
         </Container>

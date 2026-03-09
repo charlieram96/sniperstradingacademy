@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Gift, AlertCircle, CheckCircle, Loader2, RefreshCw, DollarSign, Users, Clock, ExternalLink, Wallet } from "lucide-react"
+import { useTranslation } from "@/components/language-provider"
 import { formatDistanceToNow } from "date-fns"
 
 interface InitialPayment {
@@ -64,6 +65,7 @@ interface Summary {
 }
 
 export default function DirectBonusesPage() {
+  const { t } = useTranslation()
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
   const [payments, setPayments] = useState<InitialPayment[]>([])
@@ -137,13 +139,13 @@ export default function DirectBonusesPage() {
       const data = await response.json()
 
       if (data.success) {
-        alert(`Bonus created successfully! Commission ID: ${data.commission.id}`)
+        alert(t("admin.directBonuses.bonusCreatedSuccess").replace("{id}", data.commission.id))
         await fetchData()
       } else {
-        alert(`Failed to create bonus: ${data.error}`)
+        alert(t("admin.directBonuses.failedToCreateBonus").replace("{error}", data.error))
       }
     } catch (error) {
-      alert("Error creating bonus")
+      alert(t("admin.directBonuses.errorCreatingBonus"))
       console.error(error)
     } finally {
       setCreatingBonusFor(null)
@@ -172,13 +174,13 @@ export default function DirectBonusesPage() {
       const data = await response.json()
 
       if (data.success) {
-        alert(`Success! $${data.amount} USDC transferred to ${data.userName}`)
+        alert(t("admin.directBonuses.successTransfer").replace("{amount}", data.amount).replace("{name}", data.userName))
         await fetchData()
       } else {
-        alert(`Failed: ${data.error || "Unknown error"}`)
+        alert(`Failed: ${data.error || t("common.unknown")}`)
       }
     } catch (error) {
-      alert("Error processing payout")
+      alert(t("admin.directBonuses.errorProcessingPayout"))
       console.error(error)
     } finally {
       setProcessingId(null)
@@ -187,7 +189,7 @@ export default function DirectBonusesPage() {
   }
 
   const handleMarkComplete = async (commissionId: string) => {
-    if (!confirm("Mark this bonus as completed? Use this only if payment was made outside the platform (check, cash, wire, etc.).")) {
+    if (!confirm(t("admin.directBonuses.markCompletedConfirm"))) {
       return
     }
 
@@ -202,13 +204,13 @@ export default function DirectBonusesPage() {
       const data = await response.json()
 
       if (data.success) {
-        alert("Bonus marked as completed!")
+        alert(t("admin.directBonuses.bonusMarkedComplete"))
         await fetchData()
       } else {
-        alert(`Failed: ${data.error || "Unknown error"}`)
+        alert(`Failed: ${data.error || t("common.unknown")}`)
       }
     } catch (error) {
-      alert("Error marking as complete")
+      alert(t("admin.directBonuses.errorMarkingComplete"))
       console.error(error)
     } finally {
       setProcessingId(null)
@@ -237,8 +239,8 @@ export default function DirectBonusesPage() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
-          <p className="text-muted-foreground">This page is only accessible to superadmins.</p>
+          <h2 className="text-2xl font-bold mb-2">{t("admin.accessDenied")}</h2>
+          <p className="text-muted-foreground">{t("admin.superadminOnly")}</p>
         </div>
       </div>
     )
@@ -249,10 +251,10 @@ export default function DirectBonusesPage() {
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-2">
           <Gift className="h-6 w-6 text-primary" />
-          <h1 className="text-3xl font-bold text-foreground">Direct Bonus Management</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t("admin.directBonuses.title")}</h1>
         </div>
         <p className="text-muted-foreground">
-          Track $499 initial payments and manage $249 referral bonuses
+          {t("admin.directBonuses.description")}
         </p>
       </div>
 
@@ -260,59 +262,59 @@ export default function DirectBonusesPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total $499 Payments</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.directBonuses.totalPayments")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-[#D4A853]" />
               <span className="text-2xl font-bold">{summary.totalPayments}</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Last 90 days</p>
+            <p className="text-xs text-muted-foreground mt-1">{t("admin.directBonuses.last90Days")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">With Referrers</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.directBonuses.withReferrers")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-blue-600" />
               <span className="text-2xl font-bold">{summary.paymentsWithReferrers}</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Eligible for bonus</p>
+            <p className="text-xs text-muted-foreground mt-1">{t("admin.directBonuses.eligibleForBonus")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pending Bonuses</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.directBonuses.pendingBonuses")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-amber-600" />
               <span className="text-2xl font-bold text-amber-600">{summary.pendingBonuses}</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Awaiting payout</p>
+            <p className="text-xs text-muted-foreground mt-1">{t("admin.directBonuses.awaitingPayout")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Paid Bonuses</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.directBonuses.paidBonuses")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-[#D4A853]" />
               <span className="text-2xl font-bold text-[#D4A853]">{summary.paidBonuses}</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Completed</p>
+            <p className="text-xs text-muted-foreground mt-1">{t("admin.directBonuses.completed")}</p>
           </CardContent>
         </Card>
 
         <Card className={summary.noBonusYet > 0 ? "border-amber-500" : ""}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">No Bonus Created</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.directBonuses.noBonusCreated")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
@@ -321,7 +323,7 @@ export default function DirectBonusesPage() {
                 {summary.noBonusYet}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Needs action</p>
+            <p className="text-xs text-muted-foreground mt-1">{t("admin.directBonuses.needsAction")}</p>
           </CardContent>
         </Card>
       </div>
@@ -333,14 +335,14 @@ export default function DirectBonusesPage() {
             <div className="flex items-center gap-4">
               <Select value={filter} onValueChange={setFilter}>
                 <SelectTrigger className="w-[220px]">
-                  <SelectValue placeholder="Filter payments" />
+                  <SelectValue placeholder={t("admin.directBonuses.filterPayments")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Payments ({payments.length})</SelectItem>
-                  <SelectItem value="with_referrer">With Referrer ({summary.paymentsWithReferrers})</SelectItem>
-                  <SelectItem value="pending_bonus">Pending Bonus ({summary.pendingBonuses})</SelectItem>
-                  <SelectItem value="no_bonus">No Bonus Yet ({summary.noBonusYet})</SelectItem>
-                  <SelectItem value="paid">Paid ({summary.paidBonuses})</SelectItem>
+                  <SelectItem value="all">{t("admin.directBonuses.allPayments").replace("{count}", String(payments.length))}</SelectItem>
+                  <SelectItem value="with_referrer">{t("admin.directBonuses.withReferrerFilter").replace("{count}", String(summary.paymentsWithReferrers))}</SelectItem>
+                  <SelectItem value="pending_bonus">{t("admin.directBonuses.pendingBonusFilter").replace("{count}", String(summary.pendingBonuses))}</SelectItem>
+                  <SelectItem value="no_bonus">{t("admin.directBonuses.noBonusYetFilter").replace("{count}", String(summary.noBonusYet))}</SelectItem>
+                  <SelectItem value="paid">{t("admin.directBonuses.paidFilter").replace("{count}", String(summary.paidBonuses))}</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -351,7 +353,7 @@ export default function DirectBonusesPage() {
                 disabled={processing}
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
+                {t("admin.directBonuses.refresh")}
               </Button>
             </div>
           </div>
@@ -361,26 +363,26 @@ export default function DirectBonusesPage() {
       {/* Payments Table */}
       <Card>
         <CardHeader>
-          <CardTitle>$499 Initial Payments</CardTitle>
-          <CardDescription>View payments and manage associated referral bonuses</CardDescription>
+          <CardTitle>{t("admin.directBonuses.initialPayments")}</CardTitle>
+          <CardDescription>{t("admin.directBonuses.initialPaymentsDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Payment Date</TableHead>
-                  <TableHead>Payer</TableHead>
-                  <TableHead>Referrer</TableHead>
-                  <TableHead>Bonus Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t("admin.directBonuses.paymentDate")}</TableHead>
+                  <TableHead>{t("admin.directBonuses.payer")}</TableHead>
+                  <TableHead>{t("admin.directBonuses.referrer")}</TableHead>
+                  <TableHead>{t("admin.directBonuses.bonusStatus")}</TableHead>
+                  <TableHead className="text-right">{t("admin.directBonuses.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredPayments.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      No payments match your filter
+                      {t("admin.directBonuses.noPaymentsMatch")}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -411,12 +413,12 @@ export default function DirectBonusesPage() {
                             {!payment.referrer.hasWallet && (
                               <Badge variant="outline" className="text-xs text-amber-600 border-amber-600 mt-1">
                                 <Wallet className="h-3 w-3 mr-1" />
-                                No wallet
+                                {t("admin.directBonuses.noWallet")}
                               </Badge>
                             )}
                           </div>
                         ) : (
-                          <span className="text-muted-foreground italic">No referrer</span>
+                          <span className="text-muted-foreground italic">{t("admin.directBonuses.noReferrer")}</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -424,22 +426,22 @@ export default function DirectBonusesPage() {
                           <Badge variant="secondary">N/A</Badge>
                         ) : !payment.bonus ? (
                           <Badge variant="outline" className="text-amber-600 border-amber-600">
-                            Not created
+                            {t("admin.directBonuses.notCreated")}
                           </Badge>
                         ) : payment.bonus.status === "pending" ? (
                           <div>
                             <Badge variant="outline" className="text-amber-600 border-amber-600">
-                              Pending
+                              {t("admin.directBonuses.pendingStatus")}
                             </Badge>
                             <p className="text-xs text-muted-foreground mt-1">
-                              ${payment.bonus.amount} to pay
+                              {t("admin.directBonuses.toPay").replace("{amount}", String(payment.bonus.amount))}
                             </p>
                           </div>
                         ) : payment.bonus.status === "paid" ? (
                           <div>
                             <Badge className="bg-[#D4A853]">
                               <CheckCircle className="h-3 w-3 mr-1" />
-                              Paid
+                              {t("admin.directBonuses.paidStatus")}
                             </Badge>
                             {payment.bonus.paidAt && (
                               <p className="text-xs text-muted-foreground mt-1">
@@ -464,12 +466,12 @@ export default function DirectBonusesPage() {
                             {creatingBonusFor === payment.id ? (
                               <>
                                 <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                Creating...
+                                {t("admin.directBonuses.creating")}
                               </>
                             ) : (
                               <>
                                 <Gift className="h-3 w-3 mr-1" />
-                                Create $249 Bonus
+                                {t("admin.directBonuses.createBonus")}
                               </>
                             )}
                           </Button>
@@ -479,17 +481,17 @@ export default function DirectBonusesPage() {
                               size="sm"
                               onClick={() => openPayoutModal(payment)}
                               disabled={processingId === payment.bonus.id || !payment.referrer?.hasWallet}
-                              title={!payment.referrer?.hasWallet ? "Referrer has no payout wallet" : ""}
+                              title={!payment.referrer?.hasWallet ? t("admin.directBonuses.noPayoutWallet") : ""}
                             >
                               {processingId === payment.bonus.id ? (
                                 <>
                                   <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                  Paying...
+                                  {t("admin.directBonuses.paying")}
                                 </>
                               ) : (
                                 <>
                                   <DollarSign className="h-3 w-3 mr-1" />
-                                  Pay $249
+                                  {t("admin.directBonuses.payBonus")}
                                 </>
                               )}
                             </Button>
@@ -500,13 +502,13 @@ export default function DirectBonusesPage() {
                               disabled={processingId === payment.bonus.id}
                             >
                               <CheckCircle className="h-3 w-3 mr-1" />
-                              Mark Paid
+                              {t("admin.directBonuses.markPaid")}
                             </Button>
                           </div>
                         ) : (
                           <Badge className="bg-[#D4A853]">
                             <CheckCircle className="h-3 w-3 mr-1" />
-                            Completed
+                            {t("admin.directBonuses.completedBadge")}
                           </Badge>
                         )}
                       </TableCell>
@@ -525,13 +527,13 @@ export default function DirectBonusesPage() {
           <div className="flex gap-3">
             <AlertCircle className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
             <div className="text-sm text-blue-300">
-              <p className="font-medium mb-1 text-blue-200">How Direct Bonuses Work</p>
+              <p className="font-medium mb-1 text-blue-200">{t("admin.directBonuses.howItWorks")}</p>
               <ul className="list-disc list-inside space-y-1 text-blue-300/90">
-                <li>When a new user pays $499, a $249 bonus is automatically created for their referrer</li>
-                <li>If no bonus was created (rare), you can manually create one using the &quot;Create $249 Bonus&quot; button</li>
-                <li>Click &quot;Pay $249&quot; to process the USDC transfer to the referrer&apos;s wallet</li>
-                <li>Use &quot;Mark Paid&quot; only if the bonus was paid outside the system (cash, wire, etc.)</li>
-                <li>Referrers need a payout wallet configured to receive USDC payments</li>
+                <li>{t("admin.directBonuses.howItWorksLine1")}</li>
+                <li>{t("admin.directBonuses.howItWorksLine2")}</li>
+                <li>{t("admin.directBonuses.howItWorksLine3")}</li>
+                <li>{t("admin.directBonuses.howItWorksLine4")}</li>
+                <li>{t("admin.directBonuses.howItWorksLine5")}</li>
               </ul>
             </div>
           </div>
@@ -544,10 +546,10 @@ export default function DirectBonusesPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-[#D4A853]" />
-              Confirm Direct Bonus Payout
+              {t("admin.directBonuses.confirmPayout")}
             </DialogTitle>
             <DialogDescription>
-              You are about to send a USDC payout. Please review the details below.
+              {t("admin.directBonuses.confirmPayoutDesc")}
             </DialogDescription>
           </DialogHeader>
 
@@ -555,7 +557,7 @@ export default function DirectBonusesPage() {
             <div className="space-y-4 py-4">
               {/* Payout Amount */}
               <div className="bg-[#D4A853]/10 border border-[#D4A853]/30 rounded-lg p-4 text-center">
-                <p className="text-sm text-[#D4A853] mb-1">Payout Amount</p>
+                <p className="text-sm text-[#D4A853] mb-1">{t("admin.directBonuses.payoutAmount")}</p>
                 <p className="text-3xl font-bold text-[#D4A853]">
                   ${selectedPaymentForPayout.bonus?.amount || 249} USDC
                 </p>
@@ -564,17 +566,17 @@ export default function DirectBonusesPage() {
               {/* Recipient Details */}
               <div className="space-y-3">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Recipient</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t("admin.directBonuses.recipient")}</p>
                   <p className="font-semibold">{selectedPaymentForPayout.referrer?.name}</p>
                   <p className="text-sm text-muted-foreground">{selectedPaymentForPayout.referrer?.email}</p>
                 </div>
 
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Payout Wallet Address</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t("admin.directBonuses.payoutWalletAddress")}</p>
                   <div className="flex items-center gap-2 mt-1">
                     <Wallet className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <code className="text-xs bg-surface-2 px-2 py-1 rounded break-all">
-                      {selectedPaymentForPayout.referrer?.payoutWallet || "No wallet set"}
+                      {selectedPaymentForPayout.referrer?.payoutWallet || t("admin.directBonuses.noWalletSet")}
                     </code>
                   </div>
                   {selectedPaymentForPayout.referrer?.payoutWallet && (
@@ -584,19 +586,19 @@ export default function DirectBonusesPage() {
                       rel="noopener noreferrer"
                       className="text-xs text-blue-400 hover:underline flex items-center gap-1 mt-1"
                     >
-                      View on PolygonScan
+                      {t("admin.directBonuses.viewOnPolygonScan")}
                       <ExternalLink className="h-3 w-3" />
                     </a>
                   )}
                 </div>
 
                 <div className="border-t border-border-subtle pt-3">
-                  <p className="text-sm font-medium text-muted-foreground">Bonus For</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t("admin.directBonuses.bonusFor")}</p>
                   <p className="text-sm">
-                    {selectedPaymentForPayout.payer.name}&apos;s $499 initial payment
+                    {t("admin.directBonuses.initialPaymentNote").replace("{name}", selectedPaymentForPayout.payer.name)}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Paid on {new Date(selectedPaymentForPayout.createdAt).toLocaleDateString()}
+                    {t("admin.directBonuses.paidOn").replace("{date}", new Date(selectedPaymentForPayout.createdAt).toLocaleDateString())}
                   </p>
                 </div>
               </div>
@@ -605,7 +607,7 @@ export default function DirectBonusesPage() {
               <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 flex gap-2">
                 <AlertCircle className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-300">
-                  This will initiate an on-chain USDC transfer from the platform payout wallet to the recipient&apos;s wallet. This action cannot be undone.
+                  {t("admin.directBonuses.payoutWarning")}
                 </p>
               </div>
             </div>
@@ -619,14 +621,14 @@ export default function DirectBonusesPage() {
                 setSelectedPaymentForPayout(null)
               }}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={handleConfirmPayout}
               className="bg-[#D4A853] hover:bg-[#B38A30]"
             >
               <DollarSign className="h-4 w-4 mr-1" />
-              Confirm & Send ${selectedPaymentForPayout?.bonus?.amount || 249} USDC
+              {t("admin.directBonuses.confirmAndSend").replace("{amount}", String(selectedPaymentForPayout?.bonus?.amount || 249))}
             </Button>
           </DialogFooter>
         </DialogContent>

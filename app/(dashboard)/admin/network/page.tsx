@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Network, Search, Shield, ShieldCheck, Users, CheckCircle2, XCircle, AlertTriangle, Crown, Sparkles, Trash2, UserPlus, Loader2, Power, DollarSign, CreditCard, Copy } from "lucide-react"
+import { Network, Search, Shield, ShieldCheck, Users, CheckCircle2, XCircle, AlertTriangle, Crown, Sparkles, Trash2, UserPlus, Loader2, Power, DollarSign, CreditCard, Copy, UserCheck } from "lucide-react"
 import QRCode from "qrcode"
 import { formatCurrency } from "@/lib/utils"
+import { useTranslation } from "@/components/language-provider"
 import {
   Select,
   SelectContent,
@@ -35,6 +36,7 @@ interface NetworkUser {
   is_active: boolean
   initial_payment_completed: boolean
   active_direct_referrals_count: number
+  direct_referrals_count: number
   total_network_count: number
   active_network_count: number
   current_commission_rate: number
@@ -60,6 +62,7 @@ type SortField = "name" | "email" | "created_at" | "total_network_count" | "mont
 type SortDirection = "asc" | "desc"
 
 export default function AdminNetworkPage() {
+  const { t } = useTranslation()
   const [users, setUsers] = useState<NetworkUser[]>([])
   const [filteredUsers, setFilteredUsers] = useState<NetworkUser[]>([])
   const [loading, setLoading] = useState(true)
@@ -71,6 +74,7 @@ export default function AdminNetworkPage() {
   const [sortField, setSortField] = useState<SortField>("created_at")
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
   const [selectedUser, setSelectedUser] = useState<NetworkUser | null>(null)
+  const [showUserDetailDialog, setShowUserDetailDialog] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [userToToggle, setUserToToggle] = useState<{ id: string; name: string; currentRole: "member" | "admin" | "superadmin" } | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
@@ -233,6 +237,7 @@ export default function AdminNetworkPage() {
         is_active,
         initial_payment_completed,
         active_direct_referrals_count,
+        direct_referrals_count,
         total_network_count,
         active_network_count,
         current_commission_rate,
@@ -715,7 +720,7 @@ export default function AdminNetworkPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">Loading...</div>
+        <div className="text-muted-foreground">{t("common.loading")}</div>
       </div>
     )
   }
@@ -723,7 +728,7 @@ export default function AdminNetworkPage() {
   if (!isAdmin) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">Loading...</div>
+        <div className="text-muted-foreground">{t("common.loading")}</div>
       </div>
     )
   }
@@ -733,9 +738,9 @@ export default function AdminNetworkPage() {
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-2">
           <Network className="h-6 w-6 text-primary" />
-          <h1 className="text-3xl font-bold text-foreground">Network View</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t("admin.network.title")}</h1>
         </div>
-        <p className="text-muted-foreground">Complete view of all users in the Trading Hub network</p>
+        <p className="text-muted-foreground">{t("admin.network.description")}</p>
       </div>
 
       {/* Pending Deletion Requests Section - Superadmin Only */}
@@ -746,14 +751,14 @@ export default function AdminNetworkPage() {
               <div>
                 <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-400">
                   <Trash2 className="h-5 w-5" />
-                  Pending Deletion Requests
+                  {t("admin.network.pendingDeletionRequests")}
                 </CardTitle>
                 <CardDescription>
-                  User deletion requests awaiting approval from another superadmin
+                  {t("admin.network.pendingDeletionRequestsDesc")}
                 </CardDescription>
               </div>
               <Badge variant="destructive">
-                {pendingDeletionsCount} pending
+                {pendingDeletionsCount} {t("admin.network.pending")}
               </Badge>
             </div>
           </CardHeader>
@@ -762,10 +767,10 @@ export default function AdminNetworkPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left p-2 text-sm font-semibold">User</th>
-                    <th className="text-left p-2 text-sm font-semibold">Requested By</th>
-                    <th className="text-left p-2 text-sm font-semibold">Requested At</th>
-                    <th className="text-right p-2 text-sm font-semibold">Actions</th>
+                    <th className="text-left p-2 text-sm font-semibold">{t("admin.network.user")}</th>
+                    <th className="text-left p-2 text-sm font-semibold">{t("admin.network.requestedBy")}</th>
+                    <th className="text-left p-2 text-sm font-semibold">{t("admin.network.requestedAt")}</th>
+                    <th className="text-right p-2 text-sm font-semibold">{t("admin.network.actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -778,7 +783,7 @@ export default function AdminNetworkPage() {
                         </div>
                       </td>
                       <td className="p-2 text-sm">
-                        {req.requester?.name || req.requester?.email || "Unknown"}
+                        {req.requester?.name || req.requester?.email || t("common.unknown")}
                       </td>
                       <td className="p-2 text-sm">
                         {new Date(req.requested_at).toLocaleString()}
@@ -794,7 +799,7 @@ export default function AdminNetworkPage() {
                                 disabled={isProcessing}
                               >
                                 <CheckCircle2 className="h-3 w-3 mr-1" />
-                                Approve
+                                {t("admin.network.approve")}
                               </Button>
                               <Button
                                 size="sm"
@@ -803,12 +808,12 @@ export default function AdminNetworkPage() {
                                 disabled={isProcessing}
                               >
                                 <XCircle className="h-3 w-3 mr-1" />
-                                Reject
+                                {t("admin.network.reject")}
                               </Button>
                             </>
                           ) : (
                             <span className="text-xs text-muted-foreground">
-                              Awaiting other superadmin
+                              {t("admin.network.awaitingOtherSuperadmin")}
                             </span>
                           )}
                         </div>
@@ -830,10 +835,10 @@ export default function AdminNetworkPage() {
               <div>
                 <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
                   <AlertTriangle className="h-5 w-5" />
-                  Orphaned Users
+                  {t("admin.network.orphanedUsers")}
                 </CardTitle>
                 <CardDescription>
-                  Users in auth.users but not in public.users (incomplete signups)
+                  {t("admin.network.orphanedUsersDesc")}
                 </CardDescription>
               </div>
               {!loadingOrphaned && (
@@ -851,18 +856,18 @@ export default function AdminNetworkPage() {
             ) : orphanedUsers.length === 0 ? (
               <div className="text-center py-4 text-muted-foreground">
                 <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-[#D4A853]" />
-                <p>No orphaned users found</p>
+                <p>{t("admin.network.noOrphanedUsers")}</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left p-2 text-sm font-semibold">Email</th>
-                      <th className="text-left p-2 text-sm font-semibold">Name</th>
-                      <th className="text-left p-2 text-sm font-semibold">Created</th>
-                      <th className="text-left p-2 text-sm font-semibold">Provider</th>
-                      <th className="text-right p-2 text-sm font-semibold">Actions</th>
+                      <th className="text-left p-2 text-sm font-semibold">{t("admin.network.email")}</th>
+                      <th className="text-left p-2 text-sm font-semibold">{t("admin.network.name")}</th>
+                      <th className="text-left p-2 text-sm font-semibold">{t("admin.network.created")}</th>
+                      <th className="text-left p-2 text-sm font-semibold">{t("admin.network.provider")}</th>
+                      <th className="text-right p-2 text-sm font-semibold">{t("admin.network.actions")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -885,7 +890,7 @@ export default function AdminNetworkPage() {
                               })}
                             >
                               <UserPlus className="h-3 w-3 mr-1" />
-                              Fix
+                              {t("admin.network.fix")}
                             </Button>
                             <Button
                               size="sm"
@@ -915,7 +920,7 @@ export default function AdminNetworkPage() {
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.network.totalUsers")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{users.length}</p>
@@ -923,7 +928,7 @@ export default function AdminNetworkPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Active Users</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.network.activeUsers")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-[#D4A853]">
@@ -933,7 +938,7 @@ export default function AdminNetworkPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Paid Members</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.network.paidMembers")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">
@@ -943,7 +948,7 @@ export default function AdminNetworkPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Admins</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.network.admins")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-primary">
@@ -953,7 +958,7 @@ export default function AdminNetworkPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Superadmins</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.network.superadmins")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-purple-600">
@@ -971,7 +976,7 @@ export default function AdminNetworkPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by name or email..."
+                  placeholder={t("admin.network.searchByNameOrEmail")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9"
@@ -983,10 +988,10 @@ export default function AdminNetworkPage() {
                 <SelectValue placeholder="Filter by role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="member">Members Only</SelectItem>
-                <SelectItem value="admin">Admins Only</SelectItem>
-                <SelectItem value="superadmin">Superadmins Only</SelectItem>
+                <SelectItem value="all">{t("admin.network.allRoles")}</SelectItem>
+                <SelectItem value="member">{t("admin.network.membersOnly")}</SelectItem>
+                <SelectItem value="admin">{t("admin.network.adminsOnly")}</SelectItem>
+                <SelectItem value="superadmin">{t("admin.network.superadminsOnly")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={(value: "all" | "active" | "inactive") => setStatusFilter(value)}>
@@ -994,9 +999,9 @@ export default function AdminNetworkPage() {
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active Only</SelectItem>
-                <SelectItem value="inactive">Inactive Only</SelectItem>
+                <SelectItem value="all">{t("admin.network.allStatus")}</SelectItem>
+                <SelectItem value="active">{t("admin.network.activeOnly")}</SelectItem>
+                <SelectItem value="inactive">{t("admin.network.inactiveOnly")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -1006,12 +1011,12 @@ export default function AdminNetworkPage() {
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="created_at">Join Date</SelectItem>
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="email">Email</SelectItem>
-                <SelectItem value="total_network_count">Team Size</SelectItem>
-                <SelectItem value="monthly_commission">Commission</SelectItem>
-                <SelectItem value="active_direct_referrals_count">Direct Referrals</SelectItem>
+                <SelectItem value="created_at">{t("admin.network.joinDate")}</SelectItem>
+                <SelectItem value="name">{t("admin.network.name")}</SelectItem>
+                <SelectItem value="email">{t("admin.network.email")}</SelectItem>
+                <SelectItem value="total_network_count">{t("admin.network.teamSize")}</SelectItem>
+                <SelectItem value="monthly_commission">{t("admin.network.commission")}</SelectItem>
+                <SelectItem value="active_direct_referrals_count">{t("admin.network.directReferrals")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={sortDirection} onValueChange={(value: SortDirection) => setSortDirection(value)}>
@@ -1019,8 +1024,8 @@ export default function AdminNetworkPage() {
                 <SelectValue placeholder="Direction" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="asc">Ascending</SelectItem>
-                <SelectItem value="desc">Descending</SelectItem>
+                <SelectItem value="asc">{t("admin.network.ascending")}</SelectItem>
+                <SelectItem value="desc">{t("admin.network.descending")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -1030,21 +1035,21 @@ export default function AdminNetworkPage() {
       {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>All Users ({filteredUsers.length})</CardTitle>
-          <CardDescription>Click on a user to view details and manage admin privileges</CardDescription>
+          <CardTitle>{t("admin.network.allUsers").replace("{count}", String(filteredUsers.length))}</CardTitle>
+          <CardDescription>{t("admin.network.clickToViewDetails")}</CardDescription>
         </CardHeader>
         <CardContent>
           {filteredUsers.length === 0 ? (
             <div className="text-center py-8">
               <Users className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-              <p className="text-muted-foreground">No users match your filters</p>
+              <p className="text-muted-foreground">{t("admin.network.noUsersMatch")}</p>
             </div>
           ) : (
             <div className="space-y-2">
               {filteredUsers.map((user) => (
                 <div
                   key={user.id}
-                  onClick={() => setSelectedUser(selectedUser?.id === user.id ? null : user)}
+                  onClick={() => { setSelectedUser(user); setShowUserDetailDialog(true) }}
                   className="p-4 border border-border-subtle rounded-lg hover:bg-surface-2 transition-colors cursor-pointer"
                 >
                   <div className="flex items-start justify-between">
@@ -1068,62 +1073,62 @@ export default function AdminNetworkPage() {
                             {user.bypass_direct_referrals && (
                               <Badge className="bg-blue-600 text-white">
                                 <Users className="h-3 w-3 mr-1" />
-                                Bypass Referrals
+                                {t("admin.network.bypassReferrals")}
                               </Badge>
                             )}
                             {user.bypass_subscription && (
                               <Badge className="bg-[#D4A853] text-white">
                                 <CheckCircle2 className="h-3 w-3 mr-1" />
-                                Bypass Subscription
+                                {t("admin.network.bypassSubscription")}
                               </Badge>
                             )}
                             {user.bypass_initial_payment && (
                               <Badge className="bg-purple-600 text-white">
                                 <Crown className="h-3 w-3 mr-1" />
-                                Bypass Initial Payment
+                                {t("admin.network.bypassInitialPayment")}
                               </Badge>
                             )}
                           </>
                         )}
                         {user.is_active ? (
-                          <Badge className="bg-[#D4A853] text-white">
+                          <Badge variant="success">
                             <CheckCircle2 className="h-3 w-3 mr-1" />
-                            Active
+                            {t("admin.network.active")}
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="text-muted-foreground">
                             <XCircle className="h-3 w-3 mr-1" />
-                            Inactive
+                            {t("admin.network.inactive")}
                           </Badge>
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground mb-2">{user.email}</p>
                       <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-sm">
                         <div>
-                          <p className="text-muted-foreground">Direct Referrals</p>
-                          <p className="font-medium">{user.active_direct_referrals_count}</p>
+                          <p className="text-muted-foreground">{t("admin.network.directReferrals")}</p>
+                          <p className="font-medium">{user.active_direct_referrals_count}/{user.direct_referrals_count}</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Total Team</p>
+                          <p className="text-muted-foreground">{t("admin.network.totalTeam")}</p>
                           <p className="font-medium">{user.total_network_count}</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Active Team</p>
+                          <p className="text-muted-foreground">{t("admin.network.activeTeam")}</p>
                           <p className="font-medium">{user.active_network_count}</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Commission Rate</p>
+                          <p className="text-muted-foreground">{t("admin.network.commissionRate")}</p>
                           <p className="font-medium">{(user.current_commission_rate * 100).toFixed(0)}%</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Monthly Earnings</p>
+                          <p className="text-muted-foreground">{t("admin.network.monthlyEarnings")}</p>
                           <p className="font-medium text-primary">{formatCurrency(user.monthly_commission)}</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Referred By</p>
+                          <p className="text-muted-foreground">{t("admin.network.referredBy")}</p>
                           <p className="font-medium truncate">
                             {user.referrer && user.referrer.length > 0 ? (
-                              user.referrer[0].name || "Unknown"
+                              user.referrer[0].name || t("common.unknown")
                             ) : (
                               <span className="text-muted-foreground">—</span>
                             )}
@@ -1133,157 +1138,212 @@ export default function AdminNetworkPage() {
                     </div>
                   </div>
 
-                  {/* Expanded Details */}
-                  {selectedUser?.id === user.id && (
-                    <div className="mt-4 pt-4 border-t space-y-3">
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <p className="text-muted-foreground">User ID</p>
-                          <p className="font-mono text-xs">{user.id}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Referral Code</p>
-                          <p className="font-mono text-sm font-medium">{user.referral_code || "N/A"}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Joined</p>
-                          <p className="font-medium">
-                            {new Date(user.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Payment Schedule</p>
-                          <p className="font-medium capitalize">{user.payment_schedule}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Initial Payment</p>
-                          <p className={`font-medium ${user.initial_payment_completed ? 'text-[#D4A853]' : 'text-yellow-600'}`}>
-                            {user.initial_payment_completed ? "Completed" : "Pending"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Referred By</p>
-                          <p className="font-medium">
-                            {user.referrer && user.referrer.length > 0 ? (
-                              <>
-                                {user.referrer[0].name || "Unknown"}
-                                {user.referrer[0].network_position_id && (
-                                  <span className="text-xs text-muted-foreground ml-1">
-                                    (Pos: {user.referrer[0].network_position_id})
-                                  </span>
-                                )}
-                              </>
-                            ) : (
-                              <span className="text-muted-foreground">No Referrer</span>
-                            )}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Last Payment</p>
-                          <p className="font-medium">
-                            {user.last_payment_date
-                              ? new Date(user.last_payment_date).toLocaleDateString()
-                              : "Never"}
-                          </p>
-                        </div>
-                      </div>
-                      {isSuperAdmin && (
-                        <div className="flex flex-wrap gap-2 mt-4">
-                          {/* Toggle Active Status - Only show if initial payment completed */}
-                          {user.initial_payment_completed && (
-                            <Button
-                              size="sm"
-                              variant={user.is_active ? "outline" : "default"}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleToggleActive(user)
-                              }}
-                              disabled={isProcessing}
-                            >
-                              <Power className="h-3 w-3 mr-2" />
-                              {user.is_active ? "Deactivate" : "Activate"}
-                            </Button>
-                          )}
-
-                          {/* Grant Admin */}
-                          <Button
-                            size="sm"
-                            variant={user.role === "admin" ? "destructive" : "default"}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              openConfirmDialog(user.id, user.name || user.email, user.role)
-                            }}
-                          >
-                            <Shield className="h-3 w-3 mr-2" />
-                            {user.role === "admin" ? "Revoke Admin" : "Grant Admin"}
-                          </Button>
-
-                          {/* Grant Bypass */}
-                          <Button
-                            size="sm"
-                            variant="default"
-                            className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              openBypassDialog(user)
-                            }}
-                          >
-                            <Sparkles className="h-3 w-3 mr-2" />
-                            Grant Bypass
-                          </Button>
-
-                          {/* Manual Payout - Only show if user has payout wallet */}
-                          {user.payout_wallet_address && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                openManualPayoutDialog(user)
-                              }}
-                            >
-                              <DollarSign className="h-3 w-3 mr-2" />
-                              Manual Payout
-                            </Button>
-                          )}
-
-                          {/* Make Payment */}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              openPaymentDialog(user)
-                            }}
-                          >
-                            <CreditCard className="h-3 w-3 mr-2" />
-                            Make Payment
-                          </Button>
-
-                          {/* Request Deletion */}
-                          {user.role !== "superadmin" && (
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                openDeletionRequestDialog(user)
-                              }}
-                            >
-                              <Trash2 className="h-3 w-3 mr-2" />
-                              Delete Account
-                            </Button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* User Detail Dialog */}
+      <Dialog open={showUserDetailDialog} onOpenChange={setShowUserDetailDialog}>
+        <DialogContent className="max-w-lg">
+          {selectedUser && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <UserCheck className="h-5 w-5" />
+                  {t("admin.network.userDetails").replace("{name}", selectedUser.name || t("common.noName"))}
+                </DialogTitle>
+                <DialogDescription>{t("admin.network.viewStatsAndManage")}</DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-5">
+                {/* User Info */}
+                <div className="rounded-lg border p-4 space-y-2 text-sm">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {selectedUser.is_active ? (
+                      <Badge variant="success">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        {t("admin.network.active")}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-muted-foreground">
+                        <XCircle className="h-3 w-3 mr-1" />
+                        {t("admin.network.inactive")}
+                      </Badge>
+                    )}
+                    {selectedUser.role === "superadmin" && (
+                      <Badge className="bg-purple-600 text-white">
+                        <ShieldCheck className="h-3 w-3 mr-1" />
+                        Superadmin
+                      </Badge>
+                    )}
+                    {selectedUser.role === "admin" && (
+                      <Badge className="bg-primary text-white">
+                        <ShieldCheck className="h-3 w-3 mr-1" />
+                        Admin
+                      </Badge>
+                    )}
+                    {selectedUser.role === "member" && (
+                      <Badge variant="outline">Member</Badge>
+                    )}
+                  </div>
+                  <p className="text-muted-foreground">{selectedUser.email}</p>
+                  <p className="text-muted-foreground">Joined {new Date(selectedUser.created_at).toLocaleDateString()}</p>
+                </div>
+
+                {/* Referral Statistics */}
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">{t("admin.network.referralStatistics")}</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-lg border p-3 text-center">
+                      <p className="text-xs text-muted-foreground">{t("admin.network.totalDirectReferrals")}</p>
+                      <p className="text-2xl font-bold">{selectedUser.direct_referrals_count}</p>
+                    </div>
+                    <div className="rounded-lg border p-3 text-center">
+                      <p className="text-xs text-muted-foreground">{t("admin.network.activeDirectReferrals")}</p>
+                      <p className="text-2xl font-bold text-primary">{selectedUser.active_direct_referrals_count}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Network Stats */}
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">{t("admin.network.networkStats")}</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-lg border p-3 text-center">
+                      <p className="text-xs text-muted-foreground">{t("admin.network.totalTeam")}</p>
+                      <p className="text-2xl font-bold">{selectedUser.total_network_count}</p>
+                    </div>
+                    <div className="rounded-lg border p-3 text-center">
+                      <p className="text-xs text-muted-foreground">{t("admin.network.activeTeam")}</p>
+                      <p className="text-2xl font-bold text-primary">{selectedUser.active_network_count}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Info */}
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">{t("admin.network.additionalInfo")}</h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">{t("admin.network.referralCode")}</p>
+                      <p className="font-mono font-medium">{selectedUser.referral_code || "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">{t("admin.network.referredBy")}</p>
+                      <p className="font-medium">
+                        {selectedUser.referrer && selectedUser.referrer.length > 0 ? (
+                          <>
+                            {selectedUser.referrer[0].name || t("common.unknown")}
+                            {selectedUser.referrer[0].network_position_id && (
+                              <span className="text-xs text-muted-foreground ml-1">
+                                (Pos: {selectedUser.referrer[0].network_position_id})
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-muted-foreground">{t("admin.network.noReferrer")}</span>
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">{t("admin.network.commissionRate")}</p>
+                      <p className="font-medium">{(selectedUser.current_commission_rate * 100).toFixed(0)}%</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">{t("admin.network.paymentSchedule")}</p>
+                      <p className="font-medium capitalize">{selectedUser.payment_schedule}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">{t("admin.network.initialPayment")}</p>
+                      <p className={`font-medium ${selectedUser.initial_payment_completed ? 'text-[#D4A853]' : 'text-yellow-600'}`}>
+                        {selectedUser.initial_payment_completed ? t("admin.network.completed") : t("admin.payouts.pending")}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">{t("admin.network.lastPayment")}</p>
+                      <p className="font-medium">
+                        {selectedUser.last_payment_date
+                          ? new Date(selectedUser.last_payment_date).toLocaleDateString()
+                          : t("admin.financials.never")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Admin Actions */}
+                {isSuperAdmin && (
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2">{t("admin.network.adminActions")}</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedUser.initial_payment_completed && (
+                        <Button
+                          size="sm"
+                          variant={selectedUser.is_active ? "outline" : "default"}
+                          onClick={() => handleToggleActive(selectedUser)}
+                          disabled={isProcessing}
+                        >
+                          <Power className="h-3 w-3 mr-2" />
+                          {selectedUser.is_active ? t("admin.network.deactivate") : t("admin.network.activate")}
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant={selectedUser.role === "admin" ? "destructive" : "default"}
+                        onClick={() => {
+                          openConfirmDialog(selectedUser.id, selectedUser.name || selectedUser.email, selectedUser.role)
+                        }}
+                      >
+                        <Shield className="h-3 w-3 mr-2" />
+                        {selectedUser.role === "admin" ? t("admin.network.revokeAdmin") : t("admin.network.grantAdmin")}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="default"
+                        className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+                        onClick={() => openBypassDialog(selectedUser)}
+                      >
+                        <Sparkles className="h-3 w-3 mr-2" />
+                        {t("admin.network.grantBypass")}
+                      </Button>
+                      {selectedUser.payout_wallet_address && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openManualPayoutDialog(selectedUser)}
+                        >
+                          <DollarSign className="h-3 w-3 mr-2" />
+                          {t("admin.network.manualPayout")}
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openPaymentDialog(selectedUser)}
+                      >
+                        <CreditCard className="h-3 w-3 mr-2" />
+                        {t("admin.network.makePayment")}
+                      </Button>
+                      {selectedUser.role !== "superadmin" && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => openDeletionRequestDialog(selectedUser)}
+                        >
+                          <Trash2 className="h-3 w-3 mr-2" />
+                          {t("admin.network.deleteAccount")}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Confirmation Dialog */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
@@ -1293,12 +1353,12 @@ export default function AdminNetworkPage() {
               {userToToggle?.currentRole === "admin" ? (
                 <>
                   <AlertTriangle className="h-5 w-5 text-destructive" />
-                  Revoke Admin Privileges
+                  {t("admin.network.revokeAdminPrivileges")}
                 </>
               ) : (
                 <>
                   <ShieldCheck className="h-5 w-5 text-primary" />
-                  Grant Admin Privileges
+                  {t("admin.network.grantAdminPrivileges")}
                 </>
               )}
             </DialogTitle>
@@ -1324,7 +1384,7 @@ export default function AdminNetworkPage() {
               onClick={() => setShowConfirmDialog(false)}
               disabled={isUpdating}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               variant={userToToggle?.currentRole === "admin" ? "destructive" : "default"}
@@ -1332,11 +1392,11 @@ export default function AdminNetworkPage() {
               disabled={isUpdating}
             >
               {isUpdating ? (
-                "Updating..."
+                t("admin.network.updating")
               ) : userToToggle?.currentRole === "admin" ? (
-                "Revoke Admin"
+                t("admin.network.revokeAdmin")
               ) : (
-                "Grant Admin"
+                t("admin.network.grantAdmin")
               )}
             </Button>
           </DialogFooter>
@@ -1349,18 +1409,16 @@ export default function AdminNetworkPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-purple-600" />
-              Grant Bypass Access
+              {t("admin.network.grantBypassAccess")}
             </DialogTitle>
             <DialogDescription>
-              Configure bypass settings for{" "}
-              <span className="font-semibold text-foreground">{userForBypass?.name}</span>.
-              Select which requirements to bypass.
+              {t("admin.network.grantBypassDesc").replace("{name}", userForBypass?.name || "")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="bypass-referrals-count" className="text-sm font-medium">
-                Direct Referrals Bypass Count (0-18)
+                {t("admin.network.directReferralsBypassCount")}
               </Label>
               <Input
                 id="bypass-referrals-count"
@@ -1375,7 +1433,7 @@ export default function AdminNetworkPage() {
                 }}
               />
               <p className="text-xs text-muted-foreground">
-                Set to 0 to disable bypass. User is treated as having <strong>whichever is greater</strong>: their actual active direct referral count or this number. (Qualification requires 3 referrals)
+                {t("admin.network.directReferralsBypassDesc")}
               </p>
             </div>
 
@@ -1392,10 +1450,10 @@ export default function AdminNetworkPage() {
                   htmlFor="bypass-subscription"
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                 >
-                  Bypass Subscription Requirement
+                  {t("admin.network.bypassSubscriptionRequirement")}
                 </label>
                 <p className="text-sm text-muted-foreground">
-                  User maintains active status without monthly subscription payments. <strong>Uncheck to remove bypass</strong> (user status will be updated by cron if they lack an active subscription).
+                  {t("admin.network.bypassSubscriptionDesc")}
                 </p>
               </div>
             </div>
@@ -1414,20 +1472,20 @@ export default function AdminNetworkPage() {
                   htmlFor="bypass-initial"
                   className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${(userForBypass?.currentBypasses.initialPayment || userForBypass?.initialPaymentCompleted) ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                 >
-                  Bypass Initial Payment Requirement
+                  {t("admin.network.bypassInitialPaymentRequirement")}
                   {userForBypass?.currentBypasses.initialPayment && (
-                    <span className="text-purple-600 ml-2">(Already bypassed)</span>
+                    <span className="text-purple-600 ml-2">({t("admin.network.alreadyBypassed")})</span>
                   )}
                   {userForBypass?.initialPaymentCompleted && !userForBypass?.currentBypasses.initialPayment && (
-                    <span className="text-[#D4A853] ml-2">(Already paid)</span>
+                    <span className="text-[#D4A853] ml-2">({t("admin.network.alreadyPaid")})</span>
                   )}
                 </label>
                 <p className="text-sm text-muted-foreground">
                   {userForBypass?.initialPaymentCompleted
-                    ? "User has already completed their initial payment"
+                    ? t("admin.network.alreadyCompletedPayment")
                     : userForBypass?.currentBypasses.initialPayment
-                    ? "This bypass is permanent once granted and cannot be revoked"
-                    : "User gets platform access without the $499 initial payment"}
+                    ? t("admin.network.permanentBypass")
+                    : t("admin.network.bypassInitialPaymentDesc")}
                 </p>
               </div>
             </div>
@@ -1438,7 +1496,7 @@ export default function AdminNetworkPage() {
               onClick={() => setShowBypassDialog(false)}
               disabled={isUpdating}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               variant="default"
@@ -1446,7 +1504,7 @@ export default function AdminNetworkPage() {
               onClick={confirmUpdateBypass}
               disabled={isUpdating}
             >
-              {isUpdating ? "Updating..." : "Save Changes"}
+              {isUpdating ? t("admin.network.updating") : t("admin.network.saveChanges")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1456,9 +1514,9 @@ export default function AdminNetworkPage() {
       <Dialog open={showFixDialog} onOpenChange={setShowFixDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Fix Orphaned User</DialogTitle>
+            <DialogTitle>{t("admin.network.fixOrphanedUser")}</DialogTitle>
             <DialogDescription>
-              This will create a public.users record for this user, completing their signup process.
+              {t("admin.network.fixOrphanedUserDesc")}
             </DialogDescription>
           </DialogHeader>
           {orphanedUserToFix && (
@@ -1491,12 +1549,12 @@ export default function AdminNetworkPage() {
               {isProcessing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Fixing...
+                  {t("admin.network.fixing")}
                 </>
               ) : (
                 <>
                   <UserPlus className="h-4 w-4 mr-2" />
-                  Fix User
+                  {t("admin.network.fixUser")}
                 </>
               )}
             </Button>
@@ -1510,10 +1568,10 @@ export default function AdminNetworkPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <AlertTriangle className="h-5 w-5" />
-              Delete User from Auth
+              {t("admin.network.deleteUserFromAuth")}
             </DialogTitle>
             <DialogDescription>
-              This will permanently delete this user from the auth.users table. This action cannot be undone.
+              {t("admin.network.deleteUserFromAuthDesc")}
             </DialogDescription>
           </DialogHeader>
           {orphanedUserToDelete && (
@@ -1523,7 +1581,7 @@ export default function AdminNetworkPage() {
                 <p className="text-sm"><strong>Name:</strong> {orphanedUserToDelete.name || "Not set"}</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email-confirm">Type the email to confirm deletion:</Label>
+                <Label htmlFor="email-confirm">{t("admin.network.typeEmailToConfirm")}</Label>
                 <Input
                   id="email-confirm"
                   type="text"
@@ -1546,12 +1604,12 @@ export default function AdminNetworkPage() {
               {isProcessing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Deleting...
+                  {t("admin.network.deleting")}
                 </>
               ) : (
                 <>
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Permanently
+                  {t("admin.network.deletePermanently")}
                 </>
               )}
             </Button>
@@ -1565,15 +1623,15 @@ export default function AdminNetworkPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-[#D4A853]" />
-              Manual Payout
+              {t("admin.network.manualPayoutTitle")}
             </DialogTitle>
             <DialogDescription>
-              Send USDC to {userForPayout?.name || userForPayout?.email}
+              {t("admin.network.manualPayoutDesc").replace("{name}", userForPayout?.name || userForPayout?.email || "")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="payout-amount">Amount (USDC)</Label>
+              <Label htmlFor="payout-amount">{t("admin.network.amountUsdc")}</Label>
               <Input
                 id="payout-amount"
                 type="number"
@@ -1584,7 +1642,7 @@ export default function AdminNetworkPage() {
                 onChange={(e) => setPayoutAmount(e.target.value)}
                 placeholder="0.00"
               />
-              <p className="text-xs text-muted-foreground">Max 2,000 USDC</p>
+              <p className="text-xs text-muted-foreground">{t("admin.network.maxUsdc")}</p>
             </div>
           </div>
           <DialogFooter>
@@ -1599,10 +1657,10 @@ export default function AdminNetworkPage() {
               {isProcessing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Sending...
+                  {t("admin.network.sending")}
                 </>
               ) : (
-                "Send"
+                t("admin.network.send")
               )}
             </Button>
           </DialogFooter>
@@ -1615,10 +1673,10 @@ export default function AdminNetworkPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <Trash2 className="h-5 w-5" />
-              Request Account Deletion
+              {t("admin.network.requestAccountDeletion")}
             </DialogTitle>
             <DialogDescription>
-              This will request deletion of the account. Another superadmin must approve for the deletion to proceed.
+              {t("admin.network.requestAccountDeletionDesc")}
             </DialogDescription>
           </DialogHeader>
           {userForDeletion && (
@@ -1655,12 +1713,12 @@ export default function AdminNetworkPage() {
               {isProcessing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Requesting...
+                  {t("admin.network.requesting")}
                 </>
               ) : (
                 <>
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Request Deletion
+                  {t("admin.network.requestDeletion")}
                 </>
               )}
             </Button>
@@ -1674,7 +1732,7 @@ export default function AdminNetworkPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-primary" />
-              Make Payment for User
+              {t("admin.network.makePaymentForUser")}
             </DialogTitle>
             <DialogDescription>
               Make a payment on behalf of{" "}
@@ -1684,7 +1742,7 @@ export default function AdminNetworkPage() {
           <div className="space-y-4 py-4">
             {/* Payment Type Selector */}
             <div className="space-y-2">
-              <Label>Payment Type</Label>
+              <Label>{t("admin.network.paymentType")}</Label>
               <Select
                 value={paymentType}
                 onValueChange={(value: "weekly" | "monthly" | "initial") => handlePaymentTypeChange(value)}
@@ -1709,7 +1767,7 @@ export default function AdminNetworkPage() {
 
             {/* Expected Amount */}
             <div className="p-3 bg-surface-2 rounded-lg text-center">
-              <p className="text-sm text-muted-foreground">Amount Due</p>
+              <p className="text-sm text-muted-foreground">{t("admin.network.amountDue")}</p>
               <p className="text-2xl font-bold text-primary">${expectedPaymentAmount.toFixed(2)}</p>
             </div>
 
@@ -1727,7 +1785,7 @@ export default function AdminNetworkPage() {
                 )}
                 <div className="text-center w-full">
                   <p className="text-sm text-muted-foreground mb-2">
-                    Send USDC (Polygon) to this address:
+                    {t("admin.network.sendUsdcPolygon")}
                   </p>
                   <div className="flex items-center gap-2 p-3 bg-surface-2 rounded-lg">
                     <code className="text-xs font-mono break-all flex-1">
@@ -1748,12 +1806,12 @@ export default function AdminNetworkPage() {
                   </div>
                 </div>
                 <div className="text-xs text-muted-foreground text-center">
-                  <p>Payment will be automatically detected via webhook</p>
+                  <p>{t("admin.network.paymentAutoDetected")}</p>
                 </div>
               </div>
             ) : (
               <div className="text-center py-4 text-muted-foreground">
-                Failed to load payment address
+                {t("admin.network.failedToLoadPaymentAddress")}
               </div>
             )}
           </div>
