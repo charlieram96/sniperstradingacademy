@@ -576,7 +576,7 @@ function RegisterForm() {
                           const { error } = await supabase.auth.signInWithOAuth({
                             provider: 'google',
                             options: {
-                              redirectTo: `${redirectUrl}/auth/callback?next=/complete-signup`,
+                              redirectTo: `${redirectUrl}/auth/callback?next=/complete-signup&ref=${encodeURIComponent(referrerInfo.referralCode)}`,
                             },
                           })
 

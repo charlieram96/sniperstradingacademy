@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
   const mode = requestUrl.searchParams.get("mode") // 'login' or null (signup)
   const next = requestUrl.searchParams.get("next") || "/dashboard"
   const type = requestUrl.searchParams.get("type") // 'recovery' for password reset
+  const ref = requestUrl.searchParams.get("ref") // referral code from OAuth signup
 
   if (code) {
     const supabase = await createClient()
@@ -59,7 +60,8 @@ export async function GET(request: NextRequest) {
 
         // If signup flow but userData not ready, redirect to complete-signup
         console.log("New OAuth user detected (no user data yet), redirecting to complete-signup")
-        return NextResponse.redirect(`${requestUrl.origin}/complete-signup`)
+        const completeUrl1 = ref ? `/complete-signup?ref=${encodeURIComponent(ref)}` : '/complete-signup'
+        return NextResponse.redirect(`${requestUrl.origin}${completeUrl1}`)
       }
 
       // Root user ID - used as default by database trigger when no referrer specified
@@ -89,7 +91,8 @@ export async function GET(request: NextRequest) {
         } else {
           console.log("New OAuth user detected, redirecting to complete-signup")
         }
-        return NextResponse.redirect(`${requestUrl.origin}/complete-signup`)
+        const completeUrl2 = ref ? `/complete-signup?ref=${encodeURIComponent(ref)}` : '/complete-signup'
+        return NextResponse.redirect(`${requestUrl.origin}${completeUrl2}`)
       }
 
       // For email verification (user already has referral/position), go to dashboard

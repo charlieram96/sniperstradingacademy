@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -19,6 +19,7 @@ interface ReferrerInfo {
 
 export default function CompleteSignupPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { t } = useTranslation()
   const [isProcessing, setIsProcessing] = useState(true)
   const [error, setError] = useState("")
@@ -78,16 +79,46 @@ export default function CompleteSignupPage() {
 
         // Get pending referral from localStorage
         const pendingReferralStr = localStorage.getItem('pending_referral')
+        let referrerInfo: ReferrerInfo | null = null
 
-        // If no pending referral in localStorage, redirect back to register to select one
-        if (!pendingReferralStr) {
+        if (pendingReferralStr) {
+          referrerInfo = JSON.parse(pendingReferralStr)
+        } else {
+          // Fallback: validate referral code from URL param (in case localStorage was lost during OAuth redirect)
+          const refCode = searchParams.get('ref')
+          if (refCode) {
+            console.log("⚠️ localStorage empty, falling back to URL ref param:", refCode)
+            try {
+              const validateRes = await fetch(`/api/referral/validate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ referralCode: refCode }),
+              })
+              if (validateRes.ok) {
+                const validateData = await validateRes.json()
+                if (validateData.valid && validateData.user) {
+                  referrerInfo = {
+                    id: validateData.user.id,
+                    name: validateData.user.name,
+                    email: validateData.user.email,
+                    referralCode: refCode,
+                  }
+                  console.log("✅ Recovered referral from URL param:", referrerInfo.name)
+                }
+              }
+            } catch (e) {
+              console.error("Failed to validate ref code from URL:", e)
+            }
+          }
+        }
+
+        // If no pending referral from either source, redirect back to register to select one
+        if (!referrerInfo) {
           setError(t("auth.completeSignup.selectReferralCode"))
           setIsProcessing(false)
           setTimeout(() => router.push("/register"), 2000)
           return
         }
-
-        const referrerInfo: ReferrerInfo = JSON.parse(pendingReferralStr)
 
         // Check if this is a bypass code (principal user)
         const isBypassCode = !referrerInfo.id || referrerInfo.id === ""
@@ -168,7 +199,7 @@ export default function CompleteSignupPage() {
     }
 
     completeSignup()
-  }, [router])
+  }, [router, searchParams])
 
   return (
     <div className="min-h-screen flex">

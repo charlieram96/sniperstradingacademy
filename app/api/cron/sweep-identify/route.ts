@@ -23,7 +23,7 @@ const MIN_SWEEP_AMOUNT = 1;
 // Minimum POL needed for gas
 const MIN_POL_FOR_GAS = 0.08;
 // Max users to process per run
-const BATCH_SIZE = 50;
+const BATCH_SIZE = 100;
 
 export async function GET(req: NextRequest) {
   const startTime = Date.now();
@@ -42,11 +42,15 @@ export async function GET(req: NextRequest) {
     const supabase = createServiceRoleClient();
 
     // Find users with deposit addresses that are idle or failed (retry)
+    // Order by sweep_completed_at ASC NULLS FIRST so users who have never been swept
+    // (or were swept longest ago) get checked first. This ensures all users rotate
+    // through the batch window instead of the same 50 being checked every run.
     const { data: users, error } = await supabase
       .from('users')
       .select('id, email, crypto_deposit_address')
       .not('crypto_deposit_address', 'is', null)
       .in('sweep_status', ['idle', 'failed'])
+      .order('sweep_completed_at', { ascending: true, nullsFirst: true })
       .limit(BATCH_SIZE);
 
     if (error) {
@@ -78,8 +82,13 @@ export async function GET(req: NextRequest) {
           const usdcResult = await polygonUSDCClient.getBalance(user.crypto_deposit_address);
           const usdcBalance = usdcResult.success ? parseFloat(usdcResult.data?.balance || '0') : 0;
 
-          // Skip if below minimum
+          // Skip if below minimum — but update sweep_completed_at so this user
+          // rotates to the back of the queue and other users get checked next run
           if (usdcBalance < MIN_SWEEP_AMOUNT) {
+            await supabase
+              .from('users')
+              .update({ sweep_completed_at: new Date().toISOString() })
+              .eq('id', user.id);
             return { userId: user.id, action: 'skip', usdcBalance };
           }
 
