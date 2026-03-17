@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
         name,
         email,
         crypto_deposit_address,
-        crypto_address_index,
+        crypto_derivation_index,
         initial_payment_completed,
         payment_schedule,
         previous_payment_due_date,
@@ -66,7 +66,12 @@ export async function POST(req: NextRequest) {
       .eq('id', userId)
       .single();
 
-    if (userError || !targetUser) {
+    if (userError) {
+      console.error('[PaymentAddressAPI] Query error:', userError);
+      return NextResponse.json({ error: 'Failed to fetch user', details: userError.message }, { status: 500 });
+    }
+
+    if (!targetUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
