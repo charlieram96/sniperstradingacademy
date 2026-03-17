@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,6 +18,18 @@ interface ReferrerInfo {
 }
 
 export default function CompleteSignupPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+      </div>
+    }>
+      <CompleteSignupContent />
+    </Suspense>
+  )
+}
+
+function CompleteSignupContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { t } = useTranslation()
