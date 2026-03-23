@@ -108,7 +108,7 @@ export function StructureDropdown({
               </div>
             </DialogHeader>
 
-            <div className="flex-1 p-6 overflow-hidden">
+            <div className="flex-1 p-6 overflow-hidden min-h-0">
               {/* Search and Filters */}
               <div className="flex gap-2 mb-4">
                 <div className="relative flex-1">

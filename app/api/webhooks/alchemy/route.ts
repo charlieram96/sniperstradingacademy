@@ -561,8 +561,8 @@ async function processSubscriptionPayment(
 
   if (currentNextDueDate <= now) {
     // User is overdue/inactive — one payment brings them current, anchor from NOW
-    newPreviousDueDate = now;
-    newNextDueDate = new Date(now.getTime() + (isWeekly ? 7 : 30) * 24 * 60 * 60 * 1000);
+    newPreviousDueDate = getInitialAnchorDate(now);
+    newNextDueDate = calculateNextDueDate(isWeekly, newPreviousDueDate);
   } else {
     // Normal on-time payment — roll forward from current dates
     newPreviousDueDate = currentNextDueDate;
@@ -574,17 +574,26 @@ async function processSubscriptionPayment(
   const wasInactive = !userBefore?.is_active
 
   // Update user status (only reached if no duplicate payment found)
-  await supabase
+  const updateData: Record<string, unknown> = {
+    is_active: true,
+    paid_for_period: true,
+    last_payment_date: now.toISOString(),
+    payment_schedule: isMonthly ? 'monthly' : 'weekly',
+    previous_payment_due_date: newPreviousDueDate.toISOString(),
+    next_payment_due_date: newNextDueDate.toISOString(),
+  };
+  // Clear inactive_since when reactivating
+  if (wasInactive) {
+    updateData.inactive_since = null;
+  }
+  const { error: userUpdateError } = await supabase
     .from('users')
-    .update({
-      is_active: true,
-      paid_for_period: true,
-      last_payment_date: now.toISOString(),
-      payment_schedule: isMonthly ? 'monthly' : 'weekly',
-      previous_payment_due_date: newPreviousDueDate.toISOString(),
-      next_payment_due_date: newNextDueDate.toISOString(),
-    })
+    .update(updateData)
     .eq('id', userId);
+
+  if (userUpdateError) {
+    console.error(`[AlchemyWebhook] CRITICAL: Failed to update user ${userId} after payment:`, userUpdateError);
+  }
 
   // Send payment succeeded notification
   try {
