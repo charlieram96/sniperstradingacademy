@@ -113,6 +113,14 @@ export async function POST(req: NextRequest) {
       amountUSDC = selectedSchedule === 'weekly'
         ? PAYMENT_AMOUNTS.WEEKLY_SUBSCRIPTION
         : PAYMENT_AMOUNTS.MONTHLY_SUBSCRIPTION;
+
+      // Save selected schedule so the cron/webhook knows what amount to expect
+      if (requestedSchedule && requestedSchedule !== userData.payment_schedule) {
+        await serviceSupabase
+          .from('users')
+          .update({ payment_schedule: requestedSchedule })
+          .eq('id', user.id);
+      }
     }
 
     // Get or create permanent deposit address
