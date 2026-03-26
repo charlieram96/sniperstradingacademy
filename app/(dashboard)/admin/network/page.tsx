@@ -126,6 +126,9 @@ export default function AdminNetworkPage() {
 
   const [showDeletionRequestDialog, setShowDeletionRequestDialog] = useState(false)
   const [userForDeletion, setUserForDeletion] = useState<NetworkUser | null>(null)
+  const [showReactivateDialog, setShowReactivateDialog] = useState(false)
+  const [userForReactivation, setUserForReactivation] = useState<NetworkUser | null>(null)
+  const [reactivateNextDueDate, setReactivateNextDueDate] = useState("")
 
   const [pendingDeletions, setPendingDeletions] = useState<Array<{
     id: string
@@ -480,6 +483,18 @@ export default function AdminNetworkPage() {
 
   // Toggle user active/inactive
   async function handleToggleActive(user: NetworkUser) {
+    // When activating an inactive user, show dialog to set next payment due date
+    if (!user.is_active) {
+      setUserForReactivation(user)
+      // Default to 1 month from today
+      const defaultDate = new Date()
+      defaultDate.setMonth(defaultDate.getMonth() + 1)
+      setReactivateNextDueDate(defaultDate.toISOString().split("T")[0])
+      setShowReactivateDialog(true)
+      return
+    }
+
+    // Deactivating — no dialog needed
     setIsProcessing(true)
     try {
       const response = await fetch("/api/admin/users/toggle-active", {
@@ -487,23 +502,59 @@ export default function AdminNetworkPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user.id,
-          isActive: !user.is_active
+          isActive: false
         })
       })
 
       if (!response.ok) {
         const errorData = await response.json()
-        alert(`Failed to toggle status: ${errorData.error || 'Unknown error'}`)
+        alert(`Failed to deactivate: ${errorData.error || 'Unknown error'}`)
         return
       }
 
       await fetchAllUsers()
       if (selectedUser?.id === user.id) {
-        setSelectedUser({ ...selectedUser, is_active: !user.is_active })
+        setSelectedUser({ ...selectedUser, is_active: false })
       }
     } catch (error) {
-      console.error("Error toggling user status:", error)
-      alert("Failed to toggle user status. Please try again.")
+      console.error("Error deactivating user:", error)
+      alert("Failed to deactivate user. Please try again.")
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  // Reactivate user with next payment due date
+  async function handleReactivateUser() {
+    if (!userForReactivation || !reactivateNextDueDate) return
+
+    setIsProcessing(true)
+    try {
+      const response = await fetch("/api/admin/users/toggle-active", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: userForReactivation.id,
+          isActive: true,
+          nextPaymentDueDate: reactivateNextDueDate
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        alert(`Failed to reactivate: ${errorData.error || 'Unknown error'}`)
+        return
+      }
+
+      await fetchAllUsers()
+      if (selectedUser?.id === userForReactivation.id) {
+        setSelectedUser({ ...selectedUser, is_active: true })
+      }
+      setShowReactivateDialog(false)
+      setUserForReactivation(null)
+    } catch (error) {
+      console.error("Error reactivating user:", error)
+      alert("Failed to reactivate user. Please try again.")
     } finally {
       setIsProcessing(false)
     }
@@ -1720,6 +1771,51 @@ export default function AdminNetworkPage() {
                   <Trash2 className="h-4 w-4 mr-2" />
                   {t("admin.network.requestDeletion")}
                 </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reactivate User Dialog */}
+      <Dialog open={showReactivateDialog} onOpenChange={setShowReactivateDialog}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Power className="h-5 w-5 text-green-600" />
+              Reactivate User
+            </DialogTitle>
+            <DialogDescription>
+              Reactivate {userForReactivation?.name || userForReactivation?.email}. Set their next payment due date.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="next-due-date">Next Payment Due Date</Label>
+              <Input
+                id="next-due-date"
+                type="date"
+                value={reactivateNextDueDate}
+                onChange={(e) => setReactivateNextDueDate(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setShowReactivateDialog(false)} disabled={isProcessing}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleReactivateUser}
+              disabled={isProcessing || !reactivateNextDueDate}
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Activating...
+                </>
+              ) : (
+                "Activate"
               )}
             </Button>
           </DialogFooter>

@@ -593,6 +593,10 @@ async function processSubscriptionPayment(
 
   if (userUpdateError) {
     console.error(`[AlchemyWebhook] CRITICAL: Failed to update user ${userId} after payment:`, userUpdateError);
+    // Do NOT continue — if we create a payment record and link transactions
+    // without the user being activated, the cron will never retry (it only
+    // counts unlinked transactions). Bail out so the cron can pick this up.
+    return;
   }
 
   // Send payment succeeded notification
