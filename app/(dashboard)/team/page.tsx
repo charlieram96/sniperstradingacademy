@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { StructureDropdown } from "@/components/team/structure-dropdown"
+import { MemberInsights } from "@/components/team/member-insights"
 import {
   Users,
   UserPlus,
@@ -780,6 +781,9 @@ export default function TeamPage() {
           </Card>
         </motion.div>
       </motion.div>
+
+      {/* Member Insights - Payment tracking, at-risk members, activity feed */}
+      {userId && <MemberInsights userId={userId} />}
     </div>
   )
 }

@@ -108,9 +108,9 @@ export function StructureDropdown({
               </div>
             </DialogHeader>
 
-            <div className="flex-1 p-6 overflow-hidden">
+            <div className="flex-1 flex flex-col p-6 min-h-0">
               {/* Search and Filters */}
-              <div className="flex gap-2 mb-4">
+              <div className="flex gap-2 mb-4 flex-shrink-0">
                 <div className="relative flex-1">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -133,7 +133,7 @@ export function StructureDropdown({
               </div>
 
               {/* Members List */}
-              <ScrollArea className="h-[calc(100%-60px)]">
+              <ScrollArea className="flex-1">
                 {filteredMembers.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     No members found matching your filters
