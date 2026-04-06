@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback, Suspense } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { NavigationLink } from "@/components/navigation-link"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,6 +23,7 @@ interface ReferrerInfo {
 }
 
 function RegisterForm() {
+  const router = useRouter()
   const { t } = useTranslation()
   const searchParams = useSearchParams()
   const urlReferralCode = searchParams.get("ref")
@@ -41,8 +42,6 @@ function RegisterForm() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [waitingForVerification, setWaitingForVerification] = useState(false)
   const [userEmail, setUserEmail] = useState("")
-  const [resendCooldown, setResendCooldown] = useState(0)
-  const cooldownRef = useRef<NodeJS.Timeout | null>(null)
 
   // Check for error messages in URL (from OAuth redirect)
   useEffect(() => {
@@ -70,27 +69,28 @@ function RegisterForm() {
     loadReferral()
   }, [urlReferralCode])
 
-  // Start resend cooldown timer
-  const startCooldown = useCallback((seconds: number) => {
-    setResendCooldown(seconds)
-    if (cooldownRef.current) clearInterval(cooldownRef.current)
-    cooldownRef.current = setInterval(() => {
-      setResendCooldown((prev) => {
-        if (prev <= 1) {
-          if (cooldownRef.current) clearInterval(cooldownRef.current)
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-  }, [])
-
-  // Cleanup cooldown timer on unmount
+  // Listen for email verification
   useEffect(() => {
+    if (!waitingForVerification) return
+
+    const supabase = createClient()
+
+    // Listen for auth state changes
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state change:', event, session?.user?.email_confirmed_at)
+
+      // When user confirms email, they'll be automatically signed in
+      if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
+        console.log('Email verified! Redirecting to dashboard...')
+        router.push('/dashboard')
+      }
+    })
+
+    // Cleanup listener on unmount
     return () => {
-      if (cooldownRef.current) clearInterval(cooldownRef.current)
+      authListener?.subscription?.unsubscribe()
     }
-  }, [])
+  }, [waitingForVerification, router])
 
   async function loadDefaultReferral() {
     try {
@@ -217,11 +217,7 @@ function RegisterForm() {
       })
 
       if (authError) {
-        if (authError.message.toLowerCase().includes('rate limit')) {
-          setError('Too many attempts. Please wait a few minutes before trying again.')
-        } else {
-          setError(authError.message)
-        }
+        setError(authError.message)
         return
       }
 
@@ -252,14 +248,9 @@ function RegisterForm() {
         // This happens automatically via the crypto payment webhook handler
       }
 
-      // Sign out to prevent stale session / refresh token race condition
-      // User will get a proper session after clicking the email verification link
-      await supabase.auth.signOut()
-
-      // Show verification waiting screen
+      // Instead of redirecting to login, show verification waiting screen
       setUserEmail(email)
       setWaitingForVerification(true)
-      startCooldown(60)
       setIsLoading(false)
     } catch {
       setError(t("auth.register.errorOccurred"))
@@ -283,14 +274,11 @@ function RegisterForm() {
       })
 
       if (error) {
-        if (error.message.toLowerCase().includes('rate limit')) {
-          setError('Too many attempts. Please wait a few minutes before trying again.')
-        } else {
-          setError(error.message)
-        }
+        setError(error.message)
       } else {
         setError("")
-        startCooldown(60)
+        // Show success message briefly
+        alert("Verification email resent! Please check your inbox.")
       }
     } catch {
       setError(t("auth.register.resendFailed"))
@@ -362,11 +350,11 @@ function RegisterForm() {
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <Mail className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                    <Loader2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0 animate-spin" />
                     <div className="space-y-1">
                       <p className="text-sm font-medium">{t("auth.register.waitingForVerification")}</p>
                       <p className="text-xs text-muted-foreground">
-                        {t("auth.register.clickLinkToComplete")}
+                        {t("auth.register.autoRedirect")}
                       </p>
                     </div>
                   </div>
@@ -384,7 +372,7 @@ function RegisterForm() {
                   </p>
                   <Button
                     onClick={handleResendEmail}
-                    disabled={isLoading || resendCooldown > 0}
+                    disabled={isLoading}
                     variant="outline"
                     className="w-full"
                   >
@@ -392,11 +380,6 @@ function RegisterForm() {
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         {t("auth.register.sending")}
-                      </>
-                    ) : resendCooldown > 0 ? (
-                      <>
-                        <RefreshCw className="mr-2 h-4 w-4" />
-                        {t("auth.register.resendVerification")} ({resendCooldown}s)
                       </>
                     ) : (
                       <>

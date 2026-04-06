@@ -179,25 +179,6 @@ async function processTransfer(
   const receivedAmountUsdc = transfer.amountUsdc;
   const tolerance = expectedAmountUsdc * 0.01; // 1% tolerance
 
-  // MINIMUM DEPOSIT THRESHOLD: Ignore deposits under $1 for payment processing
-  // These are typically dust transactions and should not trigger payment logic.
-  // The deposit is still recorded in usdc_transactions for accounting purposes.
-  if (receivedAmountUsdc < 1) {
-    // Record the transaction but skip payment processing
-    await supabase.from('usdc_transactions').insert({
-      transaction_type: 'deposit',
-      from_address: transfer.from,
-      to_address: transfer.to,
-      amount: receivedAmountUsdc.toFixed(2),
-      user_id: user.id,
-      status: 'confirmed',
-      polygon_tx_hash: transfer.txHash,
-      confirmed_at: new Date().toISOString(),
-    });
-    console.log(`[AlchemyWebhook] Recorded $${receivedAmountUsdc.toFixed(2)} dust deposit for ${user.email}, skipping payment processing`);
-    return;
-  }
-
   // PERIOD-BASED LOGIC: Record this transaction first, then check period total
   // Get the ID back so we can link it to the payment record later
   const { data: txRecord, error: txInsertError } = await supabase.from('usdc_transactions').insert({
@@ -256,9 +237,7 @@ async function processTransfer(
   }
 
   // Now get period total (including the transaction we just recorded)
-  // Use last_payment_date as period start so overpayment from previous payment
-  // types (e.g. initial unlock) doesn't carry into subscription accumulation
-  const periodStart = user.last_payment_date || user.previous_payment_due_date || '1970-01-01';
+  const periodStart = user.previous_payment_due_date || '1970-01-01';
 
   const { data: periodTxs } = await supabase
     .from('usdc_transactions')
@@ -582,8 +561,8 @@ async function processSubscriptionPayment(
 
   if (currentNextDueDate <= now) {
     // User is overdue/inactive — one payment brings them current, anchor from NOW
-    newPreviousDueDate = getInitialAnchorDate(now);
-    newNextDueDate = calculateNextDueDate(isWeekly, newPreviousDueDate);
+    newPreviousDueDate = now;
+    newNextDueDate = new Date(now.getTime() + (isWeekly ? 7 : 30) * 24 * 60 * 60 * 1000);
   } else {
     // Normal on-time payment — roll forward from current dates
     newPreviousDueDate = currentNextDueDate;
@@ -595,30 +574,17 @@ async function processSubscriptionPayment(
   const wasInactive = !userBefore?.is_active
 
   // Update user status (only reached if no duplicate payment found)
-  const updateData: Record<string, unknown> = {
-    is_active: true,
-    paid_for_period: true,
-    last_payment_date: now.toISOString(),
-    payment_schedule: isMonthly ? 'monthly' : 'weekly',
-    previous_payment_due_date: newPreviousDueDate.toISOString(),
-    next_payment_due_date: newNextDueDate.toISOString(),
-  };
-  // Clear inactive_since when reactivating
-  if (wasInactive) {
-    updateData.inactive_since = null;
-  }
-  const { error: userUpdateError } = await supabase
+  await supabase
     .from('users')
-    .update(updateData)
+    .update({
+      is_active: true,
+      paid_for_period: true,
+      last_payment_date: now.toISOString(),
+      payment_schedule: isMonthly ? 'monthly' : 'weekly',
+      previous_payment_due_date: newPreviousDueDate.toISOString(),
+      next_payment_due_date: newNextDueDate.toISOString(),
+    })
     .eq('id', userId);
-
-  if (userUpdateError) {
-    console.error(`[AlchemyWebhook] CRITICAL: Failed to update user ${userId} after payment:`, userUpdateError);
-    // Do NOT continue — if we create a payment record and link transactions
-    // without the user being activated, the cron will never retry (it only
-    // counts unlinked transactions). Bail out so the cron can pick this up.
-    return;
-  }
 
   // Send payment succeeded notification
   try {
@@ -663,27 +629,10 @@ async function processSubscriptionPayment(
   }
 
   // Distribute to upline
-  const { data: distributeResult, error: distributeError } = await supabase.rpc('distribute_to_upline_batch', {
+  await supabase.rpc('distribute_to_upline_batch', {
     p_user_id: userId,
     p_amount: amountUsdc,
   });
-
-  if (distributeError) {
-    console.error(`[AlchemyWebhook] CRITICAL: distribute_to_upline_batch failed for user ${userId}, amount ${amountUsdc}:`, distributeError);
-    await supabase.from('crypto_audit_log').insert({
-      event_type: 'volume_distribution_failure',
-      entity_type: 'payment',
-      entity_id: paymentRecord?.id || null,
-      details: {
-        user_id: userId,
-        amount: amountUsdc,
-        error: distributeError.message,
-        source: 'alchemy_webhook',
-      },
-    }).then(() => {}, () => {});
-  } else {
-    console.log(`[AlchemyWebhook] Distributed $${amountUsdc} volume to ${distributeResult} ancestors for user ${userId}`);
-  }
 
   // Check for volume milestone
   try {

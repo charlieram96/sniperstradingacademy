@@ -728,29 +728,13 @@ export default function AdminFinancialsPage() {
     const supabase = createClient()
     const { data } = await supabase
       .from('users')
-      .select('id, name, email, created_at, is_active, sniper_volume_current_month')
+      .select('id, name, email, created_at, is_active, direct_referrals_count, sniper_volume_current_month')
       .is('payout_wallet_address', null)
       .order('created_at', { ascending: false })
       .limit(100)
 
     if (data) {
-      // Fetch real-time network counts via bulk RPC
-      const userIds = data.map(u => u.id)
-      const { data: countData } = await supabase.rpc("get_bulk_network_counts", { p_user_ids: userIds })
-
-      const countMap = new Map<string, number>()
-      if (countData) {
-        for (const row of countData) {
-          countMap.set(row.user_id, row.direct_referrals_count ?? 0)
-        }
-      }
-
-      const merged = data.map(u => ({
-        ...u,
-        direct_referrals_count: countMap.get(u.id) ?? 0,
-      }))
-
-      setUsersWithoutWallets(merged)
+      setUsersWithoutWallets(data)
     }
   }, [])
 

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Network, Search, Shield, ShieldCheck, Users, CheckCircle2, XCircle, AlertTriangle, Crown, Sparkles, Trash2, UserPlus, Loader2, Power, DollarSign, CreditCard, Copy, UserCheck, KeyRound, ShieldOff } from "lucide-react"
+import { Network, Search, Shield, ShieldCheck, Users, CheckCircle2, XCircle, AlertTriangle, Crown, Sparkles, Trash2, UserPlus, Loader2, Power, DollarSign, CreditCard, Copy, UserCheck } from "lucide-react"
 import QRCode from "qrcode"
 import { formatCurrency } from "@/lib/utils"
 import { useTranslation } from "@/components/language-provider"
@@ -68,7 +68,6 @@ export default function AdminNetworkPage() {
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
-  const [isSuperAdminPlus, setIsSuperAdminPlus] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState<"all" | "member" | "admin" | "superadmin">("all")
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all")
@@ -127,9 +126,6 @@ export default function AdminNetworkPage() {
 
   const [showDeletionRequestDialog, setShowDeletionRequestDialog] = useState(false)
   const [userForDeletion, setUserForDeletion] = useState<NetworkUser | null>(null)
-  const [showReactivateDialog, setShowReactivateDialog] = useState(false)
-  const [userForReactivation, setUserForReactivation] = useState<NetworkUser | null>(null)
-  const [reactivateNextDueDate, setReactivateNextDueDate] = useState("")
 
   const [pendingDeletions, setPendingDeletions] = useState<Array<{
     id: string
@@ -151,48 +147,6 @@ export default function AdminNetworkPage() {
   const [expectedPaymentAmount, setExpectedPaymentAmount] = useState(0)
   const [loadingPaymentAddress, setLoadingPaymentAddress] = useState(false)
   const [copiedAddress, setCopiedAddress] = useState(false)
-
-  const handleResetPassword = async (targetUser: NetworkUser) => {
-    if (!confirm(`Send a password reset email to ${targetUser.email}?`)) return
-    setIsProcessing(true)
-    try {
-      const res = await fetch("/api/admin/users/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: targetUser.id }),
-      })
-      const data = await res.json()
-      if (res.ok) {
-        alert(data.message)
-      } else {
-        alert(`Error: ${data.error}`)
-      }
-    } catch {
-      alert("Failed to send password reset")
-    }
-    setIsProcessing(false)
-  }
-
-  const handleReset2FA = async (targetUser: NetworkUser) => {
-    if (!confirm(`Remove all 2FA factors for ${targetUser.email}? They will need to re-enroll.`)) return
-    setIsProcessing(true)
-    try {
-      const res = await fetch("/api/admin/users/reset-2fa", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: targetUser.id }),
-      })
-      const data = await res.json()
-      if (res.ok) {
-        alert(data.message)
-      } else {
-        alert(`Error: ${data.error}`)
-      }
-    } catch {
-      alert("Failed to reset 2FA")
-    }
-    setIsProcessing(false)
-  }
 
   const filterAndSortUsers = useCallback(() => {
     let result = [...users]
@@ -268,7 +222,6 @@ export default function AdminNetworkPage() {
 
       setIsAdmin(userData?.role === "admin" || userData?.role === "superadmin" || userData?.role === "superadmin+")
       setIsSuperAdmin(userData?.role === "superadmin" || userData?.role === "superadmin+")
-      setIsSuperAdminPlus(userData?.role === "superadmin+")
     }
   }
 
@@ -283,6 +236,10 @@ export default function AdminNetworkPage() {
         role,
         is_active,
         initial_payment_completed,
+        active_direct_referrals_count,
+        direct_referrals_count,
+        total_network_count,
+        active_network_count,
         current_commission_rate,
         sniper_volume_current_month,
         created_at,
@@ -300,34 +257,11 @@ export default function AdminNetworkPage() {
       .order("created_at", { ascending: false })
 
     if (!error && data) {
-      // Fetch real-time network counts via RPC
-      const userIds = data.map(u => u.id)
-      const { data: countsData } = await supabase.rpc("get_bulk_network_counts", { p_user_ids: userIds })
-
-      const countsMap = new Map<string, { total_network_count: number; active_network_count: number; direct_referrals_count: number; active_direct_referrals_count: number }>()
-      if (countsData) {
-        for (const row of countsData) {
-          countsMap.set(row.user_id, {
-            total_network_count: row.total_network_count,
-            active_network_count: row.active_network_count,
-            direct_referrals_count: row.direct_referrals_count,
-            active_direct_referrals_count: row.active_direct_referrals_count,
-          })
-        }
-      }
-
-      // Merge counts and calculate monthly_commission dynamically
-      const usersWithCommission = data.map(user => {
-        const counts = countsMap.get(user.id)
-        return {
-          ...user,
-          total_network_count: counts?.total_network_count ?? 0,
-          active_network_count: counts?.active_network_count ?? 0,
-          direct_referrals_count: counts?.direct_referrals_count ?? 0,
-          active_direct_referrals_count: counts?.active_direct_referrals_count ?? 0,
-          monthly_commission: parseFloat(user.sniper_volume_current_month || 0) * parseFloat(user.current_commission_rate || 0),
-        }
-      })
+      // Calculate monthly_commission dynamically
+      const usersWithCommission = data.map(user => ({
+        ...user,
+        monthly_commission: parseFloat(user.sniper_volume_current_month || 0) * parseFloat(user.current_commission_rate || 0)
+      }))
       setUsers(usersWithCommission)
     }
     setLoading(false)
@@ -546,18 +480,6 @@ export default function AdminNetworkPage() {
 
   // Toggle user active/inactive
   async function handleToggleActive(user: NetworkUser) {
-    // When activating an inactive user, show dialog to set next payment due date
-    if (!user.is_active) {
-      setUserForReactivation(user)
-      // Default to 1 month from today
-      const defaultDate = new Date()
-      defaultDate.setMonth(defaultDate.getMonth() + 1)
-      setReactivateNextDueDate(defaultDate.toISOString().split("T")[0])
-      setShowReactivateDialog(true)
-      return
-    }
-
-    // Deactivating — no dialog needed
     setIsProcessing(true)
     try {
       const response = await fetch("/api/admin/users/toggle-active", {
@@ -565,59 +487,23 @@ export default function AdminNetworkPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user.id,
-          isActive: false
+          isActive: !user.is_active
         })
       })
 
       if (!response.ok) {
         const errorData = await response.json()
-        alert(`Failed to deactivate: ${errorData.error || 'Unknown error'}`)
+        alert(`Failed to toggle status: ${errorData.error || 'Unknown error'}`)
         return
       }
 
       await fetchAllUsers()
       if (selectedUser?.id === user.id) {
-        setSelectedUser({ ...selectedUser, is_active: false })
+        setSelectedUser({ ...selectedUser, is_active: !user.is_active })
       }
     } catch (error) {
-      console.error("Error deactivating user:", error)
-      alert("Failed to deactivate user. Please try again.")
-    } finally {
-      setIsProcessing(false)
-    }
-  }
-
-  // Reactivate user with next payment due date
-  async function handleReactivateUser() {
-    if (!userForReactivation || !reactivateNextDueDate) return
-
-    setIsProcessing(true)
-    try {
-      const response = await fetch("/api/admin/users/toggle-active", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: userForReactivation.id,
-          isActive: true,
-          nextPaymentDueDate: reactivateNextDueDate
-        })
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        alert(`Failed to reactivate: ${errorData.error || 'Unknown error'}`)
-        return
-      }
-
-      await fetchAllUsers()
-      if (selectedUser?.id === userForReactivation.id) {
-        setSelectedUser({ ...selectedUser, is_active: true })
-      }
-      setShowReactivateDialog(false)
-      setUserForReactivation(null)
-    } catch (error) {
-      console.error("Error reactivating user:", error)
-      alert("Failed to reactivate user. Please try again.")
+      console.error("Error toggling user status:", error)
+      alert("Failed to toggle user status. Please try again.")
     } finally {
       setIsProcessing(false)
     }
@@ -1453,34 +1339,6 @@ export default function AdminNetworkPage() {
                     </div>
                   </div>
                 )}
-
-                {/* Superadmin+ Only: Account Reset Actions */}
-                {isSuperAdminPlus && selectedUser.id !== currentUserId && (
-                  <div>
-                    <h4 className="text-sm font-semibold mb-2">Account Resets</h4>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleResetPassword(selectedUser)}
-                        disabled={isProcessing}
-                      >
-                        <KeyRound className="h-3 w-3 mr-2" />
-                        Send Password Reset
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
-                        onClick={() => handleReset2FA(selectedUser)}
-                        disabled={isProcessing}
-                      >
-                        <ShieldOff className="h-3 w-3 mr-2" />
-                        Reset 2FA
-                      </Button>
-                    </div>
-                  </div>
-                )}
               </div>
             </>
           )}
@@ -1862,51 +1720,6 @@ export default function AdminNetworkPage() {
                   <Trash2 className="h-4 w-4 mr-2" />
                   {t("admin.network.requestDeletion")}
                 </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Reactivate User Dialog */}
-      <Dialog open={showReactivateDialog} onOpenChange={setShowReactivateDialog}>
-        <DialogContent className="max-w-xs">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Power className="h-5 w-5 text-green-600" />
-              Reactivate User
-            </DialogTitle>
-            <DialogDescription>
-              Reactivate {userForReactivation?.name || userForReactivation?.email}. Set their next payment due date.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="next-due-date">Next Payment Due Date</Label>
-              <Input
-                id="next-due-date"
-                type="date"
-                value={reactivateNextDueDate}
-                onChange={(e) => setReactivateNextDueDate(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setShowReactivateDialog(false)} disabled={isProcessing}>
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleReactivateUser}
-              disabled={isProcessing || !reactivateNextDueDate}
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Activating...
-                </>
-              ) : (
-                "Activate"
               )}
             </Button>
           </DialogFooter>

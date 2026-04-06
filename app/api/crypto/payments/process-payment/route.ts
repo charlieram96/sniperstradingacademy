@@ -587,26 +587,13 @@ async function processSubscriptionPayment(supabase: any, intent: any, transactio
     }
 
     // Distribute subscription payment to upline (sniper volume)
-    const { data: distributeResult, error: distributeError } = await supabase.rpc('distribute_to_upline_batch', {
-      p_user_id: intent.user_id,
-      p_amount: parseFloat(intent.amount_usdc),
-    });
-
-    if (distributeError) {
-      console.error(`[ProcessSubscriptionPayment] CRITICAL: distribute_to_upline_batch failed for user ${intent.user_id}, amount ${intent.amount_usdc}:`, distributeError);
-      await supabase.from('crypto_audit_log').insert({
-        event_type: 'volume_distribution_failure',
-        entity_type: 'payment_intent',
-        entity_id: intent.id,
-        details: {
-          user_id: intent.user_id,
-          amount: intent.amount_usdc,
-          error: distributeError.message,
-          source: 'process_payment',
-        },
-      }).then(() => {}, () => {});
-    } else {
-      console.log(`[ProcessSubscriptionPayment] Distributed $${intent.amount_usdc} volume to ${distributeResult} ancestors for user ${intent.user_id}`);
+    try {
+      await supabase.rpc('distribute_to_upline_batch', {
+        p_user_id: intent.user_id,
+        p_amount: parseFloat(intent.amount_usdc),
+      });
+    } catch (rpcError) {
+      console.warn('[ProcessSubscriptionPayment] distribute_to_upline_batch failed (may not exist):', rpcError);
     }
 
     console.log(`[ProcessSubscriptionPayment] Extended subscription for user ${intent.user_id}`);
