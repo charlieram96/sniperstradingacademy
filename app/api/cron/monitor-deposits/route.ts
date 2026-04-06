@@ -634,30 +634,17 @@ async function processSubscriptionPayment(
   const wasInactive = !userBefore?.is_active
 
   // Update user status (only reached if no duplicate payment found)
-  const updateData: Record<string, unknown> = {
-    is_active: true,
-    paid_for_period: currentNextDueDate <= now ? true : !isLatePayment,
-    last_payment_date: now.toISOString(),
-    payment_schedule: isMonthly ? 'monthly' : 'weekly',
-    previous_payment_due_date: newPreviousDueDate.toISOString(),
-    next_payment_due_date: newNextDueDate.toISOString(),
-  };
-  // Clear inactive_since when reactivating
-  if (wasInactive) {
-    updateData.inactive_since = null;
-  }
-  const { error: userUpdateError } = await supabase
+  await supabase
     .from('users')
-    .update(updateData)
+    .update({
+      is_active: true,
+      paid_for_period: currentNextDueDate <= now ? true : !isLatePayment,
+      last_payment_date: now.toISOString(),
+      payment_schedule: isMonthly ? 'monthly' : 'weekly',
+      previous_payment_due_date: newPreviousDueDate.toISOString(),
+      next_payment_due_date: newNextDueDate.toISOString(),
+    })
     .eq('id', userId);
-
-  if (userUpdateError) {
-    console.error(`[MonitorDeposits] CRITICAL: Failed to update user ${userId} after payment:`, userUpdateError);
-    // Do NOT continue — if we create a payment record and link transactions
-    // without the user being activated, the cron will never retry (it only
-    // counts unlinked transactions). Bail out so the cron can pick this up.
-    return;
-  }
 
   // Send payment succeeded notification
   try {

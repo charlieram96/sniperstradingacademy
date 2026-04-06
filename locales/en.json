@@ -264,7 +264,6 @@
       "clickVerificationDesc": "Open your email and click the link to verify your account",
       "waitingForVerification": "Waiting for verification...",
       "autoRedirect": "This page will automatically redirect once verified",
-      "clickLinkToComplete": "Click the link in your email to complete registration and sign in",
       "didntReceiveEmail": "Didn't receive the email?",
       "sending": "Sending...",
       "resendVerification": "Resend verification email",

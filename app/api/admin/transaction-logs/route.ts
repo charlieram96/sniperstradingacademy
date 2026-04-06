@@ -52,14 +52,70 @@ export async function GET(req: NextRequest) {
 
     const transactions: TransactionLog[] = [];
 
-    // Fetch incoming transactions (crypto deposits first, then payments)
+    // Fetch incoming transactions (payments)
     if (direction === 'all' || direction === 'incoming') {
-      // Track payment IDs already represented by a crypto deposit to avoid duplicates
-      const linkedPaymentIds = new Set<string>();
+      let paymentsQuery = supabase
+        .from('payments')
+        .select(`
+          id,
+          amount,
+          status,
+          payment_type,
+          created_at,
+          users (
+            name,
+            email
+          )
+        `)
+        .order('created_at', { ascending: false });
 
-      // 1. Fetch crypto deposits from usdc_transactions
-      // Skip only when filtering for commission-only types
-      if (!['direct_bonus', 'residual', 'residual_monthly'].includes(type)) {
+      // Apply status filter for payments
+      if (status === 'completed') {
+        paymentsQuery = paymentsQuery.eq('status', 'succeeded');
+      } else if (status === 'pending') {
+        paymentsQuery = paymentsQuery.eq('status', 'pending');
+      } else if (status === 'failed') {
+        paymentsQuery = paymentsQuery.in('status', ['failed', 'disputed', 'refunded']);
+      }
+
+      // Apply type filter for payments
+      if (type === 'initial') {
+        paymentsQuery = paymentsQuery.eq('payment_type', 'initial');
+      } else if (type === 'weekly') {
+        paymentsQuery = paymentsQuery.eq('payment_type', 'weekly');
+      } else if (type === 'monthly') {
+        paymentsQuery = paymentsQuery.eq('payment_type', 'monthly');
+      } else if (['direct_bonus', 'residual', 'residual_monthly', 'crypto_deposit'].includes(type)) {
+        // Skip payments if filtering for commission or crypto types only
+      }
+
+      // Only fetch payments if not filtering for commission-only or crypto-only types
+      if (!['direct_bonus', 'residual', 'residual_monthly', 'crypto_deposit'].includes(type)) {
+        const { data: paymentsData } = await paymentsQuery;
+
+        if (paymentsData) {
+          for (const p of paymentsData) {
+            const userData = Array.isArray(p.users) ? p.users[0] : p.users;
+            transactions.push({
+              id: p.id,
+              direction: 'incoming',
+              type: p.payment_type,
+              amount: p.amount,
+              status: p.status === 'succeeded' ? 'completed' : p.status,
+              userName: userData?.name || null,
+              userEmail: userData?.email || '',
+              txHash: null,
+              createdAt: p.created_at,
+              paidAt: null,
+            });
+          }
+        }
+      }
+
+      // Also fetch crypto deposits from usdc_transactions
+      // Fetch if type is 'all' or 'crypto_deposit', skip if filtering for payments or commissions
+      if (!['direct_bonus', 'residual', 'residual_monthly', 'initial', 'weekly', 'monthly'].includes(type)) {
+        // Use service role client to bypass RLS
         const serviceSupabase = createServiceRoleClient();
         let cryptoQuery = serviceSupabase
           .from('usdc_transactions')
@@ -70,15 +126,11 @@ export async function GET(req: NextRequest) {
             status,
             transaction_type,
             polygon_tx_hash,
-            related_payment_id,
             created_at,
             confirmed_at,
             user:users!usdc_transactions_user_id_fkey (
               name,
               email
-            ),
-            payment:payments!usdc_transactions_related_payment_id_fkey (
-              payment_type
             )
           `)
           .eq('transaction_type', 'deposit')
@@ -101,27 +153,11 @@ export async function GET(req: NextRequest) {
 
         if (cryptoData) {
           for (const c of cryptoData) {
-            // Use linked payment type if available, otherwise show as crypto_deposit
-            const paymentData = Array.isArray(c.payment) ? c.payment[0] : c.payment;
-            const linkedPaymentType = paymentData?.payment_type || null;
-
-            // If filtering by a specific payment type, only include matching deposits
-            if (['initial', 'weekly', 'monthly'].includes(type)) {
-              if (linkedPaymentType !== type) continue;
-            }
-            // If filtering for crypto_deposit only, skip linked deposits
-            if (type === 'crypto_deposit' && linkedPaymentType) continue;
-
-            // Track linked payment IDs so we skip them in the payments query
-            if (c.related_payment_id) {
-              linkedPaymentIds.add(c.related_payment_id);
-            }
-
             const userData = Array.isArray(c.user) ? c.user[0] : c.user;
             transactions.push({
               id: c.id,
               direction: 'incoming',
-              type: linkedPaymentType || 'crypto_deposit',
+              type: 'crypto_deposit',
               amount: parseFloat(c.amount || '0'),
               status: c.status === 'confirmed' ? 'completed' : c.status,
               userName: userData?.name || null,
@@ -129,65 +165,6 @@ export async function GET(req: NextRequest) {
               txHash: c.polygon_tx_hash,
               createdAt: c.created_at,
               paidAt: c.confirmed_at,
-            });
-          }
-        }
-      }
-
-      // 2. Fetch payments (excluding those already shown via crypto deposit)
-      if (!['direct_bonus', 'residual', 'residual_monthly', 'crypto_deposit'].includes(type)) {
-        let paymentsQuery = supabase
-          .from('payments')
-          .select(`
-            id,
-            amount,
-            status,
-            payment_type,
-            created_at,
-            users (
-              name,
-              email
-            )
-          `)
-          .order('created_at', { ascending: false });
-
-        // Apply status filter for payments
-        if (status === 'completed') {
-          paymentsQuery = paymentsQuery.eq('status', 'succeeded');
-        } else if (status === 'pending') {
-          paymentsQuery = paymentsQuery.eq('status', 'pending');
-        } else if (status === 'failed') {
-          paymentsQuery = paymentsQuery.in('status', ['failed', 'disputed', 'refunded']);
-        }
-
-        // Apply type filter for payments
-        if (type === 'initial') {
-          paymentsQuery = paymentsQuery.eq('payment_type', 'initial');
-        } else if (type === 'weekly') {
-          paymentsQuery = paymentsQuery.eq('payment_type', 'weekly');
-        } else if (type === 'monthly') {
-          paymentsQuery = paymentsQuery.eq('payment_type', 'monthly');
-        }
-
-        const { data: paymentsData } = await paymentsQuery;
-
-        if (paymentsData) {
-          for (const p of paymentsData) {
-            // Skip payments already represented by a crypto deposit entry
-            if (linkedPaymentIds.has(p.id)) continue;
-
-            const userData = Array.isArray(p.users) ? p.users[0] : p.users;
-            transactions.push({
-              id: p.id,
-              direction: 'incoming',
-              type: p.payment_type,
-              amount: p.amount,
-              status: p.status === 'succeeded' ? 'completed' : p.status,
-              userName: userData?.name || null,
-              userEmail: userData?.email || '',
-              txHash: null,
-              createdAt: p.created_at,
-              paidAt: null,
             });
           }
         }

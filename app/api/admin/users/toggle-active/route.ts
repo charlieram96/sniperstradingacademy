@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Parse request body
-    const { userId, isActive, nextPaymentDueDate } = await req.json();
+    const { userId, isActive } = await req.json();
 
     if (!userId || typeof isActive !== 'boolean') {
       return NextResponse.json(
@@ -49,31 +49,10 @@ export async function POST(req: NextRequest) {
     // Use service role client to bypass RLS for the update
     const serviceSupabase = createServiceRoleClient();
 
-    // Build update payload
-    const updatePayload: Record<string, unknown> = { is_active: isActive };
-
-    // When reactivating, clear inactive_since and optionally set next payment due date
-    if (isActive) {
-      updatePayload.inactive_since = null;
-
-      if (nextPaymentDueDate) {
-        const dueDate = new Date(nextPaymentDueDate);
-        if (isNaN(dueDate.getTime())) {
-          return NextResponse.json(
-            { error: 'nextPaymentDueDate must be a valid date string' },
-            { status: 400 }
-          );
-        }
-        updatePayload.next_payment_due_date = dueDate.toISOString();
-        updatePayload.paid_for_period = true;
-        updatePayload.last_payment_date = new Date().toISOString();
-      }
-    }
-
     // Update user active status
     const { data: updatedUser, error: updateError } = await serviceSupabase
       .from('users')
-      .update(updatePayload)
+      .update({ is_active: isActive })
       .eq('id', userId)
       .select('id, name, email, is_active')
       .single();

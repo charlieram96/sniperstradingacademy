@@ -264,7 +264,6 @@
       "clickVerificationDesc": "Abre tu correo y haz clic en el enlace para verificar tu cuenta",
       "waitingForVerification": "Esperando verificacion...",
       "autoRedirect": "Esta pagina redirigira automaticamente una vez verificado",
-      "clickLinkToComplete": "Haz clic en el enlace de tu correo para completar el registro e iniciar sesion",
       "didntReceiveEmail": "No recibiste el correo?",
       "sending": "Enviando...",
       "resendVerification": "Reenviar correo de verificacion",
