@@ -237,7 +237,9 @@ async function processTransfer(
   }
 
   // Now get period total (including the transaction we just recorded)
-  const periodStart = user.previous_payment_due_date || '1970-01-01';
+  // Uses last_payment_date so overpayment from previous payment types
+  // (e.g. initial unlock) doesn't carry into subscription accumulation
+  const periodStart = user.last_payment_date || user.previous_payment_due_date || '1970-01-01';
 
   const { data: periodTxs } = await supabase
     .from('usdc_transactions')
@@ -574,17 +576,30 @@ async function processSubscriptionPayment(
   const wasInactive = !userBefore?.is_active
 
   // Update user status (only reached if no duplicate payment found)
-  await supabase
+  const updateData: Record<string, unknown> = {
+    is_active: true,
+    paid_for_period: true,
+    last_payment_date: now.toISOString(),
+    payment_schedule: isMonthly ? 'monthly' : 'weekly',
+    previous_payment_due_date: newPreviousDueDate.toISOString(),
+    next_payment_due_date: newNextDueDate.toISOString(),
+  };
+  // Clear inactive_since when reactivating
+  if (wasInactive) {
+    updateData.inactive_since = null;
+  }
+  const { error: userUpdateError } = await supabase
     .from('users')
-    .update({
-      is_active: true,
-      paid_for_period: true,
-      last_payment_date: now.toISOString(),
-      payment_schedule: isMonthly ? 'monthly' : 'weekly',
-      previous_payment_due_date: newPreviousDueDate.toISOString(),
-      next_payment_due_date: newNextDueDate.toISOString(),
-    })
+    .update(updateData)
     .eq('id', userId);
+
+  if (userUpdateError) {
+    console.error(`[AlchemyWebhook] CRITICAL: Failed to update user ${userId} after payment:`, userUpdateError);
+    // Do NOT continue — if we create a payment record and link transactions
+    // without the user being activated, the cron will never retry (it only
+    // counts unlinked transactions). Bail out so the cron can pick this up.
+    return;
+  }
 
   // Send payment succeeded notification
   try {
@@ -619,20 +634,39 @@ async function processSubscriptionPayment(
 
   // Link ALL contributing transactions to this payment
   // This prevents them from being counted again in future cron runs
+  // IMPORTANT: Only link transactions that aren't already linked to another payment
   if (paymentRecord && usdcTxIds.length > 0) {
     await supabase
       .from('usdc_transactions')
       .update({ related_payment_id: paymentRecord.id })
-      .in('id', usdcTxIds);
+      .in('id', usdcTxIds)
+      .is('related_payment_id', null);
 
     console.log(`[AlchemyWebhook] Linked ${usdcTxIds.length} transaction(s) to payment ${paymentRecord.id}`);
   }
 
   // Distribute to upline
-  await supabase.rpc('distribute_to_upline_batch', {
+  const { data: distributeResult, error: distributeError } = await supabase.rpc('distribute_to_upline_batch', {
     p_user_id: userId,
     p_amount: amountUsdc,
   });
+
+  if (distributeError) {
+    console.error(`[AlchemyWebhook] CRITICAL: distribute_to_upline_batch failed for user ${userId}, amount ${amountUsdc}:`, distributeError);
+    await supabase.from('crypto_audit_log').insert({
+      event_type: 'volume_distribution_failure',
+      entity_type: 'payment',
+      entity_id: paymentRecord?.id || null,
+      details: {
+        user_id: userId,
+        amount: amountUsdc,
+        error: distributeError.message,
+        source: 'alchemy_webhook',
+      },
+    }).then(() => {}, () => {});
+  } else {
+    console.log(`[AlchemyWebhook] Distributed $${amountUsdc} volume to ${distributeResult} ancestors for user ${userId}`);
+  }
 
   // Check for volume milestone
   try {

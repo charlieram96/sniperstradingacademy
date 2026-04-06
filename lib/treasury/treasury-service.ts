@@ -435,6 +435,7 @@ export async function getUserByDepositAddress(address: string): Promise<{
   previous_payment_due_date: string | null;
   next_payment_due_date: string | null;
   initial_payment_date: string | null;
+  last_payment_date: string | null;
 } | null> {
   const supabase = createServiceRoleClient();
 
@@ -452,7 +453,8 @@ export async function getUserByDepositAddress(address: string): Promise<{
       payment_schedule,
       previous_payment_due_date,
       next_payment_due_date,
-      initial_payment_date
+      initial_payment_date,
+      last_payment_date
     `)
     .eq('crypto_deposit_address', address.toLowerCase())
     .single();
@@ -473,7 +475,8 @@ export async function getUserByDepositAddress(address: string): Promise<{
         payment_schedule,
         previous_payment_due_date,
         next_payment_due_date,
-        initial_payment_date
+        initial_payment_date,
+        last_payment_date
       `)
       .ilike('crypto_deposit_address', address)
       .single();
