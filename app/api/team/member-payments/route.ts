@@ -23,6 +23,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 })
     }
 
+    // Verify the caller is authenticated and matches the userId
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!authUser || authUser.id !== userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     // ── Shared: look up caller's network position ──
     const { data: caller, error: callerError } = await supabase
       .from('users')
@@ -184,13 +190,15 @@ export async function GET(request: Request) {
       }
     ).length
 
-    // Revenue this month: sum of completed payments this calendar month
-    const revenueThisMonth = (recentPaymentsRaw || [])
-      .filter(
-        (p: { status: string; created_at: string }) =>
-          (p.status === 'succeeded' || p.status === 'completed') &&
-          new Date(p.created_at) >= monthStart
-      )
+    // Revenue this month: separate query to get accurate sum (not limited to 50)
+    const { data: revenueData } = await supabase
+      .from('payments')
+      .select('amount')
+      .in('user_id', memberIds)
+      .in('status', ['succeeded', 'completed'])
+      .gte('created_at', monthStart.toISOString())
+
+    const revenueThisMonth = (revenueData || [])
       .reduce((sum: number, p: { amount: number }) => sum + Number(p.amount), 0)
 
     return NextResponse.json({

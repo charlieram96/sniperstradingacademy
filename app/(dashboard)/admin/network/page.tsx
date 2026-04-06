@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Network, Search, Shield, ShieldCheck, Users, CheckCircle2, XCircle, AlertTriangle, Crown, Sparkles, Trash2, UserPlus, Loader2, Power, DollarSign, CreditCard, Copy, UserCheck } from "lucide-react"
+import { Network, Search, Shield, ShieldCheck, Users, CheckCircle2, XCircle, AlertTriangle, Crown, Sparkles, Trash2, UserPlus, Loader2, Power, DollarSign, CreditCard, Copy, UserCheck, KeyRound, ShieldOff } from "lucide-react"
 import QRCode from "qrcode"
 import { formatCurrency } from "@/lib/utils"
 import { useTranslation } from "@/components/language-provider"
@@ -68,6 +68,7 @@ export default function AdminNetworkPage() {
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [isSuperAdminPlus, setIsSuperAdminPlus] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState<"all" | "member" | "admin" | "superadmin">("all")
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all")
@@ -151,6 +152,48 @@ export default function AdminNetworkPage() {
   const [loadingPaymentAddress, setLoadingPaymentAddress] = useState(false)
   const [copiedAddress, setCopiedAddress] = useState(false)
 
+  const handleResetPassword = async (targetUser: NetworkUser) => {
+    if (!confirm(`Send a password reset email to ${targetUser.email}?`)) return
+    setIsProcessing(true)
+    try {
+      const res = await fetch("/api/admin/users/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: targetUser.id }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        alert(data.message)
+      } else {
+        alert(`Error: ${data.error}`)
+      }
+    } catch {
+      alert("Failed to send password reset")
+    }
+    setIsProcessing(false)
+  }
+
+  const handleReset2FA = async (targetUser: NetworkUser) => {
+    if (!confirm(`Remove all 2FA factors for ${targetUser.email}? They will need to re-enroll.`)) return
+    setIsProcessing(true)
+    try {
+      const res = await fetch("/api/admin/users/reset-2fa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: targetUser.id }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        alert(data.message)
+      } else {
+        alert(`Error: ${data.error}`)
+      }
+    } catch {
+      alert("Failed to reset 2FA")
+    }
+    setIsProcessing(false)
+  }
+
   const filterAndSortUsers = useCallback(() => {
     let result = [...users]
 
@@ -225,6 +268,7 @@ export default function AdminNetworkPage() {
 
       setIsAdmin(userData?.role === "admin" || userData?.role === "superadmin" || userData?.role === "superadmin+")
       setIsSuperAdmin(userData?.role === "superadmin" || userData?.role === "superadmin+")
+      setIsSuperAdminPlus(userData?.role === "superadmin+")
     }
   }
 
@@ -239,10 +283,6 @@ export default function AdminNetworkPage() {
         role,
         is_active,
         initial_payment_completed,
-        active_direct_referrals_count,
-        direct_referrals_count,
-        total_network_count,
-        active_network_count,
         current_commission_rate,
         sniper_volume_current_month,
         created_at,
@@ -260,11 +300,34 @@ export default function AdminNetworkPage() {
       .order("created_at", { ascending: false })
 
     if (!error && data) {
-      // Calculate monthly_commission dynamically
-      const usersWithCommission = data.map(user => ({
-        ...user,
-        monthly_commission: parseFloat(user.sniper_volume_current_month || 0) * parseFloat(user.current_commission_rate || 0)
-      }))
+      // Fetch real-time network counts via RPC
+      const userIds = data.map(u => u.id)
+      const { data: countsData } = await supabase.rpc("get_bulk_network_counts", { p_user_ids: userIds })
+
+      const countsMap = new Map<string, { total_network_count: number; active_network_count: number; direct_referrals_count: number; active_direct_referrals_count: number }>()
+      if (countsData) {
+        for (const row of countsData) {
+          countsMap.set(row.user_id, {
+            total_network_count: row.total_network_count,
+            active_network_count: row.active_network_count,
+            direct_referrals_count: row.direct_referrals_count,
+            active_direct_referrals_count: row.active_direct_referrals_count,
+          })
+        }
+      }
+
+      // Merge counts and calculate monthly_commission dynamically
+      const usersWithCommission = data.map(user => {
+        const counts = countsMap.get(user.id)
+        return {
+          ...user,
+          total_network_count: counts?.total_network_count ?? 0,
+          active_network_count: counts?.active_network_count ?? 0,
+          direct_referrals_count: counts?.direct_referrals_count ?? 0,
+          active_direct_referrals_count: counts?.active_direct_referrals_count ?? 0,
+          monthly_commission: parseFloat(user.sniper_volume_current_month || 0) * parseFloat(user.current_commission_rate || 0),
+        }
+      })
       setUsers(usersWithCommission)
     }
     setLoading(false)
@@ -1387,6 +1450,34 @@ export default function AdminNetworkPage() {
                           {t("admin.network.deleteAccount")}
                         </Button>
                       )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Superadmin+ Only: Account Reset Actions */}
+                {isSuperAdminPlus && selectedUser.id !== currentUserId && (
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2">Account Resets</h4>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleResetPassword(selectedUser)}
+                        disabled={isProcessing}
+                      >
+                        <KeyRound className="h-3 w-3 mr-2" />
+                        Send Password Reset
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
+                        onClick={() => handleReset2FA(selectedUser)}
+                        disabled={isProcessing}
+                      >
+                        <ShieldOff className="h-3 w-3 mr-2" />
+                        Reset 2FA
+                      </Button>
                     </div>
                   </div>
                 )}

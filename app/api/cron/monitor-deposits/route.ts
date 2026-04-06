@@ -88,7 +88,8 @@ async function runMonitor(req: NextRequest) {
         is_active,
         payment_schedule,
         previous_payment_due_date,
-        next_payment_due_date
+        next_payment_due_date,
+        last_payment_date
       `)
       .not('crypto_deposit_address', 'is', null)
       .limit(MAX_USERS_PER_RUN);
@@ -160,6 +161,7 @@ async function checkUserDeposit(
     payment_schedule: string | null;
     previous_payment_due_date: string | null;
     next_payment_due_date: string | null;
+    last_payment_date: string | null;
   },
   results: MonitorResults
 ) {
@@ -189,10 +191,11 @@ async function checkUserDeposit(
     detectedSchedule = isWeekly ? 'weekly' : 'monthly';
   }
 
-  // PERIOD-BASED LOGIC: Sum transactions since previous_payment_due_date
+  // PERIOD-BASED LOGIC: Sum transactions since last successful payment
+  // Uses last_payment_date so overpayment from previous payment types
+  // (e.g. initial unlock) doesn't carry into subscription accumulation
   // IMPORTANT: Only count deposits that haven't been linked to a payment yet
-  // This prevents the same deposit from being credited multiple times
-  const periodStart = user.previous_payment_due_date || '1970-01-01';
+  const periodStart = user.last_payment_date || user.previous_payment_due_date || '1970-01-01';
 
   const { data: periodTxs } = await supabase
     .from('usdc_transactions')
@@ -215,6 +218,28 @@ async function checkUserDeposit(
   const tolerance = expectedAmountUsdc * 0.01; // 1% tolerance
 
   console.log(`[MonitorDeposits] User ${user.email}: paid ${paidThisPeriod.toFixed(2)} this period, needs ${expectedAmountUsdc}, remaining ${remaining.toFixed(2)} (${paymentType})`);
+
+  // SAFETY CHECK: If unlinked deposits vastly exceed expected amount, they're likely
+  // from a previous payment type (e.g. $499 initial being re-detected as $199 monthly).
+  // Skip and log a warning so admin can investigate.
+  if (paymentType !== 'initial_unlock' && paidThisPeriod > expectedAmountUsdc * 2) {
+    console.warn(`[MonitorDeposits] ANOMALY: User ${user.email} has ${paidThisPeriod.toFixed(2)} in unlinked deposits but only needs ${expectedAmountUsdc}. Likely stale unlinked transactions from a previous payment. Skipping to prevent ghost payment.`);
+    await supabase.from('crypto_audit_log').insert({
+      event_type: 'deposit_anomaly_skipped',
+      user_id: user.id,
+      entity_type: 'user',
+      entity_id: user.id,
+      details: {
+        source: 'monitor_cron',
+        deposit_address: depositAddress,
+        expected_usdc: expectedAmountUsdc,
+        paid_this_period: paidThisPeriod,
+        payment_type: paymentType,
+        reason: 'Unlinked deposits exceed 2x expected amount - possible stale transactions',
+      },
+    });
+    return;
+  }
 
   // Skip if already paid for this period
   if (remaining <= tolerance) {
@@ -524,11 +549,13 @@ async function processInitialUnlock(
 
   // Link ALL contributing transactions to this payment
   // This prevents them from being counted again in future cron runs
+  // IMPORTANT: Only link transactions that aren't already linked to another payment
   if (paymentRecord && usdcTxIds.length > 0) {
     await supabase
       .from('usdc_transactions')
       .update({ related_payment_id: paymentRecord.id })
-      .in('id', usdcTxIds);
+      .in('id', usdcTxIds)
+      .is('related_payment_id', null);
 
     console.log(`[MonitorDeposits] Linked ${usdcTxIds.length} transaction(s) to initial payment ${paymentRecord.id}`);
   }
@@ -692,20 +719,39 @@ async function processSubscriptionPayment(
 
   // Link ALL contributing transactions to this payment
   // This prevents them from being counted again in future cron runs
+  // IMPORTANT: Only link transactions that aren't already linked to another payment
   if (paymentRecord && usdcTxIds.length > 0) {
     await supabase
       .from('usdc_transactions')
       .update({ related_payment_id: paymentRecord.id })
-      .in('id', usdcTxIds);
+      .in('id', usdcTxIds)
+      .is('related_payment_id', null);
 
     console.log(`[MonitorDeposits] Linked ${usdcTxIds.length} transaction(s) to payment ${paymentRecord.id}`);
   }
 
   // Distribute to upline
-  await supabase.rpc('distribute_to_upline_batch', {
+  const { data: distributeResult, error: distributeError } = await supabase.rpc('distribute_to_upline_batch', {
     p_user_id: userId,
     p_amount: amountUsdc,
   });
+
+  if (distributeError) {
+    console.error(`[MonitorDeposits] CRITICAL: distribute_to_upline_batch failed for user ${userId}, amount ${amountUsdc}:`, distributeError);
+    await supabase.from('crypto_audit_log').insert({
+      event_type: 'volume_distribution_failure',
+      entity_type: 'payment',
+      entity_id: paymentRecord?.id || null,
+      details: {
+        user_id: userId,
+        amount: amountUsdc,
+        error: distributeError.message,
+        source: 'monitor_deposits',
+      },
+    }).then(() => {}, () => {});
+  } else {
+    console.log(`[MonitorDeposits] Distributed $${amountUsdc} volume to ${distributeResult} ancestors for user ${userId}`);
+  }
 
   // Check for volume milestone
   try {

@@ -102,11 +102,20 @@ export async function POST(req: NextRequest) {
       // Get all users with volume including their details for commission calculation
       const { data: usersWithVolume } = await supabase
         .from('users')
-        .select('id, name, email, sniper_volume_current_month, current_commission_rate, last_payment_date, is_active, bypass_subscription, qualified, payout_wallet_address, active_direct_referrals_count, bypass_direct_referrals')
+        .select('id, name, email, sniper_volume_current_month, current_commission_rate, last_payment_date, is_active, bypass_subscription, qualified, payout_wallet_address, bypass_direct_referrals')
         .gt('sniper_volume_current_month', 0)
         .order('sniper_volume_current_month', { ascending: false });
 
       const users = usersWithVolume || [];
+
+      // Get real-time active direct referral counts for all users
+      const userIds = users.map(u => u.id);
+      const { data: referralCounts } = userIds.length > 0
+        ? await supabase.rpc('get_bulk_network_counts', { p_user_ids: userIds })
+        : { data: [] };
+      const referralCountMap = new Map<string, number>(
+        ((referralCounts || []) as Array<{ user_id: string; active_direct_referrals_count: number }>).map(c => [c.user_id, Number(c.active_direct_referrals_count)])
+      );
 
       // Calculate eligibility and commissions for each user
       const eligibleUsers: Array<{
@@ -136,8 +145,9 @@ export async function POST(req: NextRequest) {
         // Account for subscription bypass when checking active status
         const isActive = user.is_active || user.bypass_subscription;
         const isQualified = user.qualified === true;
-        // Use effective referral count (actual or bypass, whichever is higher)
-        const directReferrals = Math.max(user.active_direct_referrals_count || 0, user.bypass_direct_referrals || 0);
+        // Use effective referral count (real-time count or bypass, whichever is higher)
+        const activeDirectRefs = referralCountMap.get(user.id) || 0;
+        const directReferrals = Math.max(activeDirectRefs, user.bypass_direct_referrals || 0);
         const hasWallet = !!user.payout_wallet_address;
 
         if (isActive) {

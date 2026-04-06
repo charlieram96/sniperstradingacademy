@@ -8,11 +8,7 @@ import {
  * GET /api/network/stats?userId=xxx
  * Get network statistics for a user
  *
- * UPDATED: Now uses denormalized data from users table for better performance
- * - sniper_volume_current_month (real-time incremented on payments)
- * - active_network_count (updated after each payment in network)
- * - current_commission_rate (auto-calculated based on structure)
- * - current_structure_number (auto-updated)
+ * Uses get_real_time_network_counts RPC for accurate member counts.
  */
 export async function GET(request: Request) {
   try {
@@ -24,15 +20,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 })
     }
 
-    // Get user's denormalized network data (fast single query)
+    // Get user's data (fast single query)
     const { data: user, error: userError } = await supabase
       .from('users')
       .select(`
         network_position_id,
         sniper_volume_current_month,
         sniper_volume_previous_month,
-        active_network_count,
-        total_network_count,
         current_commission_rate,
         current_structure_number,
         last_payment_date,
@@ -49,20 +43,26 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
+    // Get real-time network counts
+    const { data: counts } = await supabase
+      .rpc('get_real_time_network_counts', { p_user_id: userId })
+      .single()
+
+    const realTimeCounts = (counts as { total_network_count: number; active_network_count: number; direct_referrals_count: number; active_direct_referrals_count: number } | null) || {
+      total_network_count: 0,
+      active_network_count: 0,
+      direct_referrals_count: 0,
+      active_direct_referrals_count: 0
+    }
+
     // Handle users without network positions (haven't paid $499 yet)
     if (!user.network_position_id) {
-      // Count direct referrals (works without position)
-      const { count: directReferralCount } = await supabase
-        .from('users')
-        .select('id', { count: 'exact', head: true })
-        .eq('referred_by', userId)
-
       return NextResponse.json({
         network: {
           totalMembers: 0,
           activeMembers: 0,
           inactiveMembers: 0,
-          directReferrals: directReferralCount || 0
+          directReferrals: realTimeCounts.direct_referrals_count
         },
         structures: {
           completed: 0,
@@ -84,7 +84,7 @@ export async function GET(request: Request) {
           actualMonthlyEarnings: 0,
           canWithdraw: false,
           withdrawalRequirement: {
-            currentReferrals: directReferralCount || 0,
+            currentReferrals: realTimeCounts.direct_referrals_count,
             requiredReferrals: 0,
             deficit: 0,
             message: 'Complete $499 initial payment to unlock network position and start earning'
@@ -98,20 +98,18 @@ export async function GET(request: Request) {
       })
     }
 
-    // Count direct referrals
-    const { count: directReferralCount } = await supabase
-      .from('users')
-      .select('id', { count: 'exact', head: true })
-      .eq('referred_by', userId)
+    // Use real-time counts
+    const activeNetworkCount = Number(realTimeCounts.active_network_count)
+    const totalNetworkCount = Number(realTimeCounts.total_network_count)
+    const referralCount = Number(realTimeCounts.direct_referrals_count)
 
-    // Calculate structure stats
-    const completedStructures = Math.floor(user.active_network_count / 1092)
-    const currentStructureProgress = user.active_network_count % 1092
+    // Calculate structure stats from real-time active count
+    const completedStructures = Math.floor(activeNetworkCount / 1092)
+    const currentStructureProgress = activeNetworkCount % 1092
     const currentStructurePercentage = (currentStructureProgress / 1092) * 100
 
     // Calculate required referrals for withdrawal
     const requiredReferrals = user.current_structure_number * 3
-    const referralCount = directReferralCount || 0
 
     // Check granular bypass settings
     let withdrawalMessage: string
@@ -165,9 +163,9 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       network: {
-        totalMembers: user.total_network_count,
-        activeMembers: user.active_network_count,
-        inactiveMembers: user.total_network_count - user.active_network_count,
+        totalMembers: totalNetworkCount,
+        activeMembers: activeNetworkCount,
+        inactiveMembers: totalNetworkCount - activeNetworkCount,
         directReferrals: referralCount
       },
       structures: {

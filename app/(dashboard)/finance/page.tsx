@@ -102,12 +102,17 @@ export default function FinancePage() {
       try {
         const supabase = createClient()
 
-        // Fetch user account data
-        const { data: userData } = await supabase
-          .from('users')
-          .select('is_active, previous_payment_due_date, next_payment_due_date, initial_payment_date, qualified_at, direct_referrals_count, active_network_count, current_commission_rate, bypass_direct_referrals, bypass_subscription, bypass_initial_payment, payment_schedule, payout_wallet_address')
-          .eq('id', userId)
-          .single()
+        // Fetch user account data and network stats in parallel
+        const [userResult, statsResponse] = await Promise.all([
+          supabase
+            .from('users')
+            .select('is_active, previous_payment_due_date, next_payment_due_date, initial_payment_date, qualified_at, bypass_direct_referrals, bypass_subscription, bypass_initial_payment, payment_schedule, payout_wallet_address')
+            .eq('id', userId)
+            .single(),
+          fetch(`/api/network/stats?userId=${userId}`)
+        ])
+        const userData = userResult.data
+        const stats = await statsResponse.json()
 
         // Get payment schedule and next payment due date directly from database
         const paymentSchedule = userData?.payment_schedule || 'monthly'
@@ -122,16 +127,12 @@ export default function FinancePage() {
           lastPaymentDate: userData?.previous_payment_due_date ? new Date(userData.previous_payment_due_date) : null,
           qualificationDeadline: null,
           qualifiedAt: userData?.qualified_at ? new Date(userData.qualified_at) : null,
-          directReferralsCount: userData?.direct_referrals_count || 0,
+          directReferralsCount: stats.network?.directReferrals || 0,
           accumulatedResidual: 0,
           paymentSchedule: paymentSchedule as 'weekly' | 'monthly',
           bypassSubscription: userData?.bypass_subscription || false,
           payoutWalletAddress: userData?.payout_wallet_address || null
         })
-
-        // Fetch real network stats
-        const statsResponse = await fetch(`/api/network/stats?userId=${userId}`)
-        const stats = await statsResponse.json()
 
         // Fetch real payment history
         const { data: payments } = await supabase

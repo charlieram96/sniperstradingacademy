@@ -24,7 +24,7 @@ export default async function NetworkVisualizerPage() {
   // Fetch all users with network positions
   const { data: networkUsers, error: usersError } = await supabase
     .from("users")
-    .select("id, email, name, network_position_id, network_level, network_position, tree_parent_network_position_id, is_active, created_at, initial_payment_completed, last_referral_branch, total_network_count, active_network_count, referred_by, referrer:users!referred_by(name, network_position_id)")
+    .select("id, email, name, network_position_id, network_level, network_position, tree_parent_network_position_id, is_active, created_at, initial_payment_completed, last_referral_branch, referred_by, referrer:users!referred_by(name, network_position_id)")
     .not("network_position_id", "is", null)
     .order("network_level", { ascending: true })
     .order("network_position", { ascending: true })
@@ -33,15 +33,43 @@ export default async function NetworkVisualizerPage() {
     console.error("Error fetching network users:", usersError)
   }
 
+  // Fetch real-time network counts via RPC
+  const userIds = (networkUsers || []).map(u => u.id)
+  let countsMap: Record<string, { total_network_count: number; active_network_count: number }> = {}
+
+  if (userIds.length > 0) {
+    const { data: countsData, error: countsError } = await supabase.rpc("get_bulk_network_counts", {
+      p_user_ids: userIds,
+    })
+
+    if (countsError) {
+      console.error("Error fetching network counts:", countsError)
+    } else if (countsData) {
+      for (const row of countsData) {
+        countsMap[row.user_id] = {
+          total_network_count: row.total_network_count ?? 0,
+          active_network_count: row.active_network_count ?? 0,
+        }
+      }
+    }
+  }
+
+  // Merge counts into user objects
+  const usersWithCounts = (networkUsers || []).map(user => ({
+    ...user,
+    total_network_count: countsMap[user.id]?.total_network_count ?? 0,
+    active_network_count: countsMap[user.id]?.active_network_count ?? 0,
+  }))
+
   // Group users by level
-  const usersByLevel = (networkUsers || []).reduce((acc, user) => {
+  const usersByLevel = usersWithCounts.reduce((acc, user) => {
     const level = user.network_level || 0
     if (!acc[level]) {
       acc[level] = []
     }
     acc[level].push(user)
     return acc
-  }, {} as Record<number, NonNullable<typeof networkUsers>>)
+  }, {} as Record<number, typeof usersWithCounts>)
 
   return (
     <div className="max-w-full">
@@ -52,7 +80,7 @@ export default async function NetworkVisualizerPage() {
 
       <NetworkVisualizerClient
         usersByLevel={usersByLevel}
-        totalUsers={networkUsers?.length || 0}
+        totalUsers={usersWithCounts.length}
       />
     </div>
   )

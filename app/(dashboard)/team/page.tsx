@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { StructureDropdown } from "@/components/team/structure-dropdown"
+import { MemberInsights } from "@/components/team/member-insights"
 import {
   Users,
   UserPlus,
@@ -137,17 +138,33 @@ export default function TeamPage() {
       const treeChildrenData = await treeChildrenResponse.json()
       setTreeChildren(treeChildrenData.treeChildren || [])
 
-      // Get all direct referrals with detailed stats
+      // Get all direct referrals
       const { data: directRefs } = await supabase
         .from("users")
-        .select("id, name, email, network_position_id, network_level, is_active, created_at, direct_referrals_count, active_direct_referrals_count, active_network_count, total_network_count")
+        .select("id, name, email, network_position_id, network_level, is_active, created_at")
         .eq("referred_by", userId)
+
+      // Get real-time counts for all direct referrals
+      interface NetworkCounts {
+        user_id: string
+        total_network_count: number
+        active_network_count: number
+        direct_referrals_count: number
+        active_direct_referrals_count: number
+      }
+      const directRefIds = directRefs?.map(d => d.id) || []
+      const { data: directRefCounts } = directRefIds.length > 0
+        ? await supabase.rpc("get_bulk_network_counts", { p_user_ids: directRefIds })
+        : { data: [] }
+      const directRefCountsMap = new Map<string, NetworkCounts>(
+        ((directRefCounts || []) as NetworkCounts[]).map(c => [c.user_id, c])
+      )
 
       // Get full user details for all downline members
       const downlineIds = downlineMembers?.map((m: { contributor_id: string }) => m.contributor_id) || []
       const { data: fullUserData } = await supabase
         .from("users")
-        .select("id, name, email, created_at, is_active, direct_referrals_count, active_network_count, network_level")
+        .select("id, name, email, created_at, is_active, network_level")
         .in("id", downlineIds)
         .limit(10000)
 
@@ -164,6 +181,7 @@ export default function TeamPage() {
         const userData = userDataMap.get(m.contributor_id)
         const isDirectReferral = directRefs?.some(d => d.id === m.contributor_id) || false
 
+        const memberCounts = directRefCountsMap.get(m.contributor_id)
         return {
           id: m.contributor_id,
           name: m.contributor_name || "Unknown",
@@ -173,28 +191,31 @@ export default function TeamPage() {
           created_at: userData?.created_at || new Date().toISOString(),
           subscription_status: m.is_active ? "active" : "inactive",
           is_direct_referral: isDirectReferral,
-          referrals_count: userData?.direct_referrals_count || 0,
-          active_network_count: userData?.active_network_count || 0
+          referrals_count: Number(memberCounts?.direct_referrals_count || 0),
+          active_network_count: Number(memberCounts?.active_network_count || 0)
         }
       }) || []
 
-      // Separate direct referrals with full stats
-      const directs = directRefs?.map(d => ({
-        id: d.id,
-        name: d.name || "Unknown",
-        email: d.email,
-        network_position_id: d.network_position_id || "",
-        network_level: d.network_level || 0,
-        level: 1,
-        created_at: d.created_at,
-        subscription_status: d.is_active ? "active" : "inactive",
-        is_direct_referral: true,
-        is_active: d.is_active,
-        referrals_count: d.direct_referrals_count || 0,
-        active_direct_referrals_count: d.active_direct_referrals_count || 0,
-        active_network_count: d.active_network_count || 0,
-        total_network_count: d.total_network_count || 0
-      })) || []
+      // Separate direct referrals with real-time stats
+      const directs = directRefs?.map(d => {
+        const counts = directRefCountsMap.get(d.id)
+        return {
+          id: d.id,
+          name: d.name || "Unknown",
+          email: d.email,
+          network_position_id: d.network_position_id || "",
+          network_level: d.network_level || 0,
+          level: 1,
+          created_at: d.created_at,
+          subscription_status: d.is_active ? "active" : "inactive",
+          is_direct_referral: true,
+          is_active: d.is_active,
+          referrals_count: Number(counts?.direct_referrals_count || 0),
+          active_direct_referrals_count: Number(counts?.active_direct_referrals_count || 0),
+          active_network_count: Number(counts?.active_network_count || 0),
+          total_network_count: Number(counts?.total_network_count || 0)
+        }
+      }) || []
 
       setDirectReferrals(directs)
       setTeamMembers(formattedMembers)
@@ -588,6 +609,9 @@ export default function TeamPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Member Insights Section */}
+      {userId && <MemberInsights userId={userId} />}
 
       {/* Current Structure + Structure Overview side by side */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
