@@ -53,6 +53,7 @@ export default async function NetworkVisualizerPage() {
       <NetworkVisualizerClient
         usersByLevel={usersByLevel}
         totalUsers={networkUsers?.length || 0}
+        viewerRole={userData?.role ?? null}
       />
     </div>
   )
