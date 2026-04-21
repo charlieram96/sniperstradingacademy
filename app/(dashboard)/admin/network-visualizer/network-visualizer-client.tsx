@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Search, ChevronDown, ChevronRight, Users as UsersIcon, Network, GitBranch, Trash2, AlertTriangle } from "lucide-react"
+import { Search, ChevronDown, ChevronRight, Users as UsersIcon, Network, GitBranch, Trash2, AlertTriangle, ArrowLeftRight } from "lucide-react"
+import { ReassignPositionDialog } from "@/components/admin/reassign-position-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   AlertDialog,
@@ -54,9 +55,10 @@ interface ChildPosition {
 interface NetworkVisualizerClientProps {
   usersByLevel: Record<number, NetworkUser[]>
   totalUsers: number
+  viewerRole: string | null
 }
 
-export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVisualizerClientProps) {
+export function NetworkVisualizerClient({ usersByLevel, totalUsers, viewerRole }: NetworkVisualizerClientProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [expandedLevels, setExpandedLevels] = useState<Set<number>>(new Set([0]))
   const [selectedUser, setSelectedUser] = useState<NetworkUser | null>(null)
@@ -70,6 +72,10 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
   const [deleting, setDeleting] = useState(false)
   const [blockingUsers, setBlockingUsers] = useState<NetworkUser[]>([])
   const [showBlockingUsersDialog, setShowBlockingUsersDialog] = useState(false)
+
+  // Reassign functionality
+  const [showReassignDialog, setShowReassignDialog] = useState(false)
+  const canReassign = viewerRole === "superadmin+"
 
   const { toast } = useToast()
 
@@ -507,8 +513,31 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
                 )}
               </div>
 
-              {/* Delete User Button */}
-              <div className="pt-4 border-t">
+              {/* Admin actions */}
+              <div className="pt-4 border-t space-y-3">
+                {canReassign && (() => {
+                  const hasDownline = (selectedUser.total_network_count ?? 0) > 0
+                  return (
+                    <div>
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowReassignDialog(true)}
+                        className="w-full"
+                        disabled={hasDownline}
+                        title={hasDownline ? "User has downline — cannot reassign" : undefined}
+                      >
+                        <ArrowLeftRight className="h-4 w-4 mr-2" />
+                        Reassign Position
+                      </Button>
+                      <p className="text-xs text-muted-foreground text-center mt-2">
+                        {hasDownline
+                          ? "Disabled: user has downline members."
+                          : "Moves this user to a new parent + slot. Changes are atomic and audited."}
+                      </p>
+                    </div>
+                  )
+                })()}
+
                 <Button
                   variant="destructive"
                   onClick={handleDeleteClick}
@@ -590,6 +619,29 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers }: NetworkVis
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Reassign Position Dialog */}
+      {selectedUser && (
+        <ReassignPositionDialog
+          open={showReassignDialog}
+          onOpenChange={setShowReassignDialog}
+          targetUser={{
+            id: selectedUser.id,
+            name: selectedUser.name,
+            email: selectedUser.email,
+            network_position_id: selectedUser.network_position_id,
+            network_level: selectedUser.network_level,
+            network_position: selectedUser.network_position,
+            tree_parent_network_position_id: selectedUser.tree_parent_network_position_id,
+            referred_by: selectedUser.referred_by,
+            referrer: selectedUser.referrer,
+          }}
+          onSuccess={() => {
+            closeDialog()
+            window.location.reload()
+          }}
+        />
+      )}
 
       {/* Blocking Users Dialog */}
       <AlertDialog open={showBlockingUsersDialog} onOpenChange={setShowBlockingUsersDialog}>

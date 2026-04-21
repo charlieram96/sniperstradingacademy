@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     // Search users by name or email
     const { data: users, error: searchError } = await supabase
       .from("users")
-      .select("id, name, email")
+      .select("id, name, email, network_position_id, network_level, network_position")
       .or(`name.ilike.%${query}%,email.ilike.%${query}%`)
       .limit(20)
 
