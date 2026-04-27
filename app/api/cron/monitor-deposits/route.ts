@@ -184,11 +184,11 @@ async function checkUserDeposit(
     expectedAmountUsdc = parseFloat(PAYMENT_AMOUNTS.INITIAL_UNLOCK);
   } else {
     paymentType = 'subscription';
-    // We'll detect the schedule based on total paid this period later
-    // For now, use user's existing schedule to determine expected amount
-    const isWeekly = user.payment_schedule === 'weekly';
-    expectedAmountUsdc = isWeekly ? weeklyAmount : monthlyAmount;
-    detectedSchedule = isWeekly ? 'weekly' : 'monthly';
+    // Subscriptions accept either weekly or monthly. Use weekly as the
+    // "is the period covered" threshold; the actual schedule is detected
+    // from the deposit amount once we know the period is paid.
+    expectedAmountUsdc = weeklyAmount;
+    detectedSchedule = 'weekly';
   }
 
   // PERIOD-BASED LOGIC: Sum transactions since last successful payment
@@ -221,9 +221,11 @@ async function checkUserDeposit(
 
   // SAFETY CHECK: If unlinked deposits vastly exceed expected amount, they're likely
   // from a previous payment type (e.g. $499 initial being re-detected as $199 monthly).
-  // Skip and log a warning so admin can investigate.
-  if (paymentType !== 'initial_unlock' && paidThisPeriod > expectedAmountUsdc * 2) {
-    console.warn(`[MonitorDeposits] ANOMALY: User ${user.email} has ${paidThisPeriod.toFixed(2)} in unlinked deposits but only needs ${expectedAmountUsdc}. Likely stale unlinked transactions from a previous payment. Skipping to prevent ghost payment.`);
+  // For subscriptions, cap against the largest legit single-period payment (monthly)
+  // so a $199 monthly deposit isn't flagged when the threshold is the weekly amount.
+  const anomalyCap = paymentType === 'subscription' ? monthlyAmount * 2 : expectedAmountUsdc * 2;
+  if (paymentType !== 'initial_unlock' && paidThisPeriod > anomalyCap) {
+    console.warn(`[MonitorDeposits] ANOMALY: User ${user.email} has ${paidThisPeriod.toFixed(2)} in unlinked deposits but cap is ${anomalyCap}. Likely stale unlinked transactions from a previous payment. Skipping to prevent ghost payment.`);
     await supabase.from('crypto_audit_log').insert({
       event_type: 'deposit_anomaly_skipped',
       user_id: user.id,
@@ -233,9 +235,10 @@ async function checkUserDeposit(
         source: 'monitor_cron',
         deposit_address: depositAddress,
         expected_usdc: expectedAmountUsdc,
+        anomaly_cap: anomalyCap,
         paid_this_period: paidThisPeriod,
         payment_type: paymentType,
-        reason: 'Unlinked deposits exceed 2x expected amount - possible stale transactions',
+        reason: 'Unlinked deposits exceed anomaly cap - possible stale transactions',
       },
     });
     return;
@@ -496,20 +499,12 @@ async function processInitialUnlock(
     throw new Error(`Failed to assign network position: ${positionError.message}`);
   }
 
-  // Get user's payment schedule preference (default to monthly)
-  const { data: userData } = await supabase
-    .from('users')
-    .select('payment_schedule')
-    .eq('id', userId)
-    .single();
-
-  const isWeekly = userData?.payment_schedule === 'weekly';
   const now = new Date();
 
-  // Get anchor date with day capped at 28 (e.g., Jan 31 → Jan 28)
+  // Initial unlock always grants a 30-day cycle. Per-payment schedule
+  // (weekly vs monthly) is chosen at each subscription payment.
   const anchorDate = getInitialAnchorDate(now);
-  // Next due date is one period from the anchor
-  const nextDueDate = calculateNextDueDate(isWeekly, anchorDate);
+  const nextDueDate = calculateNextDueDate(false, anchorDate);
 
   // Update user membership with initial due dates
   const { error: userUpdateError } = await supabase
