@@ -82,95 +82,69 @@ export async function GET(req: NextRequest) {
 
     console.log(`[CheckPaymentReviews] Window: ${windowStart.toISOString()} to ${now.toISOString()}`);
 
-    // Single aggregate query to get payment counts per user
-    const { data: users, error: queryError } = await supabase.rpc('get_payment_review_data', {
-      p_window_start: windowStart.toISOString(),
-    });
+    // Coverage is per-payment: each weekly payment covers 1 week, each monthly covers 4.
+    // We can't rely on a per-user schedule, so we count by payment_type.
+    const { data: usersData, error: usersError } = await supabase
+      .from('users')
+      .select('id, email, payment_schedule, flagged_for_review, network_position_id')
+      .eq('initial_payment_completed', true)
+      .not('role', 'in', '("superadmin","superadmin+")');
 
-    // If RPC doesn't exist, fall back to raw query
-    let userData: Array<{
-      id: string;
-      email: string;
-      payment_schedule: string | null;
-      flagged_for_review: boolean;
-      network_position_id: string | null;
-      payment_count: number;
-    }>;
-
-    if (queryError || !users) {
-      // Fallback: use direct queries
-      console.log('[CheckPaymentReviews] Using direct query fallback');
-
-      const { data: usersData, error: usersError } = await supabase
-        .from('users')
-        .select('id, email, payment_schedule, flagged_for_review, network_position_id')
-        .eq('initial_payment_completed', true)
-        .not('role', 'in', '("superadmin","superadmin+")');
-
-      if (usersError) {
-        console.error('[CheckPaymentReviews] Users query error:', usersError);
-        return NextResponse.json({
-          success: false,
-          error: 'Failed to query users',
-          details: usersError.message,
-        }, { status: 500 });
-      }
-
-      if (!usersData || usersData.length === 0) {
-        console.log('[CheckPaymentReviews] No users to check');
-        return NextResponse.json({
-          success: true,
-          message: 'No users to check',
-          stats: { checked: 0, flagged: 0, duration: Date.now() - startTime },
-        });
-      }
-
-      // Filter out bypassed users in code
-      const eligibleUsers = usersData.filter(u => {
-        // We can't filter bypass_subscription with .or() easily, do it here
-        return true;
-      });
-
-      // Get payment counts for all eligible users
-      const { data: paymentCounts, error: paymentsError } = await supabase
-        .from('payments')
-        .select('user_id, id')
-        .eq('status', 'succeeded')
-        .in('payment_type', ['weekly', 'monthly'])
-        .gte('created_at', windowStart.toISOString());
-
-      if (paymentsError) {
-        console.error('[CheckPaymentReviews] Payments query error:', paymentsError);
-        return NextResponse.json({
-          success: false,
-          error: 'Failed to query payments',
-          details: paymentsError.message,
-        }, { status: 500 });
-      }
-
-      // Build payment count map
-      const paymentCountMap = new Map<string, number>();
-      for (const p of paymentCounts || []) {
-        paymentCountMap.set(p.user_id, (paymentCountMap.get(p.user_id) || 0) + 1);
-      }
-
-      // Also check bypass_subscription
-      const { data: bypassUsers } = await supabase
-        .from('users')
-        .select('id')
-        .eq('bypass_subscription', true);
-
-      const bypassSet = new Set((bypassUsers || []).map(u => u.id));
-
-      userData = eligibleUsers
-        .filter(u => !bypassSet.has(u.id))
-        .map(u => ({
-          ...u,
-          payment_count: paymentCountMap.get(u.id) || 0,
-        }));
-    } else {
-      userData = users;
+    if (usersError) {
+      console.error('[CheckPaymentReviews] Users query error:', usersError);
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to query users',
+        details: usersError.message,
+      }, { status: 500 });
     }
+
+    if (!usersData || usersData.length === 0) {
+      console.log('[CheckPaymentReviews] No users to check');
+      return NextResponse.json({
+        success: true,
+        message: 'No users to check',
+        stats: { checked: 0, flagged: 0, duration: Date.now() - startTime },
+      });
+    }
+
+    const { data: paymentRows, error: paymentsError } = await supabase
+      .from('payments')
+      .select('user_id, payment_type')
+      .eq('status', 'succeeded')
+      .in('payment_type', ['weekly', 'monthly'])
+      .gte('created_at', windowStart.toISOString());
+
+    if (paymentsError) {
+      console.error('[CheckPaymentReviews] Payments query error:', paymentsError);
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to query payments',
+        details: paymentsError.message,
+      }, { status: 500 });
+    }
+
+    const weeklyCountMap = new Map<string, number>();
+    const monthlyCountMap = new Map<string, number>();
+    for (const p of paymentRows || []) {
+      const target = p.payment_type === 'weekly' ? weeklyCountMap : monthlyCountMap;
+      target.set(p.user_id, (target.get(p.user_id) || 0) + 1);
+    }
+
+    const { data: bypassUsers } = await supabase
+      .from('users')
+      .select('id')
+      .eq('bypass_subscription', true);
+
+    const bypassSet = new Set((bypassUsers || []).map(u => u.id));
+
+    const userData = usersData
+      .filter(u => !bypassSet.has(u.id))
+      .map(u => ({
+        ...u,
+        weekly_count: weeklyCountMap.get(u.id) || 0,
+        monthly_count: monthlyCountMap.get(u.id) || 0,
+      }));
 
     console.log(`[CheckPaymentReviews] Checking ${userData.length} users...`);
 
@@ -178,18 +152,10 @@ export async function GET(req: NextRequest) {
     const flaggedUsers: Array<{ userId: string; email: string; missedWeeks: number }> = [];
 
     for (const user of userData) {
-      const schedule = user.payment_schedule || 'monthly';
-      let missedWeeks: number;
-
-      if (schedule === 'weekly') {
-        missedWeeks = Math.max(0, 26 - user.payment_count);
-      } else {
-        // monthly: each payment covers 4 weeks
-        missedWeeks = Math.max(0, 26 - (user.payment_count * 4));
-      }
+      const coverageWeeks = user.weekly_count + user.monthly_count * 4;
+      const missedWeeks = Math.max(0, 26 - coverageWeeks);
 
       if (missedWeeks >= MISSED_WEEKS_THRESHOLD && !user.flagged_for_review) {
-        // Flag this user
         const { error: updateError } = await supabase
           .from('users')
           .update({
@@ -203,7 +169,6 @@ export async function GET(req: NextRequest) {
           continue;
         }
 
-        // Log flagging event
         await supabase.from('crypto_audit_log').insert({
           event_type: 'account_flagged_for_review',
           user_id: user.id,
@@ -211,8 +176,9 @@ export async function GET(req: NextRequest) {
           entity_id: user.id,
           details: {
             missed_weeks: missedWeeks,
-            payment_count: user.payment_count,
-            payment_schedule: schedule,
+            weekly_payment_count: user.weekly_count,
+            monthly_payment_count: user.monthly_count,
+            coverage_weeks: coverageWeeks,
             window_start: windowStart.toISOString(),
             window_end: now.toISOString(),
           },
@@ -225,7 +191,7 @@ export async function GET(req: NextRequest) {
           missedWeeks,
         });
 
-        console.log(`[CheckPaymentReviews] Flagged user ${user.email} (${missedWeeks} missed weeks, schedule: ${schedule})`);
+        console.log(`[CheckPaymentReviews] Flagged user ${user.email} (${missedWeeks} missed weeks, weekly: ${user.weekly_count}, monthly: ${user.monthly_count})`);
       }
     }
 

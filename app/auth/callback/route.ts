@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 import { NextRequest } from "next/server"
+import { getOrCreateUserDepositAddress } from "@/lib/treasury/treasury-service"
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
@@ -63,6 +64,13 @@ export async function GET(request: NextRequest) {
         const completeUrl1 = ref ? `/complete-signup?ref=${encodeURIComponent(ref)}` : '/complete-signup'
         return NextResponse.redirect(`${requestUrl.origin}${completeUrl1}`)
       }
+
+      // Provision deposit address for the user (idempotent). Doing this at signup
+      // gives Alchemy webhook subscription days to propagate before the first deposit.
+      // Fire-and-forget — failures are logged inside and shouldn't block auth.
+      void getOrCreateUserDepositAddress(session.user.id).catch((err) => {
+        console.error(`[AuthCallback] Deposit-address provisioning failed for ${session.user.id}:`, err)
+      })
 
       // Root user ID - used as default by database trigger when no referrer specified
       const ROOT_USER_ID = 'b10f0367-0471-4eab-9d15-db68b1ac4556'
