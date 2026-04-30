@@ -217,7 +217,15 @@ function RegisterForm() {
       })
 
       if (authError) {
-        setError(authError.message)
+        const raw = authError.message?.toLowerCase() ?? ""
+        let friendly = authError.message
+        if (raw.includes("rate limit") || authError.status === 429) {
+          friendly = "We're sending too many emails right now. Please wait a minute and try again."
+        } else if (raw.includes("already registered") || raw.includes("user already")) {
+          friendly = "An account with this email already exists. Try signing in instead."
+        }
+        setError(friendly)
+        setIsLoading(false)
         return
       }
 
