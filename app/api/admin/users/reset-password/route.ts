@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
     const emailResult = await sendEmail({
       to: targetUser.email,
       subject: "Your password has been reset by an administrator",
-      html: buildTempPasswordEmailHtml({ triggeredBy }),
+      html: buildTempPasswordEmailHtml({ triggeredBy, tempPassword }),
     })
 
     if (!emailResult.success) {
@@ -229,18 +229,28 @@ function buildSendLinkEmailHtml({
   `
 }
 
-function buildTempPasswordEmailHtml({ triggeredBy }: { triggeredBy: string }): string {
+function buildTempPasswordEmailHtml({
+  triggeredBy,
+  tempPassword,
+}: {
+  triggeredBy: string
+  tempPassword: string
+}): string {
   return `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #111827;">
       <h1 style="font-size: 22px; font-weight: 700; margin: 0 0 16px;">Your password has been reset</h1>
       <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">
         ${escapeHtml(triggeredBy)} reset your Snipers Trading Academy password and assigned a temporary one.
       </p>
+      <p style="font-size: 14px; line-height: 1.6; margin: 0 0 8px; color: #374151;">Your temporary password:</p>
+      <div style="background: #F3F4F6; border: 1px solid #E5E7EB; border-radius: 8px; padding: 14px 16px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 16px; font-weight: 600; letter-spacing: 0.5px; word-break: break-all; margin: 0 0 20px;">
+        ${escapeHtml(tempPassword)}
+      </div>
       <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">
-        For your security, the temporary password is <strong>not included in this email</strong>. Please contact your administrator to receive it.
+        Use this password to log in. You will be required to choose a new password before you can continue.
       </p>
-      <p style="font-size: 15px; line-height: 1.6; margin: 0 0 24px;">
-        When you next log in, you'll be required to choose a new password before continuing.
+      <p style="font-size: 13px; line-height: 1.6; color: #b45309; background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 8px; padding: 10px 12px; margin: 0 0 24px;">
+        <strong>Security tip:</strong> for your protection, log in and change this password as soon as possible. Do not share it with anyone, and delete this email after you've reset your password.
       </p>
       <p style="font-size: 13px; line-height: 1.6; color: #6b7280; margin: 0;">
         If you weren't expecting this, please contact support immediately.
