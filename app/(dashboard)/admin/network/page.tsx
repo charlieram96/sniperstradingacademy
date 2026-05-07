@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Network, Search, Shield, ShieldCheck, Users, CheckCircle2, XCircle, AlertTriangle, Crown, Sparkles, Trash2, UserPlus, Loader2, Power, DollarSign, CreditCard, Copy, UserCheck } from "lucide-react"
+import { Network, Search, Shield, ShieldCheck, Users, CheckCircle2, XCircle, AlertTriangle, Crown, Sparkles, Trash2, UserPlus, Loader2, Power, DollarSign, CreditCard, Copy, UserCheck, KeyRound } from "lucide-react"
+import { ResetPasswordDialog } from "@/components/admin/reset-password-dialog"
 import QRCode from "qrcode"
 import { formatCurrency } from "@/lib/utils"
 import { useTranslation } from "@/components/language-provider"
@@ -68,6 +69,9 @@ export default function AdminNetworkPage() {
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [isSuperAdminPlus, setIsSuperAdminPlus] = useState(false)
+  const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false)
+  const [targetHasPasswordLogin, setTargetHasPasswordLogin] = useState<boolean | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState<"all" | "member" | "admin" | "superadmin">("all")
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all")
@@ -205,6 +209,33 @@ export default function AdminNetworkPage() {
   }, [])
 
   useEffect(() => {
+    if (!showUserDetailDialog || !selectedUser || !isSuperAdminPlus) {
+      setTargetHasPasswordLogin(null)
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/admin/users/${selectedUser.id}/auth-info`)
+        if (!cancelled) {
+          if (res.ok) {
+            const data = await res.json()
+            setTargetHasPasswordLogin(!!data.has_password_login)
+          } else {
+            setTargetHasPasswordLogin(false)
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching auth info:", err)
+        if (!cancelled) setTargetHasPasswordLogin(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [showUserDetailDialog, selectedUser, isSuperAdminPlus])
+
+  useEffect(() => {
     filterAndSortUsers()
   }, [filterAndSortUsers])
 
@@ -222,6 +253,7 @@ export default function AdminNetworkPage() {
 
       setIsAdmin(userData?.role === "admin" || userData?.role === "superadmin" || userData?.role === "superadmin+")
       setIsSuperAdmin(userData?.role === "superadmin" || userData?.role === "superadmin+")
+      setIsSuperAdminPlus(userData?.role === "superadmin+")
     }
   }
 
@@ -1326,6 +1358,16 @@ export default function AdminNetworkPage() {
                         <CreditCard className="h-3 w-3 mr-2" />
                         {t("admin.network.makePayment")}
                       </Button>
+                      {isSuperAdminPlus && targetHasPasswordLogin === true && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setShowResetPasswordDialog(true)}
+                        >
+                          <KeyRound className="h-3 w-3 mr-2" />
+                          Reset Password
+                        </Button>
+                      )}
                       {selectedUser.role !== "superadmin" && (
                         <Button
                           size="sm"
@@ -1344,6 +1386,19 @@ export default function AdminNetworkPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Reset Password Dialog */}
+      {selectedUser && (
+        <ResetPasswordDialog
+          open={showResetPasswordDialog}
+          onOpenChange={setShowResetPasswordDialog}
+          targetUser={{
+            id: selectedUser.id,
+            email: selectedUser.email,
+            name: selectedUser.name,
+          }}
+        />
+      )}
 
       {/* Confirmation Dialog */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
