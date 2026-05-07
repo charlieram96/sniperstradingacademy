@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Search, ChevronDown, ChevronRight, Users as UsersIcon, Network, GitBranch, Trash2, AlertTriangle, ArrowLeftRight } from "lucide-react"
+import { Search, ChevronDown, ChevronRight, Users as UsersIcon, Network, GitBranch, Trash2, AlertTriangle, ArrowLeftRight, KeyRound } from "lucide-react"
 import { ReassignPositionDialog } from "@/components/admin/reassign-position-dialog"
+import { ResetPasswordDialog } from "@/components/admin/reset-password-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   AlertDialog,
@@ -77,6 +78,11 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers, viewerRole }
   const [showReassignDialog, setShowReassignDialog] = useState(false)
   const canReassign = viewerRole === "superadmin+"
 
+  // Password reset functionality (superadmin+ only, hidden for OAuth-only users)
+  const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false)
+  const [targetHasPasswordLogin, setTargetHasPasswordLogin] = useState<boolean | null>(null)
+  const canResetPassword = viewerRole === "superadmin+"
+
   const { toast } = useToast()
 
   const levels = Object.keys(usersByLevel).map(Number).sort((a, b) => a - b)
@@ -106,6 +112,7 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers, viewerRole }
     setSelectedUser(user)
     setLoadingChildren(true)
     setChildren(null)
+    setTargetHasPasswordLogin(null)
 
     try {
       const response = await fetch(`/api/admin/network/children?positionId=${user.network_position_id}`)
@@ -118,11 +125,27 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers, viewerRole }
     } finally {
       setLoadingChildren(false)
     }
+
+    if (canResetPassword) {
+      try {
+        const authRes = await fetch(`/api/admin/users/${user.id}/auth-info`)
+        if (authRes.ok) {
+          const data = await authRes.json()
+          setTargetHasPasswordLogin(!!data.has_password_login)
+        } else {
+          setTargetHasPasswordLogin(false)
+        }
+      } catch (error) {
+        console.error("Error fetching auth info:", error)
+        setTargetHasPasswordLogin(false)
+      }
+    }
   }
 
   const closeDialog = () => {
     setSelectedUser(null)
     setChildren(null)
+    setTargetHasPasswordLogin(null)
   }
 
   const handleDeleteClick = () => {
@@ -538,6 +561,22 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers, viewerRole }
                   )
                 })()}
 
+                {canResetPassword && targetHasPasswordLogin === true && (
+                  <div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowResetPasswordDialog(true)}
+                      className="w-full"
+                    >
+                      <KeyRound className="h-4 w-4 mr-2" />
+                      Reset Password
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      Send a recovery email or set a temporary password (forced change on next login).
+                    </p>
+                  </div>
+                )}
+
                 <Button
                   variant="destructive"
                   onClick={handleDeleteClick}
@@ -639,6 +678,19 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers, viewerRole }
           onSuccess={() => {
             closeDialog()
             window.location.reload()
+          }}
+        />
+      )}
+
+      {/* Reset Password Dialog */}
+      {selectedUser && (
+        <ResetPasswordDialog
+          open={showResetPasswordDialog}
+          onOpenChange={setShowResetPasswordDialog}
+          targetUser={{
+            id: selectedUser.id,
+            email: selectedUser.email,
+            name: selectedUser.name,
           }}
         />
       )}
