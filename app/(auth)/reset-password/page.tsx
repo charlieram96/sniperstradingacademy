@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { NavigationLink } from "@/components/navigation-link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,8 +12,10 @@ import { Loader2, Lock, Eye, EyeOff, CheckCircle } from "lucide-react"
 import Image from "next/image"
 import { useTranslation } from "@/components/language-provider"
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const isForced = searchParams.get("force") === "1"
   const { t } = useTranslation()
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -51,6 +53,14 @@ export default function ResetPasswordPage() {
 
       if (error) {
         setError(error.message)
+      } else if (isForced) {
+        // Forced flow: clear the admin-set flag, then go to dashboard
+        try {
+          await fetch("/api/auth/clear-force-flag", { method: "POST" })
+        } catch (clearErr) {
+          console.error("Failed to clear force flag:", clearErr)
+        }
+        router.push("/dashboard")
       } else {
         // Success - redirect to login
         router.push("/login?message=Password reset successfully. Please login with your new password.")
@@ -119,7 +129,9 @@ export default function ResetPasswordPage() {
               </div>
               <CardTitle className="text-3xl font-bold text-center">{t("auth.resetPassword.title")}</CardTitle>
               <CardDescription className="text-base text-center">
-                {t("auth.resetPassword.subtitle")}
+                {isForced
+                  ? "Your administrator reset your password. Please choose a new one to continue."
+                  : t("auth.resetPassword.subtitle")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -216,17 +228,31 @@ export default function ResetPasswordPage() {
                 </Button>
               </form>
             </CardContent>
-            <CardFooter className="flex-col space-y-4">
-              <p className="text-sm text-center w-full text-muted-foreground">
-                {t("auth.resetPassword.rememberPassword")}{" "}
-                <NavigationLink href="/login" className="font-semibold text-primary hover:underline">
-                  {t("auth.resetPassword.signIn")}
-                </NavigationLink>
-              </p>
-            </CardFooter>
+            {!isForced && (
+              <CardFooter className="flex-col space-y-4">
+                <p className="text-sm text-center w-full text-muted-foreground">
+                  {t("auth.resetPassword.rememberPassword")}{" "}
+                  <NavigationLink href="/login" className="font-semibold text-primary hover:underline">
+                    {t("auth.resetPassword.signIn")}
+                  </NavigationLink>
+                </p>
+              </CardFooter>
+            )}
           </Card>
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    }>
+      <ResetPasswordContent />
+    </Suspense>
   )
 }

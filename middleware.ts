@@ -61,12 +61,20 @@ export async function middleware(req: NextRequest) {
   }
 
   // Check if user is active (paid initial fee, has bypass, AND is_active=true)
+  // and whether an admin has flagged them for a forced password change.
   if (isLoggedIn && isDashboard && !isMFAPage) {
     const { data: userData } = await supabase
       .from("users")
-      .select("initial_payment_completed, bypass_initial_payment, bypass_subscription, is_active, role")
+      .select("initial_payment_completed, bypass_initial_payment, bypass_subscription, is_active, role, force_password_change")
       .eq("id", user.id)
       .single()
+
+    // Admin-driven forced password change takes precedence over the activation gate
+    if (userData?.force_password_change && !req.nextUrl.pathname.startsWith("/reset-password")) {
+      const url = new URL("/reset-password", req.url)
+      url.searchParams.set("force", "1")
+      return NextResponse.redirect(url)
+    }
 
     // User is active if:
     // 1. Has completed initial payment OR has bypass_initial_payment
