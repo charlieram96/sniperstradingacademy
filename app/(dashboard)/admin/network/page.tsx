@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Network, Search, Shield, ShieldCheck, Users, CheckCircle2, XCircle, AlertTriangle, Crown, Sparkles, Trash2, UserPlus, Loader2, Power, DollarSign, CreditCard, Copy, UserCheck, KeyRound } from "lucide-react"
+import { Network, Search, Shield, ShieldCheck, Users, CheckCircle2, XCircle, AlertTriangle, Crown, Sparkles, Trash2, UserPlus, Loader2, Power, DollarSign, CreditCard, Copy, UserCheck, KeyRound, CalendarClock } from "lucide-react"
 import { ResetPasswordDialog } from "@/components/admin/reset-password-dialog"
+import { SkipPaymentDialog } from "@/components/admin/skip-payment-dialog"
 import QRCode from "qrcode"
 import { formatCurrency } from "@/lib/utils"
 import { useTranslation } from "@/components/language-provider"
@@ -45,6 +46,7 @@ interface NetworkUser {
   monthly_commission: number // Calculated: sniper_volume_current_month × current_commission_rate
   created_at: string
   last_payment_date: string | null
+  next_payment_due_date: string | null
   payment_schedule: "weekly" | "monthly"
   referral_code: string | null
   premium_bypass: boolean
@@ -71,6 +73,7 @@ export default function AdminNetworkPage() {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [isSuperAdminPlus, setIsSuperAdminPlus] = useState(false)
   const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false)
+  const [showSkipPaymentDialog, setShowSkipPaymentDialog] = useState(false)
   const [targetHasPasswordLogin, setTargetHasPasswordLogin] = useState<boolean | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState<"all" | "member" | "admin" | "superadmin">("all")
@@ -276,6 +279,7 @@ export default function AdminNetworkPage() {
         sniper_volume_current_month,
         created_at,
         last_payment_date,
+        next_payment_due_date,
         payment_schedule,
         referral_code,
         premium_bypass,
@@ -1302,6 +1306,14 @@ export default function AdminNetworkPage() {
                           : t("admin.financials.never")}
                       </p>
                     </div>
+                    <div>
+                      <p className="text-muted-foreground">Next Payment Due</p>
+                      <p className="font-medium">
+                        {selectedUser.next_payment_due_date
+                          ? new Date(selectedUser.next_payment_due_date).toLocaleDateString()
+                          : "—"}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -1358,6 +1370,16 @@ export default function AdminNetworkPage() {
                         <CreditCard className="h-3 w-3 mr-2" />
                         {t("admin.network.makePayment")}
                       </Button>
+                      {isSuperAdminPlus && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setShowSkipPaymentDialog(true)}
+                        >
+                          <CalendarClock className="h-3 w-3 mr-2" />
+                          Skip Payment
+                        </Button>
+                      )}
                       {isSuperAdminPlus && targetHasPasswordLogin === true && (
                         <Button
                           size="sm"
@@ -1396,6 +1418,32 @@ export default function AdminNetworkPage() {
             id: selectedUser.id,
             email: selectedUser.email,
             name: selectedUser.name,
+          }}
+        />
+      )}
+
+      {/* Skip Payment Dialog */}
+      {selectedUser && (
+        <SkipPaymentDialog
+          open={showSkipPaymentDialog}
+          onOpenChange={setShowSkipPaymentDialog}
+          targetUser={{
+            id: selectedUser.id,
+            name: selectedUser.name,
+            email: selectedUser.email,
+            next_payment_due_date: selectedUser.next_payment_due_date,
+            payment_schedule: selectedUser.payment_schedule,
+          }}
+          onSuccess={() => {
+            fetchAllUsers()
+            setSelectedUser((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    is_active: true,
+                  }
+                : prev
+            )
           }}
         />
       )}
