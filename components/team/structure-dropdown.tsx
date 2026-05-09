@@ -133,7 +133,7 @@ export function StructureDropdown({
               </div>
 
               {/* Members List */}
-              <ScrollArea className="flex-1">
+              <ScrollArea className="flex-1 min-h-0">
                 {filteredMembers.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     No members found matching your filters
