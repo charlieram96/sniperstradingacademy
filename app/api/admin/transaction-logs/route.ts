@@ -62,9 +62,13 @@ export async function GET(req: NextRequest) {
           status,
           payment_type,
           created_at,
+          usdc_transaction_id,
           users (
             name,
             email
+          ),
+          usdc_transaction:usdc_transactions!payments_usdc_transaction_id_fkey (
+            polygon_tx_hash
           )
         `)
         .order('created_at', { ascending: false });
@@ -96,6 +100,7 @@ export async function GET(req: NextRequest) {
         if (paymentsData) {
           for (const p of paymentsData) {
             const userData = Array.isArray(p.users) ? p.users[0] : p.users;
+            const cryptoTx = Array.isArray(p.usdc_transaction) ? p.usdc_transaction[0] : p.usdc_transaction;
             transactions.push({
               id: p.id,
               direction: 'incoming',
@@ -104,7 +109,7 @@ export async function GET(req: NextRequest) {
               status: p.status === 'succeeded' ? 'completed' : p.status,
               userName: userData?.name || null,
               userEmail: userData?.email || '',
-              txHash: null,
+              txHash: cryptoTx?.polygon_tx_hash || null,
               createdAt: p.created_at,
               paidAt: null,
             });
@@ -134,6 +139,7 @@ export async function GET(req: NextRequest) {
             )
           `)
           .eq('transaction_type', 'deposit')
+          .is('related_payment_id', null)
           .order('created_at', { ascending: false });
 
         // Apply status filter for crypto transactions
