@@ -50,13 +50,31 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
+    let confirmed = 0;
+    let pending = 0;
+    let failed = 0;
+    let totalSweptUsdc = 0;
+
     if (!users || users.length === 0) {
       console.log('[SweepVerify] No transactions to verify');
+      const duration = Date.now() - startTime;
+      await supabase.from('crypto_audit_log').insert({
+        event_type: 'sweep_verify_completed',
+        entity_type: 'treasury',
+        details: {
+          transactions_checked: 0,
+          confirmed: 0,
+          pending: 0,
+          failed: 0,
+          total_swept_usdc: 0,
+          duration_ms: duration,
+        },
+      });
       return NextResponse.json({
         success: true,
         message: 'No transactions to verify',
         stats: { verified: 0 },
-        duration: Date.now() - startTime,
+        duration,
       });
     }
 
@@ -66,66 +84,47 @@ export async function GET(req: NextRequest) {
     const rpcUrl = process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com';
     const provider = new ethers.JsonRpcProvider(rpcUrl);
 
-    let confirmed = 0;
-    let pending = 0;
-    let failed = 0;
-    let totalSweptUsdc = 0;
-
     for (const user of users) {
       try {
-        // Get transaction receipt
-        const receipt = await provider.getTransactionReceipt(user.sweep_tx);
+        // sweep_tx may hold a comma-joined list (multi-token sweeps: native USDC + bridged USDC.e).
+        const hashes = (user.sweep_tx as string).split(',').map((h) => h.trim()).filter(Boolean);
 
-        if (receipt === null) {
-          // Transaction still pending
+        const receipts = await Promise.all(
+          hashes.map((h) => provider.getTransactionReceipt(h).catch(() => null))
+        );
+
+        let anyPending = false;
+        let anyReverted = false;
+        let firstRevertHash: string | null = null;
+        let lastConfirmedReceipt: ethers.TransactionReceipt | null = null;
+
+        for (let i = 0; i < receipts.length; i++) {
+          const receipt = receipts[i];
+          if (receipt === null) {
+            anyPending = true;
+          } else if (receipt.status === 1) {
+            lastConfirmedReceipt = receipt;
+          } else {
+            anyReverted = true;
+            firstRevertHash = firstRevertHash ?? hashes[i];
+          }
+        }
+
+        if (anyPending) {
           pending++;
-          console.log(`[SweepVerify] ${user.email}: tx ${user.sweep_tx} still pending`);
+          console.log(`[SweepVerify] ${user.email}: at least one tx still pending (${hashes.length} total)`);
           continue;
         }
 
-        if (receipt.status === 1) {
-          // Transaction confirmed successfully
-          console.log(`[SweepVerify] ${user.email}: sweep confirmed, ${user.sweep_usdc_balance} USDC`);
-
-          await supabase
-            .from('users')
-            .update({
-              sweep_status: 'idle',
-              sweep_completed_at: new Date().toISOString(),
-              sweep_error: null,
-            })
-            .eq('id', user.id);
-
-          // Log individual sweep audit event
-          await supabase.from('crypto_audit_log').insert({
-            event_type: 'deposit_swept',
-            user_id: user.id,
-            entity_type: 'user',
-            entity_id: user.id,
-            details: {
-              deposit_address: user.crypto_deposit_address,
-              amount_usdc: user.sweep_usdc_balance,
-              tx_hash: user.sweep_tx,
-              block_number: receipt.blockNumber,
-              gas_used: receipt.gasUsed.toString(),
-            },
-          });
-
-          confirmed++;
-          totalSweptUsdc += parseFloat(user.sweep_usdc_balance || '0');
-        } else {
-          // Transaction failed on-chain
-          console.error(`[SweepVerify] ${user.email}: tx ${user.sweep_tx} failed on-chain`);
-
+        if (anyReverted) {
+          console.error(`[SweepVerify] ${user.email}: tx ${firstRevertHash} reverted on-chain`);
           await supabase
             .from('users')
             .update({
               sweep_status: 'failed',
-              sweep_error: 'Transaction reverted on-chain',
+              sweep_error: `Transaction reverted on-chain: ${firstRevertHash}`,
             })
             .eq('id', user.id);
-
-          // Log failure
           await supabase.from('crypto_audit_log').insert({
             event_type: 'deposit_sweep_failed',
             user_id: user.id,
@@ -133,13 +132,40 @@ export async function GET(req: NextRequest) {
             entity_id: user.id,
             details: {
               deposit_address: user.crypto_deposit_address,
-              tx_hash: user.sweep_tx,
+              tx_hashes: hashes,
+              reverted_tx: firstRevertHash,
               error: 'Transaction reverted',
             },
           });
-
           failed++;
+          continue;
         }
+
+        // All hashes confirmed.
+        console.log(`[SweepVerify] ${user.email}: sweep confirmed, ${user.sweep_usdc_balance} USDC (${hashes.length} tx)`);
+        await supabase
+          .from('users')
+          .update({
+            sweep_status: 'idle',
+            sweep_completed_at: new Date().toISOString(),
+            sweep_error: null,
+          })
+          .eq('id', user.id);
+        await supabase.from('crypto_audit_log').insert({
+          event_type: 'deposit_swept',
+          user_id: user.id,
+          entity_type: 'user',
+          entity_id: user.id,
+          details: {
+            deposit_address: user.crypto_deposit_address,
+            amount_usdc: user.sweep_usdc_balance,
+            tx_hashes: hashes,
+            block_number: lastConfirmedReceipt?.blockNumber ?? null,
+            gas_used: lastConfirmedReceipt?.gasUsed?.toString() ?? null,
+          },
+        });
+        confirmed++;
+        totalSweptUsdc += parseFloat(user.sweep_usdc_balance || '0');
       } catch (err) {
         console.error(`[SweepVerify] Error verifying ${user.email}:`, err);
         // Don't change status - will retry next run
