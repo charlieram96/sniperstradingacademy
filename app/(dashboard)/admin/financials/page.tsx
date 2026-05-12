@@ -237,6 +237,32 @@ export default function AdminFinancialsPage() {
     failed: number
   } | null>(null)
 
+  // Stuck funding transactions (gas-tank mempool queue)
+  type StuckTx = {
+    nonce: number
+    hash: string
+    to: string | null
+    valuePol: string
+    ageSeconds: number | null
+    originalMaxFeeGwei: number
+    currentGasPriceGwei: number
+    needsBump: boolean
+    linkedUserId: string | null
+    linkedUserEmail: string | null
+    linkedUsdcBalance: string | null
+  }
+  const [stuckTxs, setStuckTxs] = useState<{
+    gasTankAddress: string
+    gasTankPolBalance: string
+    confirmedNonce: number
+    pendingNonce: number
+    stuckCount: number
+    currentGasPriceGwei: number
+    stuckTxs: StuckTx[]
+  } | null>(null)
+  const [stuckTxsLoading, setStuckTxsLoading] = useState(false)
+  const [stuckTxAction, setStuckTxAction] = useState<{ nonce: number; status: string } | null>(null)
+
   // Monthly processing state
   const [monthlyStatus, setMonthlyStatus] = useState<MonthlyProcessingStatus | null>(null)
   const [monthlyPreview, setMonthlyPreview] = useState<MonthlyProcessingPreview | null>(null)
@@ -675,13 +701,73 @@ export default function AdminFinancialsPage() {
           }
         })
         setSweepPipelineStats(stats)
+
+        // If any user is stuck in funding_sent, the gas-tank wallet probably has
+        // pending nonces queued in mempool — pull that diagnostic into view.
+        if (stats.funding_sent > 0) {
+          fetchStuckTxs()
+        } else {
+          setStuckTxs(null)
+        }
       }
     } catch (error) {
       console.error("Failed to fetch sweep status:", error)
     } finally {
       setSweepLoading(false)
     }
+  // fetchStuckTxs is a stable useCallback below; intentionally not in deps to avoid forward-reference loops
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Fetch stuck funding transactions (gas-tank wallet's pending mempool queue)
+  const fetchStuckTxs = useCallback(async () => {
+    setStuckTxsLoading(true)
+    try {
+      const response = await fetch("/api/admin/treasury/stuck-txs")
+      const data = await response.json()
+      if (data.success) {
+        setStuckTxs(data)
+      } else {
+        setStuckTxs(null)
+      }
+    } catch (error) {
+      console.error("Failed to fetch stuck txs:", error)
+      setStuckTxs(null)
+    } finally {
+      setStuckTxsLoading(false)
+    }
+  }, [])
+
+  // Replace or cancel a single stuck nonce
+  const replaceStuckTx = async (nonce: number, action: "replace" | "cancel", gasMultiplier = 1.5) => {
+    setStuckTxAction({ nonce, status: action === "cancel" ? "Cancelling" : "Replacing" })
+    try {
+      const response = await fetch("/api/admin/treasury/replace-stuck-tx", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nonce, action, gasMultiplier }),
+      })
+      const data = await response.json()
+      if (!data.success) {
+        console.error("replace-stuck-tx failed:", data.error || data)
+      }
+      await fetchStuckTxs()
+      await fetchSweepStatus()
+    } catch (error) {
+      console.error("Failed to replace stuck tx:", error)
+    } finally {
+      setStuckTxAction(null)
+    }
+  }
+
+  // Bump every stuck nonce at once
+  const bumpAllStuckTxs = async (gasMultiplier = 1.5) => {
+    if (!stuckTxs) return
+    for (const tx of stuckTxs.stuckTxs) {
+      const action = tx.linkedUserId ? "replace" : "cancel"
+      await replaceStuckTx(tx.nonce, action, gasMultiplier)
+    }
+  }
 
   // Execute manual sweep
   const executeSweep = async () => {
@@ -1349,6 +1435,146 @@ export default function AdminFinancialsPage() {
                   <p className="text-xs text-muted-foreground">
                     Total addresses with deposits: {Object.values(sweepPipelineStats).reduce((a, b) => a + b, 0)}
                   </p>
+                </div>
+              )}
+
+              {/* Stuck Funding Transactions - only shown when funding_sent users exist */}
+              {sweepPipelineStats && sweepPipelineStats.funding_sent > 0 && (
+                <div className="border rounded-lg p-4 space-y-3 border-amber-300 bg-amber-50/40">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="text-sm font-semibold flex items-center gap-2 text-amber-700">
+                      <AlertTriangle className="h-4 w-4" />
+                      Stuck Funding Transactions
+                    </h4>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm" onClick={fetchStuckTxs} disabled={stuckTxsLoading}>
+                        <RefreshCw className={`h-4 w-4 ${stuckTxsLoading ? "animate-spin" : ""}`} />
+                      </Button>
+                      {stuckTxs && stuckTxs.stuckCount > 0 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => bumpAllStuckTxs(1.5)}
+                          disabled={stuckTxAction !== null}
+                        >
+                          Bump all (1.5×)
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {stuckTxsLoading && !stuckTxs && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin" /> Loading gas-tank state…
+                    </div>
+                  )}
+
+                  {stuckTxs && (
+                    <>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                        <div className="p-2 bg-white rounded">
+                          <p className="text-muted-foreground">Gas tank</p>
+                          <p className="font-mono text-[10px] break-all">{stuckTxs.gasTankAddress}</p>
+                        </div>
+                        <div className="p-2 bg-white rounded">
+                          <p className="text-muted-foreground">POL balance</p>
+                          <p className="font-semibold">{parseFloat(stuckTxs.gasTankPolBalance).toFixed(4)} POL</p>
+                        </div>
+                        <div className="p-2 bg-white rounded">
+                          <p className="text-muted-foreground">Nonce (confirmed → pending)</p>
+                          <p className="font-semibold">{stuckTxs.confirmedNonce} → {stuckTxs.pendingNonce}</p>
+                        </div>
+                        <div className="p-2 bg-white rounded">
+                          <p className="text-muted-foreground">Current gas price</p>
+                          <p className="font-semibold">{stuckTxs.currentGasPriceGwei.toFixed(1)} gwei</p>
+                        </div>
+                      </div>
+
+                      {stuckTxs.stuckCount === 0 ? (
+                        <p className="text-xs text-muted-foreground italic">
+                          No pending nonces. Funding transactions are clearing the mempool normally.
+                        </p>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="text-xs">Nonce</TableHead>
+                                <TableHead className="text-xs">User</TableHead>
+                                <TableHead className="text-xs">USDC waiting</TableHead>
+                                <TableHead className="text-xs">Age</TableHead>
+                                <TableHead className="text-xs">Original gas</TableHead>
+                                <TableHead className="text-xs">Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {stuckTxs.stuckTxs.map((tx) => {
+                                const isActing = stuckTxAction?.nonce === tx.nonce
+                                const ageLabel = tx.ageSeconds == null
+                                  ? "—"
+                                  : tx.ageSeconds < 3600
+                                    ? `${Math.round(tx.ageSeconds / 60)}m`
+                                    : `${Math.floor(tx.ageSeconds / 3600)}h ${Math.round((tx.ageSeconds % 3600) / 60)}m`
+                                return (
+                                  <TableRow key={tx.nonce}>
+                                    <TableCell className="text-xs font-mono">{tx.nonce}</TableCell>
+                                    <TableCell className="text-xs">
+                                      {tx.linkedUserEmail || <span className="italic text-muted-foreground">unlinked</span>}
+                                    </TableCell>
+                                    <TableCell className="text-xs">
+                                      {tx.linkedUsdcBalance ? `$${parseFloat(tx.linkedUsdcBalance).toFixed(2)}` : "—"}
+                                    </TableCell>
+                                    <TableCell className="text-xs">{ageLabel}</TableCell>
+                                    <TableCell className="text-xs">
+                                      {tx.originalMaxFeeGwei > 0 ? (
+                                        <span className={tx.needsBump ? "text-amber-700 font-semibold" : ""}>
+                                          {tx.originalMaxFeeGwei.toFixed(1)} gwei
+                                        </span>
+                                      ) : (
+                                        "—"
+                                      )}
+                                    </TableCell>
+                                    <TableCell className="text-xs">
+                                      <div className="flex gap-1">
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          disabled={isActing || !tx.linkedUserId}
+                                          onClick={() => replaceStuckTx(tx.nonce, "replace", 1.5)}
+                                        >
+                                          {isActing && stuckTxAction?.status === "Replacing" ? (
+                                            <Loader2 className="h-3 w-3 animate-spin" />
+                                          ) : (
+                                            "Replace 1.5×"
+                                          )}
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          disabled={isActing}
+                                          onClick={() => replaceStuckTx(tx.nonce, "cancel", 1.5)}
+                                        >
+                                          {isActing && stuckTxAction?.status === "Cancelling" ? (
+                                            <Loader2 className="h-3 w-3 animate-spin" />
+                                          ) : (
+                                            "Cancel"
+                                          )}
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                )
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      )}
+
+                      <p className="text-xs text-muted-foreground">
+                        <strong>Replace</strong> re-broadcasts the original POL funding at higher gas (recovers the user). <strong>Cancel</strong> sends a 0-value self-transfer to free a nonce without re-funding (use for non-funding txs in the queue).
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
 

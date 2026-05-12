@@ -82,12 +82,16 @@ export async function GET(req: NextRequest) {
           const usdcResult = await polygonUSDCClient.getBalance(user.crypto_deposit_address);
           const usdcBalance = usdcResult.success ? parseFloat(usdcResult.data?.balance || '0') : 0;
 
-          // Skip if below minimum — but update sweep_completed_at so this user
-          // rotates to the back of the queue and other users get checked next run
+          // Skip if below minimum — update sweep_completed_at so this user rotates
+          // to the back of the queue, and clear any stale sweep_error so the UI
+          // doesn't keep showing "failed" for a user that's now just sitting idle.
           if (usdcBalance < MIN_SWEEP_AMOUNT) {
             await supabase
               .from('users')
-              .update({ sweep_completed_at: new Date().toISOString() })
+              .update({
+                sweep_completed_at: new Date().toISOString(),
+                sweep_error: null,
+              })
               .eq('id', user.id);
             return { userId: user.id, action: 'skip', usdcBalance };
           }

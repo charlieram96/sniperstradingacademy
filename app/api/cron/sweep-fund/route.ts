@@ -14,6 +14,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { ethers } from 'ethers';
+import { computeOutgoingFees } from '@/lib/treasury/gas-config';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -79,10 +80,10 @@ export async function GET(req: NextRequest) {
     // Get current nonce (we'll increment manually for parallel broadcasts)
     let nonce = await provider.getTransactionCount(wallet.address, 'pending');
 
-    // Get gas price once (reuse for all txs)
+    // Get gas price once (reuse for all txs). 1.5x buffer protects against gas
+    // spikes between sign-time and mempool inclusion-time.
     const feeData = await provider.getFeeData();
-    const maxFeePerGas = feeData.maxFeePerGas || ethers.parseUnits('50', 'gwei');
-    const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas || ethers.parseUnits('30', 'gwei');
+    const { maxFeePerGas, maxPriorityFeePerGas } = computeOutgoingFees(feeData);
 
     let funded = 0;
     let failed = 0;
