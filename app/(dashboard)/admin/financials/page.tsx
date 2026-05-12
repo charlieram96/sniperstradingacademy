@@ -719,20 +719,33 @@ export default function AdminFinancialsPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Fetch stuck funding transactions (gas-tank wallet's pending mempool queue)
-  const fetchStuckTxs = useCallback(async () => {
+  // Fetch stuck funding transactions (gas-tank wallet's pending mempool queue).
+  // Returns the fresh data so callers like bumpAllStuckTxs can iterate it directly
+  // without waiting for a React state-update tick.
+  type StuckTxsResponse = {
+    gasTankAddress: string
+    gasTankPolBalance: string
+    confirmedNonce: number
+    pendingNonce: number
+    stuckCount: number
+    currentGasPriceGwei: number
+    stuckTxs: StuckTx[]
+  }
+  const fetchStuckTxs = useCallback(async (): Promise<StuckTxsResponse | null> => {
     setStuckTxsLoading(true)
     try {
       const response = await fetch("/api/admin/treasury/stuck-txs")
       const data = await response.json()
       if (data.success) {
         setStuckTxs(data)
-      } else {
-        setStuckTxs(null)
+        return data as StuckTxsResponse
       }
+      setStuckTxs(null)
+      return null
     } catch (error) {
       console.error("Failed to fetch stuck txs:", error)
       setStuckTxs(null)
+      return null
     } finally {
       setStuckTxsLoading(false)
     }
@@ -748,7 +761,10 @@ export default function AdminFinancialsPage() {
         body: JSON.stringify({ nonce, action, gasMultiplier }),
       })
       const data = await response.json()
-      if (!data.success) {
+      if (data.success && data.skipped) {
+        // Nonce already mined since snapshot was taken — informational, not an error.
+        console.info(`replace-stuck-tx skipped nonce ${nonce}: ${data.reason}`)
+      } else if (!data.success) {
         console.error("replace-stuck-tx failed:", data.error || data)
       }
       await fetchStuckTxs()
@@ -760,10 +776,14 @@ export default function AdminFinancialsPage() {
     }
   }
 
-  // Bump every stuck nonce at once
+  // Bump every stuck nonce at once. Refetches first so we work against the current
+  // chain state (the mempool can drain between render and click), and re-checks each
+  // nonce against confirmedNonce before sending.
   const bumpAllStuckTxs = async (gasMultiplier = 1.5) => {
-    if (!stuckTxs) return
-    for (const tx of stuckTxs.stuckTxs) {
+    const fresh = await fetchStuckTxs()
+    if (!fresh || fresh.stuckTxs.length === 0) return
+    for (const tx of fresh.stuckTxs) {
+      if (tx.nonce < fresh.confirmedNonce) continue
       const action = tx.linkedUserId ? "replace" : "cancel"
       await replaceStuckTx(tx.nonce, action, gasMultiplier)
     }

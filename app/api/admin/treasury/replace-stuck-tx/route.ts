@@ -75,10 +75,15 @@ export async function POST(req: NextRequest) {
 
     const confirmedNonce = await provider.getTransactionCount(wallet.address, 'latest');
     if (nonce < confirmedNonce) {
-      return NextResponse.json(
-        { error: `Nonce ${nonce} is already mined (confirmed nonce is ${confirmedNonce})` },
-        { status: 400 }
-      );
+      // Nothing to do — the nonce already mined since the client snapshot. Return success
+      // so the bulk-bump loop doesn't treat a stale request as a failure.
+      return NextResponse.json({
+        success: true,
+        skipped: true,
+        reason: 'already_mined',
+        nonce,
+        confirmedNonce,
+      });
     }
 
     // Find the original pending tx so we can recover its `to`, `value`, and original fees.
