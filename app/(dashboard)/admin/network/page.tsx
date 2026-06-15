@@ -13,6 +13,7 @@ import { ResetPasswordDialog } from "@/components/admin/reset-password-dialog"
 import { SkipPaymentDialog } from "@/components/admin/skip-payment-dialog"
 import QRCode from "qrcode"
 import { formatCurrency } from "@/lib/utils"
+import { hasPrivilege } from "@/lib/admin/permissions"
 import { useTranslation } from "@/components/language-provider"
 import {
   Select,
@@ -54,10 +55,10 @@ interface NetworkUser {
   bypass_subscription: boolean
   bypass_initial_payment: boolean
   referred_by: string | null
-  referrer: Array<{
+  referrer: {
     name: string | null
     network_position_id: string | null
-  }> | null
+  } | null
   payout_wallet_address: string | null
 }
 
@@ -250,11 +251,11 @@ export default function AdminNetworkPage() {
       setCurrentUserId(user.id)
       const { data: userData } = await supabase
         .from("users")
-        .select("role")
+        .select("role, permissions")
         .eq("id", user.id)
         .single()
 
-      setIsAdmin(userData?.role === "admin" || userData?.role === "superadmin" || userData?.role === "superadmin+")
+      setIsAdmin(hasPrivilege(userData?.role, userData?.permissions, "manage_network"))
       setIsSuperAdmin(userData?.role === "superadmin" || userData?.role === "superadmin+")
       setIsSuperAdminPlus(userData?.role === "superadmin+")
     }
@@ -269,6 +270,7 @@ export default function AdminNetworkPage() {
         name,
         email,
         role,
+        network_position_id,
         is_active,
         initial_payment_completed,
         active_direct_referrals_count,
@@ -287,17 +289,25 @@ export default function AdminNetworkPage() {
         bypass_subscription,
         bypass_initial_payment,
         referred_by,
-        payout_wallet_address,
-        referrer:users!referred_by(name, network_position_id)
+        payout_wallet_address
       `)
       .order("created_at", { ascending: false })
 
     if (!error && data) {
-      // Calculate monthly_commission dynamically
-      const usersWithCommission = data.map(user => ({
-        ...user,
-        monthly_commission: parseFloat(user.sniper_volume_current_month || 0) * parseFloat(user.current_commission_rate || 0)
-      }))
+      // Resolve each user's referrer from their referred_by id. We look it up
+      // against the full user set (this query already fetches every user) rather
+      // than a PostgREST self-FK embed, which resolves the relationship in the
+      // wrong direction (it returns downline, not the actual referrer).
+      const usersById = new Map(data.map(u => [u.id, u]))
+
+      const usersWithCommission = data.map(user => {
+        const ref = user.referred_by ? usersById.get(user.referred_by) : null
+        return {
+          ...user,
+          referrer: ref ? { name: ref.name, network_position_id: ref.network_position_id } : null,
+          monthly_commission: parseFloat(user.sniper_volume_current_month || 0) * parseFloat(user.current_commission_rate || 0)
+        }
+      })
       setUsers(usersWithCommission)
     }
     setLoading(false)
@@ -1163,8 +1173,8 @@ export default function AdminNetworkPage() {
                         <div>
                           <p className="text-muted-foreground">{t("admin.network.referredBy")}</p>
                           <p className="font-medium truncate">
-                            {user.referrer && user.referrer.length > 0 ? (
-                              user.referrer[0].name || t("common.unknown")
+                            {user.referrer ? (
+                              user.referrer.name || t("common.unknown")
                             ) : (
                               <span className="text-muted-foreground">—</span>
                             )}
@@ -1270,12 +1280,12 @@ export default function AdminNetworkPage() {
                     <div>
                       <p className="text-muted-foreground">{t("admin.network.referredBy")}</p>
                       <p className="font-medium">
-                        {selectedUser.referrer && selectedUser.referrer.length > 0 ? (
+                        {selectedUser.referrer ? (
                           <>
-                            {selectedUser.referrer[0].name || t("common.unknown")}
-                            {selectedUser.referrer[0].network_position_id && (
+                            {selectedUser.referrer.name || t("common.unknown")}
+                            {selectedUser.referrer.network_position_id && (
                               <span className="text-xs text-muted-foreground ml-1">
-                                (Pos: {selectedUser.referrer[0].network_position_id})
+                                (Pos: {selectedUser.referrer.network_position_id})
                               </span>
                             )}
                           </>

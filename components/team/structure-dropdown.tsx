@@ -95,8 +95,8 @@ export function StructureDropdown({
 
       {/* Main Structure Modal */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="!max-w-[calc(100vw-2rem)] !w-[calc(100vw-2rem)] h-[90vh] p-0 overflow-hidden bg-background/95 backdrop-blur-xl">
-          <div className="flex flex-col h-full">
+        <DialogContent className="!max-w-[calc(100vw-2rem)] !w-[calc(100vw-2rem)] h-[90vh] p-0 gap-0 overflow-hidden bg-background/95 backdrop-blur-xl flex flex-col">
+          <div className="flex flex-col h-full min-h-0">
             <DialogHeader className="px-6 py-4 border-b">
               <div className="flex items-center gap-4">
                 <div className="flex-1">

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { roleRank } from '@/lib/admin/permissions';
 
 export const runtime = 'nodejs';
 
@@ -20,11 +21,11 @@ export async function POST(req: NextRequest) {
 
     const { data: currentUser } = await supabase
       .from('users')
-      .select('role')
+      .select('role, permissions')
       .eq('id', user.id)
       .single();
 
-    if (!currentUser || !['superadmin', 'superadmin+'].includes(currentUser.role)) {
+    if (!(roleRank(currentUser?.role) >= roleRank('superadmin+') || (currentUser?.permissions ?? []).includes('view_flagged_reviews'))) {
       return NextResponse.json({ error: 'Unauthorized - superadmin+ only' }, { status: 403 });
     }
 

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 import { calculateChildPositions, formatNetworkPositionId, parseNetworkPositionId } from "@/lib/network-positions"
+import { roleRank } from "@/lib/admin/permissions"
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
@@ -15,11 +16,11 @@ export async function GET(request: NextRequest) {
   // Check if user is superadmin
   const { data: userData } = await supabase
     .from("users")
-    .select("role")
+    .select("role, permissions")
     .eq("id", user.id)
     .single()
 
-  if (userData?.role !== "superadmin" && userData?.role !== "superadmin+") {
+  if (!(roleRank(userData?.role) >= roleRank("superadmin") || (userData?.permissions ?? []).includes("manage_network"))) {
     return NextResponse.json({ error: "Forbidden - Superadmin only" }, { status: 403 })
   }
 

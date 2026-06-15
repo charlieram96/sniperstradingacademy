@@ -38,11 +38,13 @@ interface NetworkUser {
   last_referral_branch: number | null
   total_network_count: number
   active_network_count: number
+  direct_referrals_count: number
+  active_direct_referrals_count: number
   referred_by: string | null
-  referrer: Array<{
+  referrer: {
     name: string | null
     network_position_id: string | null
-  }> | null
+  } | null
 }
 
 interface ChildPosition {
@@ -455,20 +457,31 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers, viewerRole }
                     active in downline
                   </div>
                 </div>
+                <div className="p-4 bg-emerald-500/10 rounded-lg border-2 border-emerald-500/20 col-span-2">
+                  <div className="text-sm text-emerald-400 font-medium mb-1">
+                    Direct Referrals
+                  </div>
+                  <div className="text-2xl font-bold text-emerald-300">
+                    {selectedUser.active_direct_referrals_count}/{selectedUser.direct_referrals_count}
+                  </div>
+                  <div className="text-xs text-emerald-400/80 mt-1">
+                    active / total directly referred
+                  </div>
+                </div>
               </div>
 
               {/* Referred By */}
-              {selectedUser.referrer && selectedUser.referrer.length > 0 && (
+              {selectedUser.referrer && (
                 <div className="p-4 bg-gold-400/10 rounded-lg border-2 border-gold-400/20">
                   <h3 className="font-semibold text-sm mb-2 text-gold-400">Referred By</h3>
                   <div className="space-y-1 text-sm">
                     <div>
-                      <span className="font-medium">{selectedUser.referrer[0].name || "Unknown"}</span>
+                      <span className="font-medium">{selectedUser.referrer.name || "Unknown"}</span>
                     </div>
-                    {selectedUser.referrer[0].network_position_id && (
+                    {selectedUser.referrer.network_position_id && (
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-xs bg-background px-2 py-1 rounded">
-                          Position: {selectedUser.referrer[0].network_position_id}
+                          Position: {selectedUser.referrer.network_position_id}
                         </span>
                       </div>
                     )}

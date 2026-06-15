@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { roleRank } from '@/lib/admin/permissions';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120; // Allow up to 2 minutes for processing
@@ -35,11 +36,11 @@ export async function POST(req: NextRequest) {
     // Check if user is admin or superadmin
     const { data: userData } = await supabase
       .from('users')
-      .select('role, name')
+      .select('role, name, permissions')
       .eq('id', user.id)
       .single();
 
-    if (!['admin', 'superadmin', 'superadmin+'].includes(userData?.role || '')) {
+    if (!(roleRank(userData?.role) >= roleRank('admin') || (userData?.permissions ?? []).includes('manage_payouts'))) {
       return NextResponse.json(
         { error: 'Access denied. Admin or superadmin role required.' },
         { status: 403 }
@@ -333,11 +334,11 @@ export async function GET(req: NextRequest) {
     // Check if user is admin or superadmin
     const { data: userData } = await supabase
       .from('users')
-      .select('role')
+      .select('role, permissions')
       .eq('id', user.id)
       .single();
 
-    if (!['admin', 'superadmin', 'superadmin+'].includes(userData?.role || '')) {
+    if (!(roleRank(userData?.role) >= roleRank('admin') || (userData?.permissions ?? []).includes('manage_payouts'))) {
       return NextResponse.json(
         { error: 'Access denied. Admin or superadmin role required.' },
         { status: 403 }

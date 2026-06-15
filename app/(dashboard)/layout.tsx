@@ -22,7 +22,7 @@ export default async function DashboardLayout({
   // Get user role and activation status from database
   const { data: userData } = await supabase
     .from("users")
-    .select("role, initial_payment_completed, bypass_initial_payment, bypass_subscription, is_active, last_payment_date, payout_wallet_address, referred_by")
+    .select("role, permissions, initial_payment_completed, bypass_initial_payment, bypass_subscription, is_active, last_payment_date, payout_wallet_address, referred_by")
     .eq("id", user.id)
     .single()
 
@@ -62,6 +62,8 @@ export default async function DashboardLayout({
           isAdminOrSuper={isAdminOrSuper}
           isSuperAdmin={isSuperAdmin}
           isSuperAdminPlus={isSuperAdminPlus}
+          role={userRole ?? null}
+          permissions={(userData?.permissions as string[]) ?? []}
         />
 
         {/* Header */}

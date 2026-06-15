@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { roleRank } from '@/lib/admin/permissions';
 import {
   registerMultipleAddressesWithAlchemy,
   isAlchemyNotifyConfigured,
@@ -33,11 +34,11 @@ export async function POST(req: NextRequest) {
     const serviceSupabase = createServiceRoleClient();
     const { data: userData, error: userError } = await serviceSupabase
       .from('users')
-      .select('role')
+      .select('role, permissions')
       .eq('id', user.id)
       .single();
 
-    if (userError || !['admin', 'superadmin', 'superadmin+'].includes(userData?.role || '')) {
+    if (userError || !(roleRank(userData?.role) >= roleRank('admin') || (userData?.permissions ?? []).includes('manage_payouts'))) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
@@ -133,11 +134,11 @@ export async function GET(req: NextRequest) {
     const serviceSupabase = createServiceRoleClient();
     const { data: userData } = await serviceSupabase
       .from('users')
-      .select('role')
+      .select('role, permissions')
       .eq('id', user.id)
       .single();
 
-    if (!['admin', 'superadmin', 'superadmin+'].includes(userData?.role || '')) {
+    if (!(roleRank(userData?.role) >= roleRank('admin') || (userData?.permissions ?? []).includes('manage_payouts'))) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 

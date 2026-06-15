@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { hasPrivilege } from "@/lib/admin/permissions"
 import { sendNotification } from "@/lib/notifications/notification-service"
 import type { NotificationChannel } from "@/lib/notifications/notification-types"
 
@@ -32,11 +33,11 @@ export async function POST(request: NextRequest) {
     // Check if user is superadmin
     const { data: userData } = await supabase
       .from("users")
-      .select("role, name")
+      .select("role, name, permissions")
       .eq("id", authUser.id)
       .single()
 
-    if (userData?.role !== "superadmin" && userData?.role !== "superadmin+") {
+    if (!userData || !hasPrivilege(userData.role, userData.permissions, 'send_notifications')) {
       return NextResponse.json(
         { error: "Access denied. Superadmin only." },
         { status: 403 }

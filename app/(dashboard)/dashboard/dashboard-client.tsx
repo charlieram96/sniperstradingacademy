@@ -52,6 +52,7 @@ interface DashboardData {
   commissionRate: number
   teamLevels: Record<string, number>
   totalTeamSize: number
+  activeTeamSize: number
   completedStructures: number
   unlockedStructures: number
   maxMembersPerStructure: number
@@ -551,7 +552,7 @@ export function DashboardClient({
                   </div>
                   <div className="p-3 rounded-lg bg-surface-2">
                     <p className="text-sm text-muted-foreground">{t("dashboard.totalTeam")}</p>
-                    <p className="text-2xl font-bold">{data.totalTeamSize}/{data.unlockedStructures * 1092}</p>
+                    <p className="text-2xl font-bold">{data.activeTeamSize}/{data.unlockedStructures * 1092}</p>
                   </div>
                 </div>
                 
@@ -567,7 +568,7 @@ export function DashboardClient({
                       {Array.from({ length: 6 }, (_, i) => i + 1).map((structureNum) => {
                       const isUnlocked = structureNum <= data.unlockedStructures
                       const structureStart = (structureNum - 1) * 1092
-                      const membersInStructure = Math.max(0, Math.min(data.totalTeamSize - structureStart, 1092))
+                      const membersInStructure = Math.max(0, Math.min(data.activeTeamSize - structureStart, 1092))
                       const isComplete = structureNum <= data.completedStructures
 
                       // Get rank info for this specific structure based on completion
@@ -662,7 +663,7 @@ export function DashboardClient({
                     const isUnlocked = structureNum <= data.unlockedStructures
                     const requiredDirectReferrals = structureNum === 1 ? 3 : structureNum * 3
                     const structureStart = (structureNum - 1) * 1092
-                    const membersInStructure = Math.max(0, Math.min(data.totalTeamSize - structureStart, 1092))
+                    const membersInStructure = Math.max(0, Math.min(data.activeTeamSize - structureStart, 1092))
                     const progress = isUnlocked ? (membersInStructure / 1092) * 100 : 0
                     
                     return (

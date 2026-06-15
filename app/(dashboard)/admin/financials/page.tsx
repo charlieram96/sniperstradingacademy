@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { roleRank } from "@/lib/admin/permissions"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -851,11 +852,11 @@ export default function AdminFinancialsPage() {
     if (user) {
       const { data: userData } = await supabase
         .from("users")
-        .select("role")
+        .select("role, permissions")
         .eq("id", user.id)
         .single()
 
-      if (['superadmin', 'superadmin+'].includes(userData?.role || '')) {
+      if (roleRank(userData?.role) >= roleRank('superadmin') || (userData?.permissions ?? []).includes('view_financials')) {
         setIsSuperAdmin(true)
         await fetchFinancialData()
         await fetchTreasurySettings()

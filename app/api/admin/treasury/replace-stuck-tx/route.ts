@@ -17,6 +17,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ethers } from 'ethers';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { roleRank } from '@/lib/admin/permissions';
 import {
   GAS_BUFFER_MULTIPLIER,
   REPLACEMENT_BUMP_MULTIPLIER,
@@ -43,11 +44,11 @@ export async function POST(req: NextRequest) {
 
     const { data: userData } = await authSupabase
       .from('users')
-      .select('role')
+      .select('role, permissions')
       .eq('id', authUser.id)
       .single();
 
-    if (!['superadmin', 'superadmin+'].includes(userData?.role || '')) {
+    if (!(roleRank(userData?.role) >= roleRank('superadmin') || (userData?.permissions ?? []).includes('manage_payouts'))) {
       return NextResponse.json({ error: 'Access denied. Superadmin only.' }, { status: 403 });
     }
 

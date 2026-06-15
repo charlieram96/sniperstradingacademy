@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { CheckCircle, Circle, PlayCircle, FileText, ChevronDown, BookOpen, X, Clock, ExternalLink } from "lucide-react"
+import { CheckCircle, Circle, PlayCircle, FileText, ChevronDown, BookOpen, X, Clock, ExternalLink, Lock } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { staggerContainer, staggerItem, sidebarMobileRight, sidebarOverlay } from "@/lib/motion"
 
@@ -22,6 +22,7 @@ interface Module {
   title: string
   description: string
   lessons: Lesson[]
+  locked?: boolean
 }
 
 interface AcademySidebarProps {
@@ -134,11 +135,15 @@ export function AcademySidebar({
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/[0.04] transition-colors text-left group"
                 >
                   <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold flex-shrink-0 ${
-                    completed === total && total > 0
-                      ? "bg-gold-400/15 text-gold-400"
-                      : "bg-white/[0.06] text-foreground-tertiary"
+                    mod.locked
+                      ? "bg-white/[0.04] text-foreground-quaternary"
+                      : completed === total && total > 0
+                        ? "bg-gold-400/15 text-gold-400"
+                        : "bg-white/[0.06] text-foreground-tertiary"
                   }`}>
-                    {completed === total && total > 0 ? (
+                    {mod.locked ? (
+                      <Lock className="h-3.5 w-3.5" />
+                    ) : completed === total && total > 0 ? (
                       <CheckCircle className="h-4 w-4" />
                     ) : (
                       mod.number
@@ -146,7 +151,7 @@ export function AcademySidebar({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{mod.title}</p>
-                    <p className="text-xs text-muted-foreground">{completed}/{total}</p>
+                    <p className="text-xs text-muted-foreground">{mod.locked ? "Subscribe to unlock" : `${completed}/${total}`}</p>
                   </div>
                   <ChevronDown className={`h-4 w-4 text-foreground-quaternary transition-transform duration-200 flex-shrink-0 ${
                     isExpanded ? "rotate-180" : ""
@@ -175,18 +180,24 @@ export function AcademySidebar({
                             <motion.button
                               key={lesson.id}
                               variants={staggerItem}
+                              disabled={mod.locked}
                               onClick={() => {
+                                if (mod.locked) return
                                 onSelectLesson(mod.id, lesson)
                                 setMobileOpen(false)
                               }}
                               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors text-sm ${
-                                isSelected
-                                  ? "bg-gold-400/10 border-l-2 border-gold-400"
-                                  : "hover:bg-white/[0.04] border-l-2 border-transparent"
+                                mod.locked
+                                  ? "opacity-50 cursor-not-allowed border-l-2 border-transparent"
+                                  : isSelected
+                                    ? "bg-gold-400/10 border-l-2 border-gold-400"
+                                    : "hover:bg-white/[0.04] border-l-2 border-transparent"
                               }`}
                             >
                               <div className="flex-shrink-0">
-                                {lesson.completed ? (
+                                {mod.locked ? (
+                                  <Lock className="h-3.5 w-3.5 text-foreground-quaternary" />
+                                ) : lesson.completed ? (
                                   <CheckCircle className="h-4 w-4 text-gold-400" />
                                 ) : (
                                   <Circle className="h-4 w-4 text-foreground-quaternary" />

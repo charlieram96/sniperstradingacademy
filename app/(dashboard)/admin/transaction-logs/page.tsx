@@ -33,6 +33,7 @@ import {
 } from "lucide-react"
 import { formatDollars } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
+import { hasPrivilege } from "@/lib/admin/permissions"
 import { useTranslation } from "@/components/language-provider"
 
 interface TransactionLog {
@@ -152,11 +153,11 @@ export default function TransactionLogsPage() {
     if (user) {
       const { data: userData } = await supabase
         .from("users")
-        .select("role")
+        .select("role, permissions")
         .eq("id", user.id)
         .single()
 
-      if (userData?.role === "superadmin+") {
+      if (hasPrivilege(userData?.role, userData?.permissions, 'view_transaction_logs')) {
         setIsSuperAdmin(true)
         await fetchTransactions()
       }

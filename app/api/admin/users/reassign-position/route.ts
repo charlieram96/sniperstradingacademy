@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { roleRank } from '@/lib/admin/permissions';
 
 export const runtime = 'nodejs';
 
@@ -35,11 +36,11 @@ export async function POST(req: NextRequest) {
 
     const { data: adminRow } = await supabase
       .from('users')
-      .select('role')
+      .select('role, permissions')
       .eq('id', user.id)
       .single();
 
-    if (adminRow?.role !== 'superadmin+') {
+    if (!(roleRank(adminRow?.role) >= roleRank('superadmin+') || (adminRow?.permissions ?? []).includes('manage_users'))) {
       return NextResponse.json(
         { error: 'Forbidden - superadmin+ required' },
         { status: 403 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { roleRank } from "@/lib/admin/permissions"
 
 export async function GET() {
   try {
@@ -16,11 +17,11 @@ export async function GET() {
     // Check if user is superadmin
     const { data: userData } = await supabase
       .from("users")
-      .select("role")
+      .select("role, permissions")
       .eq("id", authUser.id)
       .single()
 
-    if (userData?.role !== "superadmin" && userData?.role !== "superadmin+") {
+    if (!(roleRank(userData?.role) >= roleRank('superadmin') || (userData?.permissions ?? []).includes('manage_payouts'))) {
       return NextResponse.json(
         { error: "Access denied. Superadmin only." },
         { status: 403 }

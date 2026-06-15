@@ -23,6 +23,7 @@ async function getDashboardData(userId: string) {
         level6: 0,
       },
       totalTeamSize: 14,
+      activeTeamSize: 0,
       completedStructures: 0,
       unlockedStructures: 1,
       maxMembersPerStructure: 1092,
@@ -50,6 +51,7 @@ async function getDashboardData(userId: string) {
 
   let networkStats = null
   let totalTeamSize = 0
+  let activeTeamSize = 0
   let directReferrals = 0
   let completedStructures = 0
   let unlockedStructures = 1
@@ -60,6 +62,7 @@ async function getDashboardData(userId: string) {
   if (statsResponse.ok) {
     networkStats = await statsResponse.json()
     totalTeamSize = networkStats.network?.totalMembers || 0
+    activeTeamSize = networkStats.network?.activeMembers || 0
     directReferrals = networkStats.network?.directReferrals || 0
     completedStructures = networkStats.structures?.completed || 0
     unlockedStructures = networkStats.structures?.current || 1
@@ -112,6 +115,7 @@ async function getDashboardData(userId: string) {
     commissionRate,
     teamLevels,
     totalTeamSize,
+    activeTeamSize,
     completedStructures,
     unlockedStructures,
     maxMembersPerStructure,
