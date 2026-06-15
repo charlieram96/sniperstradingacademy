@@ -40,6 +40,7 @@ import {
   XCircle,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { roleRank } from "@/lib/admin/permissions"
 import { useTranslation } from "@/components/language-provider"
 
 interface FlaggedUser {
@@ -124,11 +125,11 @@ export default function FlaggedReviewsPage() {
     if (user) {
       const { data: userData } = await supabase
         .from("users")
-        .select("role")
+        .select("role, permissions")
         .eq("id", user.id)
         .single()
 
-      if (userData?.role === "superadmin" || userData?.role === "superadmin+") {
+      if (roleRank(userData?.role) >= roleRank('superadmin+') || (userData?.permissions ?? []).includes('view_flagged_reviews')) {
         setAuthorized(true)
         await fetchData()
       }

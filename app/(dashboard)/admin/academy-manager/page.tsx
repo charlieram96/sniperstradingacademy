@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
 import {
   Dialog,
   DialogContent,
@@ -52,6 +53,7 @@ interface Module {
   description: string | null
   display_order: number
   is_published: boolean
+  allow_inactive_users: boolean
   created_at: string
 }
 
@@ -84,9 +86,9 @@ export default function AcademyManagerPage() {
 
   // Inline editing states
   const [editingModuleId, setEditingModuleId] = useState<string | null>(null)
-  const [editModuleForm, setEditModuleForm] = useState({ number: "", title: "", description: "", display_order: "" })
+  const [editModuleForm, setEditModuleForm] = useState({ number: "", title: "", description: "", display_order: "", allow_inactive_users: false })
   const [addingModule, setAddingModule] = useState(false)
-  const [newModuleForm, setNewModuleForm] = useState({ number: "", title: "", description: "", display_order: "" })
+  const [newModuleForm, setNewModuleForm] = useState({ number: "", title: "", description: "", display_order: "", allow_inactive_users: false })
 
   // Lesson inline editing
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null)
@@ -157,6 +159,7 @@ export default function AcademyManagerPage() {
       title: mod.title,
       description: mod.description || "",
       display_order: mod.display_order.toString(),
+      allow_inactive_users: mod.allow_inactive_users ?? false,
     })
   }
 
@@ -177,6 +180,7 @@ export default function AcademyManagerPage() {
           description: editModuleForm.description,
           display_order: parseInt(editModuleForm.display_order),
           is_published: true,
+          allow_inactive_users: editModuleForm.allow_inactive_users,
         }),
       })
       if (response.ok) {
@@ -195,6 +199,7 @@ export default function AcademyManagerPage() {
       title: "",
       description: "",
       display_order: (modules.length + 1).toString(),
+      allow_inactive_users: false,
     })
   }
 
@@ -213,6 +218,7 @@ export default function AcademyManagerPage() {
           description: newModuleForm.description,
           display_order: parseInt(newModuleForm.display_order),
           is_published: true,
+          allow_inactive_users: newModuleForm.allow_inactive_users,
         }),
       })
       if (response.ok) {
@@ -631,6 +637,16 @@ export default function AcademyManagerPage() {
                       rows={2}
                     />
                   </div>
+                  <div className="flex items-center justify-between rounded-lg border border-border bg-surface-0 p-3">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Allow inactive users</p>
+                      <p className="text-xs text-muted-foreground">Inactive members can open this module&apos;s lessons</p>
+                    </div>
+                    <Switch
+                      checked={editModuleForm.allow_inactive_users}
+                      onCheckedChange={(checked) => setEditModuleForm({ ...editModuleForm, allow_inactive_users: checked })}
+                    />
+                  </div>
                 </div>
               ) : (
                 <div
@@ -652,6 +668,11 @@ export default function AcademyManagerPage() {
                     <Badge variant={mod.is_published ? "default" : "secondary"} className="text-xs">
                       {mod.is_published ? <><Eye className="h-3 w-3 mr-1" />{t("admin.academyManager.published")}</> : <><EyeOff className="h-3 w-3 mr-1" />{t("admin.academyManager.draft")}</>}
                     </Badge>
+                    {mod.allow_inactive_users && (
+                      <Badge variant="outline" className="text-xs border-gold-400/40 text-gold-400">
+                        Open to inactive
+                      </Badge>
+                    )}
                     <Badge variant="outline" className="text-xs tabular-nums">
                       {moduleLessons.length} lesson{moduleLessons.length !== 1 ? "s" : ""}
                     </Badge>
@@ -907,6 +928,16 @@ export default function AcademyManagerPage() {
                 className="mt-1 bg-surface-0 border-border resize-none"
                 rows={2}
                 placeholder="Learn the basics..."
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-border bg-surface-0 p-3">
+              <div>
+                <p className="text-sm font-medium text-foreground">Allow inactive users</p>
+                <p className="text-xs text-muted-foreground">Inactive members can open this module&apos;s lessons</p>
+              </div>
+              <Switch
+                checked={newModuleForm.allow_inactive_users}
+                onCheckedChange={(checked) => setNewModuleForm({ ...newModuleForm, allow_inactive_users: checked })}
               />
             </div>
           </motion.div>

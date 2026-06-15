@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 import { getParentPositionId, parseNetworkPositionId } from "@/lib/network-positions"
+import { roleRank } from "@/lib/admin/permissions"
 
 export const runtime = "nodejs"
 
@@ -24,11 +25,11 @@ export async function GET(request: NextRequest) {
 
   const { data: adminRow } = await supabase
     .from("users")
-    .select("role")
+    .select("role, permissions")
     .eq("id", user.id)
     .single()
 
-  if (adminRow?.role !== "superadmin" && adminRow?.role !== "superadmin+") {
+  if (!(roleRank(adminRow?.role) >= roleRank("superadmin") || (adminRow?.permissions ?? []).includes("manage_network"))) {
     return NextResponse.json({ error: "Forbidden - Superadmin only" }, { status: 403 })
   }
 

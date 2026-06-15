@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { hasPrivilege } from '@/lib/admin/permissions';
 
 export const runtime = 'nodejs';
 
@@ -20,11 +21,11 @@ export async function GET(req: NextRequest) {
 
     const { data: adminData } = await supabase
       .from('users')
-      .select('role')
+      .select('role, permissions')
       .eq('id', user.id)
       .single();
 
-    if (!['superadmin', 'superadmin+'].includes(adminData?.role || '')) {
+    if (!hasPrivilege(adminData?.role, adminData?.permissions, 'manage_users')) {
       return NextResponse.json({ error: 'Unauthorized - Superadmin required' }, { status: 401 });
     }
 

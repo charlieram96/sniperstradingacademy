@@ -34,6 +34,7 @@ interface Module {
   title: string
   description: string
   lessons: Lesson[]
+  allowInactiveUsers: boolean
 }
 
 interface DBModule {
@@ -43,6 +44,7 @@ interface DBModule {
   description: string | null
   display_order: number
   is_published: boolean
+  allow_inactive_users: boolean
 }
 
 interface DBLesson {
@@ -68,6 +70,29 @@ export default function AcademyPage() {
   const [modules, setModules] = useState<Module[]>([])
   const [modulesLoading, setModulesLoading] = useState(true)
   const [selectedLesson, setSelectedLesson] = useState<{ moduleId: string; lesson: Lesson } | null>(null)
+  // Whether the current user has an active subscription. Defaults to true so active
+  // users never see a lock flash; inactive users get the real value once it resolves.
+  const [isUserActive, setIsUserActive] = useState(true)
+
+  // Fetch the current user's active status (drives module locking for inactive users)
+  useEffect(() => {
+    async function fetchActiveStatus() {
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+        const { data: userData } = await supabase
+          .from("users")
+          .select("is_active, bypass_subscription")
+          .eq("id", user.id)
+          .single()
+        setIsUserActive(!!(userData?.is_active || userData?.bypass_subscription))
+      } catch (error) {
+        console.error("Error fetching user active status:", error)
+      }
+    }
+    fetchActiveStatus()
+  }, [])
 
   // Fetch academy classes
   useEffect(() => {
@@ -112,6 +137,7 @@ export default function AcademyPage() {
           number: mod.number,
           title: mod.title,
           description: mod.description || '',
+          allowInactiveUsers: mod.allow_inactive_users ?? false,
           lessons: lessonsData
             .filter((lesson: DBLesson) => lesson.module_id === mod.id)
             .map((lesson: DBLesson) => ({
@@ -171,26 +197,35 @@ export default function AcademyPage() {
     fetchProgress()
   }, [])
 
-  // Auto-select first incomplete lesson on mount
-  useEffect(() => {
-    if (modulesLoading || progressLoading || selectedLesson || modules.length === 0) return
+  // Lock modules that inactive users are not allowed to open
+  const displayModules = useMemo(
+    () => modules.map(m => ({ ...m, locked: !isUserActive && !m.allowInactiveUsers })),
+    [modules, isUserActive]
+  )
 
-    for (const mod of modules) {
+  // Auto-select first incomplete lesson on mount (skipping locked modules)
+  useEffect(() => {
+    if (modulesLoading || progressLoading || selectedLesson || displayModules.length === 0) return
+
+    for (const mod of displayModules) {
+      if (mod.locked) continue
       const incompleteLesson = mod.lessons.find(l => !l.completed)
       if (incompleteLesson) {
         setSelectedLesson({ moduleId: mod.id, lesson: incompleteLesson })
         return
       }
     }
-    // All complete — select the first lesson
-    if (modules[0]?.lessons[0]) {
-      setSelectedLesson({ moduleId: modules[0].id, lesson: modules[0].lessons[0] })
+    // All complete — select the first lesson of the first unlocked module
+    const firstUnlocked = displayModules.find(m => !m.locked)
+    if (firstUnlocked?.lessons[0]) {
+      setSelectedLesson({ moduleId: firstUnlocked.id, lesson: firstUnlocked.lessons[0] })
     }
-  }, [modulesLoading, progressLoading, modules, selectedLesson])
+  }, [modulesLoading, progressLoading, displayModules, selectedLesson])
 
-  // Calculate overall progress
-  const totalLessons = modules.reduce((acc, module) => acc + module.lessons.length, 0)
-  const completedLessons = modules.reduce(
+  // Calculate overall progress over accessible (unlocked) modules only
+  const accessibleModules = displayModules.filter(m => !m.locked)
+  const totalLessons = accessibleModules.reduce((acc, module) => acc + module.lessons.length, 0)
+  const completedLessons = accessibleModules.reduce(
     (acc, module) => acc + module.lessons.filter(lesson => lesson.completed).length,
     0
   )
@@ -233,9 +268,10 @@ export default function AcademyPage() {
   }
 
   const handleSelectLesson = (moduleId: string, lesson: Lesson) => {
-    // Get the latest lesson state from modules
-    const mod = modules.find(m => m.id === moduleId)
-    const latestLesson = mod?.lessons.find(l => l.id === lesson.id)
+    // Locked modules cannot be opened by inactive users
+    const mod = displayModules.find(m => m.id === moduleId)
+    if (!mod || mod.locked) return
+    const latestLesson = mod.lessons.find(l => l.id === lesson.id)
     setSelectedLesson({ moduleId, lesson: latestLesson || lesson })
   }
 
@@ -254,13 +290,13 @@ export default function AcademyPage() {
       {/* Two-panel body */}
       <div className="flex gap-0 -mt-4" style={{ minHeight: 'calc(100vh - 180px)' }}>
         <LessonContent
-          modules={modules}
+          modules={displayModules}
           selectedLesson={selectedLesson}
           onSelectLesson={handleSelectLesson}
           markLessonComplete={markLessonComplete}
         />
         <AcademySidebar
-          modules={modules}
+          modules={displayModules}
           selectedLesson={selectedLesson}
           onSelectLesson={handleSelectLesson}
           totalLessons={totalLessons}

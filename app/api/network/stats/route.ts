@@ -104,13 +104,16 @@ export async function GET(request: Request) {
       .select('id', { count: 'exact', head: true })
       .eq('referred_by', userId)
 
-    // Calculate structure stats
+    // Calculate structure stats — active members only (1092 active members = 1 structure).
+    // Derive the current structure from completed structures so it never drifts from the
+    // denormalized current_structure_number column.
     const completedStructures = Math.floor(user.active_network_count / 1092)
+    const currentStructure = Math.min(completedStructures + 1, NETWORK_CONSTANTS.MAX_STRUCTURES)
     const currentStructureProgress = user.active_network_count % 1092
     const currentStructurePercentage = (currentStructureProgress / 1092) * 100
 
     // Calculate required referrals for withdrawal
-    const requiredReferrals = user.current_structure_number * 3
+    const requiredReferrals = currentStructure * 3
     const referralCount = directReferralCount || 0
 
     // Check granular bypass settings
@@ -159,7 +162,7 @@ export async function GET(request: Request) {
       } else if (referralDeficit > 0) {
         withdrawalMessage = `Need ${referralDeficit} more direct referral${referralDeficit !== 1 ? 's' : ''} to withdraw`
       } else {
-        withdrawalMessage = `Eligible to withdraw from structure ${user.current_structure_number}`
+        withdrawalMessage = `Eligible to withdraw from structure ${currentStructure}`
       }
     }
 
@@ -172,7 +175,7 @@ export async function GET(request: Request) {
       },
       structures: {
         completed: completedStructures,
-        current: user.current_structure_number,
+        current: currentStructure,
         progress: currentStructureProgress,
         progressPercentage: currentStructurePercentage,
         maxStructures: NETWORK_CONSTANTS.MAX_STRUCTURES

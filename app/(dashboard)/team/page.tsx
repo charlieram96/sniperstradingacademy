@@ -608,8 +608,8 @@ export default function TeamPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
               <p className="text-sm text-muted-foreground">{t("team.activeMembers")}</p>
-              <p className="text-3xl font-bold text-primary">{teamStats.activeMembers}/{1092 * teamStats.structures}</p>
-              <Progress value={(teamStats.activeMembers / (1092 * teamStats.structures)) * 100} className="h-2 mt-2" />
+              <p className="text-3xl font-bold text-primary">{teamStats.currentStructureProgress}/1092</p>
+              <Progress value={(teamStats.currentStructureProgress / 1092) * 100} className="h-2 mt-2" />
             </div>
             <div className="p-4 rounded-lg bg-surface-2">
               <p className="text-sm text-muted-foreground">{t("team.totalMembers")}</p>
@@ -658,36 +658,44 @@ export default function TeamPage() {
           
           {/* Interactive Structure Dropdowns */}
           <div className="space-y-3">
-            {Array.from({ length: 6 }, (_, i) => i + 1).map((structureNum) => {
-              const isUnlocked = structureNum <= teamStats.structures
-              const isComplete = structureNum <= teamStats.completedStructures
-              
-              // Filter members for this specific structure
-              // In a real implementation, you'd need to track which members belong to which structure
-              // For now, we'll distribute members across structures
-              const structureMembers = teamMembers.filter((_, index) => {
-                const structureIndex = Math.floor(index / 1092) + 1
-                return structureIndex === structureNum
+            {(() => {
+              // Assign every team member to a structure. Structures fill with ACTIVE
+              // members (1092 active = 1 structure), so a member's structure is decided
+              // by how many active members precede it in fill order. Inactive members sit
+              // in whichever structure is currently being filled. This keeps each modal's
+              // member list and count consistent with the active-based progress.
+              const ordered = [...teamMembers].sort((a, b) => {
+                if (a.level !== b.level) return a.level - b.level
+                return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
               })
-              
-              const membersInStructure = structureNum === 1 ? 
-                Math.min(teamStats.totalMembers, 1092) :
-                structureNum <= teamStats.completedStructures ? 1092 :
-                structureNum === teamStats.completedStructures + 1 ? teamStats.currentStructureProgress : 0
-              
-              return (
-                <StructureDropdown
-                  key={structureNum}
-                  structureNum={structureNum}
-                  isActive={isUnlocked}
-                  isComplete={isComplete}
-                  members={structureMembers}
-                  totalMembers={membersInStructure}
-                  maxMembers={1092}
-                  commissionRate={10 + (structureNum - 1)}
-                />
-              )
-            })}
+              const membersByStructure = new Map<number, typeof teamMembers>()
+              let activeSeen = 0
+              for (const m of ordered) {
+                const structureIndex = Math.floor(activeSeen / 1092) + 1
+                if (!membersByStructure.has(structureIndex)) membersByStructure.set(structureIndex, [])
+                membersByStructure.get(structureIndex)!.push(m)
+                if (m.subscription_status === "active") activeSeen++
+              }
+
+              return Array.from({ length: 6 }, (_, i) => i + 1).map((structureNum) => {
+                const isUnlocked = structureNum <= teamStats.structures
+                const isComplete = structureNum <= teamStats.completedStructures
+                const structureMembers = membersByStructure.get(structureNum) || []
+
+                return (
+                  <StructureDropdown
+                    key={structureNum}
+                    structureNum={structureNum}
+                    isActive={isUnlocked}
+                    isComplete={isComplete}
+                    members={structureMembers}
+                    totalMembers={structureMembers.length}
+                    maxMembers={1092}
+                    commissionRate={10 + (structureNum - 1)}
+                  />
+                )
+              })
+            })()}
           </div>
         </CardContent>
       </Card>

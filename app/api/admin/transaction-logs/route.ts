@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { hasPrivilege } from '@/lib/admin/permissions';
 
 export const runtime = 'nodejs';
 
@@ -33,11 +34,11 @@ export async function GET(req: NextRequest) {
 
     const { data: userData } = await supabase
       .from('users')
-      .select('role')
+      .select('role, permissions')
       .eq('id', user.id)
       .single();
 
-    if (userData?.role !== 'superadmin+') {
+    if (!hasPrivilege(userData?.role, userData?.permissions, 'view_transaction_logs')) {
       return NextResponse.json({ error: 'Unauthorized - superadmin+ only' }, { status: 403 });
     }
 

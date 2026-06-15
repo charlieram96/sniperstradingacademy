@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { hasPrivilege } from "@/lib/admin/permissions"
 
 // GET - List lessons (optionally filtered by module_id)  
 export async function GET(req: NextRequest) {
@@ -52,11 +53,11 @@ export async function POST(req: NextRequest) {
     // Check if user is superadmin
     const { data: userData } = await supabase
       .from("users")
-      .select("role")
+      .select("role, permissions")
       .eq("id", user.id)
       .single()
 
-    if (userData?.role !== "superadmin" && userData?.role !== "superadmin+") {
+    if (!hasPrivilege(userData?.role, userData?.permissions, 'manage_academy')) {
       return NextResponse.json({ error: "Access denied. Superadmin only." }, { status: 403 })
     }
 
@@ -133,11 +134,11 @@ export async function PATCH(req: NextRequest) {
     // Check if user is superadmin
     const { data: userData } = await supabase
       .from("users")
-      .select("role")
+      .select("role, permissions")
       .eq("id", user.id)
       .single()
 
-    if (userData?.role !== "superadmin" && userData?.role !== "superadmin+") {
+    if (!hasPrivilege(userData?.role, userData?.permissions, 'manage_academy')) {
       return NextResponse.json({ error: "Access denied. Superadmin only." }, { status: 403 })
     }
 
@@ -184,11 +185,11 @@ export async function DELETE(req: NextRequest) {
     // Check if user is superadmin
     const { data: userData } = await supabase
       .from("users")
-      .select("role")
+      .select("role, permissions")
       .eq("id", user.id)
       .single()
 
-    if (userData?.role !== "superadmin" && userData?.role !== "superadmin+") {
+    if (!hasPrivilege(userData?.role, userData?.permissions, 'manage_academy')) {
       return NextResponse.json({ error: "Access denied. Superadmin only." }, { status: 403 })
     }
 

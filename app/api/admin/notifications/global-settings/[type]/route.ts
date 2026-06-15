@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { hasPrivilege } from "@/lib/admin/permissions"
 import { invalidateGlobalSettingsCache } from "@/lib/notifications/utils/global-settings-cache"
 
 export async function PUT(
@@ -28,11 +29,11 @@ export async function PUT(
     // Check if user is superadmin
     const { data: userData } = await supabase
       .from("users")
-      .select("role")
+      .select("role, permissions")
       .eq("id", authUser.id)
       .single()
 
-    if (userData?.role !== "superadmin" && userData?.role !== "superadmin+") {
+    if (!hasPrivilege(userData?.role, userData?.permissions, 'send_notifications')) {
       return NextResponse.json(
         { error: "Access denied. Superadmin only." },
         { status: 403 }

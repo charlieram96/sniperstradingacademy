@@ -9,6 +9,7 @@
 import { NextResponse } from 'next/server';
 import { ethers } from 'ethers';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { roleRank } from '@/lib/admin/permissions';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
@@ -27,11 +28,11 @@ export async function GET() {
 
     const { data: userData } = await authSupabase
       .from('users')
-      .select('role')
+      .select('role, permissions')
       .eq('id', authUser.id)
       .single();
 
-    if (!['superadmin', 'superadmin+'].includes(userData?.role || '')) {
+    if (!(roleRank(userData?.role) >= roleRank('superadmin') || (userData?.permissions ?? []).includes('manage_payouts'))) {
       return NextResponse.json(
         { error: 'Access denied. Superadmin only.' },
         { status: 403 }

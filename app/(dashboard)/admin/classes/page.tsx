@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { hasPrivilege } from "@/lib/admin/permissions"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -71,11 +72,11 @@ export default function AdminClassesPage() {
     if (user) {
       const { data: userData } = await supabase
         .from("users")
-        .select("role")
+        .select("role, permissions")
         .eq("id", user.id)
         .single()
 
-      setIsAdmin(userData?.role === "admin" || userData?.role === "superadmin" || userData?.role === "superadmin+")
+      setIsAdmin(hasPrivilege(userData?.role, userData?.permissions, 'manage_classes'))
     }
     setLoading(false)
   }

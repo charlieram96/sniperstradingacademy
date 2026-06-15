@@ -39,6 +39,7 @@ export async function middleware(req: NextRequest) {
   const isMFAPage = req.nextUrl.pathname.startsWith("/mfa-verify")
   const isPaymentsPage = req.nextUrl.pathname.startsWith("/payments")
   const isSettingsPage = req.nextUrl.pathname.startsWith("/settings")
+  const isAcademyPage = req.nextUrl.pathname.startsWith("/academy")
   const isAdminPage = req.nextUrl.pathname.startsWith("/admin")
   const isDashboard = req.nextUrl.pathname.startsWith("/dashboard") ||
                       req.nextUrl.pathname.startsWith("/academy") ||
@@ -85,8 +86,9 @@ export async function middleware(req: NextRequest) {
     const isAdmin = userData?.role === "admin" || userData?.role === "superadmin" || userData?.role === "superadmin+"
 
     // Admins bypass activation check
-    // Inactive users can only access /payments and /settings
-    if (!isActive && !isAdmin && !isPaymentsPage && !isSettingsPage) {
+    // Inactive users can only access /payments, /settings, and /academy
+    // (the academy page itself locks modules not flagged allow_inactive_users)
+    if (!isActive && !isAdmin && !isPaymentsPage && !isSettingsPage && !isAcademyPage) {
       return NextResponse.redirect(new URL("/payments", req.url))
     }
   }

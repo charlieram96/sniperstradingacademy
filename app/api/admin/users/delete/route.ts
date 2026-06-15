@@ -1,5 +1,6 @@
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
+import { hasPrivilege } from "@/lib/admin/permissions"
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -14,11 +15,11 @@ export async function POST(request: NextRequest) {
   // Check if user is superadmin
   const { data: userData } = await supabase
     .from("users")
-    .select("role")
+    .select("role, permissions")
     .eq("id", user.id)
     .single()
 
-  if (userData?.role !== "superadmin" && userData?.role !== "superadmin+") {
+  if (!hasPrivilege(userData?.role, userData?.permissions, "manage_users")) {
     return NextResponse.json({ error: "Forbidden - Superadmin only" }, { status: 403 })
   }
 

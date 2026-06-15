@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { roleRank } from '@/lib/admin/permissions'
 
 export const runtime = 'nodejs'
 
@@ -19,11 +20,11 @@ export async function GET(req: NextRequest) {
 
     const { data: userData } = await supabase
       .from('users')
-      .select('role')
+      .select('role, permissions')
       .eq('id', user.id)
       .single()
 
-    if (!['superadmin', 'superadmin+'].includes(userData?.role || '')) {
+    if (!(roleRank(userData?.role) >= roleRank('superadmin') || (userData?.permissions ?? []).includes('manage_direct_bonuses'))) {
       return NextResponse.json({ error: 'Unauthorized - superadmin only' }, { status: 403 })
     }
 
@@ -182,11 +183,11 @@ export async function POST(req: NextRequest) {
 
     const { data: userData } = await supabase
       .from('users')
-      .select('role')
+      .select('role, permissions')
       .eq('id', user.id)
       .single()
 
-    if (!['superadmin', 'superadmin+'].includes(userData?.role || '')) {
+    if (!(roleRank(userData?.role) >= roleRank('superadmin') || (userData?.permissions ?? []).includes('manage_direct_bonuses'))) {
       return NextResponse.json({ error: 'Unauthorized - superadmin only' }, { status: 403 })
     }
 

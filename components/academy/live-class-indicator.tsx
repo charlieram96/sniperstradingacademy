@@ -14,10 +14,10 @@ interface AcademyClass {
 }
 
 export function LiveClassIndicator() {
-  const [nextClass, setNextClass] = useState<AcademyClass | null>(null)
+  const [classes, setClasses] = useState<AcademyClass[]>([])
 
   useEffect(() => {
-    async function fetchNextClass() {
+    async function fetchUpcomingClasses() {
       try {
         const supabase = createClient()
         const { data, error } = await supabase
@@ -25,29 +25,19 @@ export function LiveClassIndicator() {
           .select("id, title, meeting_link, scheduled_at")
           .gte("scheduled_at", new Date().toISOString())
           .order("scheduled_at", { ascending: true })
-          .limit(1)
-          .single()
+          .limit(5)
 
         if (!error && data) {
-          setNextClass(data)
+          setClasses(data)
         }
       } catch {
         // No upcoming classes
       }
     }
-    fetchNextClass()
+    fetchUpcomingClasses()
   }, [])
 
-  if (!nextClass) return null
-
-  const scheduledDate = new Date(nextClass.scheduled_at)
-  const formattedDate = scheduledDate.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: "America/New_York",
-  })
+  if (classes.length === 0) return null
 
   return (
     <Popover>
@@ -65,19 +55,33 @@ export function LiveClassIndicator() {
               <span className="text-[10px] font-semibold text-red-400 uppercase tracking-wider">Upcoming</span>
             </div>
           </div>
-          <div>
-            <h4 className="text-sm font-semibold text-foreground">{nextClass.title}</h4>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
-              <Calendar className="h-3 w-3" />
-              <span>{formattedDate} EST</span>
-            </div>
-          </div>
-          <a href={nextClass.meeting_link} target="_blank" rel="noopener noreferrer">
-            <Button size="sm" className="w-full bg-gold-400 hover:bg-gold-500 text-primary-foreground h-8 text-xs">
-              <ExternalLink className="h-3 w-3 mr-1.5" />
-              Join Class
-            </Button>
-          </a>
+          {classes.map((cls, index) => {
+            const scheduledDate = new Date(cls.scheduled_at)
+            const formattedDate = scheduledDate.toLocaleString("en-US", {
+              month: "short",
+              day: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+              timeZone: "America/New_York",
+            })
+            return (
+              <div key={cls.id} className={index > 0 ? "pt-3 border-t border-border-subtle" : ""}>
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground">{cls.title}</h4>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                    <Calendar className="h-3 w-3" />
+                    <span>{formattedDate} EST</span>
+                  </div>
+                </div>
+                <a href={cls.meeting_link} target="_blank" rel="noopener noreferrer">
+                  <Button size="sm" className="w-full bg-gold-400 hover:bg-gold-500 text-primary-foreground h-8 text-xs mt-2">
+                    <ExternalLink className="h-3 w-3 mr-1.5" />
+                    Join Class
+                  </Button>
+                </a>
+              </div>
+            )
+          })}
         </div>
       </PopoverContent>
     </Popover>

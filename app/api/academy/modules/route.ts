@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { hasPrivilege } from "@/lib/admin/permissions"
 
 // GET - List all modules
 export async function GET(_req: NextRequest) {
@@ -42,16 +43,16 @@ export async function POST(req: NextRequest) {
     // Check if user is superadmin
     const { data: userData } = await supabase
       .from("users")
-      .select("role")
+      .select("role, permissions")
       .eq("id", user.id)
       .single()
 
-    if (userData?.role !== "superadmin" && userData?.role !== "superadmin+") {
+    if (!hasPrivilege(userData?.role, userData?.permissions, 'manage_academy')) {
       return NextResponse.json({ error: "Access denied. Superadmin only." }, { status: 403 })
     }
 
     const body = await req.json()
-    const { number, title, description, display_order, is_published } = body
+    const { number, title, description, display_order, is_published, allow_inactive_users } = body
 
     if (!number || !title || display_order === undefined) {
       return NextResponse.json(
@@ -68,7 +69,8 @@ export async function POST(req: NextRequest) {
         title,
         description: description || null,
         display_order,
-        is_published: is_published || false
+        is_published: is_published || false,
+        allow_inactive_users: allow_inactive_users || false
       })
       .select()
       .single()
@@ -98,11 +100,11 @@ export async function PATCH(req: NextRequest) {
     // Check if user is superadmin
     const { data: userData } = await supabase
       .from("users")
-      .select("role")
+      .select("role, permissions")
       .eq("id", user.id)
       .single()
 
-    if (userData?.role !== "superadmin" && userData?.role !== "superadmin+") {
+    if (!hasPrivilege(userData?.role, userData?.permissions, 'manage_academy')) {
       return NextResponse.json({ error: "Access denied. Superadmin only." }, { status: 403 })
     }
 
@@ -149,11 +151,11 @@ export async function DELETE(req: NextRequest) {
     // Check if user is superadmin
     const { data: userData } = await supabase
       .from("users")
-      .select("role")
+      .select("role, permissions")
       .eq("id", user.id)
       .single()
 
-    if (userData?.role !== "superadmin" && userData?.role !== "superadmin+") {
+    if (!hasPrivilege(userData?.role, userData?.permissions, 'manage_academy')) {
       return NextResponse.json({ error: "Access denied. Superadmin only." }, { status: 403 })
     }
 

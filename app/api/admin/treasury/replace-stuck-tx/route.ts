@@ -17,6 +17,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ethers } from 'ethers';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { roleRank } from '@/lib/admin/permissions';
 import {
   GAS_BUFFER_MULTIPLIER,
   REPLACEMENT_BUMP_MULTIPLIER,
@@ -43,11 +44,11 @@ export async function POST(req: NextRequest) {
 
     const { data: userData } = await authSupabase
       .from('users')
-      .select('role')
+      .select('role, permissions')
       .eq('id', authUser.id)
       .single();
 
-    if (!['superadmin', 'superadmin+'].includes(userData?.role || '')) {
+    if (!(roleRank(userData?.role) >= roleRank('superadmin') || (userData?.permissions ?? []).includes('manage_payouts'))) {
       return NextResponse.json({ error: 'Access denied. Superadmin only.' }, { status: 403 });
     }
 
@@ -75,10 +76,15 @@ export async function POST(req: NextRequest) {
 
     const confirmedNonce = await provider.getTransactionCount(wallet.address, 'latest');
     if (nonce < confirmedNonce) {
-      return NextResponse.json(
-        { error: `Nonce ${nonce} is already mined (confirmed nonce is ${confirmedNonce})` },
-        { status: 400 }
-      );
+      // Nothing to do — the nonce already mined since the client snapshot. Return success
+      // so the bulk-bump loop doesn't treat a stale request as a failure.
+      return NextResponse.json({
+        success: true,
+        skipped: true,
+        reason: 'already_mined',
+        nonce,
+        confirmedNonce,
+      });
     }
 
     // Find the original pending tx so we can recover its `to`, `value`, and original fees.

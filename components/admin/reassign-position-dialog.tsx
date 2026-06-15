@@ -59,7 +59,7 @@ interface Props {
     network_position: number
     tree_parent_network_position_id: string | null
     referred_by: string | null
-    referrer: Array<{ name: string | null; network_position_id: string | null }> | null
+    referrer: { name: string | null; network_position_id: string | null } | null
   }
   onSuccess: () => void
 }
@@ -239,7 +239,7 @@ export function ReassignPositionDialog({ open, onOpenChange, targetUser, onSucce
   }
 
   const currentTreeParentLabel = targetUser.tree_parent_network_position_id ?? "—"
-  const currentSponsor = targetUser.referrer?.[0]
+  const currentSponsor = targetUser.referrer
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
