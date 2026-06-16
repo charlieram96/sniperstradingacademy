@@ -14,6 +14,7 @@ interface Lesson {
   size?: string
   url?: string
   completed: boolean
+  locked?: boolean
 }
 
 interface Module {
@@ -180,14 +181,14 @@ export function AcademySidebar({
                             <motion.button
                               key={lesson.id}
                               variants={staggerItem}
-                              disabled={mod.locked}
+                              disabled={lesson.locked}
                               onClick={() => {
-                                if (mod.locked) return
+                                if (lesson.locked) return
                                 onSelectLesson(mod.id, lesson)
                                 setMobileOpen(false)
                               }}
                               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors text-sm ${
-                                mod.locked
+                                lesson.locked
                                   ? "opacity-50 cursor-not-allowed border-l-2 border-transparent"
                                   : isSelected
                                     ? "bg-gold-400/10 border-l-2 border-gold-400"
@@ -195,7 +196,7 @@ export function AcademySidebar({
                               }`}
                             >
                               <div className="flex-shrink-0">
-                                {mod.locked ? (
+                                {lesson.locked ? (
                                   <Lock className="h-3.5 w-3.5 text-foreground-quaternary" />
                                 ) : lesson.completed ? (
                                   <CheckCircle className="h-4 w-4 text-gold-400" />

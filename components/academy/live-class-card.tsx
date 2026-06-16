@@ -11,6 +11,7 @@ interface AcademyClass {
   description: string | null
   meeting_link: string
   scheduled_at: string
+  is_live: boolean
 }
 
 interface LiveClassCardProps {
@@ -19,7 +20,7 @@ interface LiveClassCardProps {
 
 function ClassCard({ cls }: { cls: AcademyClass }) {
   const scheduledDate = new Date(cls.scheduled_at)
-  const isLive = scheduledDate <= new Date()
+  const isLive = cls.is_live
   const formattedDate = scheduledDate.toLocaleString("en-US", {
     month: "short",
     day: "numeric",
@@ -63,10 +64,9 @@ function ClassCard({ cls }: { cls: AcademyClass }) {
 export function LiveClassCard({ classes }: LiveClassCardProps) {
   if (classes.length === 0) return null
 
-  const now = new Date()
-  // Show every currently-live class (start time has passed) so two or more can
-  // run at once. If none are live yet, fall back to the soonest upcoming class.
-  const liveClasses = classes.filter((c) => new Date(c.scheduled_at) <= now)
+  // Show every class an admin has toggled live, so two or more can run at once.
+  // If none are toggled live, fall back to the soonest upcoming class as a preview.
+  const liveClasses = classes.filter((c) => c.is_live)
   const toShow = liveClasses.length > 0 ? liveClasses : [classes[0]]
 
   return (

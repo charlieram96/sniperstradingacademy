@@ -15,26 +15,41 @@ interface AcademyClass {
 
 export function LiveClassIndicator() {
   const [classes, setClasses] = useState<AcademyClass[]>([])
+  const [label, setLabel] = useState<"Live" | "Upcoming">("Upcoming")
 
   useEffect(() => {
-    async function fetchUpcomingClasses() {
+    async function fetchClasses() {
       try {
         const supabase = createClient()
-        const { data, error } = await supabase
+        // Prefer classes an admin has toggled live; fall back to the next upcoming.
+        const { data: live } = await supabase
+          .from("academy_classes")
+          .select("id, title, meeting_link, scheduled_at")
+          .eq("is_live", true)
+          .order("scheduled_at", { ascending: true })
+
+        if (live && live.length > 0) {
+          setClasses(live)
+          setLabel("Live")
+          return
+        }
+
+        const { data: upcoming } = await supabase
           .from("academy_classes")
           .select("id, title, meeting_link, scheduled_at")
           .gte("scheduled_at", new Date().toISOString())
           .order("scheduled_at", { ascending: true })
-          .limit(5)
+          .limit(1)
 
-        if (!error && data) {
-          setClasses(data)
+        if (upcoming) {
+          setClasses(upcoming)
+          setLabel("Upcoming")
         }
       } catch {
-        // No upcoming classes
+        // No classes
       }
     }
-    fetchUpcomingClasses()
+    fetchClasses()
   }, [])
 
   if (classes.length === 0) return null
@@ -52,7 +67,7 @@ export function LiveClassIndicator() {
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20">
               <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-gentle-pulse" />
-              <span className="text-[10px] font-semibold text-red-400 uppercase tracking-wider">Upcoming</span>
+              <span className="text-[10px] font-semibold text-red-400 uppercase tracking-wider">{label}</span>
             </div>
           </div>
           {classes.map((cls, index) => {
