@@ -76,6 +76,9 @@ export default function AcademyPage() {
   // Whether the current user has an active subscription. Defaults to true so active
   // users never see a lock flash; inactive users get the real value once it resolves.
   const [isUserActive, setIsUserActive] = useState(true)
+  // Whether the active status has resolved yet. Class cards are gated on this so
+  // inactive users never see a class card flash before it's hidden.
+  const [activeStatusLoaded, setActiveStatusLoaded] = useState(false)
 
   // Fetch the current user's active status (drives module locking for inactive users)
   useEffect(() => {
@@ -92,6 +95,8 @@ export default function AcademyPage() {
         setIsUserActive(!!(userData?.is_active || userData?.bypass_subscription))
       } catch (error) {
         console.error("Error fetching user active status:", error)
+      } finally {
+        setActiveStatusLoaded(true)
       }
     }
     fetchActiveStatus()
@@ -297,7 +302,8 @@ export default function AcademyPage() {
           description={t("academy.description")}
           className="flex-1 min-w-0 !border-b-0 !pb-0 !mb-0"
         />
-        {!classesLoading && <LiveClassCard classes={academyClasses} />}
+        {/* Class cards are only shown to active users */}
+        {!classesLoading && activeStatusLoaded && isUserActive && <LiveClassCard classes={academyClasses} />}
       </div>
 
       {/* Two-panel body */}
