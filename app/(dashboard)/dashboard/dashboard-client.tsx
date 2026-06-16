@@ -28,6 +28,7 @@ interface AcademyClass {
   description: string | null
   meeting_link: string
   scheduled_at: string
+  is_live: boolean
 }
 
 interface DashboardData {
@@ -144,8 +145,9 @@ export function DashboardClient({
         const { data: classes, error } = await supabase
           .from("academy_classes")
           .select("*")
+          .order("is_live", { ascending: false })
           .order("scheduled_at", { ascending: true })
-          .limit(3)
+          .limit(6)
 
         if (!error && classes) {
           setAcademyClasses(classes)
@@ -306,8 +308,8 @@ export function DashboardClient({
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {academyClasses.map((classItem, index) => {
-                const isFirst = index === 0
+              {academyClasses.map((classItem) => {
+                const isLive = classItem.is_live
                 const scheduledDate = new Date(classItem.scheduled_at)
                 const formattedDate = scheduledDate.toLocaleString("en-US", {
                   month: "short",
@@ -321,19 +323,30 @@ export function DashboardClient({
                 return (
                   <div
                     key={classItem.id}
-                    className={`p-4 rounded-lg border-2 ${
-                      isFirst
-                        ? "bg-[#D4A853]/20 border-[#D4A853]"
-                        : "border-border"
+                    className={`relative overflow-hidden p-4 pl-5 rounded-xl border transition-colors ${
+                      isLive
+                        ? "border-[#D4A853]/60 bg-gradient-to-br from-[#D4A853]/15 to-[#D4A853]/5 shadow-sm"
+                        : "border-border bg-surface-1 hover:border-border-strong"
                     }`}
                   >
+                    {/* Gold accent bar for live classes */}
+                    {isLive && (
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-gold-400 to-gold-600" />
+                    )}
+
                     <div className="flex items-center justify-between mb-2">
-                      <Badge className={isFirst ? "bg-[#D4A853] text-white" : "bg-surface-2"}>
-                        {isFirst ? t("dashboard.nextClass") : t("dashboard.upcoming")}
-                      </Badge>
-                      <PlayCircle className={`h-5 w-5 ${isFirst ? "text-[#D4A853]" : "text-muted-foreground"}`} />
+                      {isLive ? (
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-gentle-pulse" />
+                          <span className="text-[10px] font-semibold text-red-400 uppercase tracking-wider">Live</span>
+                        </div>
+                      ) : (
+                        <Badge className="bg-surface-2">{t("dashboard.upcoming")}</Badge>
+                      )}
+                      <PlayCircle className={`h-5 w-5 ${isLive ? "text-[#D4A853]" : "text-muted-foreground"}`} />
                     </div>
-                    <h3 className="font-semibold text-lg mb-1">{classItem.title}</h3>
+
+                    <h3 className="font-semibold text-base mb-1 truncate">{classItem.title}</h3>
                     {classItem.description && (
                       <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                         {classItem.description}
@@ -346,15 +359,11 @@ export function DashboardClient({
                     <a href={classItem.meeting_link} target="_blank" rel="noopener noreferrer" className="block">
                       <Button
                         size="sm"
-                        className={`w-full ${
-                          isFirst
-                            ? "bg-[#D4A853] hover:bg-[#B38A30]"
-                            : ""
-                        }`}
-                        variant={isFirst ? "default" : "outline"}
+                        className={`w-full ${isLive ? "bg-[#D4A853] hover:bg-[#B38A30] text-white" : ""}`}
+                        variant={isLive ? "default" : "outline"}
                       >
                         <ExternalLink className="h-4 w-4 mr-2" />
-                        {isFirst ? t("dashboard.joinClass") : t("dashboard.viewDetails")}
+                        {isLive ? t("dashboard.joinClass") : t("dashboard.viewDetails")}
                       </Button>
                     </a>
                   </div>

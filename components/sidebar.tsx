@@ -65,7 +65,7 @@ interface SidebarProps {
 
 const navItems = [
   { href: "/dashboard", labelKey: "nav.dashboard" as TranslationKey, icon: LayoutDashboard, requiresActive: true },
-  { href: "/academy", labelKey: "nav.academy" as TranslationKey, icon: GraduationCap, requiresActive: true },
+  { href: "/academy", labelKey: "nav.academy" as TranslationKey, icon: GraduationCap, requiresActive: false },
   { href: "/team", labelKey: "nav.myTeam" as TranslationKey, icon: Users, requiresActive: true },
   { href: "/finance", labelKey: "nav.finance" as TranslationKey, icon: DollarSign, requiresActive: true },
   { href: "/payments", labelKey: "nav.payments" as TranslationKey, icon: CreditCard, requiresActive: false },
