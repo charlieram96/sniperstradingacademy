@@ -16,6 +16,7 @@ interface AcademyClass {
   description: string | null
   meeting_link: string
   scheduled_at: string
+  is_live: boolean
 }
 
 interface Lesson {
@@ -26,6 +27,7 @@ interface Lesson {
   size?: string
   url?: string
   completed: boolean
+  allowInactiveUsers?: boolean
 }
 
 interface Module {
@@ -60,6 +62,7 @@ interface DBLesson {
   file_size: string | null
   display_order: number
   is_published: boolean
+  allow_inactive_users: boolean
 }
 
 export default function AcademyPage() {
@@ -147,7 +150,8 @@ export default function AcademyPage() {
               duration: lesson.duration || undefined,
               size: lesson.file_size || undefined,
               url: lesson.type === 'link' ? lesson.link_url || undefined : lesson.type === 'pdf' ? lesson.pdf_url || undefined : lesson.video_url || undefined,
-              completed: false // Will be updated by progress fetch
+              completed: false, // Will be updated by progress fetch
+              allowInactiveUsers: lesson.allow_inactive_users ?? false
             }))
         }))
 
@@ -197,38 +201,47 @@ export default function AcademyPage() {
     fetchProgress()
   }, [])
 
-  // Lock modules that inactive users are not allowed to open
+  // Per-lesson locking for inactive users. A module is accessible if the user is
+  // active OR the module is flagged for inactive users. Within an inaccessible
+  // module, a lesson can still be opened if it is individually flagged. A module is
+  // "fully locked" only when every one of its lessons is locked.
   const displayModules = useMemo(
-    () => modules.map(m => ({ ...m, locked: !isUserActive && !m.allowInactiveUsers })),
+    () => modules.map(m => {
+      const moduleAccessible = isUserActive || m.allowInactiveUsers
+      const lessons = m.lessons.map(l => ({
+        ...l,
+        locked: !moduleAccessible && !l.allowInactiveUsers,
+      }))
+      return { ...m, lessons, locked: lessons.length > 0 && lessons.every(l => l.locked) }
+    }),
     [modules, isUserActive]
   )
 
-  // Auto-select first incomplete lesson on mount (skipping locked modules)
+  // Auto-select first incomplete unlocked lesson on mount
   useEffect(() => {
     if (modulesLoading || progressLoading || selectedLesson || displayModules.length === 0) return
 
     for (const mod of displayModules) {
-      if (mod.locked) continue
-      const incompleteLesson = mod.lessons.find(l => !l.completed)
+      const incompleteLesson = mod.lessons.find(l => !l.locked && !l.completed)
       if (incompleteLesson) {
         setSelectedLesson({ moduleId: mod.id, lesson: incompleteLesson })
         return
       }
     }
-    // All complete — select the first lesson of the first unlocked module
-    const firstUnlocked = displayModules.find(m => !m.locked)
-    if (firstUnlocked?.lessons[0]) {
-      setSelectedLesson({ moduleId: firstUnlocked.id, lesson: firstUnlocked.lessons[0] })
+    // All complete — select the first unlocked lesson
+    for (const mod of displayModules) {
+      const firstUnlocked = mod.lessons.find(l => !l.locked)
+      if (firstUnlocked) {
+        setSelectedLesson({ moduleId: mod.id, lesson: firstUnlocked })
+        return
+      }
     }
   }, [modulesLoading, progressLoading, displayModules, selectedLesson])
 
-  // Calculate overall progress over accessible (unlocked) modules only
-  const accessibleModules = displayModules.filter(m => !m.locked)
-  const totalLessons = accessibleModules.reduce((acc, module) => acc + module.lessons.length, 0)
-  const completedLessons = accessibleModules.reduce(
-    (acc, module) => acc + module.lessons.filter(lesson => lesson.completed).length,
-    0
-  )
+  // Calculate overall progress over accessible (unlocked) lessons only
+  const unlockedLessons = displayModules.flatMap(m => m.lessons).filter(l => !l.locked)
+  const totalLessons = unlockedLessons.length
+  const completedLessons = unlockedLessons.filter(lesson => lesson.completed).length
   const overallProgress = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0
 
   const markLessonComplete = async (moduleId: string, lessonId: string) => {
@@ -268,11 +281,11 @@ export default function AcademyPage() {
   }
 
   const handleSelectLesson = (moduleId: string, lesson: Lesson) => {
-    // Locked modules cannot be opened by inactive users
+    // Locked lessons cannot be opened by inactive users
     const mod = displayModules.find(m => m.id === moduleId)
-    if (!mod || mod.locked) return
-    const latestLesson = mod.lessons.find(l => l.id === lesson.id)
-    setSelectedLesson({ moduleId, lesson: latestLesson || lesson })
+    const latestLesson = mod?.lessons.find(l => l.id === lesson.id)
+    if (!latestLesson || latestLesson.locked) return
+    setSelectedLesson({ moduleId, lesson: latestLesson })
   }
 
   return (

@@ -15,6 +15,7 @@ interface Lesson {
   size?: string
   url?: string
   completed: boolean
+  locked?: boolean
 }
 
 interface Module {
@@ -39,13 +40,13 @@ export function LessonContent({
   onSelectLesson,
   markLessonComplete,
 }: LessonContentProps) {
-  // Flatten all lessons for prev/next navigation (locked modules are skipped)
+  // Flatten all lessons for prev/next navigation (locked lessons are skipped)
   const flatLessons = useMemo(() => {
-    return modules
-      .filter(mod => !mod.locked)
-      .flatMap(mod =>
-        mod.lessons.map(lesson => ({ moduleId: mod.id, moduleName: mod.title, moduleNumber: mod.number, lesson }))
-      )
+    return modules.flatMap(mod =>
+      mod.lessons
+        .filter(lesson => !lesson.locked)
+        .map(lesson => ({ moduleId: mod.id, moduleName: mod.title, moduleNumber: mod.number, lesson }))
+    )
   }, [modules])
 
   const currentIndex = selectedLesson

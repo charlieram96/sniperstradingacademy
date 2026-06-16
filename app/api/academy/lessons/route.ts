@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { lesson_id, module_id, title, type, video_url, pdf_url, link_url, duration, file_size, is_published } = body
+    const { lesson_id, module_id, title, type, video_url, pdf_url, link_url, duration, file_size, is_published, allow_inactive_users } = body
 
     if (!lesson_id || !module_id || !title || !type) {
       return NextResponse.json(
@@ -104,7 +104,8 @@ export async function POST(req: NextRequest) {
         link_url: link_url || null,
         duration: duration || null,
         file_size: file_size || null,
-        is_published: is_published || false
+        is_published: is_published || false,
+        allow_inactive_users: allow_inactive_users || false
       })
       .select()
       .single()

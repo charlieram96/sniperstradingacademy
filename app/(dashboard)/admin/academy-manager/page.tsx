@@ -69,6 +69,7 @@ interface Lesson {
   duration: string | null
   file_size: string | null
   is_published: boolean
+  allow_inactive_users: boolean
   academy_modules?: {
     number: number
     title: string
@@ -94,12 +95,12 @@ export default function AcademyManagerPage() {
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null)
   const [editLessonForm, setEditLessonForm] = useState({
     lesson_id: "", title: "", type: "video" as "video" | "pdf" | "link",
-    video_url: "", pdf_url: "", link_url: "", duration: "", file_size: ""
+    video_url: "", pdf_url: "", link_url: "", duration: "", file_size: "", allow_inactive_users: false
   })
   const [addingLessonModuleId, setAddingLessonModuleId] = useState<string | null>(null)
   const [newLessonForm, setNewLessonForm] = useState({
     lesson_id: "", module_id: "", title: "", type: "video" as "video" | "pdf" | "link",
-    video_url: "", pdf_url: "", link_url: "", duration: "", file_size: ""
+    video_url: "", pdf_url: "", link_url: "", duration: "", file_size: "", allow_inactive_users: false
   })
 
   // File upload
@@ -257,6 +258,7 @@ export default function AcademyManagerPage() {
       link_url: lesson.link_url || "",
       duration: lesson.duration || "",
       file_size: lesson.file_size || "",
+      allow_inactive_users: lesson.allow_inactive_users ?? false,
     })
     setUploadFile(null)
     setFileSizeError(null)
@@ -331,6 +333,7 @@ export default function AcademyManagerPage() {
         duration: editLessonForm.duration || null,
         file_size: fileData?.fileSize || editLessonForm.file_size || null,
         is_published: true,
+        allow_inactive_users: editLessonForm.allow_inactive_users,
       }
 
       if (editLessonForm.type === "video") {
@@ -367,7 +370,7 @@ export default function AcademyManagerPage() {
     setAddingLessonModuleId(moduleId)
     setNewLessonForm({
       lesson_id: "", module_id: moduleId, title: "", type: "video",
-      video_url: "", pdf_url: "", link_url: "", duration: "", file_size: "",
+      video_url: "", pdf_url: "", link_url: "", duration: "", file_size: "", allow_inactive_users: false,
     })
     setUploadFile(null)
     setFileSizeError(null)
@@ -395,6 +398,7 @@ export default function AcademyManagerPage() {
         duration: newLessonForm.duration || null,
         file_size: fileData?.fileSize || newLessonForm.file_size || null,
         is_published: true,
+        allow_inactive_users: newLessonForm.allow_inactive_users,
       }
 
       if (newLessonForm.type === "video") {
@@ -761,6 +765,20 @@ export default function AcademyManagerPage() {
                                   )}
                                 </>
                               )}
+                              {mod.allow_inactive_users ? (
+                                <p className="text-[11px] text-muted-foreground">Visible to inactive users (module-level)</p>
+                              ) : (
+                                <div className="flex items-center justify-between rounded-lg border border-border bg-surface-1 p-2.5">
+                                  <div>
+                                    <p className="text-xs font-medium text-foreground">Allow inactive users</p>
+                                    <p className="text-[11px] text-muted-foreground">Inactive members can open this lesson</p>
+                                  </div>
+                                  <Switch
+                                    checked={editLessonForm.allow_inactive_users}
+                                    onCheckedChange={(checked) => setEditLessonForm({ ...editLessonForm, allow_inactive_users: checked })}
+                                  />
+                                </div>
+                              )}
                             </div>
                           )
                         }
@@ -774,7 +792,14 @@ export default function AcademyManagerPage() {
                               {typeIcon(lesson.type)}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-foreground truncate">{lesson.title}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium text-foreground truncate">{lesson.title}</p>
+                                {!mod.allow_inactive_users && lesson.allow_inactive_users && (
+                                  <Badge variant="outline" className="text-[10px] border-gold-400/40 text-gold-400 flex-shrink-0">
+                                    Open to inactive
+                                  </Badge>
+                                )}
+                              </div>
                               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                 <span>{lesson.lesson_id}</span>
                                 {lesson.duration && <span>· {lesson.duration}</span>}
@@ -856,6 +881,20 @@ export default function AcademyManagerPage() {
                                 </div>
                               )}
                             </>
+                          )}
+                          {mod.allow_inactive_users ? (
+                            <p className="text-[11px] text-muted-foreground">Visible to inactive users (module-level)</p>
+                          ) : (
+                            <div className="flex items-center justify-between rounded-lg border border-border bg-surface-1 p-2.5">
+                              <div>
+                                <p className="text-xs font-medium text-foreground">Allow inactive users</p>
+                                <p className="text-[11px] text-muted-foreground">Inactive members can open this lesson</p>
+                              </div>
+                              <Switch
+                                checked={newLessonForm.allow_inactive_users}
+                                onCheckedChange={(checked) => setNewLessonForm({ ...newLessonForm, allow_inactive_users: checked })}
+                              />
+                            </div>
                           )}
                         </div>
                       ) : (

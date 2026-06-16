@@ -22,6 +22,7 @@ import {
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { format } from "date-fns"
 
 interface AcademyClass {
@@ -30,6 +31,7 @@ interface AcademyClass {
   description: string | null
   meeting_link: string
   scheduled_at: string
+  is_live: boolean
   created_at: string
   updated_at: string
 }
@@ -158,6 +160,20 @@ export default function AdminClassesPage() {
     setEditingIndex(null)
     setEditData(null)
     setOpenCalendarIndex(null)
+  }
+
+  async function toggleLive(classItem: AcademyClass, isLive: boolean) {
+    const supabase = createClient()
+    const { error } = await supabase
+      .from("academy_classes")
+      .update({ is_live: isLive, updated_at: new Date().toISOString() })
+      .eq("id", classItem.id)
+
+    if (error) {
+      alert(t("admin.classes.errorUpdatingClass") + error.message)
+      return
+    }
+    fetchClasses()
   }
 
   function openCompleteDialog(classItem: AcademyClass) {
@@ -675,10 +691,25 @@ export default function AdminClassesPage() {
                   ) : (
                     <div className="flex flex-col h-full">
                       <div className="flex items-center justify-between mb-3">
-                        <Badge className={isFirst ? "bg-[#D4A853] text-white" : "bg-surface-2"}>
-                          {isFirst ? t("admin.classes.nextClass") : t("admin.classes.upcoming")}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge className={isFirst ? "bg-[#D4A853] text-white" : "bg-surface-2"}>
+                            {isFirst ? t("admin.classes.nextClass") : t("admin.classes.upcoming")}
+                          </Badge>
+                          {classItem.is_live && (
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20">
+                              <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-gentle-pulse" />
+                              <span className="text-[10px] font-semibold text-red-400 uppercase tracking-wider">Live</span>
+                            </div>
+                          )}
+                        </div>
                         <PlayCircle className={`h-5 w-5 ${isFirst ? "text-[#D4A853]" : "text-muted-foreground"}`} />
+                      </div>
+                      <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-lg border border-border-subtle bg-surface-0">
+                        <span className="text-xs font-medium text-foreground">Show as live to users</span>
+                        <Switch
+                          checked={classItem.is_live}
+                          onCheckedChange={(checked) => toggleLive(classItem, checked)}
+                        />
                       </div>
                       <h3 className="font-semibold text-lg mb-2 text-foreground">{classItem.title}</h3>
                       {classItem.description && (
