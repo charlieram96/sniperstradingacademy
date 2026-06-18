@@ -5,6 +5,7 @@ import { GraduationCap, Calendar, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { createClient } from "@/lib/supabase/client"
+import { computeIsActive } from "@/lib/user-status"
 
 interface AcademyClass {
   id: string
@@ -21,6 +22,18 @@ export function LiveClassIndicator() {
     async function fetchClasses() {
       try {
         const supabase = createClient()
+
+        // Classes are only shown to active users (admins always count as active).
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+        const { data: userData } = await supabase
+          .from("users")
+          .select("initial_payment_completed, bypass_initial_payment, is_active, bypass_subscription, role")
+          .eq("id", user.id)
+          .single()
+        const isAdmin = ["admin", "superadmin", "superadmin+"].includes(userData?.role || "")
+        if (!computeIsActive(userData) && !isAdmin) return
+
         // Prefer classes an admin has toggled live; fall back to the next upcoming.
         const { data: live } = await supabase
           .from("academy_classes")
