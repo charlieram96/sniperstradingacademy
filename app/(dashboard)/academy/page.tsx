@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { computeIsActive } from "@/lib/user-status"
 import { motion } from "framer-motion"
 import { fadeInUp } from "@/lib/motion"
 import { PageHeader } from "@/components/page-header"
@@ -89,10 +90,11 @@ export default function AcademyPage() {
         if (!user) return
         const { data: userData } = await supabase
           .from("users")
-          .select("is_active, bypass_subscription")
+          .select("initial_payment_completed, bypass_initial_payment, is_active, bypass_subscription, role")
           .eq("id", user.id)
           .single()
-        setIsUserActive(!!(userData?.is_active || userData?.bypass_subscription))
+        const isAdmin = ["admin", "superadmin", "superadmin+"].includes(userData?.role || "")
+        setIsUserActive(computeIsActive(userData) || isAdmin)
       } catch (error) {
         console.error("Error fetching user active status:", error)
       } finally {
