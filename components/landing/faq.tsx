@@ -19,8 +19,6 @@ export function FAQ() {
     { question: t("landing.faq.q2"), answer: t("landing.faq.a2") },
     { question: t("landing.faq.q3"), answer: t("landing.faq.a3") },
     { question: t("landing.faq.q4"), answer: t("landing.faq.a4") },
-    { question: t("landing.faq.q5"), answer: t("landing.faq.a5") },
-    { question: t("landing.faq.q6"), answer: t("landing.faq.a6") },
   ]
   return (
     <section id="faq" className="py-24 px-4">

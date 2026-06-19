@@ -106,7 +106,6 @@ function renderPage(member: MemberProfile) {
   const benefits = [
     "Comprehensive options trading curriculum",
     "Daily live trading sessions",
-    "1-on-1 mentorship opportunities",
     "Advanced trading tools and scanners",
     "Private Discord community",
     "Weekly strategy workshops",

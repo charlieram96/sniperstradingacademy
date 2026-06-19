@@ -1,7 +1,7 @@
 /**
  * PAYOUT PROCESSED EMAIL TEMPLATE
  *
- * Sent when a commission payout is successfully transferred to user's bank account
+ * Sent when a commission payout is successfully sent to user's crypto wallet
  */
 
 import {
@@ -30,7 +30,7 @@ export const PayoutProcessedEmail = ({
   userName = 'Member',
   amount = 249.50,
   commissionType = 'Direct Bonus',
-  arrivalDate = '2-7 business days',
+  arrivalDate = 'minutes to a few hours',
   dashboardUrl = 'https://sniperstradingacademy.com/dashboard'
 }: PayoutProcessedEmailProps) => {
   const formattedAmount = new Intl.NumberFormat('en-US', {
@@ -62,7 +62,7 @@ export const PayoutProcessedEmail = ({
           </Text>
 
           <Text style={text}>
-            Great news! Your commission payout has been successfully transferred to your connected bank account.
+            Great news! Your commission payout has been successfully sent to your connected crypto wallet.
           </Text>
 
           {/* Amount Box */}
@@ -73,8 +73,8 @@ export const PayoutProcessedEmail = ({
           </Section>
 
           <Text style={text}>
-            Your payout should arrive in your bank account within {arrivalDate}.
-            The exact timing depends on your bank&apos;s processing schedule.
+            Your payout should arrive in your crypto wallet within {arrivalDate}.
+            The exact timing depends on network confirmation times.
           </Text>
 
           {/* CTA Button */}
@@ -88,7 +88,7 @@ export const PayoutProcessedEmail = ({
           <Section style={infoBox}>
             <Text style={infoTitle}>What&apos;s Next?</Text>
             <Text style={infoText}>
-              • Check your bank account in 2-7 business days
+              • Check your crypto wallet within minutes to a few hours
               <br />
               • View your payout history in the Finance page
               <br />

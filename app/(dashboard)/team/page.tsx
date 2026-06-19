@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { StructureDropdown } from "@/components/team/structure-dropdown"
 import { MemberInsights } from "@/components/team/member-insights"
+import { TeamExplorer } from "@/components/team/team-explorer"
 import {
   Users,
   UserPlus,
@@ -428,6 +429,13 @@ export default function TeamPage() {
         </CardContent>
       </Card>
       </div>{/* end Qualification + Tree grid */}
+
+      {/* Team Explorer - horizontal drill-down */}
+      {userId && (
+        <div className="mb-6">
+          <TeamExplorer rootUserId={userId} />
+        </div>
+      )}
 
       {/* Direct Referrals Section - Clickable */}
       <Card className="mb-6 border-primary/50">

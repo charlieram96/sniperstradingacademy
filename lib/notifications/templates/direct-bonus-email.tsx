@@ -71,7 +71,7 @@ export const DirectBonusEmail = ({
           </Section>
 
           <Text style={text}>
-            This bonus is now in <strong>pending status</strong> and will be paid out to your connected bank account on the <strong>15th of next month</strong> during our regular payout cycle.
+            This bonus is now in <strong>pending status</strong> and will be paid out to your connected crypto wallet on the <strong>15th of next month</strong> during our regular payout cycle.
           </Text>
 
           {/* CTA Button */}
@@ -87,9 +87,9 @@ export const DirectBonusEmail = ({
             <Text style={infoText}>
               <strong>Now:</strong> Your ${formattedAmount} bonus is pending
               <br />
-              <strong>15th of next month:</strong> Payout processed to your bank
+              <strong>15th of next month:</strong> Payout sent to your crypto wallet
               <br />
-              <strong>2-7 business days later:</strong> Funds arrive in your account
+              <strong>Shortly after:</strong> Funds arrive on-chain, within minutes to a few hours
             </Text>
           </Section>
 

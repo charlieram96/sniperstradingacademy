@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { roleRank } from '@/lib/admin/permissions';
+import { expectedCoverageWeeks, getWindowStart } from '@/lib/payments/review-window';
 
 export const runtime = 'nodejs';
 
@@ -65,8 +66,9 @@ export async function GET(req: NextRequest) {
 
     // Get payment data for these users to calculate missed_weeks and last_payment_date
     const userIds = (flaggedUsers || []).map(u => u.id);
-    const windowStart = new Date();
-    windowStart.setDate(windowStart.getDate() - 182);
+    const now = new Date();
+    const windowStart = getWindowStart(now);
+    const expectedWeeks = expectedCoverageWeeks(now);
 
     let usersWithPaymentData = (flaggedUsers || []).map(u => ({
       ...u,
@@ -110,13 +112,8 @@ export async function GET(req: NextRequest) {
       usersWithPaymentData = (flaggedUsers || []).map(u => {
         const schedule = u.payment_schedule || 'monthly';
         const paymentCount = paymentCountMap.get(u.id) || 0;
-        let missedWeeks: number;
-
-        if (schedule === 'weekly') {
-          missedWeeks = Math.max(0, 26 - paymentCount);
-        } else {
-          missedWeeks = Math.max(0, 26 - (paymentCount * 4));
-        }
+        const coverageWeeks = schedule === 'weekly' ? paymentCount : paymentCount * 4;
+        const missedWeeks = Math.max(0, expectedWeeks - coverageWeeks);
 
         return {
           ...u,

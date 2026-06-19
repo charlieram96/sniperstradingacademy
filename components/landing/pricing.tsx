@@ -46,7 +46,6 @@ export function Pricing() {
     t("landing.pricing.feature6"),
     t("landing.pricing.feature7"),
     t("landing.pricing.feature8"),
-    t("landing.pricing.feature9"),
   ]
   return (
     <section id="pricing" className="py-24 px-4 relative">
