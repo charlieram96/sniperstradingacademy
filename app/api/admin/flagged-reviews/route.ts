@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { roleRank } from '@/lib/admin/permissions';
-import { expectedCoverageWeeks, getWindowStart } from '@/lib/payments/review-window';
+import { computeMissedWeeks, getWindowStart } from '@/lib/payments/review-window';
 
 export const runtime = 'nodejs';
 
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
     // Build query for flagged users
     let query = serviceSupabase
       .from('users')
-      .select('id, email, name, payment_schedule, flagged_for_review_at, is_active, network_position_id', { count: 'exact' })
+      .select('id, email, name, payment_schedule, flagged_for_review_at, is_active, network_position_id, initial_payment_date', { count: 'exact' })
       .eq('flagged_for_review', true);
 
     if (search) {
@@ -68,7 +68,6 @@ export async function GET(req: NextRequest) {
     const userIds = (flaggedUsers || []).map(u => u.id);
     const now = new Date();
     const windowStart = getWindowStart(now);
-    const expectedWeeks = expectedCoverageWeeks(now);
 
     let usersWithPaymentData = (flaggedUsers || []).map(u => ({
       ...u,
@@ -80,7 +79,7 @@ export async function GET(req: NextRequest) {
       // Get payment counts in window
       const { data: payments } = await serviceSupabase
         .from('payments')
-        .select('user_id, id, created_at')
+        .select('user_id, id, payment_type, created_at')
         .in('user_id', userIds)
         .eq('status', 'succeeded')
         .in('payment_type', ['weekly', 'monthly'])
@@ -96,11 +95,15 @@ export async function GET(req: NextRequest) {
         .in('payment_type', ['weekly', 'monthly'])
         .order('created_at', { ascending: false });
 
-      const paymentCountMap = new Map<string, number>();
+      // Count weekly and monthly payments separately so coverage matches the
+      // cron's math: each weekly payment covers 1 week, each monthly covers 4.
+      const weeklyCountMap = new Map<string, number>();
+      const monthlyCountMap = new Map<string, number>();
       const lastPaymentMap = new Map<string, string>();
 
       for (const p of payments || []) {
-        paymentCountMap.set(p.user_id, (paymentCountMap.get(p.user_id) || 0) + 1);
+        const target = p.payment_type === 'weekly' ? weeklyCountMap : monthlyCountMap;
+        target.set(p.user_id, (target.get(p.user_id) || 0) + 1);
       }
 
       for (const p of lastPayments || []) {
@@ -110,10 +113,10 @@ export async function GET(req: NextRequest) {
       }
 
       usersWithPaymentData = (flaggedUsers || []).map(u => {
-        const schedule = u.payment_schedule || 'monthly';
-        const paymentCount = paymentCountMap.get(u.id) || 0;
-        const coverageWeeks = schedule === 'weekly' ? paymentCount : paymentCount * 4;
-        const missedWeeks = Math.max(0, expectedWeeks - coverageWeeks);
+        const coverageWeeks = (weeklyCountMap.get(u.id) || 0) + (monthlyCountMap.get(u.id) || 0) * 4;
+        // Anchor to the user's own liability start (consistent with the flagging cron).
+        const initialPaymentDate = u.initial_payment_date ? new Date(u.initial_payment_date) : null;
+        const missedWeeks = computeMissedWeeks(coverageWeeks, now, initialPaymentDate);
 
         return {
           ...u,
