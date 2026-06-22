@@ -82,7 +82,7 @@ export async function GET(req: NextRequest) {
     // We can't rely on a per-user schedule, so we count by payment_type.
     const { data: usersData, error: usersError } = await supabase
       .from('users')
-      .select('id, email, payment_schedule, flagged_for_review, network_position_id')
+      .select('id, email, payment_schedule, flagged_for_review, network_position_id, initial_payment_date')
       .eq('initial_payment_completed', true)
       .not('role', 'in', '("superadmin","superadmin+")');
 
@@ -149,7 +149,10 @@ export async function GET(req: NextRequest) {
 
     for (const user of userData) {
       const coverageWeeks = user.weekly_count + user.monthly_count * 4;
-      const missedWeeks = computeMissedWeeks(coverageWeeks, now);
+      // Anchor expectation to when THIS user became liable (initial unlock + grace),
+      // so recently-joined members aren't flagged for weeks they were never due.
+      const initialPaymentDate = user.initial_payment_date ? new Date(user.initial_payment_date) : null;
+      const missedWeeks = computeMissedWeeks(coverageWeeks, now, initialPaymentDate);
 
       if (missedWeeks >= MISSED_WEEKS_THRESHOLD && !user.flagged_for_review) {
         const { error: updateError } = await supabase
