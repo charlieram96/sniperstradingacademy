@@ -9,7 +9,6 @@ import {
   Rocket,
   BookOpen,
   Video,
-  UserCheck,
 } from "lucide-react"
 import { staggerContainer, staggerItem } from "@/lib/motion"
 import { useTranslation } from "@/components/language-provider"
@@ -114,12 +113,11 @@ export function Hero() {
             variants={staggerContainer}
             initial="hidden"
             animate="visible"
-            className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto"
+            className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto"
           >
             {[
               { icon: BookOpen, value: "6+", label: t("landing.hero.statModules") },
               { icon: Video, value: "3", label: t("landing.hero.statClasses") },
-              { icon: UserCheck, value: "1-on-1", label: t("landing.hero.statMentorship") },
             ].map((stat) => (
               <motion.div
                 key={stat.label}

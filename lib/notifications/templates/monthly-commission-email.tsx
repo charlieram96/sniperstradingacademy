@@ -81,7 +81,7 @@ export const MonthlyCommissionEmail = ({
               <br />
               <strong>Transfer initiated:</strong> Within 24 hours
               <br />
-              <strong>Expected arrival:</strong> 2-5 business days
+              <strong>Expected arrival:</strong> Within minutes to a few hours
             </Text>
           </Section>
 
@@ -93,7 +93,7 @@ export const MonthlyCommissionEmail = ({
           </Section>
 
           <Text style={text}>
-            Your commission will be transferred to your connected bank account. You can track all your earnings and payouts in your dashboard.
+            Your commission will be sent to your connected crypto wallet. You can track all your earnings and payouts in your dashboard.
           </Text>
 
           {/* Tips Section */}

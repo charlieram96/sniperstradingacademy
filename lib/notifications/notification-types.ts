@@ -23,7 +23,7 @@ export type NotificationType =
   | 'network_join'              // Someone joins user's network
   | 'direct_bonus'              // User earns $249.50 direct referral bonus
   | 'monthly_commission'        // Monthly residual commission calculated
-  | 'payout_processed'          // Payout transferred to bank account
+  | 'payout_processed'          // Payout sent to crypto wallet
   | 'payout_failed'             // Payout failed (action required)
   | 'payment_failed'            // Subscription payment failed
   | 'payment_succeeded'         // Subscription payment succeeded

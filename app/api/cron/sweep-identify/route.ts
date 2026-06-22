@@ -14,6 +14,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { polygonUSDCClient } from '@/lib/polygon/usdc-client';
+import { checkAndProcessUserDeposit } from '@/lib/treasury/deposit-processor';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -47,7 +48,19 @@ export async function GET(req: NextRequest) {
     // through the batch window instead of the same 50 being checked every run.
     const { data: users, error } = await supabase
       .from('users')
-      .select('id, email, crypto_deposit_address')
+      .select(`
+        id,
+        email,
+        crypto_deposit_address,
+        crypto_derivation_index,
+        initial_payment_completed,
+        bypass_initial_payment,
+        is_active,
+        payment_schedule,
+        previous_payment_due_date,
+        next_payment_due_date,
+        last_payment_date
+      `)
       .not('crypto_deposit_address', 'is', null)
       .in('sweep_status', ['idle', 'failed'])
       .order('sweep_completed_at', { ascending: true, nullsFirst: true })
@@ -94,6 +107,21 @@ export async function GET(req: NextRequest) {
               })
               .eq('id', user.id);
             return { userId: user.id, action: 'skip', usdcBalance };
+          }
+
+          // RACE FIX: record + process this deposit as a payment NOW, while the
+          // funds are still in the address. Historically the sweep pipeline could
+          // empty the address before the hourly monitor-deposits cron recorded the
+          // deposit, after which the balance-based monitor saw 0 and silently
+          // dropped the payment (no usdc_transactions row, no payment, no upline
+          // volume). Recording here closes that race. Idempotent: if the webhook or
+          // monitor already recorded it, the balance-vs-recorded check finds nothing
+          // unrecorded and the 24h recent-payment guard prevents a double payment.
+          // Non-fatal: a processing error must never block the sweep itself.
+          try {
+            await checkAndProcessUserDeposit(supabase, user);
+          } catch (procErr) {
+            console.error(`[SweepIdentify] Deposit processing failed for ${user.email} (continuing with sweep):`, procErr);
           }
 
           // Get POL balance

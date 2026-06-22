@@ -12,18 +12,16 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
+import {
+  MISSED_WEEKS_THRESHOLD,
+  computeMissedWeeks,
+  expectedCoverageWeeks,
+  isFlaggingActive,
+  getWindowStart,
+} from '@/lib/payments/review-window';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
-
-// Date from which we start tracking — no retroactive flagging
-const REVIEW_TRACKING_START_DATE = new Date('2026-03-08T00:00:00Z');
-
-// 26 weeks in days
-const WINDOW_DAYS = 182;
-
-// Threshold: 12+ missed weeks triggers a flag
-const MISSED_WEEKS_THRESHOLD = 12;
 
 export async function GET(req: NextRequest) {
   const startTime = Date.now();
@@ -44,27 +42,29 @@ export async function GET(req: NextRequest) {
     const supabase = createServiceRoleClient();
     const now = new Date();
 
-    // Check if full 26-week window has elapsed since tracking start
-    const msSinceTrackingStart = now.getTime() - REVIEW_TRACKING_START_DATE.getTime();
-    const daysSinceTrackingStart = msSinceTrackingStart / (1000 * 60 * 60 * 24);
-
-    if (daysSinceTrackingStart < WINDOW_DAYS) {
-      console.log(`[CheckPaymentReviews] Only ${Math.floor(daysSinceTrackingStart)} days since tracking start. Need ${WINDOW_DAYS} days. Exiting early.`);
+    // Flagging only becomes possible once at least MISSED_WEEKS_THRESHOLD weeks
+    // have elapsed since tracking start (you can't miss 12 weeks before 12 weeks
+    // have passed). Missed weeks are measured against elapsed weeks (capped at
+    // the full 26-week window), so users are flagged as soon as they fall behind
+    // rather than waiting for the entire window to pass.
+    if (!isFlaggingActive(now)) {
+      const expectedWeeks = expectedCoverageWeeks(now);
+      console.log(`[CheckPaymentReviews] Only ${expectedWeeks} weeks elapsed since tracking start. Need ${MISSED_WEEKS_THRESHOLD}. Exiting early.`);
 
       await supabase.from('crypto_audit_log').insert({
         event_type: 'payment_review_check_skipped',
         entity_type: 'system',
         details: {
           trigger: isVercelCron ? 'vercel_cron' : 'manual',
-          reason: 'window_not_elapsed',
-          days_since_start: Math.floor(daysSinceTrackingStart),
-          days_required: WINDOW_DAYS,
+          reason: 'threshold_not_reachable',
+          weeks_elapsed: expectedWeeks,
+          weeks_required: MISSED_WEEKS_THRESHOLD,
         },
       });
 
       return NextResponse.json({
         success: true,
-        message: `26-week window not yet elapsed. ${Math.floor(daysSinceTrackingStart)}/${WINDOW_DAYS} days since tracking start.`,
+        message: `Flagging not yet active. ${expectedWeeks}/${MISSED_WEEKS_THRESHOLD} weeks elapsed since tracking start.`,
         stats: {
           checked: 0,
           flagged: 0,
@@ -73,12 +73,8 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Calculate window start: max(now - 182 days, REVIEW_TRACKING_START_DATE)
-    const windowStartFromNow = new Date(now);
-    windowStartFromNow.setDate(windowStartFromNow.getDate() - WINDOW_DAYS);
-    const windowStart = windowStartFromNow > REVIEW_TRACKING_START_DATE
-      ? windowStartFromNow
-      : REVIEW_TRACKING_START_DATE;
+    // Payment-counting window: max(now - 182 days, REVIEW_TRACKING_START_DATE)
+    const windowStart = getWindowStart(now);
 
     console.log(`[CheckPaymentReviews] Window: ${windowStart.toISOString()} to ${now.toISOString()}`);
 
@@ -153,7 +149,7 @@ export async function GET(req: NextRequest) {
 
     for (const user of userData) {
       const coverageWeeks = user.weekly_count + user.monthly_count * 4;
-      const missedWeeks = Math.max(0, 26 - coverageWeeks);
+      const missedWeeks = computeMissedWeeks(coverageWeeks, now);
 
       if (missedWeeks >= MISSED_WEEKS_THRESHOLD && !user.flagged_for_review) {
         const { error: updateError } = await supabase
