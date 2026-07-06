@@ -13,7 +13,7 @@ interface PayoutResult {
   userId: string;
   amount: string;
   txHash: string | null;
-  status: 'success' | 'failed';
+  status: 'success' | 'failed' | 'pending_confirmation';
   error?: string;
 }
 
@@ -110,7 +110,8 @@ export async function POST(req: NextRequest) {
         referrer_id,
         amount,
         net_amount_usdc,
-        commission_type
+        commission_type,
+        error_message
       `)
       .eq('payout_batch_id', batchId)
       .eq('status', 'pending');
@@ -127,10 +128,37 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const results: PayoutResult[] = [];
+    let successCount = 0;
+    let failCount = 0;
+    let totalGasSpent = 0;
+    const errorLog: Array<{ commission_id: string; error: string; timestamp: string }> = [];
+
     // Group commissions by user
     const userPayouts = new Map<string, { total: number; commissionIds: string[] }>();
 
     for (const commission of commissions) {
+      // Skip commissions with an unresolved broadcast from a prior attempt —
+      // re-sending here risks a double payment. Resolve via single processing,
+      // which checks the prior tx on-chain first.
+      if (/broadcast, awaiting confirmation: 0x[0-9a-fA-F]{64}/.test(commission.error_message || '')) {
+        results.push({
+          commissionId: commission.id,
+          userId: commission.referrer_id,
+          amount: commission.net_amount_usdc || commission.amount,
+          txHash: null,
+          status: 'failed',
+          error: 'Has an unresolved broadcast transaction — process individually to resolve it',
+        });
+        errorLog.push({
+          commission_id: commission.id,
+          error: 'Skipped: unresolved broadcast transaction from a prior attempt',
+          timestamp: new Date().toISOString(),
+        });
+        failCount++;
+        continue;
+      }
+
       const userId = commission.referrer_id;
       const amount = parseFloat(commission.net_amount_usdc || commission.amount);
 
@@ -204,11 +232,6 @@ export async function POST(req: NextRequest) {
     }
 
     // Process payouts
-    const results: PayoutResult[] = [];
-    let successCount = 0;
-    let failCount = 0;
-    let totalGasSpent = 0;
-    const errorLog: Array<{ commission_id: string; error: string; timestamp: string }> = [];
 
     for (const [userId, data] of userPayouts.entries()) {
       const walletAddress = walletMap.get(userId);
@@ -258,6 +281,36 @@ export async function POST(req: NextRequest) {
           })
           .select()
           .single();
+
+        // Broadcast but not yet mined (confirmation timeout): keep commissions
+        // pending with the tx hash recorded so the send is never invisible.
+        // Do NOT cancel — the tx may still mine, and cancel-then-retry double-pays.
+        if (transferResult.data.status === 'pending') {
+          for (const commissionId of data.commissionIds) {
+            await supabase
+              .from('commissions')
+              .update({
+                error_message: `broadcast, awaiting confirmation: ${transferResult.data.transactionHash}`,
+                usdc_transaction_id: transaction?.id || null,
+              })
+              .eq('id', commissionId);
+
+            results.push({
+              commissionId,
+              userId,
+              amount: data.total.toFixed(6),
+              txHash: transferResult.data.transactionHash,
+              status: 'pending_confirmation',
+            });
+            errorLog.push({
+              commission_id: commissionId,
+              error: `broadcast, awaiting confirmation: ${transferResult.data.transactionHash}`,
+              timestamp: new Date().toISOString(),
+            });
+          }
+          failCount += data.commissionIds.length;
+          continue;
+        }
 
         // Update commissions
         for (const commissionId of data.commissionIds) {

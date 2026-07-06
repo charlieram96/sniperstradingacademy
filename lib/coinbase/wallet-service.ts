@@ -301,6 +301,20 @@ class CoinbaseWalletService {
       );
 
       if (!confirmation.success || !confirmation.data) {
+        // Broadcast but not mined in time: report as pending with the tx hash
+        // so callers can record it. It may still mine — never treat as failed.
+        if (confirmation.error?.code === 'CONFIRMATION_TIMEOUT') {
+          return {
+            success: true,
+            data: {
+              transactionHash: transferResult.data.txHash,
+              status: 'pending',
+              from: transferResult.data.from,
+              to: transferResult.data.to,
+              amount: transferResult.data.amount,
+            },
+          };
+        }
         return {
           success: false,
           error: {
@@ -371,6 +385,20 @@ class CoinbaseWalletService {
       );
 
       if (!confirmation.success || !confirmation.data) {
+        // Broadcast but not mined in time: report as pending with the tx hash
+        // so callers can record it. It may still mine — never treat as failed.
+        if (confirmation.error?.code === 'CONFIRMATION_TIMEOUT') {
+          return {
+            success: true,
+            data: {
+              transactionHash: transferResult.data.txHash,
+              status: 'pending',
+              from: transferResult.data.from,
+              to: transferResult.data.to,
+              amount: transferResult.data.amount,
+            },
+          };
+        }
         return {
           success: false,
           error: {

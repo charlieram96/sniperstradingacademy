@@ -4,6 +4,7 @@ import { coinbaseWalletService } from "@/lib/coinbase/wallet-service"
 import { roleRank } from "@/lib/admin/permissions"
 
 export const runtime = 'nodejs'
+export const maxDuration = 120 // must exceed the 60s confirmation timeout so a stuck tx is recorded, not orphaned
 
 export async function POST(req: NextRequest) {
   try {
@@ -55,6 +56,8 @@ export async function POST(req: NextRequest) {
         status,
         retry_count,
         commission_type,
+        error_message,
+        usdc_transaction_id,
         users!commissions_referrer_id_fkey (
           name,
           email,
@@ -80,6 +83,58 @@ export async function POST(req: NextRequest) {
         message: "This commission has already been paid",
         commissionId: commission.id,
       })
+    }
+
+    // Double-pay guard: a previous attempt may have broadcast a tx that never
+    // confirmed before the function returned. Resolve that tx before sending again.
+    const priorBroadcast = commission.error_message?.match(/broadcast, awaiting confirmation: (0x[0-9a-fA-F]{64})/)
+    if (priorBroadcast) {
+      const { polygonUSDCClient } = await import('@/lib/polygon/usdc-client')
+      const priorTxStatus = await polygonUSDCClient.getTransactionStatus(priorBroadcast[1])
+
+      if (priorTxStatus === 'confirmed') {
+        // The earlier broadcast landed — mark paid, do not send again
+        if (commission.usdc_transaction_id) {
+          await supabase
+            .from('usdc_transactions')
+            .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
+            .eq('id', commission.usdc_transaction_id)
+        }
+        await supabase
+          .from("commissions")
+          .update({
+            status: "paid",
+            paid_at: new Date().toISOString(),
+            processed_at: new Date().toISOString(),
+            error_message: null,
+          })
+          .eq("id", commissionId)
+
+        return NextResponse.json({
+          success: true,
+          alreadyBroadcast: true,
+          txHash: priorBroadcast[1],
+          commissionId: commission.id,
+          message: "A previously broadcast transfer for this commission confirmed on-chain. Marked as paid without sending again.",
+        })
+      }
+
+      if (priorTxStatus === 'pending') {
+        return NextResponse.json({
+          success: false,
+          error: `A transfer for this commission is still awaiting confirmation (${priorBroadcast[1]}). Verify it on Polygonscan before retrying.`,
+          commissionId: commission.id,
+        }, { status: 409 })
+      }
+
+      // 'not_found' (evicted from mempool without mining) or 'failed' (reverted):
+      // mark the stale tx row and fall through to send a fresh transfer
+      if (commission.usdc_transaction_id) {
+        await supabase
+          .from('usdc_transactions')
+          .update({ status: 'failed', error_message: `superseded: prior broadcast ${priorTxStatus}` })
+          .eq('id', commission.usdc_transaction_id)
+      }
     }
 
     const user = Array.isArray(commission.users) ? commission.users[0] : commission.users
@@ -210,6 +265,29 @@ export async function POST(req: NextRequest) {
         })
         .select()
         .single()
+
+      // Broadcast but not yet mined (confirmation timeout): keep the commission
+      // pending with the tx hash recorded so the send is never invisible.
+      // Do NOT cancel — the tx may still mine, and cancel-then-retry double-pays.
+      if (transferResult.data.status === 'pending') {
+        await supabase
+          .from("commissions")
+          .update({
+            error_message: `broadcast, awaiting confirmation: ${transferResult.data.transactionHash}`,
+            usdc_transaction_id: transaction?.id || null,
+          })
+          .eq("id", commissionId)
+
+        return NextResponse.json({
+          success: true,
+          pendingConfirmation: true,
+          txHash: transferResult.data.transactionHash,
+          commissionId: commission.id,
+          amount: amount,
+          userName: user.name,
+          message: "Transfer broadcast but not yet confirmed on-chain. Check the transaction before retrying.",
+        }, { status: 202 })
+      }
 
       // Update commission as paid
       const { error: updateError } = await supabase

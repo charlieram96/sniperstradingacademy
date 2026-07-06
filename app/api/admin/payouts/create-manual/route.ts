@@ -4,6 +4,7 @@ import { coinbaseWalletService } from "@/lib/coinbase/wallet-service"
 import { roleRank } from "@/lib/admin/permissions"
 
 export const runtime = 'nodejs'
+export const maxDuration = 120 // must exceed the 60s confirmation timeout so a stuck tx is recorded, not orphaned
 
 const MAX_MANUAL_PAYOUT_AMOUNT = 2000
 
@@ -199,6 +200,32 @@ export async function POST(req: NextRequest) {
         })
         .select()
         .single()
+
+      // Broadcast but not yet mined (confirmation timeout): keep the commission
+      // pending with the tx hash recorded so the send is never invisible.
+      // Do NOT cancel — the tx may still mine, and cancel-then-retry double-pays.
+      if (transferResult.data.status === 'pending') {
+        await supabase
+          .from("commissions")
+          .update({
+            error_message: `broadcast, awaiting confirmation: ${transferResult.data.transactionHash}`,
+            usdc_transaction_id: transaction?.id || null,
+          })
+          .eq("id", commissionId)
+
+        return NextResponse.json({
+          success: true,
+          pendingConfirmation: true,
+          txHash: transferResult.data.transactionHash,
+          commissionId: commissionId,
+          amount: amountNumber,
+          userName: recipientUser.name,
+          userEmail: recipientUser.email,
+          walletAddress: recipientUser.payout_wallet_address,
+          description: description.trim(),
+          message: "Transfer broadcast but not yet confirmed on-chain. Check the transaction before retrying.",
+        }, { status: 202 })
+      }
 
       // Update commission as paid
       const { error: updateError } = await supabase

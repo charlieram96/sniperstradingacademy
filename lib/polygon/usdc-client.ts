@@ -6,6 +6,7 @@
 
 import { ethers } from 'ethers';
 import { POLYGON_CONFIG, GAS_LIMITS, ServiceResponse, ACCEPTED_USDC_CONTRACTS_MAINNET } from '../coinbase/wallet-types';
+import { computeOutgoingFees, applyMultiplier, maxFee, REPLACEMENT_BUMP_MULTIPLIER } from '../treasury/gas-config';
 
 // USDC ERC-20 ABI (minimal interface for transfers)
 const USDC_ABI = [
@@ -34,6 +35,14 @@ export interface USDCTransferResult {
   gasPrice: string;
   blockNumber?: number;
   status: 'pending' | 'confirmed' | 'failed';
+  nonce?: number;
+}
+
+function isReplacementUnderpriced(error: any): boolean {
+  return (
+    error?.code === 'REPLACEMENT_UNDERPRICED' ||
+    /replacement (transaction|fee)/i.test(error?.message || '')
+  );
 }
 
 export interface GasEstimate {
@@ -249,12 +258,43 @@ class PolygonUSDCClient {
         };
       }
 
-      // Execute transfer (cast to any for ethers v6 typing)
-      const tx = await (usdcWithSigner as any).transfer(toAddress, amountRaw, {
-        gasLimit: gasEstimate.data.gasLimit,
-        maxFeePerGas: gasEstimate.data.maxFeePerGas,
-        maxPriorityFeePerGas: gasEstimate.data.maxPriorityFeePerGas,
-      });
+      // Pin the nonce explicitly so a bump-and-replace retry targets the same slot
+      const nonce = await this.provider.getTransactionCount(wallet.address, 'pending');
+
+      let maxFeePerGas = BigInt(gasEstimate.data.maxFeePerGas);
+      let maxPriorityFeePerGas = BigInt(gasEstimate.data.maxPriorityFeePerGas);
+
+      const sendTx = () =>
+        (usdcWithSigner as any).transfer(toAddress, amountRaw, {
+          gasLimit: gasEstimate.data!.gasLimit,
+          maxFeePerGas,
+          maxPriorityFeePerGas,
+          nonce,
+        });
+
+      let tx;
+      try {
+        tx = await sendTx();
+      } catch (sendError: any) {
+        if (!isReplacementUnderpriced(sendError)) throw sendError;
+
+        // A stuck tx already occupies this nonce (e.g. broadcast during a gas
+        // spike). Replace it: fees must exceed the stuck tx's by ≥10%, so bump
+        // 15% over the higher of our estimate and the network's current view.
+        const feeData = await this.provider.getFeeData();
+        maxFeePerGas = applyMultiplier(
+          maxFee(maxFeePerGas, feeData.maxFeePerGas),
+          REPLACEMENT_BUMP_MULTIPLIER
+        )!;
+        maxPriorityFeePerGas = applyMultiplier(
+          maxFee(maxPriorityFeePerGas, feeData.maxPriorityFeePerGas),
+          REPLACEMENT_BUMP_MULTIPLIER
+        )!;
+        console.warn(
+          `[PolygonUSDCClient] Nonce ${nonce} occupied by a stuck tx; retrying as replacement at ${ethers.formatUnits(maxFeePerGas, 'gwei')} gwei`
+        );
+        tx = await sendTx();
+      }
 
       console.log('[PolygonUSDCClient] Transfer initiated:', tx.hash);
 
@@ -266,8 +306,9 @@ class PolygonUSDCClient {
           to: toAddress,
           amount: amountUSDC,
           gasUsed: '0', // Will be updated after confirmation
-          gasPrice: ethers.formatUnits(gasEstimate.data.maxFeePerGas, 'gwei'),
+          gasPrice: ethers.formatUnits(maxFeePerGas, 'gwei'),
           status: 'pending',
+          nonce,
         },
       };
     } catch (error: any) {
@@ -288,12 +329,30 @@ class PolygonUSDCClient {
    */
   async waitForConfirmation(
     txHash: string,
-    confirmations: number = 1
+    confirmations: number = 1,
+    timeoutMs: number = 60_000
   ): Promise<ServiceResponse<USDCTransferResult>> {
     try {
       console.log(`[PolygonUSDCClient] Waiting for ${confirmations} confirmations...`);
 
-      const receipt = await this.provider.waitForTransaction(txHash, confirmations);
+      let receipt;
+      try {
+        receipt = await this.provider.waitForTransaction(txHash, confirmations, timeoutMs);
+      } catch (waitError: any) {
+        // Timed out: the tx is broadcast but not yet mined (e.g. gas spike).
+        // Surface a distinct code so callers record it instead of hanging
+        // until the serverless function is killed.
+        if (waitError?.code === 'TIMEOUT') {
+          return {
+            success: false,
+            error: {
+              code: 'CONFIRMATION_TIMEOUT',
+              message: `Transaction ${txHash} broadcast but not confirmed within ${timeoutMs / 1000}s`,
+            },
+          };
+        }
+        throw waitError;
+      }
 
       if (!receipt) {
         return {
@@ -358,6 +417,20 @@ class PolygonUSDCClient {
   }
 
   /**
+   * Look up the current state of a broadcast transaction without waiting.
+   * 'not_found' means the tx is unknown to the node (e.g. evicted from the
+   * mempool without mining) — safe to re-send.
+   */
+  async getTransactionStatus(
+    txHash: string
+  ): Promise<'confirmed' | 'failed' | 'pending' | 'not_found'> {
+    const receipt = await this.provider.getTransactionReceipt(txHash);
+    if (receipt) return receipt.status === 1 ? 'confirmed' : 'failed';
+    const tx = await this.provider.getTransaction(txHash);
+    return tx ? 'pending' : 'not_found';
+  }
+
+  /**
    * Estimate gas for USDC transfer
    */
   async estimateTransferGas(
@@ -374,11 +447,10 @@ class PolygonUSDCClient {
       // Add buffer for safety
       const gasLimit = (gasLimitEstimate * BigInt(Math.floor(GAS_LIMITS.BUFFER_MULTIPLIER * 100))) / BigInt(100);
 
-      // Get current gas prices
+      // Get current gas prices, buffered for spikes between sign-time and
+      // inclusion-time (same policy as the treasury/sweep system)
       const feeData = await this.provider.getFeeData();
-
-      const maxFeePerGas = feeData.maxFeePerGas || ethers.parseUnits('100', 'gwei');
-      const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas || ethers.parseUnits('30', 'gwei');
+      const { maxFeePerGas, maxPriorityFeePerGas } = computeOutgoingFees(feeData);
 
       // Calculate estimated cost in MATIC
       const estimatedCostWei = gasLimit * maxFeePerGas;
