@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
         status,
         retry_count,
         commission_type,
+        error_message,
         users!commissions_referrer_id_fkey (
           name,
           email,
@@ -142,6 +143,22 @@ export async function POST(req: NextRequest) {
           success: false,
           skipped: true,
           error: "Already paid"
+        })
+        continue
+      }
+
+      // Skip if a previous attempt broadcast a tx that hasn't been resolved —
+      // re-sending here risks a double payment. Use single processing, which
+      // checks the prior tx on-chain before deciding.
+      if (/broadcast, awaiting confirmation: 0x[0-9a-fA-F]{64}/.test(commission.error_message || '')) {
+        skippedCount++
+        results.push({
+          commissionId: commission.id,
+          userName: user?.name || "Unknown",
+          amount: amount,
+          success: false,
+          skipped: true,
+          error: "Has an unresolved broadcast transaction — process individually to resolve it"
         })
         continue
       }
@@ -262,6 +279,29 @@ export async function POST(req: NextRequest) {
           })
           .select()
           .single()
+
+        // Broadcast but not yet mined (confirmation timeout): keep the commission
+        // pending with the tx hash recorded so the send is never invisible.
+        // Do NOT cancel — the tx may still mine, and cancel-then-retry double-pays.
+        if (transferResult.data.status === 'pending') {
+          await supabase
+            .from("commissions")
+            .update({
+              error_message: `broadcast, awaiting confirmation: ${transferResult.data.transactionHash}`,
+              usdc_transaction_id: transaction?.id || null,
+            })
+            .eq("id", commission.id)
+
+          failedCount++
+          results.push({
+            commissionId: commission.id,
+            userName: user.name || "Unknown",
+            amount: amount,
+            success: false,
+            error: `Transfer broadcast but not yet confirmed: ${transferResult.data.transactionHash}. Check the transaction before retrying.`
+          })
+          continue
+        }
 
         // Update commission as paid
         const { error: updateError } = await supabase
