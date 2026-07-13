@@ -30,7 +30,7 @@ export default async function PrivilegesPage() {
         </p>
       </div>
 
-      <PrivilegesManagerClient />
+      <PrivilegesManagerClient viewerRole={userData?.role ?? null} viewerId={user.id} />
     </div>
   )
 }

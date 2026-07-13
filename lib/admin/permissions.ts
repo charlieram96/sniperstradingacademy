@@ -49,6 +49,19 @@ export function roleRank(role: string | null | undefined): number {
   return ROLE_RANK[(role as AdminRole)] ?? 0
 }
 
+// Whether an actor may change the role/permissions of a target whose current
+// (or to-be-assigned) role is `targetRole`. superadmin+ (top rank) may manage
+// everyone, including peer superadmin+; everyone else must STRICTLY outrank
+// the target. Note roleRank maps unknown strings ("member", null) to 0.
+export function canManageTarget(
+  actorRole: string | null | undefined,
+  targetRole: string | null | undefined
+): boolean {
+  const actorRank = roleRank(actorRole)
+  if (actorRank >= roleRank("superadmin+")) return true
+  return actorRank > roleRank(targetRole)
+}
+
 // The canonical list of grantable admin privileges. The `minRole` values mirror
 // today's page/sidebar gating so role-based access is unchanged.
 export const ADMIN_PRIVILEGES: AdminPrivilege[] = [

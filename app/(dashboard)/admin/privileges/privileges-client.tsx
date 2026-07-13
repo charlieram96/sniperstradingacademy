@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast"
 import {
   ADMIN_PRIVILEGES,
   ASSIGNABLE_ROLES,
+  canManageTarget,
   roleImpliesPrivilege,
   type AdminRole,
   type PrivilegeKey,
@@ -37,7 +38,13 @@ interface SelectedUser {
   permissions: PrivilegeKey[]
 }
 
-export function PrivilegesManagerClient() {
+export function PrivilegesManagerClient({
+  viewerRole,
+  viewerId,
+}: {
+  viewerRole: string | null
+  viewerId: string
+}) {
   const { toast } = useToast()
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<SearchUser[]>([])
@@ -111,6 +118,14 @@ export function PrivilegesManagerClient() {
     }
   }
 
+  // Rank rules mirrored from the server: superadmin+ manages everyone; others
+  // must strictly outrank the target, and nobody changes their own base role.
+  const canEdit = selected ? canManageTarget(viewerRole, selected.role) : false
+  const isSelf = selected?.id === viewerId
+  const assignableRoles = ASSIGNABLE_ROLES.filter(
+    (r) => canManageTarget(viewerRole, r) || r === selected?.role
+  )
+
   return (
     <div className="space-y-6">
       {/* Search */}
@@ -175,13 +190,23 @@ export function PrivilegesManagerClient() {
                   <p className="text-xs text-muted-foreground">{selected.email}</p>
                 </div>
               </div>
-              <Button onClick={save} disabled={saving}>
+              <Button onClick={save} disabled={saving || !canEdit}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 Save changes
               </Button>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
+            {!canEdit && (
+              <p className="text-sm text-muted-foreground rounded-lg border border-border p-3">
+                You do not outrank this user. Only a superadmin+ can manage superadmin accounts.
+              </p>
+            )}
+            {canEdit && isSelf && (
+              <p className="text-sm text-muted-foreground rounded-lg border border-border p-3">
+                You cannot change your own base role.
+              </p>
+            )}
             {/* Base role */}
             <div className="flex items-center justify-between">
               <div>
@@ -190,12 +215,12 @@ export function PrivilegesManagerClient() {
                   Higher roles implicitly include lower-tier privileges
                 </p>
               </div>
-              <Select value={role} onValueChange={(v) => setRole(v as AdminRole)}>
+              <Select value={role} onValueChange={(v) => setRole(v as AdminRole)} disabled={!canEdit || isSelf}>
                 <SelectTrigger className="w-[160px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {ASSIGNABLE_ROLES.map((r) => (
+                  {assignableRoles.map((r) => (
                     <SelectItem key={r} value={r}>{r}</SelectItem>
                   ))}
                 </SelectContent>
@@ -225,7 +250,7 @@ export function PrivilegesManagerClient() {
                       </div>
                       <Switch
                         checked={checked}
-                        disabled={impliedByRole}
+                        disabled={impliedByRole || !canEdit}
                         onCheckedChange={(on) => toggleGrant(priv.key, on)}
                       />
                     </div>

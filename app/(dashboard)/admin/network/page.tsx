@@ -31,11 +31,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
+type NetworkRole = "member" | "admin" | "superadmin" | "superadmin+"
+
 interface NetworkUser {
   id: string
   name: string | null
   email: string
-  role: "member" | "admin" | "superadmin"
+  role: NetworkRole
   is_active: boolean
   initial_payment_completed: boolean
   active_direct_referrals_count: number
@@ -84,7 +86,7 @@ export default function AdminNetworkPage() {
   const [selectedUser, setSelectedUser] = useState<NetworkUser | null>(null)
   const [showUserDetailDialog, setShowUserDetailDialog] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
-  const [userToToggle, setUserToToggle] = useState<{ id: string; name: string; currentRole: "member" | "admin" | "superadmin" } | null>(null)
+  const [userToToggle, setUserToToggle] = useState<{ id: string; name: string; currentRole: NetworkRole; newRole: NetworkRole } | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
   const [showBypassDialog, setShowBypassDialog] = useState(false)
   const [userForBypass, setUserForBypass] = useState<{
@@ -169,9 +171,13 @@ export default function AdminNetworkPage() {
       )
     }
 
-    // Role filter
+    // Role filter ("superadmin" matches both superadmin tiers)
     if (roleFilter !== "all") {
-      result = result.filter((user) => user.role === roleFilter)
+      result = result.filter((user) =>
+        roleFilter === "superadmin"
+          ? user.role === "superadmin" || user.role === "superadmin+"
+          : user.role === roleFilter
+      )
     }
 
     // Status filter
@@ -409,8 +415,8 @@ export default function AdminNetworkPage() {
     }
   }
 
-  function openConfirmDialog(userId: string, userName: string, currentRole: "member" | "admin" | "superadmin") {
-    setUserToToggle({ id: userId, name: userName, currentRole })
+  function openConfirmDialog(userId: string, userName: string, currentRole: NetworkRole, newRole: NetworkRole) {
+    setUserToToggle({ id: userId, name: userName, currentRole, newRole })
     setShowConfirmDialog(true)
   }
 
@@ -438,16 +444,24 @@ export default function AdminNetworkPage() {
     if (!userToToggle) return
 
     setIsUpdating(true)
-    const newRole = userToToggle.currentRole === "admin" ? "member" : "admin"
+    const newRole = userToToggle.newRole
 
-    const supabase = createClient()
-    const { error } = await supabase
-      .from("users")
-      .update({ role: newRole })
-      .eq("id", userToToggle.id)
-
-    if (error) {
+    try {
+      const res = await fetch("/api/admin/users/update-privileges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: userToToggle.id, role: newRole }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        console.error("Error updating user role:", data.error)
+        alert(data.error || "Failed to update user role.")
+        setIsUpdating(false)
+        return
+      }
+    } catch (error) {
       console.error("Error updating user role:", error)
+      alert("Failed to update user role. Please try again.")
       setIsUpdating(false)
       return
     }
@@ -1102,6 +1116,12 @@ export default function AdminNetworkPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <h3 className="font-semibold">{user.name || "No name"}</h3>
+                        {user.role === "superadmin+" && (
+                          <Badge className="bg-purple-700 text-white">
+                            <Crown className="h-3 w-3 mr-1" />
+                            Superadmin+
+                          </Badge>
+                        )}
                         {user.role === "superadmin" && (
                           <Badge className="bg-purple-600 text-white">
                             <ShieldCheck className="h-3 w-3 mr-1" />
@@ -1217,6 +1237,12 @@ export default function AdminNetworkPage() {
                       <Badge variant="outline" className="text-muted-foreground">
                         <XCircle className="h-3 w-3 mr-1" />
                         {t("admin.network.inactive")}
+                      </Badge>
+                    )}
+                    {selectedUser.role === "superadmin+" && (
+                      <Badge className="bg-purple-700 text-white">
+                        <Crown className="h-3 w-3 mr-1" />
+                        Superadmin+
                       </Badge>
                     )}
                     {selectedUser.role === "superadmin" && (
@@ -1343,16 +1369,42 @@ export default function AdminNetworkPage() {
                           {selectedUser.is_active ? t("admin.network.deactivate") : t("admin.network.activate")}
                         </Button>
                       )}
-                      <Button
-                        size="sm"
-                        variant={selectedUser.role === "admin" ? "destructive" : "default"}
-                        onClick={() => {
-                          openConfirmDialog(selectedUser.id, selectedUser.name || selectedUser.email, selectedUser.role)
-                        }}
-                      >
-                        <Shield className="h-3 w-3 mr-2" />
-                        {selectedUser.role === "admin" ? t("admin.network.revokeAdmin") : t("admin.network.grantAdmin")}
-                      </Button>
+                      {(selectedUser.role === "member" || selectedUser.role === "admin") && (
+                        <Button
+                          size="sm"
+                          variant={selectedUser.role === "admin" ? "destructive" : "default"}
+                          onClick={() => {
+                            openConfirmDialog(
+                              selectedUser.id,
+                              selectedUser.name || selectedUser.email,
+                              selectedUser.role,
+                              selectedUser.role === "admin" ? "member" : "admin"
+                            )
+                          }}
+                        >
+                          <Shield className="h-3 w-3 mr-2" />
+                          {selectedUser.role === "admin" ? t("admin.network.revokeAdmin") : t("admin.network.grantAdmin")}
+                        </Button>
+                      )}
+                      {isSuperAdminPlus &&
+                        (selectedUser.role === "superadmin" || selectedUser.role === "superadmin+") &&
+                        selectedUser.id !== currentUserId && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => {
+                            openConfirmDialog(
+                              selectedUser.id,
+                              selectedUser.name || selectedUser.email,
+                              selectedUser.role,
+                              "admin"
+                            )
+                          }}
+                        >
+                          <Shield className="h-3 w-3 mr-2" />
+                          {t("admin.network.revokeSuperadmin")}
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="default"
@@ -1400,7 +1452,7 @@ export default function AdminNetworkPage() {
                           Reset Password
                         </Button>
                       )}
-                      {selectedUser.role !== "superadmin" && (
+                      {!["superadmin", "superadmin+"].includes(selectedUser.role) && (
                         <Button
                           size="sm"
                           variant="destructive"
@@ -1463,7 +1515,12 @@ export default function AdminNetworkPage() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {userToToggle?.currentRole === "admin" ? (
+              {userToToggle?.currentRole === "superadmin" || userToToggle?.currentRole === "superadmin+" ? (
+                <>
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                  {t("admin.network.revokeSuperadminPrivileges")}
+                </>
+              ) : userToToggle?.currentRole === "admin" ? (
                 <>
                   <AlertTriangle className="h-5 w-5 text-destructive" />
                   {t("admin.network.revokeAdminPrivileges")}
@@ -1476,7 +1533,9 @@ export default function AdminNetworkPage() {
               )}
             </DialogTitle>
             <DialogDescription>
-              {userToToggle?.currentRole === "admin" ? (
+              {userToToggle?.currentRole === "superadmin" || userToToggle?.currentRole === "superadmin+" ? (
+                t("admin.network.revokeSuperadminConfirm", { name: userToToggle?.name ?? "" })
+              ) : userToToggle?.currentRole === "admin" ? (
                 <>
                   Are you sure you want to revoke admin privileges from{" "}
                   <span className="font-semibold text-foreground">{userToToggle?.name}</span>?
@@ -1500,12 +1559,14 @@ export default function AdminNetworkPage() {
               {t("common.cancel")}
             </Button>
             <Button
-              variant={userToToggle?.currentRole === "admin" ? "destructive" : "default"}
+              variant={userToToggle?.currentRole === "member" ? "default" : "destructive"}
               onClick={confirmToggleAdminRole}
               disabled={isUpdating}
             >
               {isUpdating ? (
                 t("admin.network.updating")
+              ) : userToToggle?.currentRole === "superadmin" || userToToggle?.currentRole === "superadmin+" ? (
+                t("admin.network.revokeSuperadmin")
               ) : userToToggle?.currentRole === "admin" ? (
                 t("admin.network.revokeAdmin")
               ) : (
