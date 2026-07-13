@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase/server"
-import { requireAdminPrivilege } from "@/lib/admin/access-control"
-import { ASSIGNABLE_ROLES, isPrivilegeKey, type AdminRole } from "@/lib/admin/permissions"
+import { requireAdminAccess, requireAdminPrivilege } from "@/lib/admin/access-control"
+import {
+  ASSIGNABLE_ROLES,
+  canManageTarget,
+  hasPrivilege,
+  isPrivilegeKey,
+  roleRank,
+  type PrivilegeKey,
+} from "@/lib/admin/permissions"
+
+// Roles accepted by this endpoint. "member" is the network page's legacy alias
+// for the base role (rank 0, same as "user") and is passed through unchanged.
+const VALID_ROLES: string[] = [...ASSIGNABLE_ROLES, "member"]
 
 // GET ?userId=xxx — current role + permissions for a single user
 export async function GET(req: NextRequest) {
@@ -28,8 +39,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    // Only those who can manage privileges (superadmin+) may call this
-    const auth = await requireAdminPrivilege("manage_privileges")
+    // Superadmins may call this (the network page routes its member<->admin
+    // toggle here); what each caller can actually change is narrowed by the
+    // rank guards below.
+    const auth = await requireAdminAccess("superadmin", "manage_privileges")
     if (!auth.ok) return auth.response
 
     const body = await req.json()
@@ -44,9 +57,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate role
-    if (role !== undefined && !ASSIGNABLE_ROLES.includes(role as AdminRole)) {
+    if (role !== undefined && !VALID_ROLES.includes(role)) {
       return NextResponse.json(
-        { error: `role must be one of: ${ASSIGNABLE_ROLES.join(", ")}` },
+        { error: `role must be one of: ${VALID_ROLES.join(", ")}` },
         { status: 400 }
       )
     }
@@ -77,12 +90,46 @@ export async function POST(req: NextRequest) {
     // Ensure target exists
     const { data: target, error: targetError } = await serviceSupabase
       .from("users")
-      .select("id")
+      .select("id, role, permissions")
       .eq("id", userId)
       .single()
 
     if (targetError || !target) {
       return NextResponse.json({ error: "Target user not found" }, { status: 404 })
+    }
+
+    const actorRole = auth.ctx.role
+
+    // Rank guard 1: actor must outrank the target at their CURRENT role
+    // (superadmin+ may manage everyone, including peer superadmin+).
+    if (!canManageTarget(actorRole, target.role)) {
+      return NextResponse.json(
+        { error: "You do not outrank this user, so you cannot modify their role or privileges." },
+        { status: 403 }
+      )
+    }
+
+    // Rank guard 2: actor may only ASSIGN roles they could manage.
+    if (role !== undefined && !canManageTarget(actorRole, role)) {
+      return NextResponse.json(
+        { error: "You cannot assign a role at or above your own rank." },
+        { status: 403 }
+      )
+    }
+
+    // Rank guard 3: non-superadmin+ actors may only grant privileges they
+    // themselves hold. Removing privileges is unrestricted.
+    if (cleanedPermissions !== undefined && roleRank(actorRole) < roleRank("superadmin+")) {
+      const current = new Set((target.permissions ?? []) as string[])
+      const notHeld = cleanedPermissions.filter(
+        (k) => !current.has(k) && !hasPrivilege(actorRole, auth.ctx.permissions, k as PrivilegeKey)
+      )
+      if (notHeld.length > 0) {
+        return NextResponse.json(
+          { error: `You cannot grant privileges you do not hold: ${notHeld.join(", ")}` },
+          { status: 403 }
+        )
+      }
     }
 
     const updates: { role?: string; permissions?: string[] } = {}
