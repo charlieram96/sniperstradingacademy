@@ -11,9 +11,11 @@
  *     dropped payments)
  *
  * Idempotency is preserved by the same invariant the webhook + monitor already rely
- * on: unrecordedFunds = on-chain balance − sum of already-recorded deposits. Once a
- * deposit is recorded and linked to a payment it is never re-counted, and
- * processSubscriptionPayment additionally guards on a recent (24h) payment.
+ * on: unrecordedFunds = on-chain balance − sum of deposits recorded since the last
+ * sweep (sweeps empty the address, so older recorded deposits no longer contribute
+ * to the balance). Once a deposit is recorded and linked to a payment it is never
+ * re-counted, and processSubscriptionPayment additionally guards on a recent (24h)
+ * payment.
  */
 
 import { createServiceRoleClient } from '@/lib/supabase/server';
@@ -216,14 +218,31 @@ export async function checkAndProcessUserDeposit(
     return;
   }
 
-  // Sum all recorded deposits for this address (lifetime, for balance comparison)
-  const { data: allRecordedTxs } = await supabase
+  // Sum deposits recorded since the last sweep. Sweeps empty the address, so
+  // comparing the live balance against LIFETIME-recorded deposits would hide
+  // every repeat deposit smaller than the address's swept history (a $202
+  // monthly payment on a once-swept-$499 address computed 202 − 499 < 1 and
+  // was silently dropped, then swept uncredited — July 2026 incident).
+  const { data: lastSweep } = await supabase
+    .from('crypto_audit_log')
+    .select('created_at')
+    .eq('user_id', user.id)
+    .in('event_type', ['deposit_swept', 'manual_sweep_success'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  let recordedTxQuery = supabase
     .from('usdc_transactions')
     .select('amount')
     .eq('to_address', depositAddress)
     .eq('user_id', user.id)
     .eq('status', 'confirmed')
     .eq('transaction_type', 'deposit');
+  if (lastSweep?.created_at) {
+    recordedTxQuery = recordedTxQuery.gt('created_at', lastSweep.created_at);
+  }
+  const { data: allRecordedTxs } = await recordedTxQuery;
 
   const totalRecorded = allRecordedTxs?.reduce(
     (sum, tx) => sum + parseFloat(tx.amount),
@@ -245,6 +264,22 @@ export async function checkAndProcessUserDeposit(
       }
     } catch (err) {
       console.error('[DepositProcessor] Failed to find tx hash:', err);
+    }
+
+    // Dedupe guard: if this on-chain tx is already recorded (e.g. the webhook
+    // recorded it moments before a sweep event advanced the since-last-sweep
+    // window), don't record it a second time.
+    if (txHash) {
+      const { data: existingTx } = await supabase
+        .from('usdc_transactions')
+        .select('id')
+        .eq('polygon_tx_hash', txHash)
+        .limit(1)
+        .maybeSingle();
+      if (existingTx) {
+        console.log(`[DepositProcessor] Tx ${txHash} already recorded for ${user.email}, skipping re-record`);
+        return;
+      }
     }
 
     // Record the new deposit - MUST succeed before processing payment
