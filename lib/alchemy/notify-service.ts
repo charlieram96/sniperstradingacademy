@@ -185,6 +185,58 @@ export async function registerMultipleAddressesWithAlchemy(
 }
 
 /**
+ * Fetch ALL addresses currently registered on the Alchemy webhook (paginated).
+ * Returns lowercase addresses. Used by the reconcile cron to diff against the
+ * DB — registrations can be lost without any failure ever being logged (e.g.
+ * the July 2026 CAPPED_CAPACITY episode dropped addresses silently).
+ */
+export async function getRegisteredWebhookAddresses(): Promise<
+  { success: true; addresses: Set<string> } | { success: false; error: string }
+> {
+  const authToken = getAlchemyAuthToken();
+  const webhookId = getAlchemyWebhookId();
+
+  if (!authToken || !webhookId) {
+    return { success: false, error: 'Alchemy not configured' };
+  }
+
+  const addresses = new Set<string>();
+  let after: string | null = null;
+  // Page cap well above expected size (100 addresses/page) as a runaway guard.
+  const MAX_PAGES = 100;
+
+  try {
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const url =
+        `https://dashboard.alchemy.com/api/webhook-addresses?webhook_id=${webhookId}&limit=100` +
+        (after ? `&after=${after}` : '');
+
+      const response = await fetch(url, {
+        headers: { 'X-Alchemy-Token': authToken },
+      });
+
+      if (!response.ok) {
+        return { success: false, error: `Alchemy API error: ${response.status}` };
+      }
+
+      const data: { data?: string[]; pagination?: { cursors?: { after?: string } } } =
+        await response.json();
+      for (const addr of data.data || []) {
+        addresses.add(addr.toLowerCase());
+      }
+
+      after = data.pagination?.cursors?.after || null;
+      if (!after) break;
+    }
+
+    return { success: true, addresses };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: errorMsg };
+  }
+}
+
+/**
  * Remove an address from the Alchemy webhook
  * Rarely needed, but available if needed
  */
