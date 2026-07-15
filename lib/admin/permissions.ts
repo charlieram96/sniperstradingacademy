@@ -10,7 +10,10 @@
 // This means existing role-based access is never removed — granular grants only
 // ADD access for users below the floor.
 
-export type AdminRole = "user" | "admin" | "superadmin" | "superadmin+"
+// NOTE: the DB column users.role is the Postgres enum `user_role` with labels
+// member | admin | superadmin | superadmin+. "member" (not "user") is the base
+// role — writing any other string is rejected by the database.
+export type AdminRole = "member" | "admin" | "superadmin" | "superadmin+"
 
 export type PrivilegeKey =
   | "manage_classes"
@@ -35,11 +38,11 @@ export interface AdminPrivilege {
 }
 
 // Roles a superadmin+ may assign as a user's base role, in ascending order.
-export const ASSIGNABLE_ROLES: AdminRole[] = ["user", "admin", "superadmin", "superadmin+"]
+export const ASSIGNABLE_ROLES: AdminRole[] = ["member", "admin", "superadmin", "superadmin+"]
 
 // Numeric rank for comparing roles.
 const ROLE_RANK: Record<AdminRole, number> = {
-  user: 0,
+  member: 0,
   admin: 1,
   superadmin: 2,
   "superadmin+": 3,

@@ -50,7 +50,7 @@ export function PrivilegesManagerClient({
   const [results, setResults] = useState<SearchUser[]>([])
   const [searching, setSearching] = useState(false)
   const [selected, setSelected] = useState<SelectedUser | null>(null)
-  const [role, setRole] = useState<AdminRole>("user")
+  const [role, setRole] = useState<AdminRole>("member")
   const [grants, setGrants] = useState<Set<PrivilegeKey>>(new Set())
   const [loadingUser, setLoadingUser] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -75,7 +75,7 @@ export function PrivilegesManagerClient({
       const res = await fetch(`/api/admin/users/update-privileges?userId=${u.id}`)
       if (!res.ok) throw new Error()
       const { user } = await res.json()
-      const userRole = (user.role as AdminRole) || "user"
+      const userRole = (user.role as AdminRole) || "member"
       const userPerms = (user.permissions as PrivilegeKey[]) || []
       setSelected({ id: user.id, name: user.name, email: user.email, role: userRole, permissions: userPerms })
       setRole(userRole)
