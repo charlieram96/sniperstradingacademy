@@ -106,6 +106,7 @@ export default function AcademyManagerPage() {
   // File upload
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [fileSizeError, setFileSizeError] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Expanded modules
@@ -262,12 +263,14 @@ export default function AcademyManagerPage() {
     })
     setUploadFile(null)
     setFileSizeError(null)
+    setSaveError(null)
   }
 
   const cancelEditLesson = () => {
     setEditingLessonId(null)
     setUploadFile(null)
     setFileSizeError(null)
+    setSaveError(null)
   }
 
   const handleFileUpload = async (type: "video" | "pdf") => {
@@ -280,8 +283,8 @@ export default function AcademyManagerPage() {
         body: JSON.stringify({ fileName: uploadFile.name, fileType: uploadFile.type, type }),
       })
       if (!urlResponse.ok) {
-        const errorData = await urlResponse.json()
-        alert(errorData.error || "Failed to get upload URL")
+        const errorData = await urlResponse.json().catch(() => ({}))
+        setSaveError(errorData.error || `Failed to get upload URL (${urlResponse.status})`)
         return null
       }
       const { uploadUrl, publicUrl } = await urlResponse.json()
@@ -291,14 +294,14 @@ export default function AcademyManagerPage() {
         body: uploadFile,
       })
       if (!uploadResponse.ok) {
-        alert("File upload to storage failed")
+        setSaveError(`File upload to storage failed (${uploadResponse.status})`)
         return null
       }
       const fileSizeMB = (uploadFile.size / (1024 * 1024)).toFixed(2)
       return { url: publicUrl, fileSize: `${fileSizeMB} MB` }
     } catch (error) {
       console.error("Error uploading file:", error)
-      alert("Error uploading file. Please try again.")
+      setSaveError("Error uploading file. Please try again.")
       return null
     } finally {
       setUploading(false)
@@ -318,6 +321,15 @@ export default function AcademyManagerPage() {
 
   const saveEditLesson = async () => {
     if (!editingLessonId) return
+    setSaveError(null)
+    if (!editLessonForm.lesson_id.trim() || !editLessonForm.title.trim()) {
+      setSaveError("Lesson ID and Title are required")
+      return
+    }
+    if (lessons.some(l => l.id !== editingLessonId && l.lesson_id === editLessonForm.lesson_id)) {
+      setSaveError(`Lesson ID "${editLessonForm.lesson_id}" is already used by another lesson`)
+      return
+    }
     try {
       let fileData = null
       if (uploadFile && (editLessonForm.type === "video" || editLessonForm.type === "pdf")) {
@@ -360,9 +372,14 @@ export default function AcademyManagerPage() {
         setEditingLessonId(null)
         setUploadFile(null)
         setFileSizeError(null)
+        setSaveError(null)
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        setSaveError(errorData.error || `Failed to save lesson (${response.status})`)
       }
     } catch (error) {
       console.error("Error saving lesson:", error)
+      setSaveError("Failed to save lesson. Please try again.")
     }
   }
 
@@ -374,15 +391,26 @@ export default function AcademyManagerPage() {
     })
     setUploadFile(null)
     setFileSizeError(null)
+    setSaveError(null)
   }
 
   const cancelAddLesson = () => {
     setAddingLessonModuleId(null)
     setUploadFile(null)
     setFileSizeError(null)
+    setSaveError(null)
   }
 
   const saveNewLesson = async () => {
+    setSaveError(null)
+    if (!newLessonForm.lesson_id.trim() || !newLessonForm.title.trim()) {
+      setSaveError("Lesson ID and Title are required")
+      return
+    }
+    if (lessons.some(l => l.lesson_id === newLessonForm.lesson_id)) {
+      setSaveError(`Lesson ID "${newLessonForm.lesson_id}" is already used by another lesson`)
+      return
+    }
     try {
       let fileData = null
       if (uploadFile && (newLessonForm.type === "video" || newLessonForm.type === "pdf")) {
@@ -425,9 +453,14 @@ export default function AcademyManagerPage() {
         setAddingLessonModuleId(null)
         setUploadFile(null)
         setFileSizeError(null)
+        setSaveError(null)
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        setSaveError(errorData.error || `Failed to create lesson (${response.status})`)
       }
     } catch (error) {
       console.error("Error creating lesson:", error)
+      setSaveError("Failed to create lesson. Please try again.")
     }
   }
 
@@ -728,6 +761,7 @@ export default function AcademyManagerPage() {
                                   </Button>
                                 </div>
                               </div>
+                              {saveError && <p className="text-xs text-red-400">{saveError}</p>}
                               <div className="grid grid-cols-3 gap-3">
                                 <div>
                                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.academyManager.lessonId")}</label>
@@ -845,6 +879,7 @@ export default function AcademyManagerPage() {
                               </Button>
                             </div>
                           </div>
+                          {saveError && <p className="text-xs text-red-400">{saveError}</p>}
                           <div className="grid grid-cols-3 gap-3">
                             <div>
                               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("admin.academyManager.lessonId")}</label>

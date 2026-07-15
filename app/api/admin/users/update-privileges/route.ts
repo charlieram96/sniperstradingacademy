@@ -10,9 +10,9 @@ import {
   type PrivilegeKey,
 } from "@/lib/admin/permissions"
 
-// Roles accepted by this endpoint. "member" is the network page's legacy alias
-// for the base role (rank 0, same as "user") and is passed through unchanged.
-const VALID_ROLES: string[] = [...ASSIGNABLE_ROLES, "member"]
+// The DB enum user_role has no "user" label — "member" is the base role.
+// Accept "user" from older clients as an alias and normalize before writing.
+const VALID_ROLES: string[] = [...ASSIGNABLE_ROLES]
 
 // GET ?userId=xxx — current role + permissions for a single user
 export async function GET(req: NextRequest) {
@@ -46,11 +46,12 @@ export async function POST(req: NextRequest) {
     if (!auth.ok) return auth.response
 
     const body = await req.json()
-    const { userId, role, permissions } = body as {
+    const { userId, role: rawRole, permissions } = body as {
       userId?: string
       role?: string
       permissions?: unknown
     }
+    const role = rawRole === "user" ? "member" : rawRole
 
     if (!userId) {
       return NextResponse.json({ error: "userId is required" }, { status: 400 })

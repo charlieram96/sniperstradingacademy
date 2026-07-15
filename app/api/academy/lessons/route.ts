@@ -112,7 +112,16 @@ export async function POST(req: NextRequest) {
 
     if (insertError) {
       console.error("Error creating lesson:", insertError)
-      return NextResponse.json({ error: "Failed to create lesson" }, { status: 500 })
+      if (insertError.code === "23505") {
+        return NextResponse.json(
+          { error: `A lesson with ID "${lesson_id}" already exists` },
+          { status: 409 }
+        )
+      }
+      return NextResponse.json(
+        { error: `Failed to create lesson: ${insertError.message}` },
+        { status: 500 }
+      )
     }
 
     return NextResponse.json({ lesson }, { status: 201 })
@@ -163,7 +172,16 @@ export async function PATCH(req: NextRequest) {
 
     if (updateError) {
       console.error("Error updating lesson:", updateError)
-      return NextResponse.json({ error: "Failed to update lesson" }, { status: 500 })
+      if (updateError.code === "23505") {
+        return NextResponse.json(
+          { error: "Another lesson already uses this Lesson ID" },
+          { status: 409 }
+        )
+      }
+      return NextResponse.json(
+        { error: `Failed to update lesson: ${updateError.message}` },
+        { status: 500 }
+      )
     }
 
     return NextResponse.json({ lesson })

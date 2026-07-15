@@ -381,7 +381,7 @@ class GasManager {
       // Get admin users
       const { data: admins } = await supabase
         .from('users')
-        .select('id, email, full_name')
+        .select('id, email, name')
         .in('role', ['admin', 'superadmin', 'superadmin+']);
 
       if (!admins || admins.length === 0) {
@@ -494,7 +494,7 @@ class GasManager {
     try {
       const { data: admins } = await supabase
         .from('users')
-        .select('id, email, full_name')
+        .select('id, email, name')
         .in('role', ['admin', 'superadmin', 'superadmin+']);
 
       if (!admins || admins.length === 0) {
@@ -520,13 +520,17 @@ class GasManager {
 
       console.log(`[GasManager] Payout Wallet ${urgency} Alert:`, message);
 
-      // Log to audit
+      // Log to audit. NOTE: crypto_audit_log has a CHECK constraint on
+      // event_type — 'payout_wallet_low_balance' is not an allowed value, so
+      // log as 'admin_action' with the specific action in details (same
+      // pattern as the check-gas-tank cron's status entries).
       await supabase.from('crypto_audit_log').insert({
-        event_type: 'payout_wallet_low_balance',
+        event_type: 'admin_action',
         admin_id: null,
         entity_type: 'payout_wallet',
         entity_id: null,
         details: {
+          action: 'payout_wallet_low_balance',
           urgency,
           address: status.address,
           usdc_balance: status.usdcBalance,

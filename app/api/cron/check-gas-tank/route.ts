@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 import { gasManager } from '@/lib/polygon/gas-manager';
 
 export const runtime = 'nodejs';
@@ -27,7 +27,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const supabase = await createClient();
+    // Cron context has no user session — the anon client fails RLS on every
+    // audit-log insert and can't read users. Use the service-role client.
+    const supabase = createServiceRoleClient();
 
     // Check gas tank status
     const statusResponse = await gasManager.getGasTankStatus();
