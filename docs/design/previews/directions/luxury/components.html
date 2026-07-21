@@ -62,7 +62,7 @@
   .t-h3{font-family:var(--serif);font-weight:400;font-size:20px;color:var(--ink)}
   .t-body{font-family:var(--sans);font-size:14px;color:var(--ink-2);line-height:1.6}
   .t-cap{font-family:var(--sans);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-3)}
-  .t-mono{font-family:var(--serif);font-weight:300;font-size:32px;color:var(--gold-bright);letter-spacing:-0.01em}
+  .t-num{font-family:var(--serif);font-weight:300;font-size:32px;color:var(--gold-bright);letter-spacing:-0.01em}
 
   /* ---------- buttons ---------- */
   .btn{
@@ -128,9 +128,9 @@
   .toggle-row{display:flex;align-items:center;justify-content:space-between}
   .toggle-row span{font-size:13px;color:var(--ink-2)}
   .switch{width:44px;height:24px;border-radius:100px;background:var(--surface-raised);border:1px solid var(--hairline);position:relative;cursor:pointer;transition:background .2s}
-  .switch::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--gold);transition:left .2s}
-  .switch.on{background:rgba(201,164,92,0.18)}
-  .switch.on::after{left:22px;background:var(--gold-bright)}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--ink-2);transition:left .2s}
+  .switch.on{background:rgba(255,255,255,0.10)}
+  .switch.on::after{left:22px;background:var(--ink)}
 
   /* ---------- badges ---------- */
   .badge{display:inline-flex;align-items:center;gap:7px;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;padding:5px 11px;border-radius:100px;border:1px solid var(--border);color:var(--ink-2)}
@@ -149,9 +149,9 @@
 
   /* ---------- progress ---------- */
   .bar{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden}
-  .bar > i{display:block;height:100%;background:var(--gold);border-radius:2px}
+  .bar > i{display:block;height:100%;background:var(--ink-2);border-radius:2px}
   .prog-label{display:flex;justify-content:space-between;margin-bottom:12px;font-family:var(--mono);font-size:12px;color:var(--ink-2)}
-  .prog-label .pct{color:var(--gold)}
+  .prog-label .pct{color:var(--ink)}
   /* signature progress — ruled ledger */
   .ledger{margin-top:28px}
   .ledger .top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px}
@@ -159,8 +159,8 @@
   .ledger .top .n small{font-family:var(--sans);font-size:13px;color:var(--ink-3)}
   .ledger .ticks{display:flex;gap:3px}
   .ledger .ticks i{flex:1;height:22px;border-radius:1px;background:rgba(255,255,255,0.05)}
-  .ledger .ticks i.on{background:var(--gold)}
-  .ledger .ticks i.edge{background:var(--gold-bright)}
+  .ledger .ticks i.on{background:var(--ink-3)}
+  .ledger .ticks i.edge{background:var(--ink-2)}
 
   /* ---------- table ---------- */
   table{width:100%;border-collapse:collapse}
@@ -171,7 +171,7 @@
   tbody td.date{color:var(--ink)}
   tbody td.amt{font-family:var(--serif);font-weight:300;font-size:20px;color:var(--ink);letter-spacing:-0.01em}
   tbody .status{display:inline-flex;align-items:center;gap:7px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold)}
-  tbody .status .d{width:5px;height:5px;border-radius:50%;background:var(--gold)}
+  tbody .status .d{width:5px;height:5px;border-radius:50%;background:var(--ink-2)}
 
   /* ---------- empty state ---------- */
   .empty{text-align:center;padding:56px 20px}
@@ -214,7 +214,7 @@
       <div class="type-row"><span class="lab">Heading 3</span><span class="spec">Serif · 20 / 400</span><span class="t-h3">Payout wallet</span></div>
       <div class="type-row"><span class="lab">Body</span><span class="spec">Sans · 14 / 400</span><span class="t-body">Your commission scales with each completed structure — quiet, compounding, unhurried.</span></div>
       <div class="type-row"><span class="lab">Caption</span><span class="spec">Sans · 11 / caps</span><span class="t-cap">Team pool · monthly</span></div>
-      <div class="type-row"><span class="lab">Numerals</span><span class="spec">Serif · 32 / 300</span><span class="t-mono">$5,797.80</span></div>
+      <div class="type-row"><span class="lab">Numerals</span><span class="spec">Serif · 32 / 300</span><span class="t-num">$5,797.80</span></div>
     </div>
   </section>
 
