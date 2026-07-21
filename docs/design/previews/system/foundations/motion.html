@@ -120,9 +120,9 @@ section{margin-top:44px}
 .sk{position:relative;overflow:hidden;background:var(--surface-raised);border-radius:5px}
 .sk::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent);animation:shimmer 1.5s ease-in-out infinite}
 @keyframes shimmer{100%{transform:translateX(100%)}}
-.sk.line-sm{height:11px;width:40%}
 .sk.line-lg{height:26px;width:66%}
-.sk.line-md{height:11px;width:52%}
+.shim-cap{font-size:11px;color:var(--ink-3);line-height:1.55;margin-top:2px}
+.shim-cap b{font-family:var(--mono);color:var(--ink-2);font-weight:600}
 
 /* ---------- 04 reduced motion ---------- */
 .rm-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -248,9 +248,8 @@ section{margin-top:44px}
     <div class="shim-wrap">
       <div class="card shim-demo">
         <div class="sub-label" style="margin-bottom:2px">Live skeleton</div>
-        <div class="sk line-sm"></div>
         <div class="sk line-lg"></div>
-        <div class="sk line-md"></div>
+        <div class="shim-cap">One bar shown — a single <b>.sk</b> element. Every skeleton placeholder inherits the same sweep.</div>
       </div>
       <div class="code"><span class="cmt">/* canonical skeleton shimmer — copy verbatim */</span>
 <span class="sel">.sk</span> {
