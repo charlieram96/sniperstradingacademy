@@ -1,0 +1,337 @@
+<!-- @dsCard group="Components" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feedback &amp; Status</title>
+<style>
+:root {
+  /* Base */
+  --bg:#05080F; --surface:#0A0F1C; --surface-raised:#101728; --surface-overlay:#151D33;
+  --ink:#E6EAF2; --ink-2:#8B95A9; --ink-3:#525D73;
+  --border:rgba(255,255,255,0.10); --border-subtle:rgba(255,255,255,0.05); --border-strong:rgba(255,255,255,0.16);
+  /* Brand gold ramp */
+  --gold-50:#FDF8ED; --gold-100:#F9ECCC; --gold-200:#F0D48A; --gold-300:#E5C06A;
+  --gold-400:#D4A853; --gold-500:#C49B3E; --gold-600:#A67E2E; --gold-700:#856420; --gold-800:#6B4D18;
+  --gold:var(--gold-400); --ring:rgba(212,168,83,0.55);
+  /* Status */
+  --emerald:#34D399; --emerald-dim:rgba(52,211,153,0.12);
+  --red:#F87171; --red-dim:rgba(248,113,113,0.12);
+  --amber:#FBBF24; --amber-dim:rgba(251,191,36,0.12);
+  --blue:#60A5FA; --blue-dim:rgba(96,165,250,0.12);
+  /* Charts (series order) */
+  --chart-1:var(--gold-400); --chart-2:#60A5FA; --chart-3:#34D399; --chart-4:#A78BFA; --chart-5:#8B95A9;
+  /* Spacing (4px grid) */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px; --sp-10:40px; --sp-12:48px; --sp-16:64px;
+  /* Radius */
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-pill:999px;
+  /* Shadows */
+  --sh-sm:0 1px 2px rgba(0,0,0,0.35);
+  --sh-md:0 4px 12px rgba(0,0,0,0.28),0 1px 3px rgba(0,0,0,0.3);
+  --sh-lg:0 12px 32px rgba(0,0,0,0.35),0 4px 8px rgba(0,0,0,0.25);
+  --sh-gold:0 2px 12px rgba(212,168,83,0.18);
+  /* Type scale */
+  --t-xs:11px; --t-sm:12px; --t-base:13px; --t-md:14px; --t-lg:16px; --t-xl:18px; --t-2xl:22px; --t-3xl:28px; --t-4xl:36px;
+  /* Motion */
+  --dur-micro:120ms; --dur-std:200ms; --dur-enter:320ms;
+  --ease-out:cubic-bezier(0.2,0.8,0.2,1); --ease-spring:cubic-bezier(0.34,1.4,0.44,1);
+}
+:root{ --sans:-apple-system,"SF Pro Text",Inter,"Segoe UI",sans-serif; --mono:ui-monospace,"SF Mono","Geist Mono",Menlo,monospace; }
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:var(--t-base);line-height:1.45;min-height:100vh;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.014) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.014) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.label{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3)}
+
+/* ---------- page frame ---------- */
+.wrap{max-width:1200px;margin:0 auto;padding:40px 40px 80px}
+.masthead{display:flex;align-items:center;gap:14px;padding-bottom:28px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.masthead .brand-name{font-size:15px;font-weight:600;line-height:1.1;color:var(--ink)}
+.masthead .brand-name span{display:block;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-3);margin-top:3px}
+.masthead .tag{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.masthead .tag b{color:var(--gold);font-weight:600}
+.page-title{margin-top:26px}
+.page-title h1{font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1;color:var(--ink)}
+.page-title p{color:var(--ink-2);font-size:13px;margin-top:9px;max-width:660px;line-height:1.55}
+
+section{margin-top:44px}
+.sec-title{display:flex;align-items:baseline;gap:12px;margin-bottom:20px}
+.sec-title .n{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--gold);letter-spacing:0.04em}
+.sec-title h2{font-size:16px;font-weight:600;letter-spacing:-0.01em;color:var(--ink)}
+.sec-title .line{flex:1;height:1px;background:var(--border)}
+.sec-title .note{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:0.02em}
+.sub-label{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md)}
+
+/* ---------- toasts ---------- */
+.toast-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:24px}
+.toast{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--sh-md);padding:14px 14px 14px 14px}
+.toast .t-ico{width:30px;height:30px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.toast .t-body{flex:1;min-width:0}
+.toast .t-msg{font-size:13px;font-weight:600;color:var(--ink);line-height:1.4;font-variant-numeric:tabular-nums}
+.toast .t-meta{display:block;font-family:var(--mono);font-size:10px;color:var(--ink-3);letter-spacing:0.04em;margin-top:5px;font-variant-numeric:tabular-nums}
+.toast .t-close{flex:0 0 auto;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;color:var(--ink-3);cursor:pointer;background:transparent;border:0}
+.toast.success{border-color:rgba(52,211,153,0.30);background:linear-gradient(0deg,var(--emerald-dim),var(--emerald-dim)),var(--surface-raised)}
+.toast.success .t-ico{color:var(--emerald);background:rgba(52,211,153,0.14)}
+.toast.error{border-color:rgba(248,113,113,0.30);background:linear-gradient(0deg,var(--red-dim),var(--red-dim)),var(--surface-raised)}
+.toast.error .t-ico{color:var(--red);background:rgba(248,113,113,0.14)}
+.toast.info{border-color:rgba(96,165,250,0.30);background:linear-gradient(0deg,var(--blue-dim),var(--blue-dim)),var(--surface-raised)}
+.toast.info .t-ico{color:var(--blue);background:rgba(96,165,250,0.14)}
+.toast.warning{border-color:rgba(251,191,36,0.30);background:linear-gradient(0deg,var(--amber-dim),var(--amber-dim)),var(--surface-raised)}
+.toast.warning .t-ico{color:var(--amber);background:rgba(251,191,36,0.14)}
+
+/* ---------- inline alert banners ---------- */
+.alert-col{display:flex;flex-direction:column;gap:12px;padding:24px}
+.alert{display:flex;gap:13px;align-items:flex-start;border:1px solid var(--border);border-radius:var(--r-md);padding:14px 16px;width:100%}
+.alert .a-ico{flex:0 0 auto;margin-top:1px}
+.alert .a-body{flex:1;min-width:0}
+.alert .a-title{font-size:13px;font-weight:600;color:var(--ink);line-height:1.4;font-variant-numeric:tabular-nums}
+.alert .a-desc{font-size:12px;color:var(--ink-2);margin-top:3px;line-height:1.55;font-variant-numeric:tabular-nums}
+.alert .a-desc .num{color:var(--ink)}
+.alert .a-tag{flex:0 0 auto;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;border-radius:var(--r-pill);align-self:center}
+.alert.success{border-color:rgba(52,211,153,0.30);background:var(--emerald-dim)} .alert.success .a-ico{color:var(--emerald)} .alert.success .a-tag{color:var(--emerald);background:rgba(52,211,153,0.14)}
+.alert.error{border-color:rgba(248,113,113,0.30);background:var(--red-dim)} .alert.error .a-ico{color:var(--red)} .alert.error .a-tag{color:var(--red);background:rgba(248,113,113,0.14)}
+.alert.info{border-color:rgba(96,165,250,0.30);background:var(--blue-dim)} .alert.info .a-ico{color:var(--blue)} .alert.info .a-tag{color:var(--blue);background:rgba(96,165,250,0.14)}
+.alert.warning{border-color:rgba(251,191,36,0.30);background:var(--amber-dim)} .alert.warning .a-ico{color:var(--amber)} .alert.warning .a-tag{color:var(--amber);background:rgba(251,191,36,0.14)}
+
+/* ---------- status badges ---------- */
+.badge-grid{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:24px}
+.badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;padding:4px 9px;border-radius:5px;border:1px solid var(--border);color:var(--ink-2);background:var(--surface-raised)}
+.badge .dot{width:5px;height:5px;border-radius:50%;flex:0 0 auto}
+.badge.active{color:var(--emerald);border-color:rgba(52,211,153,0.28);background:var(--emerald-dim)}
+.badge.active .dot{background:var(--emerald)}
+.badge.inactive{color:var(--ink-3);border-color:var(--border)}
+.badge.inactive .dot{background:var(--ink-3)}
+.badge.paid{color:var(--emerald);border-color:rgba(52,211,153,0.28);background:var(--emerald-dim)}
+.badge.pending{color:var(--amber);border-color:rgba(251,191,36,0.28);background:var(--amber-dim)}
+.badge.live{border-color:rgba(248,113,113,0.30);color:var(--red);background:rgba(248,113,113,0.07)}
+.badge.live .dot{background:var(--red);position:relative}
+.badge.live .dot::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1px solid var(--red);opacity:.6;animation:pulse 2s ease-out infinite}
+@keyframes pulse{0%{transform:scale(.5);opacity:.7}100%{transform:scale(1.9);opacity:0}}
+.badge.complete{border-color:rgba(212,168,83,0.28);color:var(--gold);background:rgba(212,168,83,0.10)}
+.badge.locked{color:var(--ink-3);background:transparent;border-color:var(--border)}
+
+/* ---------- rank badges (gold intensity scales with rank) ---------- */
+.rank-ladder{display:flex;flex-direction:column;gap:10px;padding:24px}
+.rank-line{display:flex;align-items:center;gap:14px}
+.rank-line .step{font-family:var(--mono);font-size:9.5px;font-weight:600;color:var(--ink-3);width:26px;flex:0 0 auto;font-variant-numeric:tabular-nums}
+.rankbadge{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.06em;padding:6px 13px;border-radius:var(--r-pill);border:1px solid var(--border);background:var(--surface-raised);color:var(--ink-3)}
+.rankbadge svg{flex:0 0 auto}
+.rankbadge.r0{background:var(--surface-raised);border-color:var(--border);color:var(--ink-3)}
+.rankbadge.r1{background:rgba(212,168,83,0.06);border-color:rgba(212,168,83,0.18);color:var(--gold-600)}
+.rankbadge.r2{background:rgba(212,168,83,0.10);border-color:rgba(212,168,83,0.28);color:var(--gold-500)}
+.rankbadge.r3{background:rgba(212,168,83,0.14);border-color:rgba(212,168,83,0.36);color:var(--gold-400)}
+.rankbadge.r4{background:rgba(212,168,83,0.19);border-color:rgba(212,168,83,0.44);color:var(--gold-300)}
+.rankbadge.r5{background:rgba(212,168,83,0.25);border-color:rgba(212,168,83,0.54);color:var(--gold-200)}
+.rankbadge.r6{background:rgba(212,168,83,0.33);border-color:rgba(212,168,83,0.64);color:var(--gold-100);box-shadow:var(--sh-gold)}
+.rank-cur{font-family:var(--mono);font-size:8.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--gold);background:rgba(212,168,83,0.10);border:1px solid rgba(212,168,83,0.28);border-radius:var(--r-pill);padding:2px 8px}
+
+/* ---------- avatars ---------- */
+.avatar-row{display:flex;align-items:flex-end;gap:26px;padding:24px;flex-wrap:wrap}
+.av-cell{display:flex;flex-direction:column;align-items:center;gap:10px}
+.av-cap{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);letter-spacing:0.04em;font-variant-numeric:tabular-nums}
+.avatar{border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-variant-numeric:tabular-nums;background:radial-gradient(120% 120% at 30% 20%,rgba(212,168,83,0.24),rgba(212,168,83,0.10));border:1px solid rgba(212,168,83,0.34);color:var(--gold-100);flex:0 0 auto}
+.avatar.sm{width:28px;height:28px;font-size:10px}
+.avatar.md{width:36px;height:36px;font-size:12px}
+.avatar.lg{width:48px;height:48px;font-size:15px}
+.avatar-wrap{position:relative;display:inline-flex}
+.avatar-dot{position:absolute;right:-1px;bottom:-1px;width:12px;height:12px;border-radius:50%;background:var(--emerald);border:2px solid var(--surface)}
+
+/* ---------- progress ---------- */
+.prog-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.prog-card{padding:24px 20px}
+.bar-meta{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.bar-meta .k{font-size:12px;color:var(--ink-2)}
+.bar-meta .v{font-family:var(--mono);font-size:11px;color:var(--ink);font-variant-numeric:tabular-nums}
+.bar{height:8px;background:rgba(255,255,255,0.06);border-radius:var(--r-pill);overflow:hidden}
+.bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-300));border-radius:var(--r-pill)}
+.bar-cap{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:10px;letter-spacing:0.04em;font-variant-numeric:tabular-nums}
+.ring-wrap{display:flex;align-items:center;gap:18px}
+.ring-num{font-family:var(--mono);font-size:20px;font-weight:600;fill:var(--gold-100);font-variant-numeric:tabular-nums}
+.ring-meta .v{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.ring-meta .k{font-size:11.5px;color:var(--ink-2);margin-top:4px}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="11.5" stroke="#D4A853" stroke-width="1.5"/>
+      <circle cx="16" cy="16" r="3" stroke="#D4A853" stroke-width="1.5"/>
+      <path d="M16 1.5V8M16 24v6.5M1.5 16H8M24 16h6.5" stroke="#D4A853" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <div class="brand-name">Snipers<span>Trading Academy</span></div>
+    <div class="tag">Components · <b>Feedback &amp; Status</b></div>
+  </div>
+
+  <div class="page-title">
+    <h1>Feedback &amp; Status</h1>
+    <p>How the system tells you what happened and where things stand — transient toasts, persistent alert banners, status and rank badges, avatars, and progress. Colour is semantic: emerald for good, red for failure, amber for warnings, blue for information, gold for rank and progress.</p>
+  </div>
+
+  <!-- 01 TOASTS -->
+  <section>
+    <div class="sec-title"><span class="n">01</span><h2>Toasts</h2><span class="line"></span><span class="note">icon · 1px status border · dim wash</span></div>
+    <div class="card toast-grid">
+      <div class="toast success">
+        <span class="t-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg></span>
+        <div class="t-body">
+          <div class="t-msg">Payout sent — $5,412.00 USDC</div>
+          <span class="t-meta">Jul 1, 2026 · Polygon · 0x7C4d…9E2a</span>
+        </div>
+        <button class="t-close" aria-label="Dismiss"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="toast error">
+        <span class="t-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg></span>
+        <div class="t-body">
+          <div class="t-msg">Transaction failed — insufficient gas</div>
+          <span class="t-meta">Add MATIC to the wallet, then retry</span>
+        </div>
+        <button class="t-close" aria-label="Dismiss"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="toast info">
+        <span class="t-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></span>
+        <div class="t-body">
+          <div class="t-msg">New team member: Maria G. joined Structure 3</div>
+          <span class="t-meta">Jul 18, 2026 · Team now 2,560</span>
+        </div>
+        <button class="t-close" aria-label="Dismiss"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="toast warning">
+        <span class="t-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/></svg></span>
+        <div class="t-body">
+          <div class="t-msg">Subscription renews in 3 days</div>
+          <span class="t-meta">Jul 25, 2026 · Manage plan</span>
+        </div>
+        <button class="t-close" aria-label="Dismiss"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 INLINE ALERT BANNERS -->
+  <section>
+    <div class="sec-title"><span class="n">02</span><h2>Inline alert banners</h2><span class="line"></span><span class="note">full-width · same four semantics · persistent</span></div>
+    <div class="card alert-col">
+      <div class="alert success">
+        <span class="a-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg></span>
+        <div class="a-body">
+          <div class="a-title">Payout sent</div>
+          <div class="a-desc"><span class="num">$5,412.00</span> USDC is on its way to <span class="num">0x7C4d…9E2a</span> on Polygon. It settles in a few minutes.</div>
+        </div>
+        <span class="a-tag">Success</span>
+      </div>
+      <div class="alert error">
+        <span class="a-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg></span>
+        <div class="a-body">
+          <div class="a-title">Transaction failed</div>
+          <div class="a-desc">The payout couldn't be sent — insufficient gas. Add MATIC to the wallet, then retry the transfer.</div>
+        </div>
+        <span class="a-tag">Error</span>
+      </div>
+      <div class="alert info">
+        <span class="a-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></span>
+        <div class="a-body">
+          <div class="a-title">New team member</div>
+          <div class="a-desc">Maria G. joined Structure 3 on <span class="num">Jul 18, 2026</span>. Your active team is now <span class="num">2,415</span> of <span class="num">2,560</span>.</div>
+        </div>
+        <span class="a-tag">Info</span>
+      </div>
+      <div class="alert warning">
+        <span class="a-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/></svg></span>
+        <div class="a-body">
+          <div class="a-title">Subscription renews in 3 days</div>
+          <div class="a-desc">Your plan renews on <span class="num">Jul 25, 2026</span>. Update your payment method to keep access to live sessions.</div>
+        </div>
+        <span class="a-tag">Warning</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 STATUS BADGES -->
+  <section>
+    <div class="sec-title"><span class="n">03</span><h2>Status badges</h2><span class="line"></span><span class="note">state chips · LIVE pulse is the one continuous animation</span></div>
+    <div class="card badge-grid">
+      <span class="badge active"><span class="dot"></span>Active</span>
+      <span class="badge inactive"><span class="dot"></span>Inactive</span>
+      <span class="badge paid"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Paid</span>
+      <span class="badge pending"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>Pending</span>
+      <span class="badge live"><span class="dot"></span>Live</span>
+      <span class="badge complete"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Complete</span>
+      <span class="badge locked"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Locked</span>
+    </div>
+  </section>
+
+  <!-- 04 RANK BADGES -->
+  <section>
+    <div class="sec-title"><span class="n">04</span><h2>Rank badges</h2><span class="line"></span><span class="note">Unranked → Lion Master Sniper · gold intensity scales with rank</span></div>
+    <div class="card rank-ladder">
+      <div class="rank-line"><span class="step">00</span><span class="rankbadge r0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>Unranked</span></div>
+      <div class="rank-line"><span class="step">01</span><span class="rankbadge r1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="m8.5 12.5-1.5 8L12 18l5 2.5-1.5-8"/></svg>Delta Master</span></div>
+      <div class="rank-line"><span class="step">02</span><span class="rankbadge r2"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="m8.5 12.5-1.5 8L12 18l5 2.5-1.5-8"/></svg>Delta Master Sniper</span><span class="rank-cur">Current</span></div>
+      <div class="rank-line"><span class="step">03</span><span class="rankbadge r3"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="m8.5 12.5-1.5 8L12 18l5 2.5-1.5-8"/></svg>Trend Master</span></div>
+      <div class="rank-line"><span class="step">04</span><span class="rankbadge r4"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="m8.5 12.5-1.5 8L12 18l5 2.5-1.5-8"/></svg>Trend Master Sniper</span></div>
+      <div class="rank-line"><span class="step">05</span><span class="rankbadge r5"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="m8.5 12.5-1.5 8L12 18l5 2.5-1.5-8"/></svg>Lion Master</span></div>
+      <div class="rank-line"><span class="step">06</span><span class="rankbadge r6"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="m8.5 12.5-1.5 8L12 18l5 2.5-1.5-8"/></svg>Lion Master Sniper</span></div>
+    </div>
+  </section>
+
+  <!-- 05 AVATARS -->
+  <section>
+    <div class="sec-title"><span class="n">05</span><h2>Avatars</h2><span class="line"></span><span class="note">initials · three sizes · online status dot</span></div>
+    <div class="card avatar-row">
+      <div class="av-cell"><span class="avatar sm">CR</span><span class="av-cap">sm · 28px</span></div>
+      <div class="av-cell"><span class="avatar md">CR</span><span class="av-cap">md · 36px</span></div>
+      <div class="av-cell"><span class="avatar lg">CR</span><span class="av-cap">lg · 48px</span></div>
+      <div class="av-cell"><span class="avatar-wrap"><span class="avatar lg">CR</span><span class="avatar-dot"></span></span><span class="av-cap">lg · online</span></div>
+    </div>
+  </section>
+
+  <!-- 06 PROGRESS -->
+  <section>
+    <div class="sec-title"><span class="n">06</span><h2>Progress</h2><span class="line"></span><span class="note">linear bar &amp; ring · Structure 3 at 21%</span></div>
+    <div class="prog-grid">
+      <div class="card prog-card">
+        <div class="sub-label">Linear bar · 21%</div>
+        <div class="bar-meta"><span class="k">Structure 3</span><span class="v">231 / 1,092</span></div>
+        <div class="bar"><i style="width:21%"></i></div>
+        <div class="bar-cap">21% FILLED · 861 SEATS REMAINING</div>
+      </div>
+      <div class="card prog-card">
+        <div class="sub-label">Progress ring · 21%</div>
+        <div class="ring-wrap" style="margin-top:12px">
+          <svg width="72" height="72" viewBox="0 0 72 72">
+            <circle cx="36" cy="36" r="26" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="6"/>
+            <circle cx="36" cy="36" r="26" fill="none" stroke="#D4A853" stroke-width="6" stroke-linecap="round" stroke-dasharray="163.36" stroke-dashoffset="129.05" transform="rotate(-90 36 36)"/>
+            <text x="36" y="41" text-anchor="middle" class="ring-num">21%</text>
+          </svg>
+          <div class="ring-meta">
+            <div class="v">231 / 1,092</div>
+            <div class="k">Structure 3 members</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

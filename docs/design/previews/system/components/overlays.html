@@ -1,0 +1,314 @@
+<!-- @dsCard group="Components" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overlays</title>
+<style>
+:root {
+  /* Base */
+  --bg:#05080F; --surface:#0A0F1C; --surface-raised:#101728; --surface-overlay:#151D33;
+  --ink:#E6EAF2; --ink-2:#8B95A9; --ink-3:#525D73;
+  --border:rgba(255,255,255,0.10); --border-subtle:rgba(255,255,255,0.05); --border-strong:rgba(255,255,255,0.16);
+  /* Brand gold ramp */
+  --gold-50:#FDF8ED; --gold-100:#F9ECCC; --gold-200:#F0D48A; --gold-300:#E5C06A;
+  --gold-400:#D4A853; --gold-500:#C49B3E; --gold-600:#A67E2E; --gold-700:#856420; --gold-800:#6B4D18;
+  --gold:var(--gold-400); --ring:rgba(212,168,83,0.55);
+  /* Status */
+  --emerald:#34D399; --emerald-dim:rgba(52,211,153,0.12);
+  --red:#F87171; --red-dim:rgba(248,113,113,0.12);
+  --amber:#FBBF24; --amber-dim:rgba(251,191,36,0.12);
+  --blue:#60A5FA; --blue-dim:rgba(96,165,250,0.12);
+  /* Charts (series order) */
+  --chart-1:var(--gold-400); --chart-2:#60A5FA; --chart-3:#34D399; --chart-4:#A78BFA; --chart-5:#8B95A9;
+  /* Spacing (4px grid) */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px; --sp-10:40px; --sp-12:48px; --sp-16:64px;
+  /* Radius */
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-pill:999px;
+  /* Shadows */
+  --sh-sm:0 1px 2px rgba(0,0,0,0.35);
+  --sh-md:0 4px 12px rgba(0,0,0,0.28),0 1px 3px rgba(0,0,0,0.3);
+  --sh-lg:0 12px 32px rgba(0,0,0,0.35),0 4px 8px rgba(0,0,0,0.25);
+  --sh-gold:0 2px 12px rgba(212,168,83,0.18);
+  /* Type scale */
+  --t-xs:11px; --t-sm:12px; --t-base:13px; --t-md:14px; --t-lg:16px; --t-xl:18px; --t-2xl:22px; --t-3xl:28px; --t-4xl:36px;
+  /* Motion */
+  --dur-micro:120ms; --dur-std:200ms; --dur-enter:320ms;
+  --ease-out:cubic-bezier(0.2,0.8,0.2,1); --ease-spring:cubic-bezier(0.34,1.4,0.44,1);
+}
+:root{ --sans:-apple-system,"SF Pro Text",Inter,"Segoe UI",sans-serif; --mono:ui-monospace,"SF Mono","Geist Mono",Menlo,monospace; }
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:var(--t-base);line-height:1.45;min-height:100vh;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.014) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.014) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.label{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3)}
+
+/* ---------- page frame ---------- */
+.wrap{max-width:1200px;margin:0 auto;padding:40px 40px 80px}
+.masthead{display:flex;align-items:center;gap:14px;padding-bottom:28px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.masthead .brand-name{font-size:15px;font-weight:600;line-height:1.1;color:var(--ink)}
+.masthead .brand-name span{display:block;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-3);margin-top:3px}
+.masthead .tag{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.masthead .tag b{color:var(--gold);font-weight:600}
+.page-title{margin-top:26px}
+.page-title h1{font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1;color:var(--ink)}
+.page-title p{color:var(--ink-2);font-size:13px;margin-top:9px;max-width:660px;line-height:1.55}
+
+section{margin-top:44px}
+.sec-title{display:flex;align-items:baseline;gap:12px;margin-bottom:20px}
+.sec-title .n{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--gold);letter-spacing:0.04em}
+.sec-title h2{font-size:16px;font-weight:600;letter-spacing:-0.01em;color:var(--ink)}
+.sec-title .line{flex:1;height:1px;background:var(--border)}
+.sec-title .note{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:0.02em}
+.sub-label{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md)}
+
+/* ---------- buttons (reused for dialog CTAs — same set as Buttons card) ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-family:var(--sans);font-weight:600;letter-spacing:0.01em;border-radius:var(--r-sm);border:1px solid transparent;white-space:nowrap;line-height:1;cursor:pointer;text-decoration:none;transition:background var(--dur-micro) var(--ease-out),border-color var(--dur-micro) var(--ease-out),color var(--dur-micro) var(--ease-out)}
+.btn.sm{height:28px;padding:0 12px;font-size:11.5px}
+.btn.md{height:34px;padding:0 16px;font-size:12.5px}
+.btn.lg{height:40px;padding:0 20px;font-size:14px}
+.btn.icon.md{width:34px;padding:0}
+.btn svg{flex:0 0 auto}
+.btn-primary{background:var(--gold);color:#0A0F1C}
+.btn-secondary{background:var(--surface-raised);color:var(--ink);border-color:var(--border)}
+.btn-outline{background:transparent;color:var(--ink-2);border-color:var(--border)}
+.btn-ghost{background:transparent;color:var(--ink-2)}
+.btn-destructive{background:var(--red-dim);color:var(--red);border-color:rgba(248,113,113,0.30)}
+.btn.is-focus{outline:2px solid var(--ring);outline-offset:2px}
+.btn.is-disabled{opacity:.4;cursor:not-allowed}
+
+/* ---------- anatomy pins + notes (same pattern as Cards card) ---------- */
+.anat-tag{display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;font-weight:600;color:#0A0F1C;background:var(--gold);border-radius:3px;width:15px;height:15px;vertical-align:1px}
+.anat-tag.pin{position:absolute;z-index:4}
+.anat-notes{display:flex;flex-direction:column}
+.anat-note{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--border-subtle)}
+.anat-note:last-child{border-bottom:0}
+.anat-note .k{flex:0 0 18px;display:flex}
+.anat-note .d{font-size:11.5px;color:var(--ink-2);line-height:1.5}
+.anat-note .d b{color:var(--ink);font-weight:600}
+.anat-note .d code{font-family:var(--mono);font-size:11px;color:var(--gold)}
+
+/* token spec chips */
+.spec-chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.spec-chip{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;color:var(--ink-2);background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--r-pill);padding:6px 13px;font-variant-numeric:tabular-nums}
+.spec-chip b{color:var(--gold);font-weight:600}
+
+/* ---------- demo frame with contained scrim ---------- */
+.anat-grid{display:grid;grid-template-columns:1fr 316px;gap:36px;align-items:center;padding:28px}
+.demo-frame{position:relative;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);overflow:hidden;display:flex;align-items:center;justify-content:center;padding:48px 28px;min-height:340px}
+.demo-frame.tall{min-height:392px}
+.frame-hint{position:absolute;inset:0;padding:20px;display:flex;flex-direction:column;gap:12px;z-index:0}
+.frame-hint .hb{height:12px;border-radius:4px;background:rgba(255,255,255,0.05)}
+.frame-hint .hb.w1{width:40%} .frame-hint .hb.w2{width:72%;height:44px} .frame-hint .hb.w3{width:58%} .frame-hint .hb.w4{width:66%}
+.frame-scrim{position:absolute;inset:0;background:rgba(0,0,0,0.6);z-index:1}
+.frame-cap{position:absolute;top:12px;left:14px;z-index:3;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3);background:rgba(5,8,15,0.72);border:1px solid var(--border);border-radius:var(--r-pill);padding:4px 10px}
+
+/* ---------- dialog panel ---------- */
+.dialog{position:relative;z-index:2;width:392px;max-width:calc(100% - 24px);background:var(--surface-overlay);border:1px solid var(--border-strong);border-radius:var(--r-lg);box-shadow:var(--sh-lg);padding:var(--sp-6)}
+.dlg-icon{width:40px;height:40px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.dlg-icon.gold{background:rgba(212,168,83,0.12);border:1px solid rgba(212,168,83,0.30);color:var(--gold)}
+.dlg-icon.red{background:var(--red-dim);border:1px solid rgba(248,113,113,0.30);color:var(--red)}
+.dlg-title{font-size:15.5px;font-weight:600;color:var(--ink);line-height:1.4;letter-spacing:-0.01em;font-variant-numeric:tabular-nums}
+.dlg-body{font-size:12.5px;color:var(--ink-2);line-height:1.6;margin-top:8px}
+.dlg-body b{color:var(--ink);font-weight:600}
+.dlg-detail{margin-top:16px;border:1px solid var(--border);border-radius:var(--r-md);background:rgba(255,255,255,0.02);overflow:hidden}
+.dlg-detail .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 13px;border-bottom:1px solid var(--border-subtle)}
+.dlg-detail .row:last-child{border-bottom:0}
+.dlg-detail .k{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3)}
+.dlg-detail .v{font-family:var(--mono);font-size:12px;color:var(--ink);font-variant-numeric:tabular-nums}
+.dlg-detail .v.gold{color:var(--gold-100)}
+.dlg-foot{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+
+/* ---------- popover ---------- */
+.overlay-cols{display:grid;grid-template-columns:1fr 316px;gap:36px;align-items:center;padding:28px}
+.stage{position:relative;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);min-height:300px;display:flex;align-items:center;justify-content:center;padding:40px}
+.pop-anchor{display:inline-flex;flex-direction:column;align-items:center;gap:9px}
+.pop-trigger{display:inline-flex;align-items:center;gap:9px;font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--ink);background:var(--surface-raised);border:1px solid var(--border-strong);border-radius:var(--r-sm);height:34px;padding:0 13px;cursor:pointer}
+.pop-trigger .addr{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink-2);font-weight:500}
+.pop-trigger .chev{color:var(--gold);display:inline-flex}
+.popover{position:relative;width:264px;background:var(--surface-overlay);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--sh-lg);padding:var(--sp-4)}
+.popover::before{content:"";position:absolute;top:-7px;left:50%;transform:translateX(-50%) rotate(45deg);width:12px;height:12px;background:var(--surface-overlay);border-left:1px solid var(--border-strong);border-top:1px solid var(--border-strong)}
+.pop-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.pop-title{font-size:12.5px;font-weight:600;color:var(--ink)}
+.pop-net{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--gold);background:rgba(212,168,83,0.10);border:1px solid rgba(212,168,83,0.28);border-radius:5px;padding:2px 7px}
+.pop-rows{display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden;margin-bottom:12px}
+.pop-rows .r{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 11px;border-bottom:1px solid var(--border-subtle)}
+.pop-rows .r:last-child{border-bottom:0}
+.pop-rows .rk{font-family:var(--mono);font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-3)}
+.pop-rows .rv{font-family:var(--mono);font-size:11.5px;color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* ---------- tooltip ---------- */
+.tip-anchor{display:inline-flex;flex-direction:column;align-items:center;gap:10px}
+.tooltip{position:relative;max-width:230px;background:var(--surface-overlay);border:1px solid var(--border-strong);border-radius:var(--r-sm);box-shadow:var(--sh-md);padding:7px 11px;font-family:var(--mono);font-size:var(--t-xs);line-height:1.5;color:var(--ink);font-variant-numeric:tabular-nums;text-align:center}
+.tooltip b{color:var(--gold)}
+.tooltip::after{content:"";position:absolute;bottom:-6px;left:50%;transform:translateX(-50%) rotate(45deg);width:11px;height:11px;background:var(--surface-overlay);border-right:1px solid var(--border-strong);border-bottom:1px solid var(--border-strong)}
+.tip-term{display:inline-flex;align-items:center;gap:6px;font-family:var(--sans);font-size:13px;font-weight:600;color:var(--ink);border-bottom:1px dashed var(--ink-3);padding-bottom:1px;cursor:help}
+.tip-term .q{width:15px;height:15px;border-radius:50%;border:1px solid var(--ink-3);color:var(--ink-3);display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;font-weight:600}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="11.5" stroke="#D4A853" stroke-width="1.5"/>
+      <circle cx="16" cy="16" r="3" stroke="#D4A853" stroke-width="1.5"/>
+      <path d="M16 1.5V8M16 24v6.5M1.5 16H8M24 16h6.5" stroke="#D4A853" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <div class="brand-name">Snipers<span>Trading Academy</span></div>
+    <div class="tag">Components · <b>Overlays</b></div>
+  </div>
+
+  <div class="page-title">
+    <h1>Overlays</h1>
+    <p>Everything that floats above the page — confirmation dialogs, a destructive alert, an anchored popover and a tooltip. All ride the <span class="mono">--surface-overlay</span> plane on <span class="mono">--sh-lg</span> over a scrim. Shown here as static panels inside labeled demo frames, with the scrim contained to each frame rather than the page.</p>
+  </div>
+
+  <!-- 01 CONFIRMATION DIALOG -->
+  <section>
+    <div class="sec-title"><span class="n">01</span><h2>Modal dialog · confirmation</h2><span class="line"></span><span class="note">--surface-overlay · --sh-lg · scrim rgba(0,0,0,0.6)</span></div>
+    <div class="card anat-grid">
+      <div class="demo-frame tall">
+        <span class="frame-cap">Modal · scrim rgba(0,0,0,0.6)</span>
+        <div class="frame-hint" aria-hidden="true"><div class="hb w1"></div><div class="hb w2"></div><div class="hb w3"></div><div class="hb w4"></div></div>
+        <div class="frame-scrim"></div>
+        <div class="dialog">
+          <span class="anat-tag pin" style="top:-8px;left:-8px">1</span>
+          <span class="anat-tag pin" style="top:16px;right:-8px">2</span>
+          <span class="anat-tag pin" style="bottom:-8px;left:24px">3</span>
+          <span class="anat-tag pin" style="bottom:-8px;right:24px">4</span>
+          <div class="dlg-icon gold">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7Z"/></svg>
+          </div>
+          <div class="dlg-title">Confirm payout — Send $5,797.80 USDC to 0x7C4d…9E2a?</div>
+          <p class="dlg-body">This releases your July commission from the team pool. Transfers on Polygon settle in a few minutes and can't be reversed.</p>
+          <div class="dlg-detail">
+            <div class="row"><span class="k">Amount</span><span class="v gold">$5,797.80 USDC</span></div>
+            <div class="row"><span class="k">Network</span><span class="v">Polygon</span></div>
+            <div class="row"><span class="k">To wallet</span><span class="v">0x7C4d…9E2a</span></div>
+          </div>
+          <div class="dlg-foot">
+            <a class="btn md btn-ghost">Cancel</a>
+            <a class="btn md btn-primary">Confirm payout</a>
+          </div>
+        </div>
+      </div>
+      <div class="anat-notes">
+        <div class="anat-note"><span class="k"><span class="anat-tag">1</span></span><span class="d"><b>Surface &amp; radius</b> — <code>--surface-overlay</code> #151D33 on a 1px <code>--border-strong</code> outline, <code>--r-lg</code> (14px) corners.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">2</span></span><span class="d"><b>Padding</b> — <code>--sp-6</code> (24px) all sides; the icon, title, detail block and footer stack on the 4px grid.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">3</span></span><span class="d"><b>Elevation</b> — <code>--sh-lg</code> lifts the panel clear of the <code>rgba(0,0,0,0.6)</code> scrim behind it.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">4</span></span><span class="d"><b>Actions</b> — right-aligned, Cancel as <code>ghost</code>, the one decisive action as <code>primary</code> gold.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 DESTRUCTIVE ALERT DIALOG -->
+  <section>
+    <div class="sec-title"><span class="n">02</span><h2>Alert dialog · destructive</h2><span class="line"></span><span class="note">same elevation · red-washed icon · Delete destructive</span></div>
+    <div class="card anat-grid">
+      <div class="demo-frame">
+        <span class="frame-cap">Alert dialog · scrim rgba(0,0,0,0.6)</span>
+        <div class="frame-hint" aria-hidden="true"><div class="hb w1"></div><div class="hb w2"></div><div class="hb w3"></div><div class="hb w4"></div></div>
+        <div class="frame-scrim"></div>
+        <div class="dialog">
+          <div class="dlg-icon red">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/></svg>
+          </div>
+          <div class="dlg-title">Remove team member?</div>
+          <p class="dlg-body"><b>Maria G.</b> loses access to Structure 3 and their referral link stops earning. This can't be undone.</p>
+          <div class="dlg-foot">
+            <a class="btn md btn-ghost">Cancel</a>
+            <a class="btn md btn-destructive">Delete</a>
+          </div>
+        </div>
+      </div>
+      <div class="anat-notes">
+        <div class="anat-note"><span class="k"><span class="anat-tag">1</span></span><span class="d"><b>Same shell</b> — identical <code>--surface-overlay</code>, <code>--r-lg</code>, <code>--sh-lg</code> as the confirm dialog; only the intent changes.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">2</span></span><span class="d"><b>Warning icon</b> — <code>--red-dim</code> tile, 1px red border; signals an irreversible action before the eye reaches the buttons.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">3</span></span><span class="d"><b>Destructive action</b> — the <code>destructive</code> button carries the risk; Cancel stays the calm default on the left.</span></div>
+        <div class="spec-chips">
+          <span class="spec-chip">Padding <b>--sp-6 · 24px</b></span>
+          <span class="spec-chip">Radius <b>--r-lg · 14px</b></span>
+          <span class="spec-chip">Shadow <b>--sh-lg</b></span>
+          <span class="spec-chip">Scrim <b>rgba(0,0,0,0.6)</b></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 POPOVER -->
+  <section>
+    <div class="sec-title"><span class="n">03</span><h2>Popover</h2><span class="line"></span><span class="note">anchored to a labeled trigger · arrow keys to the source</span></div>
+    <div class="card overlay-cols">
+      <div class="stage">
+        <span class="frame-cap">Anchored to trigger</span>
+        <div class="pop-anchor">
+          <button class="pop-trigger">Payout wallet <span class="addr">0x7C4d…9E2a</span><span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></button>
+          <div class="popover">
+            <div class="pop-head"><span class="pop-title">Payout wallet</span><span class="pop-net">Polygon</span></div>
+            <div class="pop-rows">
+              <div class="r"><span class="rk">Asset</span><span class="rv">USDC</span></div>
+              <div class="r"><span class="rk">Address</span><span class="rv">0x7C4d…9E2a</span></div>
+              <div class="r"><span class="rk">Last payout</span><span class="rv">$5,412.00</span></div>
+            </div>
+            <a class="btn sm btn-secondary" style="width:100%">Copy address</a>
+          </div>
+        </div>
+      </div>
+      <div class="anat-notes">
+        <div class="anat-note"><span class="k"><span class="anat-tag">1</span></span><span class="d"><b>Anchored</b> — the panel pins to its trigger; the caret points back at the button that opened it.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">2</span></span><span class="d"><b>Same plane</b> — <code>--surface-overlay</code> on <code>--sh-lg</code>, like the modal, but sized to its content, not the viewport.</span></div>
+        <div class="spec-chips">
+          <span class="spec-chip">Padding <b>--sp-4 · 16px</b></span>
+          <span class="spec-chip">Radius <b>--r-md · 10px</b></span>
+          <span class="spec-chip">Shadow <b>--sh-lg</b></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 TOOLTIP -->
+  <section>
+    <div class="sec-title"><span class="n">04</span><h2>Tooltip</h2><span class="line"></span><span class="note">mono · --t-xs · one line of clarifying detail</span></div>
+    <div class="card overlay-cols">
+      <div class="stage" style="min-height:220px">
+        <span class="frame-cap">Anchored to trigger</span>
+        <div class="tip-anchor">
+          <div class="tooltip"><b>12%</b> = 10% base + 1% per completed structure</div>
+          <span class="tip-term">Commission rate <span class="q">?</span></span>
+        </div>
+      </div>
+      <div class="anat-notes">
+        <div class="anat-note"><span class="k"><span class="anat-tag">1</span></span><span class="d"><b>Type</b> — mono at <code>--t-xs</code> (11px), tabular numerals; a tooltip carries data, so it reads in the mono voice.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">2</span></span><span class="d"><b>Trigger</b> — a dashed-underline term with a help cursor; the caret points down to the word it explains.</span></div>
+        <div class="spec-chips">
+          <span class="spec-chip">Padding <b>7px · 11px</b></span>
+          <span class="spec-chip">Radius <b>--r-sm · 6px</b></span>
+          <span class="spec-chip">Shadow <b>--sh-md</b></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
