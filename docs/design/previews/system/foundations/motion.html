@@ -1,0 +1,376 @@
+<!-- @dsCard group="Foundations" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Motion & Icons</title>
+<style>
+:root {
+  /* Base */
+  --bg:#05080F; --surface:#0A0F1C; --surface-raised:#101728; --surface-overlay:#151D33;
+  --ink:#E6EAF2; --ink-2:#8B95A9; --ink-3:#525D73;
+  --border:rgba(255,255,255,0.10); --border-subtle:rgba(255,255,255,0.05); --border-strong:rgba(255,255,255,0.16);
+  /* Brand gold ramp */
+  --gold-50:#FDF8ED; --gold-100:#F9ECCC; --gold-200:#F0D48A; --gold-300:#E5C06A;
+  --gold-400:#D4A853; --gold-500:#C49B3E; --gold-600:#A67E2E; --gold-700:#856420; --gold-800:#6B4D18;
+  --gold:var(--gold-400); --ring:rgba(212,168,83,0.55);
+  /* Status */
+  --emerald:#34D399; --emerald-dim:rgba(52,211,153,0.12);
+  --red:#F87171; --red-dim:rgba(248,113,113,0.12);
+  --amber:#FBBF24; --amber-dim:rgba(251,191,36,0.12);
+  --blue:#60A5FA; --blue-dim:rgba(96,165,250,0.12);
+  /* Charts (series order) */
+  --chart-1:var(--gold-400); --chart-2:#60A5FA; --chart-3:#34D399; --chart-4:#A78BFA; --chart-5:#8B95A9;
+  /* Spacing (4px grid) */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px; --sp-10:40px; --sp-12:48px; --sp-16:64px;
+  /* Radius */
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-pill:999px;
+  /* Shadows */
+  --sh-sm:0 1px 2px rgba(0,0,0,0.35);
+  --sh-md:0 4px 12px rgba(0,0,0,0.28),0 1px 3px rgba(0,0,0,0.3);
+  --sh-lg:0 12px 32px rgba(0,0,0,0.35),0 4px 8px rgba(0,0,0,0.25);
+  --sh-gold:0 2px 12px rgba(212,168,83,0.18);
+  /* Type scale */
+  --t-xs:11px; --t-sm:12px; --t-base:13px; --t-md:14px; --t-lg:16px; --t-xl:18px; --t-2xl:22px; --t-3xl:28px; --t-4xl:36px;
+  /* Motion */
+  --dur-micro:120ms; --dur-std:200ms; --dur-enter:320ms;
+  --ease-out:cubic-bezier(0.2,0.8,0.2,1); --ease-spring:cubic-bezier(0.34,1.4,0.44,1);
+}
+:root{ --sans:-apple-system,"SF Pro Text",Inter,"Segoe UI",sans-serif; --mono:ui-monospace,"SF Mono","Geist Mono",Menlo,monospace; }
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:var(--t-base);line-height:1.45;min-height:100vh;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.014) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.014) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.label{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3)}
+
+/* ---------- page frame ---------- */
+.wrap{max-width:1200px;margin:0 auto;padding:40px 40px 80px}
+.masthead{display:flex;align-items:center;gap:14px;padding-bottom:28px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.masthead .brand-name{font-size:15px;font-weight:600;line-height:1.1;color:var(--ink)}
+.masthead .brand-name span{display:block;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-3);margin-top:3px}
+.masthead .tag{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.masthead .tag b{color:var(--gold);font-weight:600}
+.page-title{margin-top:26px}
+.page-title h1{font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1;color:var(--ink)}
+.page-title p{color:var(--ink-2);font-size:13px;margin-top:9px;max-width:660px;line-height:1.55}
+
+section{margin-top:44px}
+.sec-title{display:flex;align-items:baseline;gap:12px;margin-bottom:20px}
+.sec-title .n{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--gold);letter-spacing:0.04em}
+.sec-title h2{font-size:16px;font-weight:600;letter-spacing:-0.01em;color:var(--ink)}
+.sec-title .line{flex:1;height:1px;background:var(--border)}
+.sec-title .note{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:0.02em}
+.sub-label{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md)}
+
+/* ---------- printed code blocks ---------- */
+.code{font-family:var(--mono);font-size:11px;line-height:1.75;color:var(--ink-2);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:15px 17px;white-space:pre;overflow-x:auto;font-variant-numeric:tabular-nums}
+.code .sel{color:var(--ink)}
+.code .prop{color:var(--gold)}
+.code .val{color:var(--ink)}
+.code .cmt{color:var(--ink-3)}
+.spec-note{font-size:11.5px;color:var(--ink-2);line-height:1.55;margin-top:14px}
+.spec-note b{color:var(--ink);font-weight:600}
+
+/* ---------- 01 duration scale ---------- */
+.dur-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.dur-cell{padding:20px}
+.dur-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px}
+.dur-tok{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--ink)}
+.dur-ms{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--gold);font-variant-numeric:tabular-nums}
+.dur-track{position:relative;width:100%;height:46px;background:var(--surface-raised);border:1px solid var(--border-subtle);border-radius:var(--r-sm);overflow:hidden}
+.dur-track::after{content:"";position:absolute;top:0;bottom:0;right:0;width:1px;background:var(--border)}
+.dur-box{position:absolute;top:8px;left:8px;width:30px;height:30px;border-radius:var(--r-sm);background:var(--gold);box-shadow:var(--sh-gold)}
+.dur-cell.d1 .dur-box{transition:transform var(--dur-micro) var(--ease-out)}
+.dur-cell.d2 .dur-box{transition:transform var(--dur-std) var(--ease-out)}
+.dur-cell.d3 .dur-box{transition:transform var(--dur-enter) var(--ease-out)}
+.dur-cell:hover .dur-box{transform:translateX(var(--travel))}
+.dur-role{font-size:11px;color:var(--ink-3);margin-top:14px;line-height:1.5}
+.hover-hint{font-family:var(--mono);font-size:10px;color:var(--ink-3);letter-spacing:0.02em;margin-top:11px;display:inline-flex;align-items:center;gap:6px}
+.hover-hint .cur{color:var(--gold)}
+
+/* ---------- 02 easing ---------- */
+.ease-wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ease-cell{padding:20px}
+.ease-head{display:flex;align-items:baseline;gap:10px;margin-bottom:16px}
+.ease-name{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--ink)}
+.ease-kind{font-size:11px;color:var(--ink-3)}
+.ease-lane{position:relative;height:44px;background:var(--surface-raised);border:1px solid var(--border-subtle);border-radius:var(--r-sm)}
+.ease-ball{position:absolute;top:9px;left:9px;width:26px;height:26px;border-radius:50%}
+.ease-ball.out{background:var(--blue);box-shadow:0 0 14px rgba(96,165,250,0.35);animation:roll 3s var(--ease-out) infinite}
+.ease-ball.spring{background:var(--gold);box-shadow:var(--sh-gold);animation:roll 3s var(--ease-spring) infinite}
+@keyframes roll{0%{transform:translateX(0)}45%{transform:translateX(var(--roll-travel))}55%{transform:translateX(var(--roll-travel))}100%{transform:translateX(0)}}
+.ease-curve{font-family:var(--mono);font-size:10.5px;color:var(--ink-2);margin-top:14px;font-variant-numeric:tabular-nums}
+.ease-curve b{color:var(--gold);font-weight:600}
+.ease-role{font-size:11px;color:var(--ink-3);margin-top:9px;line-height:1.5}
+
+/* ---------- 03 shimmer ---------- */
+.shim-wrap{display:grid;grid-template-columns:1fr 1.05fr;gap:16px;align-items:stretch}
+.shim-demo{padding:22px 20px;display:flex;flex-direction:column;justify-content:center;gap:12px}
+.sk{position:relative;overflow:hidden;background:var(--surface-raised);border-radius:5px}
+.sk::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent);animation:shimmer 1.5s ease-in-out infinite}
+@keyframes shimmer{100%{transform:translateX(100%)}}
+.sk.line-sm{height:11px;width:40%}
+.sk.line-lg{height:26px;width:66%}
+.sk.line-md{height:11px;width:52%}
+
+/* ---------- 04 reduced motion ---------- */
+.rm-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.rm-cell{padding:20px;position:relative}
+.rm-tag{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:4px 9px;border-radius:5px;margin-bottom:14px}
+.rm-cell.do{border-color:rgba(52,211,153,0.28)}
+.rm-cell.dont{border-color:rgba(248,113,113,0.28)}
+.rm-tag.do{color:var(--emerald);background:var(--emerald-dim);border:1px solid rgba(52,211,153,0.24)}
+.rm-tag.dont{color:var(--red);background:var(--red-dim);border:1px solid rgba(248,113,113,0.24)}
+.rm-vis{height:44px;border-radius:var(--r-sm);background:var(--surface-raised);border:1px solid var(--border-subtle);display:flex;align-items:center;gap:10px;padding:0 12px}
+.rm-static-bar{height:11px;width:52%;border-radius:5px;background:linear-gradient(90deg,rgba(255,255,255,0.10),rgba(255,255,255,0.045))}
+.rm-spin-illus{width:22px;height:22px;border-radius:50%;border:2px solid rgba(248,113,113,0.30);border-top-color:var(--red)}
+.rm-blur{flex:1;height:11px;border-radius:5px;background:repeating-linear-gradient(90deg,rgba(248,113,113,0.22) 0 5px,transparent 5px 13px)}
+.rm-copy{font-size:11.5px;color:var(--ink-2);line-height:1.55;margin-top:13px}
+.rm-copy b{color:var(--ink);font-weight:600}
+
+/* ---------- 05 icons ---------- */
+.rules-bar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.rule-chip{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;color:var(--ink-2);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-pill);padding:6px 13px;font-variant-numeric:tabular-nums}
+.rule-chip b{color:var(--gold);font-weight:600}
+.icon-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:0;border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;background:var(--surface)}
+.icon-cell{display:flex;flex-direction:column;align-items:center;gap:11px;padding:22px 8px 16px;border-right:1px solid var(--border-subtle);border-bottom:1px solid var(--border-subtle)}
+.icon-cell:nth-child(8n){border-right:0}
+.icon-cell:nth-child(n+9){border-bottom:0}
+/* the 24px keyline tile holding a 20px icon */
+.keyline{position:relative;width:24px;height:24px;display:flex;align-items:center;justify-content:center}
+.keyline::before{content:"";position:absolute;inset:0;border:1px dashed rgba(212,168,83,0.32);border-radius:3px}
+.keyline svg{color:var(--ink);position:relative;display:block}
+.icon-name{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);letter-spacing:0.02em;text-align:center}
+.icon-cap{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);margin-top:12px;letter-spacing:0.02em}
+.icon-cap b{color:var(--ink-2);font-weight:600}
+
+/* ---------- 06 logo ---------- */
+.logo-row{display:flex;align-items:flex-end;gap:44px;padding:34px 28px}
+.logo-unit{display:flex;flex-direction:column;align-items:center;gap:14px}
+.logo-frame{position:relative;padding:var(--pad,16px)}
+.logo-frame::before{content:"";position:absolute;inset:0;border:1px dashed rgba(212,168,83,0.34);border-radius:var(--r-sm)}
+.logo-meta{font-family:var(--mono);font-size:10px;color:var(--ink-3);text-align:center;line-height:1.5;font-variant-numeric:tabular-nums}
+.logo-meta b{color:var(--ink);font-weight:600}
+.logo-rule{margin-left:auto;max-width:230px;font-size:11.5px;color:var(--ink-2);line-height:1.6}
+.logo-rule .label{display:block;margin-bottom:9px}
+.logo-rule b{color:var(--ink);font-weight:600}
+
+/* respect user motion preference — the pattern every card copies */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="11.5" stroke="#D4A853" stroke-width="1.5"/>
+      <circle cx="16" cy="16" r="3" stroke="#D4A853" stroke-width="1.5"/>
+      <path d="M16 1.5V8M16 24v6.5M1.5 16H8M24 16h6.5" stroke="#D4A853" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <div class="brand-name">Snipers<span>Trading Academy</span></div>
+    <div class="tag">Foundations · <b>Motion &amp; Icons</b></div>
+  </div>
+
+  <div class="page-title">
+    <h1>Motion &amp; Icons</h1>
+    <p>The motion and iconography spec. Durations, easing curves and the shimmer keyframe below are the canonical source — later component cards copy this code verbatim. Every line icon is drawn on the same 24px keyline at a 1.5px stroke so the set reads as one hand.</p>
+  </div>
+
+  <!-- 01 DURATION SCALE -->
+  <section>
+    <div class="sec-title"><span class="n">01</span><h2>Duration scale</h2><span class="line"></span><span class="note">hover a track — box travels once, then rests</span></div>
+    <div class="dur-grid">
+      <div class="card dur-cell d1" style="--travel:250px">
+        <div class="dur-head"><span class="dur-tok">--dur-micro</span><span class="dur-ms">120ms</span></div>
+        <div class="dur-track"><div class="dur-box"></div></div>
+        <div class="dur-role">Micro-feedback — hover tints, toggle knobs, chip presses. Fast enough to feel instant.</div>
+        <div class="hover-hint"><span class="cur">›</span>hover to play</div>
+      </div>
+      <div class="card dur-cell d2" style="--travel:250px">
+        <div class="dur-head"><span class="dur-tok">--dur-std</span><span class="dur-ms">200ms</span></div>
+        <div class="dur-track"><div class="dur-box"></div></div>
+        <div class="dur-role">Standard — the default for most state changes: expanding rows, tab swaps, button fills.</div>
+        <div class="hover-hint"><span class="cur">›</span>hover to play</div>
+      </div>
+      <div class="card dur-cell d3" style="--travel:250px">
+        <div class="dur-head"><span class="dur-tok">--dur-enter</span><span class="dur-ms">320ms</span></div>
+        <div class="dur-track"><div class="dur-box"></div></div>
+        <div class="dur-role">Enter — elements arriving on screen: modals, popovers, toast slide-ins.</div>
+        <div class="hover-hint"><span class="cur">›</span>hover to play</div>
+      </div>
+    </div>
+    <div class="code" style="margin-top:16px"><span class="cmt">/* pulled straight from the token sheet */</span>
+<span class="prop">--dur-micro</span>: <span class="val">120ms</span>;  <span class="prop">--dur-std</span>: <span class="val">200ms</span>;  <span class="prop">--dur-enter</span>: <span class="val">320ms</span>;</div>
+  </section>
+
+  <!-- 02 EASING -->
+  <section>
+    <div class="sec-title"><span class="n">02</span><h2>Easing curves</h2><span class="line"></span><span class="note">looping 3s comparison</span></div>
+    <div class="ease-wrap">
+      <div class="card ease-cell">
+        <div class="ease-head"><span class="ease-name">--ease-out</span><span class="ease-kind">decelerate · no overshoot</span></div>
+        <div class="ease-lane"><div class="ease-ball out" style="--roll-travel:calc(100% - 44px)"></div></div>
+        <div class="ease-curve"><b>cubic-bezier(0.2, 0.8, 0.2, 1)</b></div>
+        <div class="ease-role">The workhorse. Every transition uses this unless a spring is explicitly called for.</div>
+      </div>
+      <div class="card ease-cell">
+        <div class="ease-head"><span class="ease-name">--ease-spring</span><span class="ease-kind">overshoot · settle</span></div>
+        <div class="ease-lane"><div class="ease-ball spring" style="--roll-travel:calc(100% - 44px)"></div></div>
+        <div class="ease-curve"><b>cubic-bezier(0.34, 1.4, 0.44, 1)</b></div>
+        <div class="ease-role">Reserved for celebration and confirmation — rank-ups, payout received. Note the overshoot past the edge.</div>
+      </div>
+    </div>
+    <div class="code" style="margin-top:16px"><span class="prop">--ease-out</span>:    <span class="val">cubic-bezier(0.2,0.8,0.2,1)</span>;   <span class="cmt">/* decelerate to rest */</span>
+<span class="prop">--ease-spring</span>: <span class="val">cubic-bezier(0.34,1.4,0.44,1)</span>; <span class="cmt">/* y&gt;1 → overshoot */</span></div>
+  </section>
+
+  <!-- 03 SHIMMER -->
+  <section>
+    <div class="sec-title"><span class="n">03</span><h2>Shimmer — loading skeleton</h2><span class="line"></span><span class="note">left-to-right, 1.5s, infinite</span></div>
+    <div class="shim-wrap">
+      <div class="card shim-demo">
+        <div class="sub-label" style="margin-bottom:2px">Live skeleton</div>
+        <div class="sk line-sm"></div>
+        <div class="sk line-lg"></div>
+        <div class="sk line-md"></div>
+      </div>
+      <div class="code"><span class="cmt">/* canonical skeleton shimmer — copy verbatim */</span>
+<span class="sel">.sk</span> {
+  <span class="prop">position</span>: <span class="val">relative</span>; <span class="prop">overflow</span>: <span class="val">hidden</span>;
+  <span class="prop">background</span>: <span class="val">var(--surface-raised)</span>;
+  <span class="prop">border-radius</span>: <span class="val">5px</span>;
+}
+<span class="sel">.sk::after</span> {
+  <span class="prop">content</span>: <span class="val">""</span>; <span class="prop">position</span>: <span class="val">absolute</span>; <span class="prop">inset</span>: <span class="val">0</span>;
+  <span class="prop">transform</span>: <span class="val">translateX(-100%)</span>;
+  <span class="prop">background</span>: <span class="val">linear-gradient(90deg,</span>
+    <span class="val">transparent, rgba(255,255,255,0.06), transparent)</span>;
+  <span class="prop">animation</span>: <span class="val">shimmer 1.5s ease-in-out infinite</span>;
+}
+<span class="sel">@keyframes shimmer</span> {
+  <span class="val">100%</span> { <span class="prop">transform</span>: <span class="val">translateX(100%)</span>; }
+}</div>
+    </div>
+  </section>
+
+  <!-- 04 REDUCED MOTION -->
+  <section>
+    <div class="sec-title"><span class="n">04</span><h2>Reduced motion</h2><span class="line"></span><span class="note">honor prefers-reduced-motion always</span></div>
+    <div class="rm-grid">
+      <div class="card rm-cell do">
+        <span class="rm-tag do">✓ Do</span>
+        <div class="rm-vis"><div class="rm-static-bar"></div></div>
+        <div class="rm-copy">Collapse animations to a <b>static end state</b>. The skeleton still reads as loading — it just holds still instead of sweeping.</div>
+      </div>
+      <div class="card rm-cell dont">
+        <span class="rm-tag dont">✕ Don't</span>
+        <div class="rm-vis"><span class="rm-spin-illus"></span><div class="rm-blur"></div></div>
+        <div class="rm-copy">Never leave loops, spins or sweeps <b>running unguarded</b>. Motion-sensitive users get no relief and the page feels restless.</div>
+      </div>
+    </div>
+    <div class="code" style="margin-top:16px"><span class="cmt">/* ship this guard on every card */</span>
+<span class="sel">@media (prefers-reduced-motion: reduce)</span> {
+  <span class="sel">*, *::before, *::after</span> {
+    <span class="prop">animation-duration</span>: <span class="val">0.01ms !important</span>;
+    <span class="prop">animation-iteration-count</span>: <span class="val">1 !important</span>;
+    <span class="prop">transition-duration</span>: <span class="val">0.01ms !important</span>;
+  }
+}</div>
+  </section>
+
+  <!-- 05 ICONS -->
+  <section>
+    <div class="sec-title"><span class="n">05</span><h2>Icon system</h2><span class="line"></span><span class="note">16 icons · one hand</span></div>
+    <div class="rules-bar">
+      <span class="rule-chip">Grid <b>24 × 24</b></span>
+      <span class="rule-chip">Draw size <b>20px</b></span>
+      <span class="rule-chip">Stroke <b>1.5px</b></span>
+      <span class="rule-chip">Joins <b>round</b></span>
+      <span class="rule-chip">Corner radius <b>2px</b></span>
+      <span class="rule-chip">Fill <b>none</b> · currentColor</span>
+    </div>
+    <div class="icon-grid">
+      <!-- 8 nav icons -->
+      <div class="icon-cell"><span class="keyline"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><span class="icon-name">dashboard</span></div>
+      <div class="icon-cell"><span class="keyline"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-5"/><path d="M22 10v5"/></svg></span><span class="icon-name">academy</span></div>
+      <div class="icon-cell"><span class="keyline"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20"/><circle cx="10" cy="8" r="3.5"/><path d="M20 20v-1.5a3.5 3.5 0 0 0-2.7-3.4"/><path d="M15 4.6a3.5 3.5 0 0 1 0 6.8"/></svg></span><span class="icon-name">team</span></div>
+      <div class="icon-cell"><span class="keyline"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 6.5c0-2-2.2-3-5-3s-5 1-5 3 2.2 3 5 3.5 5 1.5 5 3.5-2.2 3-5 3-5-1-5-3"/></svg></span><span class="icon-name">finance</span></div>
+      <div class="icon-cell"><span class="keyline"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg></span><span class="icon-name">payments</span></div>
+      <div class="icon-cell"><span class="keyline"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg></span><span class="icon-name">referrals</span></div>
+      <div class="icon-cell"><span class="keyline"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5a6 6 0 0 0-12 0c0 6-2.5 7.5-2.5 7.5h17S18 14.5 18 8.5"/><path d="M10.5 20a1.9 1.9 0 0 0 3 0"/></svg></span><span class="icon-name">notifications</span></div>
+      <div class="icon-cell"><span class="keyline"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H2a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 3.3 6.6l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 9 3.3V2a2 2 0 1 1 4 0v.1A1.6 1.6 0 0 0 15 3.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg></span><span class="icon-name">settings</span></div>
+      <!-- 8 more -->
+      <div class="icon-cell"><span class="keyline"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="icon-name">check</span></div>
+      <div class="icon-cell"><span class="keyline"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span><span class="icon-name">x</span></div>
+      <div class="icon-cell"><span class="keyline"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg></span><span class="icon-name">alert-triangle</span></div>
+      <div class="icon-cell"><span class="keyline"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></span><span class="icon-name">external-link</span></div>
+      <div class="icon-cell"><span class="keyline"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></span><span class="icon-name">wallet</span></div>
+      <div class="icon-cell"><span class="keyline"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 7 13.5 15.5l-5-5L2 17"/><path d="M16 7h6v6"/></svg></span><span class="icon-name">trending-up</span></div>
+      <div class="icon-cell"><span class="keyline"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4V8Z"/></svg></span><span class="icon-name">play-circle</span></div>
+      <div class="icon-cell"><span class="keyline"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span><span class="icon-name">clock</span></div>
+    </div>
+    <div class="icon-cap">First row — the <b>8 workspace nav icons</b>. Second row — the <b>8 utility icons</b> for status, actions and time. Gold dashed frame marks the 24px keyline; artwork lives inside a 20px bound.</div>
+  </section>
+
+  <!-- 06 LOGO -->
+  <section>
+    <div class="sec-title"><span class="n">06</span><h2>Logo usage</h2><span class="line"></span><span class="note">crosshair-in-circle · minimum clearspace</span></div>
+    <div class="card logo-row">
+      <div class="logo-unit">
+        <div class="logo-frame" style="--pad:12px">
+          <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="11.5" stroke="#D4A853" stroke-width="1.5"/>
+            <circle cx="16" cy="16" r="3" stroke="#D4A853" stroke-width="1.5"/>
+            <path d="M16 1.5V8M16 24v6.5M1.5 16H8M24 16h6.5" stroke="#D4A853" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="logo-meta"><b>24px</b><br>min / nav mark</div>
+      </div>
+      <div class="logo-unit">
+        <div class="logo-frame" style="--pad:16px">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="11.5" stroke="#D4A853" stroke-width="1.5"/>
+            <circle cx="16" cy="16" r="3" stroke="#D4A853" stroke-width="1.5"/>
+            <path d="M16 1.5V8M16 24v6.5M1.5 16H8M24 16h6.5" stroke="#D4A853" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="logo-meta"><b>32px</b><br>masthead default</div>
+      </div>
+      <div class="logo-unit">
+        <div class="logo-frame" style="--pad:24px">
+          <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="11.5" stroke="#D4A853" stroke-width="1.5"/>
+            <circle cx="16" cy="16" r="3" stroke="#D4A853" stroke-width="1.5"/>
+            <path d="M16 1.5V8M16 24v6.5M1.5 16H8M24 16h6.5" stroke="#D4A853" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="logo-meta"><b>48px</b><br>splash / auth</div>
+      </div>
+      <div class="logo-rule">
+        <span class="label">Clearspace</span>
+        Keep a margin of at least <b>half the mark's width</b> on every side — shown by the dashed frame. Never crop the outer ring, recolor off the gold, or place the mark on a light field.
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
