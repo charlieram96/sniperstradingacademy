@@ -1,0 +1,530 @@
+<!-- @dsCard group="Direction 1 — Private-Bank Luxury" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Luxury — Dashboard</title>
+<style>
+  :root{
+    --bg:#070B14;
+    --surface:#0C1120;
+    --surface-raised:#111729;
+    --ink:#E8E4DA;
+    --ink-2:#9BA3B4;
+    --ink-3:#5C6577;
+    --gold:#C9A45C;
+    --gold-bright:#E5C685;
+    --hairline:rgba(201,164,92,0.28);
+    --border:rgba(255,255,255,0.07);
+    --radius:6px;
+    --pad-card:36px;
+    --serif:Didot,"Bodoni MT","Playfair Display",Georgia,serif;
+    --sans:-apple-system,"SF Pro Text",Inter,"Segoe UI",sans-serif;
+    --mono:ui-monospace,"SF Mono","Geist Mono",Menlo,monospace;
+    --shadow:0 1px 2px rgba(0,0,0,0.4);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:14px;
+    line-height:1.5;
+    min-height:100vh;
+  }
+
+  /* ---------- primitives ---------- */
+  .eyebrow{
+    font-size:11px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--gold);
+    font-family:var(--sans);
+    font-weight:500;
+  }
+  .rule{height:1px;background:var(--hairline);border:0}
+  .rule-soft{height:1px;background:var(--border);border:0}
+  .serif{font-family:var(--serif)}
+  .num{font-family:var(--serif);font-weight:300;letter-spacing:-0.01em}
+
+  /* ---------- shell ---------- */
+  .app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+
+  /* ---------- sidebar ---------- */
+  .side{
+    background:var(--surface);
+    border-right:1px solid var(--border);
+    display:flex;
+    flex-direction:column;
+    padding:32px 0 20px;
+    position:sticky;
+    top:0;
+    height:100vh;
+  }
+  .brand{display:flex;align-items:center;gap:12px;padding:0 26px 30px}
+  .brand svg{flex:0 0 auto}
+  .brand-name{
+    font-family:var(--serif);
+    font-weight:400;
+    font-size:16px;
+    line-height:1.15;
+    letter-spacing:0.01em;
+    color:var(--ink);
+  }
+  .brand-name span{display:block;font-size:9.5px;letter-spacing:0.28em;text-transform:uppercase;color:var(--ink-3);font-family:var(--sans);margin-top:3px}
+
+  .nav{display:flex;flex-direction:column;gap:1px;padding:0 14px;margin-top:6px;flex:1}
+  .nav-label{padding:0 12px 12px;margin-top:8px}
+  .nav a{
+    display:flex;
+    align-items:center;
+    gap:13px;
+    padding:10px 12px;
+    color:var(--ink-2);
+    text-decoration:none;
+    border-radius:var(--radius);
+    font-size:13.5px;
+    letter-spacing:0.01em;
+    transition:color .18s,background .18s;
+  }
+  .nav a svg{flex:0 0 auto;opacity:.85}
+  .nav a:hover{color:var(--ink);background:rgba(255,255,255,0.03)}
+  .nav a.active{color:var(--ink);background:var(--surface-raised)}
+  .nav a.active{position:relative}
+  .nav a.active::before{
+    content:"";position:absolute;left:0;top:9px;bottom:9px;width:2px;
+    background:var(--gold);border-radius:2px;
+  }
+  .nav a.active svg{opacity:1;color:var(--gold)}
+
+  .chip{
+    margin:14px 18px 0;
+    padding:14px 14px;
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .avatar{
+    width:34px;height:34px;flex:0 0 auto;border-radius:50%;
+    background:var(--surface-raised);
+    border:1px solid var(--hairline);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--serif);font-size:15px;color:var(--gold-bright);
+  }
+  .chip .who{overflow:hidden}
+  .chip .who b{font-weight:500;font-size:13px;color:var(--ink);display:block}
+  .chip .who small{font-size:11px;color:var(--ink-3);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* ---------- main ---------- */
+  .main{padding:40px 56px 64px;max-width:1200px}
+  .page-head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px}
+  .page-head h1{
+    font-family:var(--serif);
+    font-weight:300;
+    font-size:38px;
+    letter-spacing:-0.01em;
+    line-height:1;
+    color:var(--ink);
+  }
+  .page-head .sub{color:var(--ink-2);font-size:14px;margin-top:11px}
+  .live{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:7px 13px;border:1px solid var(--hairline);border-radius:100px;
+  }
+  .live .dot{width:7px;height:7px;border-radius:50%;background:var(--gold);position:relative}
+  .live .dot::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:1px solid var(--gold);opacity:.5;animation:pulse 2.4s ease-out infinite}
+  @keyframes pulse{0%{transform:scale(.6);opacity:.6}100%{transform:scale(1.7);opacity:0}}
+  .live .txt{font-size:10.5px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold)}
+
+  section{margin-top:40px}
+  .sec-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px}
+  .sec-head .link{font-size:12px;color:var(--ink-3);text-decoration:none;letter-spacing:0.02em}
+  .sec-head .link:hover{color:var(--gold)}
+
+  /* ---------- masthead / rank ---------- */
+  .masthead{
+    margin-top:34px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:var(--pad-card) 42px;
+  }
+  .masthead .top{display:flex;justify-content:space-between;align-items:flex-start;gap:32px}
+  .rank-badge{
+    display:inline-flex;align-items:center;gap:9px;
+    padding:6px 12px;border-radius:100px;
+    border:1px solid var(--hairline);
+    background:linear-gradient(180deg,rgba(201,164,92,0.10),rgba(201,164,92,0.03));
+  }
+  .rank-badge svg{color:var(--gold)}
+  .rank-badge span{font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--gold-bright);font-weight:500}
+  .rank-name{
+    font-family:var(--serif);font-weight:300;
+    font-size:44px;line-height:1.05;letter-spacing:-0.015em;
+    color:var(--ink);margin-top:18px;
+  }
+  .rank-meta{color:var(--ink-2);font-size:13px;margin-top:10px}
+  .rank-meta b{color:var(--ink);font-weight:500}
+
+  .commission-block{text-align:right;flex:0 0 auto}
+  .commission-block .num{font-size:52px;color:var(--gold-bright);line-height:.95}
+  .commission-block .cap{margin-top:8px}
+
+  .masthead .band{
+    display:grid;grid-template-columns:repeat(3,1fr);
+    margin-top:32px;padding-top:28px;border-top:1px solid var(--hairline);
+    gap:0;
+  }
+  .band .cell{padding:0 30px;border-left:1px solid var(--border)}
+  .band .cell:first-child{padding-left:0;border-left:0}
+  .band .cell .v{font-family:var(--serif);font-weight:300;font-size:30px;color:var(--ink);letter-spacing:-0.01em;line-height:1}
+  .band .cell .v small{font-family:var(--sans);font-size:14px;color:var(--ink-3);font-weight:400}
+  .band .cell .l{margin-top:12px}
+
+  /* ---------- stat tiles ---------- */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+  .tile{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:28px 26px 24px;
+    display:flex;flex-direction:column;justify-content:space-between;
+    min-height:172px;
+  }
+  .tile .v{font-family:var(--serif);font-weight:300;font-size:40px;line-height:1;letter-spacing:-0.01em;color:var(--ink)}
+  .tile.gold .v{color:var(--gold-bright)}
+  .tile .v small{font-family:var(--sans);font-size:14px;color:var(--ink-3)}
+  .tile .foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--hairline)}
+  .tile .foot .l{display:block}
+  .tile .foot .note{font-size:11.5px;color:var(--ink-3);margin-top:5px}
+
+  /* ---------- structures ---------- */
+  .structures{display:flex;gap:14px;overflow:hidden}
+  .struct{
+    flex:1;min-width:0;
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:22px 20px;position:relative;box-shadow:var(--shadow);
+    display:flex;flex-direction:column;gap:0;min-height:150px;
+  }
+  .struct .idx{font-family:var(--serif);font-size:15px;color:var(--ink-3);font-weight:400}
+  .struct .nm{font-size:12.5px;color:var(--ink-2);margin-top:auto;letter-spacing:0.01em}
+  .struct .st{margin-top:14px;display:flex;align-items:center;gap:7px}
+  .struct.locked{opacity:.4}
+  .struct.active{border-color:var(--hairline)}
+  .struct .check{color:var(--gold)}
+  .bar{height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin-top:12px;overflow:hidden}
+  .bar > i{display:block;height:100%;background:var(--gold);border-radius:2px}
+  .struct .prog{font-size:11px;color:var(--ink-3);margin-top:9px;font-family:var(--mono);letter-spacing:0.02em}
+  .badge-sm{
+    display:inline-flex;align-items:center;gap:6px;font-size:10px;letter-spacing:0.14em;
+    text-transform:uppercase;color:var(--gold);
+  }
+  .lock-ico{position:absolute;top:20px;right:18px;color:var(--ink-3)}
+  .struct.ultimate{
+    background:linear-gradient(180deg,rgba(201,164,92,0.07),rgba(12,17,32,0.4));
+    border-color:var(--hairline);flex:1.15;
+  }
+  .struct.ultimate .nm{color:var(--gold-bright);font-family:var(--serif);font-size:16px;font-weight:300}
+  .struct.ultimate .pct{font-family:var(--serif);font-size:26px;color:var(--gold-bright);font-weight:300}
+
+  /* ---------- two-column lower ---------- */
+  .lower{display:grid;grid-template-columns:1.55fr 1fr;gap:32px;align-items:start}
+
+  /* schedule cards */
+  .class{
+    display:flex;align-items:center;gap:20px;
+    padding:22px 24px;
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:var(--shadow);margin-bottom:14px;
+  }
+  .class:last-child{margin-bottom:0}
+  .class .when{
+    flex:0 0 62px;text-align:center;padding-right:20px;border-right:1px solid var(--hairline);
+  }
+  .class .when .d{font-family:var(--serif);font-size:26px;font-weight:300;color:var(--ink);line-height:1}
+  .class .when .mo{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-3);margin-top:5px}
+  .class .body{flex:1;min-width:0}
+  .class .body h4{font-family:var(--serif);font-weight:400;font-size:17px;color:var(--ink);letter-spacing:0.005em}
+  .class .body .meta{font-size:12px;color:var(--ink-3);margin-top:6px}
+  .class .body .badge-line{margin-top:9px}
+  .badge{
+    display:inline-flex;align-items:center;gap:7px;
+    font-size:10px;letter-spacing:0.14em;text-transform:uppercase;
+    padding:4px 10px;border-radius:100px;border:1px solid var(--border);color:var(--ink-2);
+  }
+  .badge.live{border-color:var(--hairline);color:var(--gold)}
+  .badge.live .dot{width:6px;height:6px;border-radius:50%;background:var(--gold);position:relative}
+  .badge.live .dot::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1px solid var(--gold);opacity:.5;animation:pulse 2.4s ease-out infinite}
+  .btn{
+    flex:0 0 auto;
+    font-family:var(--sans);font-size:12px;letter-spacing:0.04em;
+    padding:10px 18px;border-radius:var(--radius);cursor:pointer;border:1px solid transparent;
+    text-decoration:none;white-space:nowrap;
+  }
+  .btn-gold{background:var(--gold);color:#0B0F19;font-weight:600}
+  .btn-gold:hover{background:var(--gold-bright)}
+  .btn-outline{background:transparent;border-color:var(--border);color:var(--ink-2)}
+  .btn-outline:hover{border-color:var(--hairline);color:var(--ink)}
+
+  /* wallet */
+  .wallet{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:var(--pad-card);
+  }
+  .wallet .amt{font-family:var(--serif);font-weight:300;font-size:38px;color:var(--gold-bright);letter-spacing:-0.01em;line-height:1;margin-top:18px}
+  .wallet .amt small{font-family:var(--sans);font-size:13px;color:var(--ink-3)}
+  .wallet .addr{
+    margin-top:26px;padding-top:20px;border-top:1px solid var(--hairline);
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+  }
+  .wallet .addr .k{font-family:var(--mono);font-size:13px;color:var(--ink);letter-spacing:0.01em}
+  .wallet .chain{display:flex;align-items:center;gap:8px;margin-top:14px}
+  .wallet .chain .net{font-size:11.5px;color:var(--ink-2)}
+  .wallet .chain .net b{color:var(--ink);font-weight:500}
+  .pill{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3);border:1px solid var(--border);border-radius:100px;padding:3px 9px}
+  .referrals-note{font-size:12px;color:var(--ink-3);margin-top:20px;line-height:1.7}
+  .referrals-note b{color:var(--ink);font-family:var(--serif);font-weight:300;font-size:15px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <div class="brand">
+      <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="11.5" stroke="#C9A45C" stroke-width="1.5"/>
+        <circle cx="16" cy="16" r="3" stroke="#C9A45C" stroke-width="1.5"/>
+        <path d="M16 1.5V8M16 24v6.5M1.5 16H8M24 16h6.5" stroke="#C9A45C" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <div class="brand-name">Snipers<span>Trading Academy</span></div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-label eyebrow">Overview</div>
+      <a href="#" class="active">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="#">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-5"/><path d="M22 10v5"/></svg>
+        Academy
+      </a>
+      <a href="#">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20"/><circle cx="10" cy="8" r="3.5"/><path d="M20 20v-1.5a3.5 3.5 0 0 0-2.7-3.4"/><path d="M15 4.6a3.5 3.5 0 0 1 0 6.8"/></svg>
+        My Team
+      </a>
+      <a href="#">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 6.5c0-2-2.2-3-5-3s-5 1-5 3 2.2 3 5 3.5 5 1.5 5 3.5-2.2 3-5 3-5-1-5-3"/></svg>
+        Finance
+      </a>
+      <a href="#">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
+        Payments
+      </a>
+      <a href="#">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>
+        Referrals
+      </a>
+      <a href="#">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5a6 6 0 0 0-12 0c0 6-2.5 7.5-2.5 7.5h17S18 14.5 18 8.5"/><path d="M10.5 20a1.9 1.9 0 0 0 3 0"/></svg>
+        Notifications
+      </a>
+      <a href="#">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H2a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 3.3 6.6l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 9 3.3V2a2 2 0 1 1 4 0v.1A1.6 1.6 0 0 0 15 3.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg>
+        Settings
+      </a>
+    </nav>
+
+    <div class="chip">
+      <div class="avatar">C</div>
+      <div class="who">
+        <b>Charlie R.</b>
+        <small>charlieram96@gmail.com</small>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <div class="page-head">
+      <div>
+        <h1>Dashboard</h1>
+        <div class="sub">Welcome back, Charlie</div>
+      </div>
+      <div class="live"><span class="dot"></span><span class="txt">Live</span></div>
+    </div>
+
+    <!-- RANK MASTHEAD -->
+    <div class="masthead">
+      <div class="top">
+        <div>
+          <span class="rank-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="m8.5 12.5-1.5 8L12 18l5 2.5-1.5-8"/></svg>
+          <span>Standing</span>
+        </span>
+        <div class="rank-name">Delta Master Sniper</div>
+        <div class="rank-meta"><b>2 structures complete</b> &nbsp;·&nbsp; 3 of 6 structures unlocked</div>
+      </div>
+        <div class="commission-block">
+          <div class="num">$5,797.80</div>
+          <div class="cap eyebrow">Your commission · 12% rate</div>
+        </div>
+      </div>
+
+      <div class="band">
+        <div class="cell">
+          <div class="v">12<small>%</small></div>
+          <div class="l eyebrow">Commission rate</div>
+        </div>
+        <div class="cell">
+          <div class="v">$48,315<small>.00</small></div>
+          <div class="l eyebrow">Team pool · monthly</div>
+        </div>
+        <div class="cell">
+          <div class="v">3 <small>of 6</small></div>
+          <div class="l eyebrow">Structures unlocked</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STAT TILES -->
+    <section>
+      <div class="sec-head"><span class="eyebrow">This month</span></div>
+      <div class="stats">
+        <div class="tile">
+          <div><div class="v">$48,315<small>.00</small></div></div>
+          <div class="foot"><span class="l eyebrow">Team Pool</span><div class="note">Monthly distributable</div></div>
+        </div>
+        <div class="tile gold">
+          <div><div class="v">$5,797<small>.80</small></div></div>
+          <div class="foot"><span class="l eyebrow">Your Commission</span><div class="note">12% of team pool</div></div>
+        </div>
+        <div class="tile">
+          <div><div class="v">7 <small>of 9</small></div></div>
+          <div class="foot"><span class="l eyebrow">Active Direct Referrals</span><div class="note">2 slots available</div></div>
+        </div>
+        <div class="tile">
+          <div><div class="v">2,560</div></div>
+          <div class="foot"><span class="l eyebrow">Total Team</span><div class="note">2,415 active members</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STRUCTURES -->
+    <section>
+      <div class="sec-head">
+        <span class="eyebrow">Structures · Progression</span>
+        <a href="#" class="link">View all structures</a>
+      </div>
+      <div class="structures">
+        <div class="struct">
+          <div class="idx">01</div>
+          <div class="nm">First Structure</div>
+          <div class="st"><span class="check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="badge-sm">Complete</span></div>
+        </div>
+        <div class="struct">
+          <div class="idx">02</div>
+          <div class="nm">Second Structure</div>
+          <div class="st"><span class="check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="badge-sm">Complete</span></div>
+        </div>
+        <div class="struct active">
+          <div class="idx">03</div>
+          <div class="nm">Third Structure</div>
+          <div class="bar"><i style="width:21%"></i></div>
+          <div class="prog">231 / 1,092 members</div>
+        </div>
+        <div class="struct locked">
+          <div class="idx">04</div>
+          <span class="lock-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+          <div class="nm">Locked</div>
+        </div>
+        <div class="struct locked">
+          <div class="idx">05</div>
+          <span class="lock-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+          <div class="nm">Locked</div>
+        </div>
+        <div class="struct locked">
+          <div class="idx">06</div>
+          <span class="lock-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+          <div class="nm">Locked</div>
+        </div>
+        <div class="struct ultimate">
+          <span class="lock-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+          <div class="idx" style="color:var(--gold)">Ultimate</div>
+          <div class="pct">16%</div>
+          <div class="nm">Lion Master Sniper</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LOWER TWO-COLUMN -->
+    <section class="lower">
+      <div>
+        <div class="sec-head">
+          <span class="eyebrow">Academy · Schedule</span>
+          <a href="#" class="link">Full calendar</a>
+        </div>
+
+        <div class="class">
+          <div class="when"><div class="d">21</div><div class="mo">Jul</div></div>
+          <div class="body">
+            <h4>Live Market Session — NY Open</h4>
+            <div class="meta">Trading floor · streaming now</div>
+            <div class="badge-line"><span class="badge live"><span class="dot"></span>Live</span></div>
+          </div>
+          <a href="#" class="btn btn-gold">Join Class</a>
+        </div>
+
+        <div class="class">
+          <div class="when"><div class="d">22</div><div class="mo">Jul</div></div>
+          <div class="body">
+            <h4>London Session Breakdown</h4>
+            <div class="meta">Jul 22, 2026 · 3:00 AM EST</div>
+            <div class="badge-line"><span class="badge">Upcoming</span></div>
+          </div>
+          <a href="#" class="btn btn-outline">Remind me</a>
+        </div>
+
+        <div class="class">
+          <div class="when"><div class="d">23</div><div class="mo">Jul</div></div>
+          <div class="body">
+            <h4>Risk Management Masterclass</h4>
+            <div class="meta">Jul 23, 2026 · 7:00 PM EST</div>
+            <div class="badge-line"><span class="badge">Upcoming</span></div>
+          </div>
+          <a href="#" class="btn btn-outline">Remind me</a>
+        </div>
+      </div>
+
+      <div>
+        <div class="sec-head"><span class="eyebrow">Payout Wallet</span></div>
+        <div class="wallet">
+          <span class="eyebrow" style="color:var(--ink-3)">Estimated payout</span>
+          <div class="amt">$5,797.80 <small>USDC</small></div>
+          <div class="chain">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7l-9-5Z"/><path d="M12 22V12M3 7l9 5 9-5"/></svg>
+            <span class="net">Network · <b>Polygon</b></span>
+          </div>
+          <div class="addr">
+            <span class="k">0x7C4d…9E2a</span>
+            <span class="pill">Verified</span>
+          </div>
+          <div class="referrals-note">
+            <b>7 of 9</b> active direct referrals &nbsp;·&nbsp; <b>2,560</b> total team, 2,415 active. Structure 3 fills at 231 of 1,092 members.
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>
