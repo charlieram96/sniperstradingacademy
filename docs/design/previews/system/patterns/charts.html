@@ -1,0 +1,447 @@
+<!-- @dsCard group="Patterns" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Charts</title>
+<style>
+:root {
+  /* Base */
+  --bg:#05080F; --surface:#0A0F1C; --surface-raised:#101728; --surface-overlay:#151D33;
+  --ink:#E6EAF2; --ink-2:#8B95A9; --ink-3:#525D73;
+  --border:rgba(255,255,255,0.10); --border-subtle:rgba(255,255,255,0.05); --border-strong:rgba(255,255,255,0.16);
+  /* Brand gold ramp */
+  --gold-50:#FDF8ED; --gold-100:#F9ECCC; --gold-200:#F0D48A; --gold-300:#E5C06A;
+  --gold-400:#D4A853; --gold-500:#C49B3E; --gold-600:#A67E2E; --gold-700:#856420; --gold-800:#6B4D18;
+  --gold:var(--gold-400); --ring:rgba(212,168,83,0.55);
+  /* Status */
+  --emerald:#34D399; --emerald-dim:rgba(52,211,153,0.12);
+  --red:#F87171; --red-dim:rgba(248,113,113,0.12);
+  --amber:#FBBF24; --amber-dim:rgba(251,191,36,0.12);
+  --blue:#60A5FA; --blue-dim:rgba(96,165,250,0.12);
+  /* Charts (series order) */
+  --chart-1:var(--gold-400); --chart-2:#60A5FA; --chart-3:#34D399; --chart-4:#A78BFA; --chart-5:#8B95A9;
+  /* Spacing (4px grid) */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px; --sp-10:40px; --sp-12:48px; --sp-16:64px;
+  /* Radius */
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-pill:999px;
+  /* Shadows */
+  --sh-sm:0 1px 2px rgba(0,0,0,0.35);
+  --sh-md:0 4px 12px rgba(0,0,0,0.28),0 1px 3px rgba(0,0,0,0.3);
+  --sh-lg:0 12px 32px rgba(0,0,0,0.35),0 4px 8px rgba(0,0,0,0.25);
+  --sh-gold:0 2px 12px rgba(212,168,83,0.18);
+  /* Type scale */
+  --t-xs:11px; --t-sm:12px; --t-base:13px; --t-md:14px; --t-lg:16px; --t-xl:18px; --t-2xl:22px; --t-3xl:28px; --t-4xl:36px;
+  /* Motion */
+  --dur-micro:120ms; --dur-std:200ms; --dur-enter:320ms;
+  --ease-out:cubic-bezier(0.2,0.8,0.2,1); --ease-spring:cubic-bezier(0.34,1.4,0.44,1);
+}
+:root{ --sans:-apple-system,"SF Pro Text",Inter,"Segoe UI",sans-serif; --mono:ui-monospace,"SF Mono","Geist Mono",Menlo,monospace; }
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:var(--t-base);line-height:1.45;min-height:100vh;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.014) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.014) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.label{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3)}
+
+/* ---------- page frame ---------- */
+.wrap{max-width:1200px;margin:0 auto;padding:40px 40px 80px}
+.masthead{display:flex;align-items:center;gap:14px;padding-bottom:28px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.masthead .brand-name{font-size:15px;font-weight:600;line-height:1.1;color:var(--ink)}
+.masthead .brand-name span{display:block;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-3);margin-top:3px}
+.masthead .tag{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.masthead .tag b{color:var(--gold);font-weight:600}
+.page-title{margin-top:26px}
+.page-title h1{font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1;color:var(--ink)}
+.page-title p{color:var(--ink-2);font-size:13px;margin-top:9px;max-width:660px;line-height:1.55}
+
+section{margin-top:44px}
+.sec-title{display:flex;align-items:baseline;gap:12px;margin-bottom:20px}
+.sec-title .n{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--gold);letter-spacing:0.04em}
+.sec-title h2{font-size:16px;font-weight:600;letter-spacing:-0.01em;color:var(--ink)}
+.sec-title .line{flex:1;height:1px;background:var(--border)}
+.sec-title .note{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:0.02em}
+.sub-label{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md)}
+
+.delta{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;font-variant-numeric:tabular-nums;letter-spacing:-0.01em;white-space:nowrap}
+.delta.up{color:var(--emerald);background:var(--emerald-dim);border:1px solid rgba(52,211,153,0.22)}
+
+/* shared svg text */
+.axis-t{font-family:var(--mono);font-size:9.5px;fill:var(--ink-3);letter-spacing:0.04em}
+
+/* anat notes */
+.anat-note{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--border-subtle)}
+.anat-note:last-child{border-bottom:0}
+.anat-note .k{flex:0 0 18px;display:flex}
+.anat-note .d{font-size:11.5px;color:var(--ink-2);line-height:1.5}
+.anat-note .d b{color:var(--ink);font-weight:600}
+.anat-note .d code{font-family:var(--mono);font-size:11px;color:var(--gold)}
+.anat-tag{display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;font-weight:600;color:#0A0F1C;background:var(--gold);border-radius:3px;width:15px;height:15px}
+.anat-tag.pin{position:absolute}
+
+/* ---------- 01 sparkline spec ---------- */
+.spark-cols{display:grid;grid-template-columns:1fr 300px;gap:36px;align-items:center;padding:30px 28px}
+.spark-stage{background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--r-md);padding:26px 28px;display:flex;flex-direction:column;align-items:center;gap:16px}
+.spark-svg{width:280px;height:84px;display:block}
+.spark-rule{font-family:var(--mono);font-size:10.5px;color:var(--ink-2);letter-spacing:0.02em;text-align:center;font-variant-numeric:tabular-nums}
+.spark-rule b{color:var(--gold)}
+
+/* ---------- 02 area chart ---------- */
+.chart-card{padding:20px 22px 16px}
+.chart-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:6px}
+.chart-head .hv{font-family:var(--mono);font-size:22px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-0.02em;margin-top:8px}
+.chart-head .cap{display:flex;align-items:center;gap:9px;margin-top:8px}
+.chart-head .cap .note{font-family:var(--mono);font-size:11px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.chart-legend{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10.5px;color:var(--ink-2);letter-spacing:0.04em}
+.chart-legend .sw{width:16px;height:3px;border-radius:2px;background:var(--gold)}
+.area-svg{width:100%;height:auto;display:block;margin-top:4px}
+
+/* ---------- 03 bar chart ---------- */
+.bar-svg{width:100%;height:auto;display:block}
+.svg-tt{font-family:var(--mono);font-size:11px;fill:var(--ink);font-weight:600}
+
+/* ---------- 04 donut ---------- */
+.donut-cols{display:grid;grid-template-columns:200px 1fr;gap:36px;align-items:center;padding:28px}
+.donut-svg{width:180px;height:180px;display:block}
+.donut-v{font-family:var(--mono);font-size:24px;font-weight:600;fill:var(--gold-100);font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+.donut-k{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;fill:var(--ink-3)}
+.dlegend{display:flex;flex-direction:column;gap:2px}
+.dl-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border-subtle)}
+.dl-row:last-child{border-bottom:0}
+.dl-row i{width:12px;height:12px;border-radius:3px;flex:0 0 auto}
+.dl-row .nm{flex:1;font-size:12.5px;color:var(--ink);font-weight:500}
+.dl-row .ct{font-family:var(--mono);font-size:12px;color:var(--ink);font-variant-numeric:tabular-nums}
+.dl-row .pc{font-family:var(--mono);font-size:11px;color:var(--ink-3);font-variant-numeric:tabular-nums;width:52px;text-align:right}
+
+/* ---------- 05 chart-card anatomy ---------- */
+.anat{display:grid;grid-template-columns:1fr 300px;gap:36px;align-items:center;padding:30px 28px}
+.spec-cc{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--sh-sm);padding:var(--sp-5)}
+.spec-cc .cc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.spec-cc .cc-title{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3)}
+.spec-cc .cc-val{font-family:var(--mono);font-size:26px;font-weight:600;color:var(--gold-100);letter-spacing:-0.02em;line-height:1;margin-top:12px;font-variant-numeric:tabular-nums}
+.spec-cc .cc-chart{margin-top:14px}
+.spec-cc .cc-foot{display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border-subtle)}
+.spec-cc .cc-foot .fn{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.mini-area{width:100%;height:64px;display:block}
+
+/* ---------- 06 do / don't ---------- */
+.dd-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.dd{border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);padding:20px;display:flex;flex-direction:column}
+.dd-head{display:flex;align-items:center;gap:9px}
+.dd-ico{width:22px;height:22px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.dd.dont{border-color:rgba(248,113,113,0.28)}
+.dd.dont .dd-ico{color:var(--red);background:var(--red-dim)}
+.dd.do{border-color:rgba(52,211,153,0.28)}
+.dd.do .dd-ico{color:var(--emerald);background:var(--emerald-dim)}
+.dd-head .t{font-size:13px;font-weight:600;color:var(--ink);letter-spacing:0.01em}
+.dd-stage{height:88px;border:1px solid var(--border-subtle);border-radius:var(--r-sm);background:var(--surface-raised);margin-top:14px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.dd-list{list-style:none;margin-top:14px;display:flex;flex-direction:column;gap:9px}
+.dd-list li{display:flex;gap:9px;font-size:12px;color:var(--ink-2);line-height:1.5}
+.dd-list li svg{flex:0 0 auto;margin-top:2px}
+.dd-list li .tx{flex:1;min-width:0}
+.dd-list li b{color:var(--ink);font-weight:600}
+.dd.dont li svg{color:var(--red)}
+.dd.do li svg{color:var(--emerald)}
+.dd-list li code{font-family:var(--mono);font-size:11px;color:var(--gold)}
+.swatches{display:inline-flex;gap:4px}
+.swatches i{width:11px;height:22px;border-radius:2px}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="11.5" stroke="#D4A853" stroke-width="1.5"/>
+      <circle cx="16" cy="16" r="3" stroke="#D4A853" stroke-width="1.5"/>
+      <path d="M16 1.5V8M16 24v6.5M1.5 16H8M24 16h6.5" stroke="#D4A853" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <div class="brand-name">Snipers<span>Trading Academy</span></div>
+    <div class="tag">Patterns · <b>Charts</b></div>
+  </div>
+
+  <div class="page-title">
+    <h1>Charts</h1>
+    <p>The four chart forms the system draws — sparkline, area, bar and donut — plus the card they live in and the rules that keep them honest. Gold is the lead series; supporting series step through the chart palette. Gridlines stay at <code style="font-family:var(--mono);color:var(--gold);font-size:12px">--border-subtle</code>, and every stroke and endpoint dot is computed to sit inside its viewBox.</p>
+  </div>
+
+  <!-- 01 SPARKLINE SPEC -->
+  <section>
+    <div class="sec-title"><span class="n">01</span><h2>Sparkline</h2><span class="line"></span><span class="note">120 × 36 · 4px right margin</span></div>
+    <div class="card spark-cols">
+      <div class="spark-stage">
+        <svg class="spark-svg" viewBox="0 0 120 36" fill="none" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Six-month pool sparkline rising from 31.2k to 48.3k">
+          <defs>
+            <linearGradient id="spk" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#D4A853" stop-opacity="0.40"/>
+              <stop offset="1" stop-color="#D4A853" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <!-- viewBox frame + plot-end guide: the 4px right margin is the gap between the guide and the frame -->
+          <rect x="0.5" y="0.5" width="119" height="35" rx="3" fill="none" stroke="rgba(255,255,255,0.10)" stroke-dasharray="3 3"/>
+          <line x1="116" y1="2" x2="116" y2="34" stroke="rgba(255,255,255,0.16)" stroke-width="1" stroke-dasharray="2 3"/>
+          <!-- series -->
+          <path d="M4,31 L26.4,25.53 L48.8,20.51 L71.2,16.25 L93.6,10.63 L116,5 L116,36 L4,36 Z" fill="url(#spk)"/>
+          <path d="M4,31 L26.4,25.53 L48.8,20.51 L71.2,16.25 L93.6,10.63 L116,5" stroke="#E8C583" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="116" cy="5" r="3" fill="#E8C583" stroke="#05080F" stroke-width="1.5"/>
+        </svg>
+        <div class="spark-rule">viewBox <b>120 × 36</b> · plot ends at x=116 · <b>4px</b> right margin<br>endpoint dot Ø6 reaches x=119.75 — inside the frame</div>
+      </div>
+      <div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">1</span></span><span class="d"><b>Fixed viewBox</b> — <code>120 × 36</code>, no axes or labels. A sparkline is a shape, not a chart; it rides inline in stat tiles.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">2</span></span><span class="d"><b>Right-margin rule</b> — the line stops at x=116 so the <code>4px</code> gap holds the endpoint dot; the dot never clips the frame.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">3</span></span><span class="d"><b>Endpoint dot</b> — Ø6 gold marker on the last point, ringed in <code>--bg</code> so it reads against the fill.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">4</span></span><span class="d"><b>Round caps</b> — 1.5px stroke, round linecap and linejoin; the gold gradient fades to zero at the baseline.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 AREA CHART -->
+  <section>
+    <div class="sec-title"><span class="n">02</span><h2>Area chart</h2><span class="line"></span><span class="note">team pool · 6 months · gridlines + gold gradient</span></div>
+    <div class="card chart-card">
+      <div class="chart-head">
+        <div>
+          <span class="label">Team pool — last 6 months</span>
+          <div class="hv">$48,315.00</div>
+          <div class="cap"><span class="delta up">▲ 8.3% MoM</span><span class="note">+$17,115 since Feb</span></div>
+        </div>
+        <div class="chart-legend"><span class="sw"></span>Monthly pool (USDC)</div>
+      </div>
+      <svg class="area-svg" viewBox="0 0 560 224" fill="none" preserveAspectRatio="none" role="img" aria-label="Team pool growth over six months, from 31.2k in February to 48.3k in July">
+        <defs>
+          <linearGradient id="area1" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#D4A853" stop-opacity="0.30"/>
+            <stop offset="1" stop-color="#D4A853" stop-opacity="0.01"/>
+          </linearGradient>
+        </defs>
+        <!-- gridlines at --border-subtle -->
+        <g stroke="rgba(255,255,255,0.05)" stroke-width="1">
+          <line x1="44" y1="16" x2="544" y2="16"/>
+          <line x1="44" y1="56" x2="544" y2="56"/>
+          <line x1="44" y1="96" x2="544" y2="96"/>
+          <line x1="44" y1="136" x2="544" y2="136"/>
+          <line x1="44" y1="176" x2="544" y2="176"/>
+        </g>
+        <!-- y axis labels -->
+        <g class="axis-t" text-anchor="end">
+          <text x="36" y="19">50k</text>
+          <text x="36" y="59">45k</text>
+          <text x="36" y="99">40k</text>
+          <text x="36" y="139">35k</text>
+          <text x="36" y="179">30k</text>
+        </g>
+        <!-- area + line -->
+        <path d="M44,166.4 L144,137.6 L244,111.2 L344,88.8 L444,59.2 L544,29.6 L544,192 L44,192 Z" fill="url(#area1)"/>
+        <path d="M44,166.4 L144,137.6 L244,111.2 L344,88.8 L444,59.2 L544,29.6" stroke="#D4A853" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- points -->
+        <g fill="#05080F" stroke="#D4A853" stroke-width="1.5">
+          <circle cx="44" cy="166.4" r="3"/><circle cx="144" cy="137.6" r="3"/><circle cx="244" cy="111.2" r="3"/><circle cx="344" cy="88.8" r="3"/><circle cx="444" cy="59.2" r="3"/>
+        </g>
+        <circle cx="544" cy="29.6" r="4" fill="#E8C583" stroke="#05080F" stroke-width="1.5"/>
+        <!-- x axis labels -->
+        <g class="axis-t" text-anchor="middle">
+          <text x="44" y="212">Feb</text>
+          <text x="144" y="212">Mar</text>
+          <text x="244" y="212">Apr</text>
+          <text x="344" y="212">May</text>
+          <text x="444" y="212">Jun</text>
+          <text x="544" y="212">Jul</text>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <!-- 03 BAR CHART -->
+  <section>
+    <div class="sec-title"><span class="n">03</span><h2>Bar chart</h2><span class="line"></span><span class="note">referrals by month · hover on Jun</span></div>
+    <div class="card chart-card">
+      <div class="chart-head">
+        <div>
+          <span class="label">Referrals by month</span>
+          <div class="hv">27 <span style="font-family:var(--sans);font-size:13px;color:var(--ink-3);font-weight:500">Feb–Jul</span></div>
+          <div class="cap"><span class="delta up">▲ 2 vs May</span><span class="note">7 in July · best month</span></div>
+        </div>
+        <div class="chart-legend"><span class="sw"></span>New referrals</div>
+      </div>
+      <svg class="bar-svg" viewBox="0 0 560 224" fill="none" role="img" aria-label="New referrals by month: 2 in February, 4 March, 3 April, 6 May, 5 June, 7 July">
+        <!-- gridlines at --border-subtle; baseline stronger -->
+        <g stroke="rgba(255,255,255,0.05)" stroke-width="1">
+          <line x1="44" y1="16" x2="544" y2="16"/>
+          <line x1="44" y1="60" x2="544" y2="60"/>
+          <line x1="44" y1="104" x2="544" y2="104"/>
+          <line x1="44" y1="148" x2="544" y2="148"/>
+        </g>
+        <line x1="44" y1="192" x2="544" y2="192" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+        <!-- y axis labels -->
+        <g class="axis-t" text-anchor="end">
+          <text x="36" y="19">8</text>
+          <text x="36" y="63">6</text>
+          <text x="36" y="107">4</text>
+          <text x="36" y="151">2</text>
+          <text x="36" y="195">0</text>
+        </g>
+        <!-- bars (gold), Jun highlighted -->
+        <g fill="#D4A853">
+          <path d="M66,192 L66,152 Q66,148 70,148 L108,148 Q112,148 112,152 L112,192 Z"/>
+          <path d="M148,192 L148,108 Q148,104 152,104 L190,104 Q194,104 194,108 L194,192 Z"/>
+          <path d="M230,192 L230,130 Q230,126 234,126 L272,126 Q276,126 276,130 L276,192 Z"/>
+          <path d="M312,192 L312,64 Q312,60 316,60 L354,60 Q358,60 358,64 L358,192 Z"/>
+          <path d="M476,192 L476,42 Q476,38 480,38 L518,38 Q522,38 522,42 L522,192 Z"/>
+        </g>
+        <!-- Jun bar (hover state) -->
+        <path d="M394,192 L394,86 Q394,82 398,82 L436,82 Q440,82 440,86 L440,192 Z" fill="#E8C583"/>
+        <rect x="393" y="82" width="47" height="110" fill="rgba(212,168,83,0.10)"/>
+        <!-- x axis labels -->
+        <g class="axis-t" text-anchor="middle">
+          <text x="89" y="212">Feb</text>
+          <text x="171" y="212">Mar</text>
+          <text x="253" y="212">Apr</text>
+          <text x="335" y="212">May</text>
+          <text x="417" y="212" fill="#D4A853">Jun</text>
+          <text x="499" y="212">Jul</text>
+        </g>
+        <!-- tooltip on Jun -->
+        <g>
+          <rect x="382" y="46" width="70" height="24" rx="6" fill="#151D33" stroke="rgba(255,255,255,0.16)" stroke-width="1"/>
+          <path d="M411,70 L423,70 L417,77 Z" fill="#151D33"/>
+          <path d="M411,70.5 L417,77 L423,70.5" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="1"/>
+          <text x="417" y="62" text-anchor="middle" class="svg-tt">Jun · 5</text>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <!-- 04 DONUT -->
+  <section>
+    <div class="sec-title"><span class="n">04</span><h2>Donut</h2><span class="line"></span><span class="note">team by structure · center total</span></div>
+    <div class="card donut-cols">
+      <svg class="donut-svg" viewBox="0 0 180 180" role="img" aria-label="Team by structure: Structure 1 and 2 filled at 1,092 each, Structure 3 at 231, 861 seats unfilled; 2,415 active of 3,276 capacity">
+        <g transform="rotate(-90 90 90)" fill="none" stroke-width="22">
+          <circle cx="90" cy="90" r="64" pathLength="100" stroke="#D4A853"  stroke-dasharray="33.333 66.667" stroke-dashoffset="0"/>
+          <circle cx="90" cy="90" r="64" pathLength="100" stroke="#60A5FA"  stroke-dasharray="33.333 66.667" stroke-dashoffset="-33.333"/>
+          <circle cx="90" cy="90" r="64" pathLength="100" stroke="#34D399"  stroke-dasharray="7.051 92.949"  stroke-dashoffset="-66.667"/>
+          <circle cx="90" cy="90" r="64" pathLength="100" stroke="#8B95A9"  stroke-dasharray="26.282 73.718" stroke-dashoffset="-73.718"/>
+        </g>
+        <text x="90" y="87" text-anchor="middle" class="donut-v">2,415</text>
+        <text x="90" y="105" text-anchor="middle" class="donut-k">active</text>
+      </svg>
+      <div class="dlegend">
+        <div class="dl-row"><i style="background:#D4A853"></i><span class="nm">Structure 1</span><span class="ct">1,092</span><span class="pc">33.3%</span></div>
+        <div class="dl-row"><i style="background:#60A5FA"></i><span class="nm">Structure 2</span><span class="ct">1,092</span><span class="pc">33.3%</span></div>
+        <div class="dl-row"><i style="background:#34D399"></i><span class="nm">Structure 3</span><span class="ct">231</span><span class="pc">7.1%</span></div>
+        <div class="dl-row"><i style="background:#8B95A9"></i><span class="nm">Unfilled seats</span><span class="ct">861</span><span class="pc">26.3%</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 CHART-CARD ANATOMY -->
+  <section>
+    <div class="sec-title"><span class="n">05</span><h2>Chart-card anatomy</h2><span class="line"></span><span class="note">title · value · delta · chart · footnote</span></div>
+    <div class="card anat">
+      <div class="spec-cc">
+        <span class="anat-tag pin" style="bottom:44px;left:-8px">4</span>
+        <div class="cc-top">
+          <span class="cc-title">Team pool · monthly <span style="margin-left:4px"><span class="anat-tag" style="width:14px;height:14px">1</span></span></span>
+          <span class="delta up">▲ 8.3% MoM <span style="margin-left:2px"><span class="anat-tag" style="width:14px;height:14px">3</span></span></span>
+        </div>
+        <div class="cc-val">$48,315.00 <span style="margin-left:2px;vertical-align:6px"><span class="anat-tag" style="width:14px;height:14px">2</span></span></div>
+        <div class="cc-chart">
+          <svg class="mini-area" viewBox="0 0 300 64" fill="none" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="mini" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#D4A853" stop-opacity="0.30"/>
+                <stop offset="1" stop-color="#D4A853" stop-opacity="0.01"/>
+              </linearGradient>
+            </defs>
+            <path d="M6,54 L64.8,44.8 L123.6,36.4 L182.4,29.2 L241.2,19.6 L292,10 L292,64 L6,64 Z" fill="url(#mini)"/>
+            <path d="M6,54 L64.8,44.8 L123.6,36.4 L182.4,29.2 L241.2,19.6 L292,10" stroke="#D4A853" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="292" cy="10" r="3.5" fill="#E8C583" stroke="#05080F" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <div class="cc-foot"><span class="fn">Feb–Jul 2026 · updated Jul 21 <span style="margin-left:2px"><span class="anat-tag" style="width:14px;height:14px">5</span></span></span></div>
+      </div>
+      <div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">1</span></span><span class="d"><b>Title</b> — 10.5px uppercase mono, <code>--ink-3</code>; names the metric and its cadence.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">2</span></span><span class="d"><b>Value</b> — 26px mono tabular in <code>--gold-100</code>; the one figure the card exists to show.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">3</span></span><span class="d"><b>Delta chip</b> — sanctioned <code>▲ 8.3% MoM</code>, emerald on <code>--emerald-dim</code>, top-right.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">4</span></span><span class="d"><b>Chart</b> — the visual body; gold gradient area, endpoint dot with right-margin headroom.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">5</span></span><span class="d"><b>Footnote</b> — mono <code>--ink-3</code> range and freshness stamp, above a <code>--border-subtle</code> rule.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 DO / DON'T -->
+  <section>
+    <div class="sec-title"><span class="n">06</span><h2>Do &amp; don't</h2><span class="line"></span><span class="note">flat marks · ≤5 series · subtle gridlines</span></div>
+    <div class="dd-grid">
+      <div class="dd dont">
+        <div class="dd-head"><span class="dd-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span><span class="t">Don't</span></div>
+        <div class="dd-stage">
+          <svg width="150" height="60" viewBox="0 0 150 60" fill="none" aria-hidden="true">
+            <!-- faux-3D extruded bars: the anti-pattern -->
+            <g opacity="0.85">
+              <path d="M28,50 L28,28 L40,22 L40,44 Z" fill="#856420"/>
+              <path d="M16,50 L16,28 L28,28 L28,50 Z" fill="#D4A853"/>
+              <path d="M16,28 L28,22 L40,22 L28,28 Z" fill="#F0D48A"/>
+              <path d="M70,50 L70,18 L82,12 L82,44 Z" fill="#856420"/>
+              <path d="M58,50 L58,18 L70,18 L70,50 Z" fill="#D4A853"/>
+              <path d="M58,18 L70,12 L82,12 L70,18 Z" fill="#F0D48A"/>
+              <path d="M112,50 L112,34 L124,28 L124,44 Z" fill="#856420"/>
+              <path d="M100,50 L100,34 L112,34 L112,50 Z" fill="#D4A853"/>
+              <path d="M100,34 L112,28 L124,28 L112,34 Z" fill="#F0D48A"/>
+            </g>
+            <line x1="4" y1="54" x2="146" y2="54" stroke="rgba(255,255,255,0.16)" stroke-width="1"/>
+          </svg>
+        </div>
+        <ul class="dd-list">
+          <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg><span class="tx">No 3D, extrusion or drop-shadowed marks — depth distorts the values.</span></li>
+          <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg><span class="tx">Never exceed <b>5 series</b> — the palette stops at <code>--chart-5</code> for a reason.<br><span class="swatches" style="margin-top:8px"><i style="background:var(--chart-1)"></i><i style="background:var(--chart-2)"></i><i style="background:var(--chart-3)"></i><i style="background:var(--chart-4)"></i><i style="background:var(--chart-5)"></i><i style="background:#5B6478"></i><i style="background:#3E4658"></i></span></span></li>
+          <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg><span class="tx">No heavy gridlines competing with the data ink.</span></li>
+        </ul>
+      </div>
+      <div class="dd do">
+        <div class="dd-head"><span class="dd-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="t">Do</span></div>
+        <div class="dd-stage">
+          <svg width="150" height="60" viewBox="0 0 150 60" fill="none" aria-hidden="true">
+            <!-- subtle gridlines -->
+            <g stroke="rgba(255,255,255,0.05)" stroke-width="1">
+              <line x1="10" y1="14" x2="140" y2="14"/>
+              <line x1="10" y1="30" x2="140" y2="30"/>
+            </g>
+            <line x1="10" y1="46" x2="140" y2="46" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+            <!-- flat bars -->
+            <g fill="#D4A853">
+              <rect x="22" y="26" width="14" height="20" rx="2"/>
+              <rect x="50" y="14" width="14" height="32" rx="2"/>
+              <rect x="78" y="20" width="14" height="26" rx="2"/>
+              <rect x="106" y="10" width="14" height="36" rx="2"/>
+            </g>
+          </svg>
+        </div>
+        <ul class="dd-list">
+          <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span class="tx">Flat marks on a single plane — the height <b>is</b> the value.</span></li>
+          <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span class="tx">Up to <b>5 series</b> straight from the chart palette.<br><span class="swatches" style="margin-top:8px"><i style="background:var(--chart-1)"></i><i style="background:var(--chart-2)"></i><i style="background:var(--chart-3)"></i><i style="background:var(--chart-4)"></i><i style="background:var(--chart-5)"></i></span></span></li>
+          <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span class="tx">Gridlines held at <code>--border-subtle</code>; the baseline one step up at <code>--border</code>.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,347 @@
+<!-- @dsCard group="Patterns" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Tables</title>
+<style>
+:root {
+  /* Base */
+  --bg:#05080F; --surface:#0A0F1C; --surface-raised:#101728; --surface-overlay:#151D33;
+  --ink:#E6EAF2; --ink-2:#8B95A9; --ink-3:#525D73;
+  --border:rgba(255,255,255,0.10); --border-subtle:rgba(255,255,255,0.05); --border-strong:rgba(255,255,255,0.16);
+  /* Brand gold ramp */
+  --gold-50:#FDF8ED; --gold-100:#F9ECCC; --gold-200:#F0D48A; --gold-300:#E5C06A;
+  --gold-400:#D4A853; --gold-500:#C49B3E; --gold-600:#A67E2E; --gold-700:#856420; --gold-800:#6B4D18;
+  --gold:var(--gold-400); --ring:rgba(212,168,83,0.55);
+  /* Status */
+  --emerald:#34D399; --emerald-dim:rgba(52,211,153,0.12);
+  --red:#F87171; --red-dim:rgba(248,113,113,0.12);
+  --amber:#FBBF24; --amber-dim:rgba(251,191,36,0.12);
+  --blue:#60A5FA; --blue-dim:rgba(96,165,250,0.12);
+  /* Charts (series order) */
+  --chart-1:var(--gold-400); --chart-2:#60A5FA; --chart-3:#34D399; --chart-4:#A78BFA; --chart-5:#8B95A9;
+  /* Spacing (4px grid) */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px; --sp-10:40px; --sp-12:48px; --sp-16:64px;
+  /* Radius */
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-pill:999px;
+  /* Shadows */
+  --sh-sm:0 1px 2px rgba(0,0,0,0.35);
+  --sh-md:0 4px 12px rgba(0,0,0,0.28),0 1px 3px rgba(0,0,0,0.3);
+  --sh-lg:0 12px 32px rgba(0,0,0,0.35),0 4px 8px rgba(0,0,0,0.25);
+  --sh-gold:0 2px 12px rgba(212,168,83,0.18);
+  /* Type scale */
+  --t-xs:11px; --t-sm:12px; --t-base:13px; --t-md:14px; --t-lg:16px; --t-xl:18px; --t-2xl:22px; --t-3xl:28px; --t-4xl:36px;
+  /* Motion */
+  --dur-micro:120ms; --dur-std:200ms; --dur-enter:320ms;
+  --ease-out:cubic-bezier(0.2,0.8,0.2,1); --ease-spring:cubic-bezier(0.34,1.4,0.44,1);
+}
+:root{ --sans:-apple-system,"SF Pro Text",Inter,"Segoe UI",sans-serif; --mono:ui-monospace,"SF Mono","Geist Mono",Menlo,monospace; }
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:var(--t-base);line-height:1.45;min-height:100vh;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.014) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.014) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.label{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3)}
+
+/* ---------- page frame ---------- */
+.wrap{max-width:1200px;margin:0 auto;padding:40px 40px 80px}
+.masthead{display:flex;align-items:center;gap:14px;padding-bottom:28px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.masthead .brand-name{font-size:15px;font-weight:600;line-height:1.1;color:var(--ink)}
+.masthead .brand-name span{display:block;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-3);margin-top:3px}
+.masthead .tag{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.masthead .tag b{color:var(--gold);font-weight:600}
+.page-title{margin-top:26px}
+.page-title h1{font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1;color:var(--ink)}
+.page-title p{color:var(--ink-2);font-size:13px;margin-top:9px;max-width:660px;line-height:1.55}
+
+section{margin-top:44px}
+.sec-title{display:flex;align-items:baseline;gap:12px;margin-bottom:20px}
+.sec-title .n{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--gold);letter-spacing:0.04em}
+.sec-title h2{font-size:16px;font-weight:600;letter-spacing:-0.01em;color:var(--ink)}
+.sec-title .line{flex:1;height:1px;background:var(--border)}
+.sec-title .note{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:0.02em}
+.sub-label{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md)}
+
+/* status caption tag under specimens */
+.stag{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3)}
+.stag i{width:5px;height:5px;border-radius:50%;background:var(--ink-3);flex:0 0 auto}
+.stag.on i{background:var(--gold)}
+.stag.on{color:var(--gold)}
+
+/* ---------- shared: avatars + badges ---------- */
+.avatar{border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-variant-numeric:tabular-nums;background:radial-gradient(120% 120% at 30% 20%,rgba(212,168,83,0.24),rgba(212,168,83,0.10));border:1px solid rgba(212,168,83,0.34);color:var(--gold-100);flex:0 0 auto;width:26px;height:26px;font-size:10px}
+.badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;padding:4px 9px;border-radius:5px;border:1px solid var(--border);color:var(--ink-2);background:var(--surface-raised)}
+.badge .dot{width:5px;height:5px;border-radius:50%;flex:0 0 auto}
+.badge.active{color:var(--emerald);border-color:rgba(52,211,153,0.28);background:var(--emerald-dim)}
+.badge.active .dot{background:var(--emerald)}
+.badge.inactive{color:var(--ink-3);border-color:var(--border)}
+.badge.inactive .dot{background:var(--ink-3)}
+.badge.paid{color:var(--emerald);border-color:rgba(52,211,153,0.28);background:var(--emerald-dim)}
+
+/* ---------- 01 toolbar + dense table ---------- */
+.toolbar{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border)}
+.search{display:flex;align-items:center;gap:9px;flex:0 0 auto;width:260px;background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 11px;color:var(--ink-3)}
+.search input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:var(--ink);font-family:var(--sans);font-size:12.5px}
+.search input::placeholder{color:var(--ink-3)}
+.fchip{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.02em;color:var(--gold);background:rgba(212,168,83,0.10);border:1px solid rgba(212,168,83,0.30);border-radius:var(--r-pill);padding:6px 8px 6px 11px;font-variant-numeric:tabular-nums}
+.fchip button{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:0;background:rgba(212,168,83,0.16);color:var(--gold);cursor:pointer}
+.export{margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:0.01em;padding:8px 13px;border-radius:var(--r-sm);background:var(--gold);color:#0A0F1C;border:1px solid transparent;box-shadow:var(--sh-gold);cursor:pointer}
+
+table{width:100%;border-collapse:collapse}
+.dtable thead th{font-family:var(--mono);font-size:var(--t-xs);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:0 16px;height:38px;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:middle}
+.dtable thead th.r{text-align:right}
+.sort{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.sort .arw{display:inline-flex;flex-direction:column;color:var(--ink-3);line-height:0}
+.sort.asc .arw .up,.sort.desc .arw .dn{color:var(--gold)}
+.sort.asc,.sort.desc{color:var(--ink)}
+th.r .sort{flex-direction:row-reverse}
+.dtable tbody td{height:40px;padding:0 16px;border-bottom:1px solid var(--border-subtle);font-size:12.5px;color:var(--ink-2);vertical-align:middle;white-space:nowrap}
+.dtable tbody tr:last-child td{border-bottom:0}
+.dtable tbody tr:hover td{background:rgba(255,255,255,0.02)}
+.dtable tbody tr.is-hover td{background:rgba(255,255,255,0.02)}
+.dtable tbody tr.selected td{background:linear-gradient(0deg,rgba(212,168,83,0.08),rgba(212,168,83,0.08)),var(--surface)}
+.dtable tbody tr.selected td:first-child{box-shadow:inset 2px 0 0 var(--gold)}
+.who{display:inline-flex;align-items:center;gap:11px}
+.who b{font-weight:600;font-size:12.5px;color:var(--ink)}
+.td-struct{font-family:var(--mono);color:var(--ink);font-variant-numeric:tabular-nums;font-size:11.5px}
+.td-date{text-align:right;font-family:var(--mono);color:var(--ink-2);font-variant-numeric:tabular-nums;font-size:11.5px;letter-spacing:-0.01em}
+.legend-row{display:flex;flex-wrap:wrap;gap:20px;margin-top:14px}
+
+/* ---------- 02 payout table + footer total ---------- */
+.ptable thead th{font-family:var(--mono);font-size:var(--t-xs);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:0 20px;height:38px;border-bottom:1px solid var(--border);vertical-align:middle}
+.ptable thead th.r{text-align:right}
+.ptable tbody td{height:44px;padding:0 20px;border-bottom:1px solid var(--border-subtle);font-size:12.5px;color:var(--ink-2);vertical-align:middle}
+.ptable tbody tr:hover td{background:rgba(255,255,255,0.02)}
+.ptable .amt{text-align:right;font-family:var(--mono);color:var(--ink);font-variant-numeric:tabular-nums;font-size:12.5px}
+.ptable .date{font-family:var(--mono);color:var(--ink-2);font-variant-numeric:tabular-nums;font-size:11.5px}
+.ptable .txid{font-family:var(--mono);color:var(--ink-3);font-variant-numeric:tabular-nums;font-size:11px}
+.ptable tfoot td{height:46px;padding:0 20px;border-top:1px solid var(--border);font-size:11px;font-family:var(--mono);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3);vertical-align:middle;background:var(--surface-raised)}
+.ptable tfoot td.total{text-align:right;font-size:14px;letter-spacing:-0.01em;text-transform:none;color:var(--gold-100);font-variant-numeric:tabular-nums}
+
+/* ---------- 03 sortable header states ---------- */
+.sort-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.sort-cell{border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);overflow:hidden}
+.sort-cell .hd{display:flex;align-items:center;justify-content:space-between;height:40px;padding:0 16px;border-bottom:1px solid var(--border-subtle)}
+.sort-cell .hd .th{font-family:var(--mono);font-size:var(--t-xs);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3);display:inline-flex;align-items:center;gap:7px}
+.sort-cell.is-asc .th,.sort-cell.is-desc .th{color:var(--ink)}
+.sort-cell .arw{display:inline-flex;flex-direction:column;color:var(--ink-3);line-height:0}
+.sort-cell.is-asc .up,.sort-cell.is-desc .dn{color:var(--gold)}
+.sort-cell .cap{padding:11px 16px;font-size:11.5px;color:var(--ink-2);line-height:1.5}
+.sort-cell .cap b{color:var(--ink);font-weight:600}
+.sort-cell .cap code{font-family:var(--mono);color:var(--gold);font-size:11px}
+
+/* ---------- 04 mobile collapse ---------- */
+.mob-cols{display:grid;grid-template-columns:auto 1fr;gap:36px;align-items:start;padding:28px}
+.frame{width:360px;flex:0 0 auto;border:1px solid var(--border-strong);border-radius:var(--r-lg);background:var(--surface-raised);box-shadow:var(--sh-md);overflow:hidden}
+.frame-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface)}
+.frame-bar .ttl{font-size:12.5px;font-weight:600;color:var(--ink)}
+.frame-bar .dim{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3);background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--r-pill);padding:3px 9px;font-variant-numeric:tabular-nums}
+.stacked{padding:12px}
+.srow{border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);padding:12px 13px;margin-bottom:10px}
+.srow:last-child{margin-bottom:0}
+.srow.selected{border-color:rgba(212,168,83,0.35);background:linear-gradient(0deg,rgba(212,168,83,0.07),rgba(212,168,83,0.07)),var(--surface)}
+.srow .top{display:flex;align-items:center;gap:11px}
+.srow .top b{flex:1;font-weight:600;font-size:13px;color:var(--ink)}
+.srow .kv{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px;padding-top:11px;border-top:1px solid var(--border-subtle)}
+.srow .kv .cell .k{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3)}
+.srow .kv .cell .v{font-family:var(--mono);font-size:12px;color:var(--ink);margin-top:4px;font-variant-numeric:tabular-nums}
+.mob-notes{display:flex;flex-direction:column}
+.anat-note{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--border-subtle)}
+.anat-note:last-child{border-bottom:0}
+.anat-note .k{flex:0 0 18px;display:flex}
+.anat-note .d{font-size:11.5px;color:var(--ink-2);line-height:1.5}
+.anat-note .d b{color:var(--ink);font-weight:600}
+.anat-note .d code{font-family:var(--mono);font-size:11px;color:var(--gold)}
+.anat-tag{display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;font-weight:600;color:#0A0F1C;background:var(--gold);border-radius:3px;width:15px;height:15px}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="11.5" stroke="#D4A853" stroke-width="1.5"/>
+      <circle cx="16" cy="16" r="3" stroke="#D4A853" stroke-width="1.5"/>
+      <path d="M16 1.5V8M16 24v6.5M1.5 16H8M24 16h6.5" stroke="#D4A853" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <div class="brand-name">Snipers<span>Trading Academy</span></div>
+    <div class="tag">Patterns · <b>Data Tables</b></div>
+  </div>
+
+  <div class="page-title">
+    <h1>Data Tables</h1>
+    <p>How the system renders rows of records — a dense team roster with a working toolbar, a payout ledger that totals its own column, the three sort states a column header can hold, and the rule for collapsing a wide table onto a narrow screen. Numerals are mono and tabular so columns align; dates sit right-flush.</p>
+  </div>
+
+  <!-- 01 TOOLBAR + DENSE TABLE -->
+  <section>
+    <div class="sec-title"><span class="n">01</span><h2>Dense table &amp; toolbar</h2><span class="line"></span><span class="note">40px rows · one selected · hover wash</span></div>
+    <div class="card" style="overflow:hidden">
+      <div class="toolbar">
+        <div class="search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" placeholder="Search team members" aria-label="Search team members">
+        </div>
+        <span class="fchip">Active only <button aria-label="Remove filter"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>
+        <button class="export">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          Export
+        </button>
+      </div>
+      <table class="dtable">
+        <thead>
+          <tr>
+            <th><span class="sort"><span>Member</span></span></th>
+            <th><span class="sort"><span>Structure</span></span></th>
+            <th><span class="sort"><span>Status</span></span></th>
+            <th class="r"><span class="sort desc"><span>Joined</span><span class="arw"><svg class="up" width="9" height="6" viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 5 4-3 4 3"/></svg><svg class="dn" width="9" height="6" viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 3 4 3 4-3"/></svg></span></span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="selected">
+            <td><span class="who"><span class="avatar">MG</span><b>Maria G.</b></span></td>
+            <td><span class="td-struct">S3</span></td>
+            <td><span class="badge active"><span class="dot"></span>Active</span></td>
+            <td class="td-date">Jul 18, 2026</td>
+          </tr>
+          <tr class="is-hover">
+            <td><span class="who"><span class="avatar">JT</span><b>James T.</b></span></td>
+            <td><span class="td-struct">S2</span></td>
+            <td><span class="badge active"><span class="dot"></span>Active</span></td>
+            <td class="td-date">May 2, 2026</td>
+          </tr>
+          <tr>
+            <td><span class="who"><span class="avatar">LK</span><b>Lena K.</b></span></td>
+            <td><span class="td-struct">S1</span></td>
+            <td><span class="badge inactive"><span class="dot"></span>Inactive</span></td>
+            <td class="td-date">Feb 11, 2026</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="legend-row">
+      <span class="stag on"><i></i>Selected · gold wash + left accent (row 1)</span>
+      <span class="stag"><i></i>Hover · rgba(255,255,255,0.02) wash (row 2)</span>
+      <span class="stag"><i></i>Default · resting row (row 3)</span>
+    </div>
+  </section>
+
+  <!-- 02 PAYOUT TABLE + FOOTER TOTAL -->
+  <section>
+    <div class="sec-title"><span class="n">02</span><h2>Payout history · totalled column</h2><span class="line"></span><span class="note">footer sums the amount column</span></div>
+    <div class="card" style="overflow:hidden">
+      <table class="ptable">
+        <thead>
+          <tr>
+            <th style="width:22%">Date</th>
+            <th style="width:22%">Status</th>
+            <th>Transaction</th>
+            <th class="r" style="width:24%">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="date">Jul 1, 2026</td>
+            <td><span class="badge paid"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Paid</span></td>
+            <td class="txid">0x7C4d…9E2a · Polygon</td>
+            <td class="amt">$5,412.00</td>
+          </tr>
+          <tr>
+            <td class="date">Jun 1, 2026</td>
+            <td><span class="badge paid"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Paid</span></td>
+            <td class="txid">0x7C4d…9E2a · Polygon</td>
+            <td class="amt">$4,988.50</td>
+          </tr>
+          <tr>
+            <td class="date">May 1, 2026</td>
+            <td><span class="badge paid"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Paid</span></td>
+            <td class="txid">0x7C4d…9E2a · Polygon</td>
+            <td class="amt">$4,750.25</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3">Total paid · 3 payouts</td>
+            <td class="total">$15,150.75</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </section>
+
+  <!-- 03 SORTABLE HEADER STATES -->
+  <section>
+    <div class="sec-title"><span class="n">03</span><h2>Sortable header states</h2><span class="line"></span><span class="note">default · ascending · descending</span></div>
+    <div class="sort-grid">
+      <div class="sort-cell">
+        <div class="hd"><span class="th">Amount<span class="arw"><svg class="up" width="9" height="6" viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 5 4-3 4 3"/></svg><svg class="dn" width="9" height="6" viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 3 4 3 4-3"/></svg></span></span></div>
+        <div class="cap"><b>Default</b> — unsorted. Both chevrons sit dimmed at <code>--ink-3</code>; the column can sort in either direction.</div>
+      </div>
+      <div class="sort-cell is-asc">
+        <div class="hd"><span class="th">Amount<span class="arw"><svg class="up" width="9" height="6" viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 5 4-3 4 3"/></svg><svg class="dn" width="9" height="6" viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 3 4 3 4-3"/></svg></span></span></div>
+        <div class="cap"><b>Ascending</b> — the up chevron lights <code>--gold</code> and the label goes to <code>--ink</code>. Low values first.</div>
+      </div>
+      <div class="sort-cell is-desc">
+        <div class="hd"><span class="th">Amount<span class="arw"><svg class="up" width="9" height="6" viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 5 4-3 4 3"/></svg><svg class="dn" width="9" height="6" viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 3 4 3 4-3"/></svg></span></span></div>
+        <div class="cap"><b>Descending</b> — the down chevron lights <code>--gold</code>. High values first — the state the <b>Joined</b> column carries above.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 MOBILE COLLAPSE -->
+  <section>
+    <div class="sec-title"><span class="n">04</span><h2>Mobile collapse</h2><span class="line"></span><span class="note">below 400px each row stacks its columns</span></div>
+    <div class="card mob-cols">
+      <div class="frame">
+        <div class="frame-bar"><span class="ttl">Team members</span><span class="dim">360 px</span></div>
+        <div class="stacked">
+          <div class="srow selected">
+            <div class="top"><span class="avatar">MG</span><b>Maria G.</b><span class="badge active"><span class="dot"></span>Active</span></div>
+            <div class="kv">
+              <div class="cell"><div class="k">Structure</div><div class="v">S3</div></div>
+              <div class="cell"><div class="k">Joined</div><div class="v">Jul 18, 2026</div></div>
+            </div>
+          </div>
+          <div class="srow">
+            <div class="top"><span class="avatar">JT</span><b>James T.</b><span class="badge active"><span class="dot"></span>Active</span></div>
+            <div class="kv">
+              <div class="cell"><div class="k">Structure</div><div class="v">S2</div></div>
+              <div class="cell"><div class="k">Joined</div><div class="v">May 2, 2026</div></div>
+            </div>
+          </div>
+          <div class="srow">
+            <div class="top"><span class="avatar">LK</span><b>Lena K.</b><span class="badge inactive"><span class="dot"></span>Inactive</span></div>
+            <div class="kv">
+              <div class="cell"><div class="k">Structure</div><div class="v">S1</div></div>
+              <div class="cell"><div class="k">Joined</div><div class="v">Feb 11, 2026</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mob-notes">
+        <div class="anat-note"><span class="k"><span class="anat-tag">1</span></span><span class="d"><b>Row becomes a card</b> — each record stacks into a bordered <code>--r-sm</code> tile inside a fixed 360px frame; the table never scrolls sideways.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">2</span></span><span class="d"><b>Primary cell leads</b> — avatar, name and status badge ride the top row; they are what a person scans first.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">3</span></span><span class="d"><b>Columns become key/value</b> — the remaining columns drop below as labelled pairs, mono values aligned left.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">4</span></span><span class="d"><b>Selection carries over</b> — the selected record keeps its gold border and wash so state survives the collapse.</span></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
