@@ -140,17 +140,17 @@ section{margin-top:44px}
   background-size:4px 4px;background-color:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);position:relative}
 .anatomy-grid-tag{position:absolute;top:12px;left:14px;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3)}
 /* the stat tile */
-.tile{position:relative;background:var(--surface);border:1px solid var(--gold-400);border-radius:var(--r-md);padding:20px;display:flex;flex-direction:column;min-height:150px;box-shadow:var(--sh-md)}
+.tile{position:relative;background:var(--surface);border:1px solid var(--gold-400);border-radius:var(--r-md);padding:20px;display:flex;flex-direction:column;min-height:148px;box-shadow:var(--sh-md)}
 .tile .t-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .tile .t-head .lbl{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3)}
 .tile .delta{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 7px;border-radius:var(--r-sm);color:var(--emerald);background:var(--emerald-dim);border:1px solid rgba(52,211,153,0.20);font-variant-numeric:tabular-nums}
-.tile .v{font-family:var(--mono);font-size:26px;font-weight:600;line-height:1;letter-spacing:-0.02em;color:var(--gold-300);margin-top:14px;font-variant-numeric:tabular-nums}
+.tile .v{font-family:var(--mono);font-size:26px;font-weight:600;line-height:1;letter-spacing:-0.02em;color:var(--gold-300);margin-top:12px;font-variant-numeric:tabular-nums}
 .tile .v small{font-family:var(--sans);font-size:13px;color:var(--ink-3);font-weight:500}
-.tile .foot{margin-top:auto;padding-top:14px;font-size:11px;color:var(--ink-3)}
+.tile .foot{margin-top:auto;padding-top:16px;font-size:11px;color:var(--ink-3)}
 /* annotation guides */
 .anno{position:absolute;font-family:var(--mono);font-size:9.5px;font-weight:600;color:var(--gold-300);letter-spacing:0.02em;font-variant-numeric:tabular-nums;white-space:nowrap;background:rgba(5,8,15,0.85);padding:1px 5px;border-radius:3px}
 .pad-guide{position:absolute;background:rgba(212,168,83,0.14);border:1px dashed rgba(212,168,83,0.5)}
-.gap-guide{position:absolute;left:20px;right:20px;height:14px;background:rgba(96,165,250,0.12);border-top:1px dashed rgba(96,165,250,0.55);border-bottom:1px dashed rgba(96,165,250,0.55)}
+.gap-guide{position:absolute;left:20px;right:20px;height:12px;background:rgba(96,165,250,0.12);border-top:1px dashed rgba(96,165,250,0.55);border-bottom:1px dashed rgba(96,165,250,0.55)}
 /* anatomy legend */
 .anatomy-legend{display:flex;flex-direction:column;gap:0}
 .anatomy-legend .lg-row{display:flex;align-items:flex-start;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-subtle)}
@@ -226,7 +226,7 @@ section{margin-top:44px}
       </div>
       <div class="type-row">
         <div class="meta"><div class="tok">--t-sm</div><div class="px">12px / 400</div><div class="role">Secondary / meta</div></div>
-        <div class="spec body sz-sm">Estimated payout, updated every 60 seconds on the Polygon network.</div>
+        <div class="spec body sz-sm">Estimated payout · paid monthly in USDC on Polygon.</div>
         <div class="num sz-sm">$5,797.80</div>
       </div>
       <div class="type-row">
@@ -322,7 +322,7 @@ section{margin-top:44px}
           <div class="pad-guide" style="left:0;top:0;bottom:0;width:20px"></div>
           <div class="pad-guide" style="right:0;top:0;bottom:0;width:20px"></div>
           <!-- gap guide between head and value -->
-          <div class="gap-guide" style="top:38px"></div>
+          <div class="gap-guide" style="top:40px"></div>
 
           <div class="t-head"><span class="lbl">Your Commission</span><span class="delta">▲ 8.3%</span></div>
           <div class="v">$5,797<small>.80</small></div>
@@ -330,7 +330,7 @@ section{margin-top:44px}
 
           <!-- annotations -->
           <span class="anno" style="left:-2px;top:-20px">padding 20px = --sp-5</span>
-          <span class="anno" style="left:24px;top:44px">gap 14px</span>
+          <span class="anno" style="left:24px;top:46px">gap 12px (--sp-3)</span>
           <span class="anno" style="right:-2px;bottom:-20px">radius 10px = --r-md</span>
         </div>
       </div>
@@ -338,11 +338,11 @@ section{margin-top:44px}
         <div class="sub-label">Measured anatomy</div>
         <div class="anatomy-legend">
           <div class="lg-row"><span class="k">Padding</span><div><div class="val">20px · --sp-5</div><div class="d">Uniform inset on all four sides of the tile.</div></div></div>
-          <div class="lg-row"><span class="k">Head → value</span><div><div class="val">14px gap</div><div class="d">Space below the label row before the figure. Off-grid by 2px is not allowed; 14 = 3.5 × 4 snaps to the baseline.</div></div></div>
-          <div class="lg-row"><span class="k">Value → foot</span><div><div class="val">14px · padding-top</div><div class="d">Footnote pinned to the base with margin-top:auto.</div></div></div>
-          <div class="lg-row"><span class="k">Radius</span><div><div class="val">10px · --r-md</div><div class="d">Standard card corner.</div></div></div>
+          <div class="lg-row"><span class="k">Head → value</span><div><div class="val">12px · --sp-3</div><div class="d">Gap below the label row before the figure. 12 = 3 × 4, on the grid.</div></div></div>
+          <div class="lg-row"><span class="k">Value → foot</span><div><div class="val">16px · --sp-4</div><div class="d">padding-top on the footnote, pinned to the base with margin-top:auto. 16 = 4 × 4.</div></div></div>
+          <div class="lg-row"><span class="k">Radius</span><div><div class="val">10px · --r-md</div><div class="d">Standard card corner (radius scale is independent of the 4px spacing grid).</div></div></div>
           <div class="lg-row"><span class="k">Border</span><div><div class="val">1px · --border</div><div class="d">Crisp hairline; --gold-400 shown here for the active state.</div></div></div>
-          <div class="lg-row"><span class="k">Min-height</span><div><div class="val">150px</div><div class="d">Keeps a grid of tiles even when figures differ.</div></div></div>
+          <div class="lg-row"><span class="k">Min-height</span><div><div class="val">148px</div><div class="d">Keeps a grid of tiles even when figures differ. 148 = 37 × 4.</div></div></div>
         </div>
         <div class="grid-note">Every offset is a multiple of <b>4px</b>. Spacing tokens compose the rhythm; the mono, tabular figure holds its column as digits change.</div>
       </div>
