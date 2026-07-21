@@ -1,0 +1,488 @@
+<!-- @dsCard group="Components" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forms &amp; Inputs</title>
+<style>
+:root {
+  /* Base */
+  --bg:#05080F; --surface:#0A0F1C; --surface-raised:#101728; --surface-overlay:#151D33;
+  --ink:#E6EAF2; --ink-2:#8B95A9; --ink-3:#525D73;
+  --border:rgba(255,255,255,0.10); --border-subtle:rgba(255,255,255,0.05); --border-strong:rgba(255,255,255,0.16);
+  /* Brand gold ramp */
+  --gold-50:#FDF8ED; --gold-100:#F9ECCC; --gold-200:#F0D48A; --gold-300:#E5C06A;
+  --gold-400:#D4A853; --gold-500:#C49B3E; --gold-600:#A67E2E; --gold-700:#856420; --gold-800:#6B4D18;
+  --gold:var(--gold-400); --ring:rgba(212,168,83,0.55);
+  /* Status */
+  --emerald:#34D399; --emerald-dim:rgba(52,211,153,0.12);
+  --red:#F87171; --red-dim:rgba(248,113,113,0.12);
+  --amber:#FBBF24; --amber-dim:rgba(251,191,36,0.12);
+  --blue:#60A5FA; --blue-dim:rgba(96,165,250,0.12);
+  /* Charts (series order) */
+  --chart-1:var(--gold-400); --chart-2:#60A5FA; --chart-3:#34D399; --chart-4:#A78BFA; --chart-5:#8B95A9;
+  /* Spacing (4px grid) */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px; --sp-10:40px; --sp-12:48px; --sp-16:64px;
+  /* Radius */
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-pill:999px;
+  /* Shadows */
+  --sh-sm:0 1px 2px rgba(0,0,0,0.35);
+  --sh-md:0 4px 12px rgba(0,0,0,0.28),0 1px 3px rgba(0,0,0,0.3);
+  --sh-lg:0 12px 32px rgba(0,0,0,0.35),0 4px 8px rgba(0,0,0,0.25);
+  --sh-gold:0 2px 12px rgba(212,168,83,0.18);
+  /* Type scale */
+  --t-xs:11px; --t-sm:12px; --t-base:13px; --t-md:14px; --t-lg:16px; --t-xl:18px; --t-2xl:22px; --t-3xl:28px; --t-4xl:36px;
+  /* Motion */
+  --dur-micro:120ms; --dur-std:200ms; --dur-enter:320ms;
+  --ease-out:cubic-bezier(0.2,0.8,0.2,1); --ease-spring:cubic-bezier(0.34,1.4,0.44,1);
+}
+:root{ --sans:-apple-system,"SF Pro Text",Inter,"Segoe UI",sans-serif; --mono:ui-monospace,"SF Mono","Geist Mono",Menlo,monospace; }
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:var(--t-base);line-height:1.45;min-height:100vh;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.014) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.014) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.label{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3)}
+
+/* ---------- page frame ---------- */
+.wrap{max-width:1200px;margin:0 auto;padding:40px 40px 80px}
+.masthead{display:flex;align-items:center;gap:14px;padding-bottom:28px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.masthead .brand-name{font-size:15px;font-weight:600;line-height:1.1;color:var(--ink)}
+.masthead .brand-name span{display:block;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-3);margin-top:3px}
+.masthead .tag{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.masthead .tag b{color:var(--gold);font-weight:600}
+.page-title{margin-top:26px}
+.page-title h1{font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1;color:var(--ink)}
+.page-title p{color:var(--ink-2);font-size:13px;margin-top:9px;max-width:660px;line-height:1.55}
+
+section{margin-top:44px}
+.sec-title{display:flex;align-items:baseline;gap:12px;margin-bottom:20px}
+.sec-title .n{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--gold);letter-spacing:0.04em}
+.sec-title h2{font-size:16px;font-weight:600;letter-spacing:-0.01em;color:var(--ink)}
+.sec-title .line{flex:1;height:1px;background:var(--border)}
+.sec-title .note{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:0.02em}
+.sub-label{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md)}
+.pad{padding:24px 20px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.set-cap{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:11px}
+
+/* ---------- field anatomy ---------- */
+.flabel{display:block;font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--ink-2);margin-bottom:6px}
+.help{font-size:11px;color:var(--ink-3);margin-top:6px;line-height:1.5}
+.field{margin-bottom:18px}
+.field:last-child{margin-bottom:0}
+
+.input-wrap{position:relative}
+.input{width:100%;height:38px;font-family:var(--sans);font-size:13px;color:var(--ink);background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--r-sm);padding:0 12px;transition:border-color var(--dur-micro) var(--ease-out)}
+.input::placeholder{color:var(--ink-3)}
+.input.is-focus{border-color:var(--gold);outline:2px solid var(--ring);outline-offset:1px}
+.input.is-error{border-color:var(--red)}
+.input.is-disabled{opacity:.5;cursor:not-allowed;background:var(--surface);color:var(--ink-3)}
+.input.has-lead{padding-left:36px}
+.input-wrap .lead{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink-3);pointer-events:none;display:flex}
+.err-msg{font-family:var(--mono);font-size:11px;color:var(--red);margin-top:7px;display:flex;align-items:center;gap:6px}
+.ok-msg{font-family:var(--mono);font-size:11px;color:var(--emerald);margin-top:7px;display:flex;align-items:center;gap:6px}
+
+/* anatomy annotations */
+.anat{display:grid;grid-template-columns:1fr 260px;gap:32px;align-items:center;padding:26px 20px}
+.anat-notes{display:flex;flex-direction:column;gap:0}
+.anat-note{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--border-subtle)}
+.anat-note:last-child{border-bottom:0}
+.anat-note .k{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--gold);flex:0 0 18px;font-variant-numeric:tabular-nums}
+.anat-note .d{font-size:11.5px;color:var(--ink-2);line-height:1.5}
+.anat-note .d b{color:var(--ink);font-weight:600}
+.anat-tag{display:inline-block;font-family:var(--mono);font-size:9px;font-weight:600;color:#0A0F1C;background:var(--gold);border-radius:3px;width:15px;height:15px;line-height:15px;text-align:center;margin-left:8px;vertical-align:1px}
+
+/* ---------- select ---------- */
+.sel-wrap{position:relative}
+.sel-wrap .chev{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--ink-3);pointer-events:none}
+.sel-display{display:flex;align-items:center;height:38px;padding:0 34px 0 12px;background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--r-sm);font-size:13px;color:var(--ink)}
+.sel-display.open{border-color:var(--gold);outline:2px solid var(--ring);outline-offset:1px}
+.sel-panel{margin-top:6px;background:var(--surface-overlay);border:1px solid var(--border-strong);border-radius:var(--r-sm);box-shadow:var(--sh-lg);padding:5px;overflow:hidden}
+.sel-opt{display:flex;align-items:center;justify-content:space-between;gap:8px;height:32px;padding:0 10px;border-radius:5px;font-size:13px;color:var(--ink-2)}
+.sel-opt.sel-active{background:rgba(212,168,83,0.14);color:var(--gold)}
+.sel-opt.sel-hover{background:rgba(255,255,255,0.05);color:var(--ink)}
+.sel-opt svg{color:var(--gold)}
+
+/* ---------- textarea ---------- */
+.ta{width:100%;min-height:92px;font-family:var(--sans);font-size:13px;line-height:1.55;color:var(--ink);background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;resize:vertical}
+.ta::placeholder{color:var(--ink-3)}
+.ta-foot{display:flex;justify-content:flex-end;margin-top:6px}
+.ta-count{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+
+/* ---------- choice controls ---------- */
+.choice-block{padding:22px 20px;display:flex;flex-direction:column;gap:20px}
+.choice-head{display:grid;grid-template-columns:1fr 90px 90px 90px;align-items:center;gap:12px}
+.choice-head .ct{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink)}
+.choice-head .cs{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3);text-align:center}
+.choice-row{display:grid;grid-template-columns:1fr 90px 90px 90px;align-items:center;gap:12px;padding-top:16px;border-top:1px solid var(--border-subtle)}
+.choice-row .rk{font-size:12.5px;color:var(--ink-2)}
+.choice-cell{display:flex;justify-content:center}
+
+.check{width:18px;height:18px;border-radius:5px;border:1px solid var(--border-strong);background:var(--surface-raised);display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+.check svg{color:#0A0F1C;opacity:0}
+.check.on{background:var(--gold);border-color:var(--gold)}
+.check.on svg{opacity:1}
+.check.dis{opacity:.4}
+
+.radio{width:18px;height:18px;border-radius:50%;border:1px solid var(--border-strong);background:var(--surface-raised);display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+.radio::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--gold);opacity:0}
+.radio.on{border-color:var(--gold)}
+.radio.on::after{opacity:1}
+.radio.dis{opacity:.4}
+
+.toggle{width:40px;height:22px;border-radius:100px;background:var(--surface-raised);border:1px solid var(--border);position:relative;flex:0 0 auto;transition:background var(--dur-std) var(--ease-out),border-color var(--dur-std) var(--ease-out)}
+.toggle i{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--ink-3);transition:transform var(--dur-std) var(--ease-out),background var(--dur-std) var(--ease-out)}
+.toggle.on{background:rgba(212,168,83,0.22);border-color:rgba(212,168,83,0.45)}
+.toggle.on i{transform:translateX(18px);background:var(--gold-300)}
+.toggle.dis{opacity:.4}
+
+/* radio group (vertical, labeled) */
+.radio-group{display:flex;flex-direction:column;gap:14px}
+.radio-line{display:flex;align-items:center;gap:11px}
+.radio-line .rl{font-size:13px;color:var(--ink)}
+.radio-line .rl small{display:block;font-size:11px;color:var(--ink-3);margin-top:2px}
+.radio-line.dis .rl{color:var(--ink-3)}
+
+/* ---------- composed form ---------- */
+.form-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:22px;padding-top:18px;border-top:1px solid var(--border-subtle)}
+.form-foot .note{font-size:11.5px;color:var(--ink-3)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-family:var(--sans);font-weight:600;letter-spacing:0.01em;border-radius:var(--r-sm);border:1px solid transparent;white-space:nowrap;line-height:1;cursor:pointer;height:34px;padding:0 16px;font-size:12.5px;transition:background var(--dur-micro) var(--ease-out)}
+.btn-primary{background:var(--gold);color:#0A0F1C}
+.btn-ghost{background:transparent;color:var(--ink-2)}
+.switch-row{display:flex;align-items:center;gap:12px}
+.switch-lbl{font-size:12.5px;color:var(--ink-2)}
+.switch-lbl b{color:var(--ink);font-weight:600}
+
+/* ---------- calendar ---------- */
+.cal-wrap{display:grid;grid-template-columns:320px 1fr;gap:32px;padding:24px 20px;align-items:start}
+.cal{width:320px}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-title{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--ink);letter-spacing:0.02em}
+.cal-nav{display:flex;gap:6px}
+.cal-nav button{width:28px;height:28px;border-radius:var(--r-sm);background:var(--surface-raised);border:1px solid var(--border);color:var(--ink-2);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color var(--dur-micro) var(--ease-out)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-dow{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:var(--ink-3);text-align:center;padding:4px 0 8px}
+.cal-day{position:relative;height:40px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12.5px;color:var(--ink-2);font-variant-numeric:tabular-nums;border-radius:var(--r-sm)}
+.cal-day.muted{color:transparent}
+.cal-day.in{color:var(--ink)}
+.cal-day.today{color:var(--gold);font-weight:600}
+.cal-day.today::before{content:"";position:absolute;width:30px;height:30px;border-radius:50%;border:1.5px solid var(--gold);box-shadow:var(--sh-gold)}
+.cal-day .dot{position:absolute;bottom:5px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--gold)}
+.cal-legend{display:flex;flex-direction:column;gap:14px}
+.cal-legend .li{display:flex;gap:11px;align-items:flex-start}
+.cal-legend .mk{flex:0 0 30px;height:30px;display:flex;align-items:center;justify-content:center;position:relative}
+.cal-legend .mk.ring::before{content:"";position:absolute;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--gold)}
+.cal-legend .mk.ring span{color:var(--gold);font-family:var(--mono);font-size:11px;font-weight:600}
+.cal-legend .mk.dotmk{background:var(--surface-raised);border:1px solid var(--border-subtle);border-radius:var(--r-sm)}
+.cal-legend .mk.dotmk::after{content:"";width:4px;height:4px;border-radius:50%;background:var(--gold);position:absolute;bottom:6px;left:50%;transform:translateX(-50%)}
+.cal-legend .mk.dotmk span{color:var(--ink);font-family:var(--mono);font-size:11px;font-variant-numeric:tabular-nums}
+.cal-legend .lt{font-size:12px;color:var(--ink);line-height:1.5}
+.cal-legend .lt small{display:block;color:var(--ink-3);font-size:11px;margin-top:2px}
+.cal-legend .lt .cls{font-family:var(--mono);font-size:10.5px;color:var(--ink-2)}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="11.5" stroke="#D4A853" stroke-width="1.5"/>
+      <circle cx="16" cy="16" r="3" stroke="#D4A853" stroke-width="1.5"/>
+      <path d="M16 1.5V8M16 24v6.5M1.5 16H8M24 16h6.5" stroke="#D4A853" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <div class="brand-name">Snipers<span>Trading Academy</span></div>
+    <div class="tag">Components · <b>Forms &amp; Inputs</b></div>
+  </div>
+
+  <div class="page-title">
+    <h1>Forms &amp; Inputs</h1>
+    <p>Every control a member touches to move money or manage their account. Fields lead with a mono label, hold a 38px control on the raised surface, and reserve gold for focus and the one committing action. Validation speaks plainly — it says what is wrong and never apologizes.</p>
+  </div>
+
+  <!-- 01 FIELD ANATOMY -->
+  <section>
+    <div class="sec-title"><span class="n">01</span><h2>Field anatomy</h2><span class="line"></span><span class="note">label · control · help</span></div>
+    <div class="card anat">
+      <div class="field" style="margin-bottom:0">
+        <label class="flabel">Payout wallet<span class="anat-tag">1</span></label>
+        <div class="input-wrap">
+          <span class="lead"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></span>
+          <input class="input has-lead" type="text" value="0x7C4d…9E2a" />
+        </div>
+        <div class="help">Polygon · USDC — funds release here on the 1st of each month.<span class="anat-tag">3</span></div>
+      </div>
+      <div class="anat-notes">
+        <div class="anat-note"><span class="k">1</span><span class="d"><b>Label</b> — 12px, --ink-2, uppercase mono. Names what the person controls.</span></div>
+        <div class="anat-note"><span class="k">2</span><span class="d"><b>6px gap</b> then the 38px control on --surface-raised with a 1px border.</span></div>
+        <div class="anat-note"><span class="k">3</span><span class="d"><b>Help text</b> — 11px, --ink-3. One line of guidance, sits directly below.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 TEXT INPUT STATES -->
+  <section>
+    <div class="sec-title"><span class="n">02</span><h2>Text input · states</h2><span class="line"></span><span class="note">default · focus · error · disabled · icon</span></div>
+    <div class="card pad">
+      <div class="split">
+        <div>
+          <div class="field">
+            <label class="flabel">Default</label>
+            <div class="input-wrap"><input class="input" type="text" value="Primary payout" /></div>
+          </div>
+          <div class="field">
+            <label class="flabel">Focus</label>
+            <div class="input-wrap"><input class="input is-focus" type="text" value="0x7C4d…9E2a" /></div>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label class="flabel">Error</label>
+            <div class="input-wrap"><input class="input is-error" type="text" value="0x7C4d 9E2a" /></div>
+            <div class="err-msg"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Wallet address is invalid</div>
+          </div>
+        </div>
+        <div>
+          <div class="field">
+            <label class="flabel">Disabled</label>
+            <div class="input-wrap"><input class="input is-disabled" type="text" value="Locked while payout is processing" disabled /></div>
+          </div>
+          <div class="field">
+            <label class="flabel">With leading icon</label>
+            <div class="input-wrap">
+              <span class="lead"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></span>
+              <input class="input has-lead" type="text" value="0x7C4d…9E2a" />
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label class="flabel">Placeholder</label>
+            <div class="input-wrap"><input class="input" type="text" placeholder="Paste a Polygon wallet address" /></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 SELECT & TEXTAREA -->
+  <section>
+    <div class="sec-title"><span class="n">03</span><h2>Select &amp; textarea</h2><span class="line"></span><span class="note">closed · open panel · multi-line</span></div>
+    <div class="split">
+      <div class="card pad">
+        <div class="split" style="gap:20px">
+          <div>
+            <div class="set-cap">Select · closed</div>
+            <div class="sel-wrap">
+              <div class="sel-display">Polygon</div>
+              <span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+            </div>
+          </div>
+          <div>
+            <div class="set-cap">Select · open panel</div>
+            <div class="sel-wrap">
+              <div class="sel-display open">Polygon</div>
+              <span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></span>
+              <div class="sel-panel">
+                <div class="sel-opt sel-active">Polygon<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+                <div class="sel-opt sel-hover">Ethereum</div>
+                <div class="sel-opt">Arbitrum</div>
+                <div class="sel-opt">Optimism</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card pad">
+        <div class="set-cap">Textarea</div>
+        <div class="field" style="margin-bottom:0">
+          <label class="flabel">Note to your team</label>
+          <textarea class="ta" placeholder="Add a short note…">Great London session today — review the risk-management notes before Thursday's masterclass.</textarea>
+          <div class="ta-foot"><span class="ta-count">92 / 280</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 CHOICE CONTROLS -->
+  <section>
+    <div class="sec-title"><span class="n">04</span><h2>Checkbox, radio &amp; switch</h2><span class="line"></span><span class="note">unchecked · checked · disabled</span></div>
+    <div class="split">
+      <div class="card choice-block">
+        <div class="choice-head">
+          <span class="ct">Control</span>
+          <span class="cs">Off</span>
+          <span class="cs">On</span>
+          <span class="cs">Disabled</span>
+        </div>
+        <div class="choice-row">
+          <span class="rk">Checkbox</span>
+          <span class="choice-cell"><span class="check off"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span>
+          <span class="choice-cell"><span class="check on"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span>
+          <span class="choice-cell"><span class="check on dis"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span>
+        </div>
+        <div class="choice-row">
+          <span class="rk">Radio</span>
+          <span class="choice-cell"><span class="radio"></span></span>
+          <span class="choice-cell"><span class="radio on"></span></span>
+          <span class="choice-cell"><span class="radio on dis"></span></span>
+        </div>
+        <div class="choice-row">
+          <span class="rk">Switch</span>
+          <span class="choice-cell"><span class="toggle"><i></i></span></span>
+          <span class="choice-cell"><span class="toggle on"><i></i></span></span>
+          <span class="choice-cell"><span class="toggle on dis"><i></i></span></span>
+        </div>
+      </div>
+      <div class="card pad">
+        <div class="set-cap">Radio group · payout cadence</div>
+        <div class="radio-group">
+          <label class="radio-line"><span class="radio on"></span><span class="rl">Monthly on the 1st<small>Current schedule · next Aug 1, 2026</small></span></label>
+          <label class="radio-line"><span class="radio"></span><span class="rl">When balance clears $5,000<small>Auto-release at threshold</small></span></label>
+          <label class="radio-line dis"><span class="radio dis"></span><span class="rl">Instant per commission<small>Unavailable on Polygon · USDC</small></span></label>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 INLINE VALIDATION -->
+  <section>
+    <div class="sec-title"><span class="n">05</span><h2>Inline validation</h2><span class="line"></span><span class="note">error clears to confirmed on valid input</span></div>
+    <div class="split">
+      <div class="card pad">
+        <div class="field" style="margin-bottom:0">
+          <label class="flabel">Payout wallet</label>
+          <div class="input-wrap">
+            <span class="lead" style="color:var(--red)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></span>
+            <input class="input has-lead is-error" type="text" value="0x7C4d 9E2a" />
+          </div>
+          <div class="err-msg"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Wallet address is invalid</div>
+        </div>
+      </div>
+      <div class="card pad">
+        <div class="field" style="margin-bottom:0">
+          <label class="flabel">Payout wallet</label>
+          <div class="input-wrap">
+            <span class="lead" style="color:var(--emerald)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></span>
+            <input class="input has-lead" type="text" value="0x7C4d…9E2a" style="border-color:rgba(52,211,153,0.45)" />
+          </div>
+          <div class="ok-msg"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Valid Polygon address</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 COMPOSED FORM -->
+  <section>
+    <div class="sec-title"><span class="n">06</span><h2>Payout wallet</h2><span class="line"></span><span class="note">composed section · ends in Save</span></div>
+    <div class="card pad">
+      <div class="split">
+        <div>
+          <div class="field">
+            <label class="flabel">Wallet address</label>
+            <div class="input-wrap">
+              <span class="lead"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></span>
+              <input class="input has-lead" type="text" value="0x7C4d…9E2a" />
+            </div>
+            <div class="help">Double-check every character — payouts are irreversible.</div>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label class="flabel">Wallet label</label>
+            <div class="input-wrap"><input class="input" type="text" value="Primary payout" /></div>
+          </div>
+        </div>
+        <div>
+          <div class="field">
+            <label class="flabel">Network</label>
+            <div class="sel-wrap">
+              <div class="sel-display">Polygon</div>
+              <span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label class="flabel">Asset</label>
+            <div class="sel-wrap">
+              <div class="sel-display">USDC</div>
+              <span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="field" style="margin-top:18px;margin-bottom:0">
+        <div class="switch-row"><span class="toggle on"><i></i></span><span class="switch-lbl"><b>Auto-payout on</b> — release funds monthly without review</span></div>
+      </div>
+      <div class="form-foot">
+        <span class="note">Estimated next payout $5,797.80 · Aug 1, 2026</span>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-ghost">Cancel</button>
+          <button class="btn btn-primary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Save payout wallet</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 07 CALENDAR -->
+  <section>
+    <div class="sec-title"><span class="n">07</span><h2>Calendar · date picker</h2><span class="line"></span><span class="note">July 2026 · today ringed · classes dotted</span></div>
+    <div class="card cal-wrap">
+      <div class="cal">
+        <div class="cal-head">
+          <div class="cal-title">July 2026</div>
+          <div class="cal-nav">
+            <button aria-label="Previous month"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+            <button aria-label="Next month"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+          </div>
+        </div>
+        <div class="cal-grid">
+          <div class="cal-dow">Su</div><div class="cal-dow">Mo</div><div class="cal-dow">Tu</div><div class="cal-dow">We</div><div class="cal-dow">Th</div><div class="cal-dow">Fr</div><div class="cal-dow">Sa</div>
+          <!-- week 1 — Jul 1 falls on Wed -->
+          <div class="cal-day muted">·</div><div class="cal-day muted">·</div><div class="cal-day muted">·</div>
+          <div class="cal-day in">1</div><div class="cal-day in">2</div><div class="cal-day in">3</div><div class="cal-day in">4</div>
+          <!-- week 2 -->
+          <div class="cal-day in">5</div><div class="cal-day in">6</div><div class="cal-day in">7</div><div class="cal-day in">8</div><div class="cal-day in">9</div><div class="cal-day in">10</div><div class="cal-day in">11</div>
+          <!-- week 3 -->
+          <div class="cal-day in">12</div><div class="cal-day in">13</div><div class="cal-day in">14</div><div class="cal-day in">15</div><div class="cal-day in">16</div><div class="cal-day in">17</div><div class="cal-day in">18</div>
+          <!-- week 4 -->
+          <div class="cal-day in">19</div><div class="cal-day in">20</div>
+          <div class="cal-day today">21</div>
+          <div class="cal-day in">22<span class="dot"></span></div>
+          <div class="cal-day in">23<span class="dot"></span></div>
+          <div class="cal-day in">24</div><div class="cal-day in">25</div>
+          <!-- week 5 -->
+          <div class="cal-day in">26</div><div class="cal-day in">27</div><div class="cal-day in">28</div><div class="cal-day in">29</div><div class="cal-day in">30</div><div class="cal-day in">31</div><div class="cal-day muted">·</div>
+        </div>
+      </div>
+      <div class="cal-legend">
+        <div class="li">
+          <div class="mk ring"><span>21</span></div>
+          <div class="lt">Today<small>Tuesday, July 21, 2026</small></div>
+        </div>
+        <div class="li">
+          <div class="mk dotmk"><span>22</span></div>
+          <div class="lt">Scheduled class<span class="cls">London Session Breakdown · Jul 22, 3:00 AM EST</span></div>
+        </div>
+        <div class="li">
+          <div class="mk dotmk"><span>23</span></div>
+          <div class="lt">Scheduled class<span class="cls">Risk Management Masterclass · Jul 23, 7:00 PM EST</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
