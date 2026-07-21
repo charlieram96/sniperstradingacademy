@@ -1,0 +1,337 @@
+<!-- @dsCard group="Foundations" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colors & Elevation</title>
+<style>
+:root {
+  /* Base */
+  --bg:#05080F; --surface:#0A0F1C; --surface-raised:#101728; --surface-overlay:#151D33;
+  --ink:#E6EAF2; --ink-2:#8B95A9; --ink-3:#525D73;
+  --border:rgba(255,255,255,0.10); --border-subtle:rgba(255,255,255,0.05); --border-strong:rgba(255,255,255,0.16);
+  /* Brand gold ramp */
+  --gold-50:#FDF8ED; --gold-100:#F9ECCC; --gold-200:#F0D48A; --gold-300:#E5C06A;
+  --gold-400:#D4A853; --gold-500:#C49B3E; --gold-600:#A67E2E; --gold-700:#856420; --gold-800:#6B4D18;
+  --gold:var(--gold-400); --ring:rgba(212,168,83,0.55);
+  /* Status */
+  --emerald:#34D399; --emerald-dim:rgba(52,211,153,0.12);
+  --red:#F87171; --red-dim:rgba(248,113,113,0.12);
+  --amber:#FBBF24; --amber-dim:rgba(251,191,36,0.12);
+  --blue:#60A5FA; --blue-dim:rgba(96,165,250,0.12);
+  /* Charts (series order) */
+  --chart-1:var(--gold-400); --chart-2:#60A5FA; --chart-3:#34D399; --chart-4:#A78BFA; --chart-5:#8B95A9;
+  /* Spacing (4px grid) */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px; --sp-10:40px; --sp-12:48px; --sp-16:64px;
+  /* Radius */
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-pill:999px;
+  /* Shadows */
+  --sh-sm:0 1px 2px rgba(0,0,0,0.35);
+  --sh-md:0 4px 12px rgba(0,0,0,0.28),0 1px 3px rgba(0,0,0,0.3);
+  --sh-lg:0 12px 32px rgba(0,0,0,0.35),0 4px 8px rgba(0,0,0,0.25);
+  --sh-gold:0 2px 12px rgba(212,168,83,0.18);
+  /* Type scale */
+  --t-xs:11px; --t-sm:12px; --t-base:13px; --t-md:14px; --t-lg:16px; --t-xl:18px; --t-2xl:22px; --t-3xl:28px; --t-4xl:36px;
+  /* Motion */
+  --dur-micro:120ms; --dur-std:200ms; --dur-enter:320ms;
+  --ease-out:cubic-bezier(0.2,0.8,0.2,1); --ease-spring:cubic-bezier(0.34,1.4,0.44,1);
+}
+:root{ --sans:-apple-system,"SF Pro Text",Inter,"Segoe UI",sans-serif; --mono:ui-monospace,"SF Mono","Geist Mono",Menlo,monospace; }
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:var(--t-base);line-height:1.45;min-height:100vh;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.014) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.014) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.label{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3)}
+
+/* ---------- page frame ---------- */
+.wrap{max-width:1200px;margin:0 auto;padding:40px 40px 80px}
+.masthead{display:flex;align-items:center;gap:14px;padding-bottom:28px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.masthead .brand-name{font-size:15px;font-weight:600;line-height:1.1;color:var(--ink)}
+.masthead .brand-name span{display:block;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-3);margin-top:3px}
+.masthead .tag{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.masthead .tag b{color:var(--gold);font-weight:600}
+.page-title{margin-top:26px}
+.page-title h1{font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1;color:var(--ink)}
+.page-title p{color:var(--ink-2);font-size:13px;margin-top:9px;max-width:640px;line-height:1.55}
+
+section{margin-top:44px}
+.sec-title{display:flex;align-items:baseline;gap:12px;margin-bottom:20px}
+.sec-title .n{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--gold);letter-spacing:0.04em}
+.sec-title h2{font-size:16px;font-weight:600;letter-spacing:-0.01em;color:var(--ink)}
+.sec-title .line{flex:1;height:1px;background:var(--border)}
+.sec-title .note{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:0.02em}
+.sub-label{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md)}
+
+/* ---------- gold ramp ---------- */
+.ramp{display:grid;grid-template-columns:repeat(9,1fr);gap:0;border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden}
+.ramp .stop{display:flex;flex-direction:column}
+.ramp .chip{height:96px;position:relative}
+.ramp .stop:not(:last-child) .meta{border-right:1px solid var(--border-subtle)}
+.ramp .base-flag{position:absolute;top:8px;left:8px;font-family:var(--mono);font-size:8.5px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:#0A0F1C;background:rgba(10,15,28,0.55);color:#05080F;border-radius:4px;padding:2px 5px}
+.ramp .meta{padding:11px 12px 13px;background:var(--surface)}
+.ramp .tok{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink);letter-spacing:0.01em}
+.ramp .hex{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:4px;font-variant-numeric:tabular-nums}
+.on-dark{color:#05080F}
+
+/* ---------- elevation / surfaces ---------- */
+.surf-stack{padding:var(--sp-6);border-radius:var(--r-md);border:1px solid var(--border-subtle)}
+.surf-panel{border-radius:var(--r-md);border:1px solid var(--border);padding:var(--sp-5)}
+.surf-panel + .surf-panel-inner{margin-top:0}
+.surf-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:4px}
+.surf-name{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--ink)}
+.surf-hex{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.surf-sh{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);letter-spacing:0.04em;margin-top:10px}
+.lvl0{background:var(--bg)}
+.lvl1{background:var(--surface);box-shadow:var(--sh-sm)}
+.lvl2{background:var(--surface-raised);box-shadow:var(--sh-md)}
+.lvl3{background:var(--surface-overlay);box-shadow:var(--sh-lg)}
+
+.sh-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:16px}
+.sh-spec{background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--r-md);height:96px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.sh-spec.s1{box-shadow:var(--sh-sm)}
+.sh-spec.s2{box-shadow:var(--sh-md)}
+.sh-spec.s3{box-shadow:var(--sh-lg)}
+.sh-spec.s4{box-shadow:var(--sh-gold);border-color:rgba(212,168,83,0.30)}
+.sh-spec .tok{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink)}
+.sh-spec .role{font-size:10.5px;color:var(--ink-3)}
+
+/* ---------- borders ---------- */
+.border-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.border-tile{background:var(--surface-raised);border-radius:var(--r-md);height:108px;padding:16px;display:flex;flex-direction:column;justify-content:flex-end}
+.border-tile.b1{border:1px solid var(--border-subtle)}
+.border-tile.b2{border:1px solid var(--border)}
+.border-tile.b3{border:1px solid var(--border-strong)}
+.border-tile .tok{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink)}
+.border-tile .val{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:4px;font-variant-numeric:tabular-nums}
+.border-tile .use{font-size:11px;color:var(--ink-3);margin-top:9px;line-height:1.45}
+
+/* ---------- status ---------- */
+.status-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.status-cell{border:1px solid var(--border);border-radius:var(--r-md);padding:16px;background:var(--surface)}
+.status-cell .role{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3)}
+.status-pair{display:flex;gap:8px;margin-top:13px}
+.chip-solid{flex:1;height:38px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:600;color:#05080F}
+.chip-dim{flex:1;height:38px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:600}
+.status-cell .toks{margin-top:12px;display:flex;flex-direction:column;gap:5px}
+.status-cell .toks span{font-family:var(--mono);font-size:10px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.status-cell .toks span b{color:var(--ink);font-weight:600}
+.s-emerald .chip-solid{background:var(--emerald)} .s-emerald .chip-dim{background:var(--emerald-dim);color:var(--emerald);border:1px solid rgba(52,211,153,0.24)}
+.s-red .chip-solid{background:var(--red)} .s-red .chip-dim{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,0.24)}
+.s-amber .chip-solid{background:var(--amber)} .s-amber .chip-dim{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(251,191,36,0.24)}
+.s-blue .chip-solid{background:var(--blue)} .s-blue .chip-dim{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(96,165,250,0.24)}
+
+/* ---------- charts ---------- */
+.chart-wrap{display:grid;grid-template-columns:1fr 1.15fr;gap:24px;align-items:start}
+.series-list{display:flex;flex-direction:column;gap:2px}
+.series-row{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border-subtle)}
+.series-row:last-child{border-bottom:0}
+.series-sw{width:26px;height:14px;border-radius:4px;flex:0 0 auto}
+.series-row .tok{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--ink);flex:1}
+.series-row .hex{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.sw1{background:var(--chart-1)} .sw2{background:var(--chart-2)} .sw3{background:var(--chart-3)} .sw4{background:var(--chart-4)} .sw5{background:var(--chart-5)}
+.stack-demo{padding:20px}
+.stack-bar{display:flex;height:44px;border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--border)}
+.stack-seg{display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10.5px;font-weight:600;color:#05080F}
+.stack-legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:16px}
+.stack-legend span{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.stack-legend i{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
+
+/* ---------- usage table ---------- */
+table{width:100%;border-collapse:collapse}
+thead th{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:0 var(--sp-5) 12px;border-bottom:1px solid var(--border)}
+tbody td{padding:16px var(--sp-5);border-bottom:1px solid var(--border-subtle);font-size:12.5px;color:var(--ink-2);vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:rgba(255,255,255,0.02)}
+td .tok{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+td .role{color:var(--ink)}
+.eg{display:inline-flex;align-items:center}
+.eg-btn{font-family:var(--sans);font-size:12px;font-weight:600;padding:7px 13px;border-radius:var(--r-sm);background:var(--gold);color:#0A0F1C;border:1px solid transparent}
+.eg-input{font-family:var(--sans);font-size:12px;color:var(--ink);background:var(--surface-raised);border:1px solid var(--gold);outline:2px solid var(--ring);outline-offset:1px;border-radius:var(--r-sm);padding:7px 11px}
+.eg-delta{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:11px;font-weight:600;padding:3px 8px;border-radius:var(--r-sm);font-variant-numeric:tabular-nums}
+.eg-delta.up{color:var(--emerald);background:var(--emerald-dim);border:1px solid rgba(52,211,153,0.22)}
+.eg-btn.destructive{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,0.30)}
+.eg-note{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;font-weight:600;padding:5px 10px;border-radius:var(--r-sm);color:var(--blue);background:var(--blue-dim);border:1px solid rgba(96,165,250,0.24)}
+.eg-note .dot{width:6px;height:6px;border-radius:50%;background:var(--blue)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="11.5" stroke="#D4A853" stroke-width="1.5"/>
+      <circle cx="16" cy="16" r="3" stroke="#D4A853" stroke-width="1.5"/>
+      <path d="M16 1.5V8M16 24v6.5M1.5 16H8M24 16h6.5" stroke="#D4A853" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <div class="brand-name">Snipers<span>Trading Academy</span></div>
+    <div class="tag">Foundations · <b>Colors &amp; Elevation</b></div>
+  </div>
+
+  <div class="page-title">
+    <h1>Colors &amp; Elevation</h1>
+    <p>The full color and elevation foundation. Every value is a CSS custom property from the canonical token sheet — labeled here in mono with its token name and resolved hex so downstream components can be eyeballed for ramp and surface correctness.</p>
+  </div>
+
+  <!-- 01 GOLD RAMP -->
+  <section>
+    <div class="sec-title"><span class="n">01</span><h2>Brand gold ramp</h2><span class="line"></span><span class="note">--gold-50 → --gold-800</span></div>
+    <div class="ramp">
+      <div class="stop"><div class="chip" style="background:var(--gold-50)"></div><div class="meta"><div class="tok">--gold-50</div><div class="hex">#FDF8ED</div></div></div>
+      <div class="stop"><div class="chip" style="background:var(--gold-100)"></div><div class="meta"><div class="tok">--gold-100</div><div class="hex">#F9ECCC</div></div></div>
+      <div class="stop"><div class="chip" style="background:var(--gold-200)"></div><div class="meta"><div class="tok">--gold-200</div><div class="hex">#F0D48A</div></div></div>
+      <div class="stop"><div class="chip" style="background:var(--gold-300)"></div><div class="meta"><div class="tok">--gold-300</div><div class="hex">#E5C06A</div></div></div>
+      <div class="stop"><div class="chip" style="background:var(--gold-400)"><span class="base-flag on-dark">Base · --gold</span></div><div class="meta"><div class="tok">--gold-400</div><div class="hex">#D4A853</div></div></div>
+      <div class="stop"><div class="chip" style="background:var(--gold-500)"></div><div class="meta"><div class="tok">--gold-500</div><div class="hex">#C49B3E</div></div></div>
+      <div class="stop"><div class="chip" style="background:var(--gold-600)"></div><div class="meta"><div class="tok">--gold-600</div><div class="hex">#A67E2E</div></div></div>
+      <div class="stop"><div class="chip" style="background:var(--gold-700)"></div><div class="meta"><div class="tok">--gold-700</div><div class="hex">#856420</div></div></div>
+      <div class="stop"><div class="chip" style="background:var(--gold-800)"></div><div class="meta"><div class="tok">--gold-800</div><div class="hex">#6B4D18</div></div></div>
+    </div>
+  </section>
+
+  <!-- 02 SURFACES & ELEVATION -->
+  <section>
+    <div class="sec-title"><span class="n">02</span><h2>Base surfaces &amp; elevation</h2><span class="line"></span><span class="note">nested — each level lifts on a stronger shadow</span></div>
+    <div class="card surf-stack lvl0">
+      <div class="surf-head"><span class="surf-name">--bg</span><span class="surf-hex">#05080F · page canvas</span></div>
+      <div class="surf-panel lvl1" style="margin-top:14px">
+        <div class="surf-head"><span class="surf-name">--surface</span><span class="surf-hex">#0A0F1C</span></div>
+        <div class="surf-sh">shadow: --sh-sm · cards, panels, the resting plane</div>
+        <div class="surf-panel lvl2" style="margin-top:16px">
+          <div class="surf-head"><span class="surf-name">--surface-raised</span><span class="surf-hex">#101728</span></div>
+          <div class="surf-sh">shadow: --sh-md · inputs, nav-active, hovered rows</div>
+          <div class="surf-panel lvl3" style="margin-top:16px">
+            <div class="surf-head"><span class="surf-name">--surface-overlay</span><span class="surf-hex">#151D33</span></div>
+            <div class="surf-sh">shadow: --sh-lg · modals, popovers, transient overlays</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sub-label" style="margin-top:24px">Shadow tokens — applied to identical raised tiles</div>
+    <div class="sh-grid">
+      <div class="sh-spec s1"><span class="tok">--sh-sm</span><span class="role">resting cards</span></div>
+      <div class="sh-spec s2"><span class="tok">--sh-md</span><span class="role">raised / hover</span></div>
+      <div class="sh-spec s3"><span class="tok">--sh-lg</span><span class="role">overlays</span></div>
+      <div class="sh-spec s4"><span class="tok">--sh-gold</span><span class="role">primary emphasis</span></div>
+    </div>
+  </section>
+
+  <!-- 03 BORDERS -->
+  <section>
+    <div class="sec-title"><span class="n">03</span><h2>Border tiers</h2><span class="line"></span><span class="note">white at 5% / 10% / 16%</span></div>
+    <div class="border-grid">
+      <div class="border-tile b1"><div class="tok">--border-subtle</div><div class="val">rgba(255,255,255,0.05)</div><div class="use">Internal dividers, table row rules</div></div>
+      <div class="border-tile b2"><div class="tok">--border</div><div class="val">rgba(255,255,255,0.10)</div><div class="use">Default — card and control outlines</div></div>
+      <div class="border-tile b3"><div class="tok">--border-strong</div><div class="val">rgba(255,255,255,0.16)</div><div class="use">Hover emphasis, focused separators</div></div>
+    </div>
+  </section>
+
+  <!-- 04 STATUS -->
+  <section>
+    <div class="sec-title"><span class="n">04</span><h2>Status colors</h2><span class="line"></span><span class="note">solid + 12% -dim wash</span></div>
+    <div class="status-grid">
+      <div class="status-cell s-emerald">
+        <div class="role">Positive</div>
+        <div class="status-pair"><div class="chip-solid">solid</div><div class="chip-dim">-dim</div></div>
+        <div class="toks"><span>--emerald <b>#34D399</b></span><span>--emerald-dim <b>12%</b></span></div>
+      </div>
+      <div class="status-cell s-red">
+        <div class="role">Destructive</div>
+        <div class="status-pair"><div class="chip-solid">solid</div><div class="chip-dim">-dim</div></div>
+        <div class="toks"><span>--red <b>#F87171</b></span><span>--red-dim <b>12%</b></span></div>
+      </div>
+      <div class="status-cell s-amber">
+        <div class="role">Warning</div>
+        <div class="status-pair"><div class="chip-solid">solid</div><div class="chip-dim">-dim</div></div>
+        <div class="toks"><span>--amber <b>#FBBF24</b></span><span>--amber-dim <b>12%</b></span></div>
+      </div>
+      <div class="status-cell s-blue">
+        <div class="role">Info</div>
+        <div class="status-pair"><div class="chip-solid">solid</div><div class="chip-dim">-dim</div></div>
+        <div class="toks"><span>--blue <b>#60A5FA</b></span><span>--blue-dim <b>12%</b></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 CHART PALETTE -->
+  <section>
+    <div class="sec-title"><span class="n">05</span><h2>Chart palette</h2><span class="line"></span><span class="note">series order 1 → 5</span></div>
+    <div class="chart-wrap">
+      <div class="card">
+        <div class="series-list">
+          <div class="series-row"><span class="series-sw sw1"></span><span class="tok">--chart-1</span><span class="hex">--gold-400 · #D4A853</span></div>
+          <div class="series-row"><span class="series-sw sw2"></span><span class="tok">--chart-2</span><span class="hex">#60A5FA</span></div>
+          <div class="series-row"><span class="series-sw sw3"></span><span class="tok">--chart-3</span><span class="hex">#34D399</span></div>
+          <div class="series-row"><span class="series-sw sw4"></span><span class="tok">--chart-4</span><span class="hex">#A78BFA</span></div>
+          <div class="series-row"><span class="series-sw sw5"></span><span class="tok">--chart-5</span><span class="hex">#8B95A9</span></div>
+        </div>
+      </div>
+      <div class="card stack-demo">
+        <div class="sub-label" style="margin-bottom:14px">Mini stacked bar · Team by structure</div>
+        <div class="stack-bar">
+          <div class="stack-seg" style="width:35.2%;background:var(--chart-1)">1,092</div>
+          <div class="stack-seg" style="width:35.2%;background:var(--chart-2)">1,092</div>
+          <div class="stack-seg" style="width:7.4%;background:var(--chart-3)">231</div>
+          <div class="stack-seg" style="width:22.2%;background:var(--chart-5);color:#E6EAF2">861</div>
+        </div>
+        <div class="stack-legend">
+          <span><i class="sw1"></i>S1 · 1,092</span>
+          <span><i class="sw2"></i>S2 · 1,092</span>
+          <span><i class="sw3"></i>S3 · 231</span>
+          <span><i class="sw5"></i>Unfilled · 861</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 SEMANTIC ROLES -->
+  <section>
+    <div class="sec-title"><span class="n">06</span><h2>Semantic roles</h2><span class="line"></span><span class="note">token → role → example</span></div>
+    <div class="card" style="overflow:hidden">
+      <table>
+        <thead><tr><th style="width:26%">Token</th><th style="width:32%">Role</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="tok">--gold</span></td>
+            <td><span class="role">Primary action</span></td>
+            <td><span class="eg"><span class="eg-btn">Join Class</span></span></td>
+          </tr>
+          <tr>
+            <td><span class="tok">--ring</span></td>
+            <td><span class="role">Focus ring</span></td>
+            <td><span class="eg"><span class="eg-input">0x7C4d…9E2a</span></span></td>
+          </tr>
+          <tr>
+            <td><span class="tok">--emerald / --emerald-dim</span></td>
+            <td><span class="role">Positive delta</span></td>
+            <td><span class="eg"><span class="eg-delta up">▲ 8.3%</span></span></td>
+          </tr>
+          <tr>
+            <td><span class="tok">--red / --red-dim</span></td>
+            <td><span class="role">Destructive</span></td>
+            <td><span class="eg"><span class="eg-btn destructive">Remove wallet</span></span></td>
+          </tr>
+          <tr>
+            <td><span class="tok">--blue / --blue-dim</span></td>
+            <td><span class="role">Info</span></td>
+            <td><span class="eg"><span class="eg-note"><span class="dot"></span>New team member: Maria G.</span></span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

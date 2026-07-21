@@ -1,0 +1,354 @@
+<!-- @dsCard group="Foundations" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Typography & Spacing</title>
+<style>
+:root {
+  /* Base */
+  --bg:#05080F; --surface:#0A0F1C; --surface-raised:#101728; --surface-overlay:#151D33;
+  --ink:#E6EAF2; --ink-2:#8B95A9; --ink-3:#525D73;
+  --border:rgba(255,255,255,0.10); --border-subtle:rgba(255,255,255,0.05); --border-strong:rgba(255,255,255,0.16);
+  /* Brand gold ramp */
+  --gold-50:#FDF8ED; --gold-100:#F9ECCC; --gold-200:#F0D48A; --gold-300:#E5C06A;
+  --gold-400:#D4A853; --gold-500:#C49B3E; --gold-600:#A67E2E; --gold-700:#856420; --gold-800:#6B4D18;
+  --gold:var(--gold-400); --ring:rgba(212,168,83,0.55);
+  /* Status */
+  --emerald:#34D399; --emerald-dim:rgba(52,211,153,0.12);
+  --red:#F87171; --red-dim:rgba(248,113,113,0.12);
+  --amber:#FBBF24; --amber-dim:rgba(251,191,36,0.12);
+  --blue:#60A5FA; --blue-dim:rgba(96,165,250,0.12);
+  /* Charts (series order) */
+  --chart-1:var(--gold-400); --chart-2:#60A5FA; --chart-3:#34D399; --chart-4:#A78BFA; --chart-5:#8B95A9;
+  /* Spacing (4px grid) */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px; --sp-10:40px; --sp-12:48px; --sp-16:64px;
+  /* Radius */
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-pill:999px;
+  /* Shadows */
+  --sh-sm:0 1px 2px rgba(0,0,0,0.35);
+  --sh-md:0 4px 12px rgba(0,0,0,0.28),0 1px 3px rgba(0,0,0,0.3);
+  --sh-lg:0 12px 32px rgba(0,0,0,0.35),0 4px 8px rgba(0,0,0,0.25);
+  --sh-gold:0 2px 12px rgba(212,168,83,0.18);
+  /* Type scale */
+  --t-xs:11px; --t-sm:12px; --t-base:13px; --t-md:14px; --t-lg:16px; --t-xl:18px; --t-2xl:22px; --t-3xl:28px; --t-4xl:36px;
+  /* Motion */
+  --dur-micro:120ms; --dur-std:200ms; --dur-enter:320ms;
+  --ease-out:cubic-bezier(0.2,0.8,0.2,1); --ease-spring:cubic-bezier(0.34,1.4,0.44,1);
+}
+:root{ --sans:-apple-system,"SF Pro Text",Inter,"Segoe UI",sans-serif; --mono:ui-monospace,"SF Mono","Geist Mono",Menlo,monospace; }
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:var(--t-base);line-height:1.45;min-height:100vh;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.014) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.014) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.label{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3)}
+
+/* ---------- page frame ---------- */
+.wrap{max-width:1200px;margin:0 auto;padding:40px 40px 80px}
+.masthead{display:flex;align-items:center;gap:14px;padding-bottom:28px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.masthead .brand-name{font-size:15px;font-weight:600;line-height:1.1;color:var(--ink)}
+.masthead .brand-name span{display:block;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-3);margin-top:3px}
+.masthead .tag{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.masthead .tag b{color:var(--gold);font-weight:600}
+.page-title{margin-top:26px}
+.page-title h1{font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1;color:var(--ink)}
+.page-title p{color:var(--ink-2);font-size:13px;margin-top:9px;max-width:640px;line-height:1.55}
+
+section{margin-top:44px}
+.sec-title{display:flex;align-items:baseline;gap:12px;margin-bottom:20px}
+.sec-title .n{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--gold);letter-spacing:0.04em}
+.sec-title h2{font-size:16px;font-weight:600;letter-spacing:-0.01em;color:var(--ink)}
+.sec-title .line{flex:1;height:1px;background:var(--border)}
+.sec-title .note{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:0.02em}
+.sub-label{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md)}
+
+/* ---------- type scale ---------- */
+.scale{padding:2px var(--sp-5)}
+.scale-head{display:flex;align-items:center;gap:22px;padding:12px 0 10px;border-bottom:1px solid var(--border)}
+.scale-head .h-meta{flex:0 0 168px}
+.scale-head .h-spec{flex:1}
+.scale-head .h-num{flex:0 0 260px;text-align:right}
+.scale-head span{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3)}
+.type-row{display:flex;align-items:baseline;gap:22px;padding:15px 0;border-bottom:1px solid var(--border-subtle)}
+.type-row:last-child{border-bottom:0}
+.type-row .meta{flex:0 0 168px}
+.type-row .meta .tok{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--ink)}
+.type-row .meta .px{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:4px;font-variant-numeric:tabular-nums}
+.type-row .meta .role{font-size:10.5px;color:var(--ink-3);margin-top:5px}
+.type-row .spec{flex:1;color:var(--ink);font-weight:600;letter-spacing:-0.01em;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.type-row .spec.body{font-weight:400;color:var(--ink-2);white-space:normal;line-height:1.5}
+.type-row .num{flex:0 0 260px;text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-0.01em;color:var(--gold-400)}
+.sz-xs{font-size:var(--t-xs)} .sz-sm{font-size:var(--t-sm)} .sz-base{font-size:var(--t-base)}
+.sz-md{font-size:var(--t-md)} .sz-lg{font-size:var(--t-lg)} .sz-xl{font-size:var(--t-xl)}
+.sz-2xl{font-size:var(--t-2xl)} .sz-3xl{font-size:var(--t-3xl)} .sz-4xl{font-size:var(--t-4xl)}
+
+/* ---------- weights ---------- */
+.weight-row{display:flex;align-items:center;gap:22px;padding:16px var(--sp-5);border-bottom:1px solid var(--border-subtle)}
+.weight-row:last-child{border-bottom:0}
+.weight-row .meta{flex:0 0 190px}
+.weight-row .meta .w{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--ink)}
+.weight-row .meta .use{font-size:10.5px;color:var(--ink-3);margin-top:4px}
+.weight-row .demo{flex:1;font-size:16px;color:var(--ink)}
+.weight-row .demo.w400{font-weight:400;color:var(--ink-2)}
+.weight-row .demo.w500{font-weight:500}
+.weight-row .demo.w600{font-weight:600}
+
+/* ---------- letter-spacing ---------- */
+.track-list{padding:4px var(--sp-5)}
+.track-row{display:flex;align-items:center;gap:22px;padding:15px 0;border-bottom:1px solid var(--border-subtle)}
+.track-row:last-child{border-bottom:0}
+.track-row .meta{flex:0 0 150px;font-family:var(--mono);font-size:11px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.track-row .meta b{color:var(--ink);font-weight:600}
+.track-row .demo{flex:1;font-family:var(--mono);font-size:10.5px;font-weight:600;text-transform:uppercase;color:var(--ink-2)}
+.track-row .use{flex:0 0 260px;text-align:right;font-size:11px;color:var(--ink-3)}
+.tr-01{letter-spacing:0.02em} .tr-10{letter-spacing:0.10em} .tr-12{letter-spacing:0.12em} .tr-22{letter-spacing:0.22em}
+
+/* ---------- spacing ruler ---------- */
+.ruler{padding:6px var(--sp-5)}
+.ruler-row{display:flex;align-items:center;gap:20px;padding:9px 0;border-bottom:1px solid var(--border-subtle)}
+.ruler-row:last-child{border-bottom:0}
+.ruler-row .tok{flex:0 0 90px;font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--ink)}
+.ruler-row .px{flex:0 0 48px;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);font-variant-numeric:tabular-nums;text-align:right}
+.ruler-row .bar-wrap{flex:1}
+.ruler-row .bar{height:16px;background:linear-gradient(90deg,var(--gold-400),var(--gold-300));border-radius:3px}
+.ruler-row .mult{flex:0 0 96px;text-align:right;font-family:var(--mono);font-size:10px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+
+/* ---------- radius ---------- */
+.radius-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.radius-tile{background:var(--surface-raised);border:1px solid var(--border-strong);border-top:2px solid var(--gold-400);height:118px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px}
+.radius-tile.rs{border-radius:var(--r-sm)} .radius-tile.rm{border-radius:var(--r-md)}
+.radius-tile.rl{border-radius:var(--r-lg)} .radius-tile.rp{border-radius:var(--r-pill)}
+.radius-tile .tok{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--ink)}
+.radius-tile .px{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.radius-tile .role{font-size:10.5px;color:var(--ink-3)}
+
+/* ---------- card anatomy ---------- */
+.anatomy-wrap{display:grid;grid-template-columns:1.1fr 1fr;gap:32px;align-items:start}
+.anatomy-stage{padding:56px 64px;background:
+  linear-gradient(rgba(212,168,83,0.05) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(212,168,83,0.05) 1px,transparent 1px);
+  background-size:4px 4px;background-color:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);position:relative}
+.anatomy-grid-tag{position:absolute;top:12px;left:14px;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3)}
+/* the stat tile */
+.tile{position:relative;background:var(--surface);border:1px solid var(--gold-400);border-radius:var(--r-md);padding:20px;display:flex;flex-direction:column;min-height:150px;box-shadow:var(--sh-md)}
+.tile .t-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tile .t-head .lbl{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3)}
+.tile .delta{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 7px;border-radius:var(--r-sm);color:var(--emerald);background:var(--emerald-dim);border:1px solid rgba(52,211,153,0.20);font-variant-numeric:tabular-nums}
+.tile .v{font-family:var(--mono);font-size:26px;font-weight:600;line-height:1;letter-spacing:-0.02em;color:var(--gold-300);margin-top:14px;font-variant-numeric:tabular-nums}
+.tile .v small{font-family:var(--sans);font-size:13px;color:var(--ink-3);font-weight:500}
+.tile .foot{margin-top:auto;padding-top:14px;font-size:11px;color:var(--ink-3)}
+/* annotation guides */
+.anno{position:absolute;font-family:var(--mono);font-size:9.5px;font-weight:600;color:var(--gold-300);letter-spacing:0.02em;font-variant-numeric:tabular-nums;white-space:nowrap;background:rgba(5,8,15,0.85);padding:1px 5px;border-radius:3px}
+.pad-guide{position:absolute;background:rgba(212,168,83,0.14);border:1px dashed rgba(212,168,83,0.5)}
+.gap-guide{position:absolute;left:20px;right:20px;height:14px;background:rgba(96,165,250,0.12);border-top:1px dashed rgba(96,165,250,0.55);border-bottom:1px dashed rgba(96,165,250,0.55)}
+/* anatomy legend */
+.anatomy-legend{display:flex;flex-direction:column;gap:0}
+.anatomy-legend .lg-row{display:flex;align-items:flex-start;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-subtle)}
+.anatomy-legend .lg-row:last-child{border-bottom:0}
+.anatomy-legend .k{flex:0 0 120px;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.anatomy-legend .val{font-family:var(--mono);font-size:11px;color:var(--gold-300);font-variant-numeric:tabular-nums}
+.anatomy-legend .d{font-size:11.5px;color:var(--ink-3);margin-top:4px;line-height:1.45}
+.grid-note{margin-top:18px;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);line-height:1.6}
+.grid-note b{color:var(--ink-2);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="11.5" stroke="#D4A853" stroke-width="1.5"/>
+      <circle cx="16" cy="16" r="3" stroke="#D4A853" stroke-width="1.5"/>
+      <path d="M16 1.5V8M16 24v6.5M1.5 16H8M24 16h6.5" stroke="#D4A853" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <div class="brand-name">Snipers<span>Trading Academy</span></div>
+    <div class="tag">Foundations · <b>Typography &amp; Spacing</b></div>
+  </div>
+
+  <div class="page-title">
+    <h1>Typography &amp; Spacing</h1>
+    <p>Type runs on two families — a system sans for prose and a monospaced, tabular face for every figure. Space and radius derive from a strict 4px grid. Each specimen below is labeled with its token and measured value.</p>
+  </div>
+
+  <!-- 01 TYPE SCALE -->
+  <section>
+    <div class="sec-title"><span class="n">01</span><h2>Type scale</h2><span class="line"></span><span class="note">--t-xs → --t-4xl · sans specimen + mono numeral</span></div>
+    <div class="card scale">
+      <div class="scale-head">
+        <span class="h-meta">Token · px</span>
+        <span class="h-spec">Sans specimen</span>
+        <span class="h-num">Mono · tabular numeral</span>
+      </div>
+      <div class="type-row">
+        <div class="meta"><div class="tok">--t-4xl</div><div class="px">36px / 600</div><div class="role">Hero figures</div></div>
+        <div class="spec sz-4xl">Delta Master Sniper</div>
+        <div class="num sz-4xl">$5,797.80</div>
+      </div>
+      <div class="type-row">
+        <div class="meta"><div class="tok">--t-3xl</div><div class="px">28px / 600</div><div class="role">Page title</div></div>
+        <div class="spec sz-3xl">Your commission this month</div>
+        <div class="num sz-3xl">$5,797.80</div>
+      </div>
+      <div class="type-row">
+        <div class="meta"><div class="tok">--t-2xl</div><div class="px">22px / 600</div><div class="role">Section head</div></div>
+        <div class="spec sz-2xl">Structures &amp; progression</div>
+        <div class="num sz-2xl">$5,797.80</div>
+      </div>
+      <div class="type-row">
+        <div class="meta"><div class="tok">--t-xl</div><div class="px">18px / 600</div><div class="role">Card heading</div></div>
+        <div class="spec sz-xl">Live Market Session — NY Open</div>
+        <div class="num sz-xl">$5,797.80</div>
+      </div>
+      <div class="type-row">
+        <div class="meta"><div class="tok">--t-lg</div><div class="px">16px / 600</div><div class="role">Subheading</div></div>
+        <div class="spec sz-lg">London Session Breakdown</div>
+        <div class="num sz-lg">$5,797.80</div>
+      </div>
+      <div class="type-row">
+        <div class="meta"><div class="tok">--t-md</div><div class="px">14px / 600</div><div class="role">List title / emphasis</div></div>
+        <div class="spec sz-md">Risk Management Masterclass</div>
+        <div class="num sz-md">$5,797.80</div>
+      </div>
+      <div class="type-row">
+        <div class="meta"><div class="tok">--t-base</div><div class="px">13px / 400</div><div class="role">Body — default</div></div>
+        <div class="spec body sz-base">Commission scales with completed structures — each structure holds 1,092 members and adds one point to your rate.</div>
+        <div class="num sz-base">$5,797.80</div>
+      </div>
+      <div class="type-row">
+        <div class="meta"><div class="tok">--t-sm</div><div class="px">12px / 400</div><div class="role">Secondary / meta</div></div>
+        <div class="spec body sz-sm">Estimated payout, updated every 60 seconds on the Polygon network.</div>
+        <div class="num sz-sm">$5,797.80</div>
+      </div>
+      <div class="type-row">
+        <div class="meta"><div class="tok">--t-xs</div><div class="px">11px / 400</div><div class="role">Caption / micro-label</div></div>
+        <div class="spec body sz-xs">Structure 3 fills at 231 of 1,092 members</div>
+        <div class="num sz-xs">$5,797.80</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 WEIGHTS -->
+  <section>
+    <div class="sec-title"><span class="n">02</span><h2>Weight guide</h2><span class="line"></span><span class="note">400 · 500 · 600</span></div>
+    <div class="card">
+      <div class="weight-row">
+        <div class="meta"><div class="w">400 · Regular</div><div class="use">Body copy, long-form prose</div></div>
+        <div class="demo w400">Commission scales with every completed structure you unlock.</div>
+      </div>
+      <div class="weight-row">
+        <div class="meta"><div class="w">500 · Medium</div><div class="use">Nav items, toggle labels, quiet UI</div></div>
+        <div class="demo w500">Dashboard · Academy · My Team · Finance · Referrals</div>
+      </div>
+      <div class="weight-row">
+        <div class="meta"><div class="w">600 · Semibold</div><div class="use">Headings, buttons, all key figures</div></div>
+        <div class="demo w600">Delta Master Sniper — $5,797.80 this month</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 LETTER-SPACING -->
+  <section>
+    <div class="sec-title"><span class="n">03</span><h2>Letter-spacing — uppercase labels</h2><span class="line"></span><span class="note">tracking widens as labels shrink</span></div>
+    <div class="card track-list">
+      <div class="track-row">
+        <div class="meta"><b>0.02em</b> · headings</div>
+        <div class="demo tr-01">Payout Wallet</div>
+        <div class="use">Tight — larger uppercase set in sans</div>
+      </div>
+      <div class="track-row">
+        <div class="meta"><b>0.10em</b> · badges</div>
+        <div class="demo tr-10">Live · Complete · Upcoming</div>
+        <div class="use">Status badges, rank chips</div>
+      </div>
+      <div class="track-row">
+        <div class="meta"><b>0.12em</b> · field labels</div>
+        <div class="demo tr-12">Your Commission · 12%</div>
+        <div class="use">Default — the <span class="mono">.label</span> primitive, mono 10.5px / 600</div>
+      </div>
+      <div class="track-row">
+        <div class="meta"><b>0.22em</b> · brand eyebrow</div>
+        <div class="demo tr-22">Trading Academy</div>
+        <div class="use">Widest — masthead sub-brand only</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 SPACING SCALE -->
+  <section>
+    <div class="sec-title"><span class="n">04</span><h2>Spacing scale</h2><span class="line"></span><span class="note">4px grid · --sp-1 → --sp-16</span></div>
+    <div class="card ruler">
+      <div class="ruler-row"><span class="tok">--sp-1</span><span class="px">4px</span><div class="bar-wrap"><div class="bar" style="width:4px"></div></div><span class="mult">1 × 4px</span></div>
+      <div class="ruler-row"><span class="tok">--sp-2</span><span class="px">8px</span><div class="bar-wrap"><div class="bar" style="width:8px"></div></div><span class="mult">2 × 4px</span></div>
+      <div class="ruler-row"><span class="tok">--sp-3</span><span class="px">12px</span><div class="bar-wrap"><div class="bar" style="width:12px"></div></div><span class="mult">3 × 4px</span></div>
+      <div class="ruler-row"><span class="tok">--sp-4</span><span class="px">16px</span><div class="bar-wrap"><div class="bar" style="width:16px"></div></div><span class="mult">4 × 4px</span></div>
+      <div class="ruler-row"><span class="tok">--sp-5</span><span class="px">20px</span><div class="bar-wrap"><div class="bar" style="width:20px"></div></div><span class="mult">5 × 4px</span></div>
+      <div class="ruler-row"><span class="tok">--sp-6</span><span class="px">24px</span><div class="bar-wrap"><div class="bar" style="width:24px"></div></div><span class="mult">6 × 4px</span></div>
+      <div class="ruler-row"><span class="tok">--sp-8</span><span class="px">32px</span><div class="bar-wrap"><div class="bar" style="width:32px"></div></div><span class="mult">8 × 4px</span></div>
+      <div class="ruler-row"><span class="tok">--sp-10</span><span class="px">40px</span><div class="bar-wrap"><div class="bar" style="width:40px"></div></div><span class="mult">10 × 4px</span></div>
+      <div class="ruler-row"><span class="tok">--sp-12</span><span class="px">48px</span><div class="bar-wrap"><div class="bar" style="width:48px"></div></div><span class="mult">12 × 4px</span></div>
+      <div class="ruler-row"><span class="tok">--sp-16</span><span class="px">64px</span><div class="bar-wrap"><div class="bar" style="width:64px"></div></div><span class="mult">16 × 4px</span></div>
+    </div>
+  </section>
+
+  <!-- 05 RADIUS -->
+  <section>
+    <div class="sec-title"><span class="n">05</span><h2>Radius</h2><span class="line"></span><span class="note">--r-sm → --r-pill</span></div>
+    <div class="radius-grid">
+      <div class="radius-tile rs"><div class="tok">--r-sm</div><div class="px">6px</div><div class="role">buttons, chips, inputs</div></div>
+      <div class="radius-tile rm"><div class="tok">--r-md</div><div class="px">10px</div><div class="role">cards, panels</div></div>
+      <div class="radius-tile rl"><div class="tok">--r-lg</div><div class="px">14px</div><div class="role">modals, feature cards</div></div>
+      <div class="radius-tile rp"><div class="tok">--r-pill</div><div class="px">999px</div><div class="role">toggles, live pills</div></div>
+    </div>
+  </section>
+
+  <!-- 06 CARD ANATOMY -->
+  <section>
+    <div class="sec-title"><span class="n">06</span><h2>Card anatomy — 4px grid</h2><span class="line"></span><span class="note">stat tile · every measure snaps to 4px</span></div>
+    <div class="anatomy-wrap">
+      <div class="anatomy-stage">
+        <span class="anatomy-grid-tag">4px grid</span>
+        <div class="tile">
+          <!-- padding guides -->
+          <div class="pad-guide" style="left:0;top:0;bottom:0;width:20px"></div>
+          <div class="pad-guide" style="right:0;top:0;bottom:0;width:20px"></div>
+          <!-- gap guide between head and value -->
+          <div class="gap-guide" style="top:38px"></div>
+
+          <div class="t-head"><span class="lbl">Your Commission</span><span class="delta">▲ 8.3%</span></div>
+          <div class="v">$5,797<small>.80</small></div>
+          <div class="foot">12% of team pool</div>
+
+          <!-- annotations -->
+          <span class="anno" style="left:-2px;top:-20px">padding 20px = --sp-5</span>
+          <span class="anno" style="left:24px;top:44px">gap 14px</span>
+          <span class="anno" style="right:-2px;bottom:-20px">radius 10px = --r-md</span>
+        </div>
+      </div>
+      <div>
+        <div class="sub-label">Measured anatomy</div>
+        <div class="anatomy-legend">
+          <div class="lg-row"><span class="k">Padding</span><div><div class="val">20px · --sp-5</div><div class="d">Uniform inset on all four sides of the tile.</div></div></div>
+          <div class="lg-row"><span class="k">Head → value</span><div><div class="val">14px gap</div><div class="d">Space below the label row before the figure. Off-grid by 2px is not allowed; 14 = 3.5 × 4 snaps to the baseline.</div></div></div>
+          <div class="lg-row"><span class="k">Value → foot</span><div><div class="val">14px · padding-top</div><div class="d">Footnote pinned to the base with margin-top:auto.</div></div></div>
+          <div class="lg-row"><span class="k">Radius</span><div><div class="val">10px · --r-md</div><div class="d">Standard card corner.</div></div></div>
+          <div class="lg-row"><span class="k">Border</span><div><div class="val">1px · --border</div><div class="d">Crisp hairline; --gold-400 shown here for the active state.</div></div></div>
+          <div class="lg-row"><span class="k">Min-height</span><div><div class="val">150px</div><div class="d">Keeps a grid of tiles even when figures differ.</div></div></div>
+        </div>
+        <div class="grid-note">Every offset is a multiple of <b>4px</b>. Spacing tokens compose the rhythm; the mono, tabular figure holds its column as digits change.</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
