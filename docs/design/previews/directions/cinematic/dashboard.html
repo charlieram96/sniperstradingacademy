@@ -1,0 +1,566 @@
+<!-- @dsCard group="Direction 3 — Rich & Cinematic" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cinematic — Dashboard</title>
+<style>
+  :root{
+    --bg:#04060D;
+    --mesh-a:rgba(212,168,83,0.10);
+    --mesh-b:rgba(59,130,246,0.07);
+    --glass:rgba(15,22,41,0.62);
+    --glass-2:rgba(19,27,49,0.55);
+    --glass-border:rgba(255,255,255,0.09);
+    --ink:#EDF0F7;
+    --ink-2:#97A1B6;
+    --ink-3:#5D6883;
+    --gold:#E0B665;
+    --gold-lite:#F0D48A;
+    --gold-deep:#A67E2E;
+    --red:#F0554E;
+    --glow:0 0 24px rgba(224,182,101,0.22),0 0 64px rgba(224,182,101,0.08);
+    --radius:18px;
+    --radius-sm:12px;
+    --pad-card:28px;
+    --serif:Didot,"Bodoni MT","Playfair Display",Georgia,serif;
+    --sans:-apple-system,"SF Pro Text",Inter,"Segoe UI",sans-serif;
+    --mono:ui-monospace,"SF Mono","Geist Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:14px;
+    line-height:1.5;
+    min-height:100vh;
+    overflow-x:hidden;
+    position:relative;
+  }
+
+  /* ---------- animated mesh background (fixed, clipped) ---------- */
+  .bg{position:fixed;inset:0;overflow:hidden;z-index:0;pointer-events:none;background:var(--bg)}
+  .mesh{
+    position:absolute;inset:-25%;
+    background:
+      radial-gradient(38% 46% at 20% 26%, var(--mesh-a), transparent 68%),
+      radial-gradient(44% 50% at 84% 74%, var(--mesh-b), transparent 70%),
+      radial-gradient(30% 38% at 62% 12%, rgba(212,168,83,0.05), transparent 72%);
+    filter:blur(90px);
+    animation:drift 44s ease-in-out infinite alternate;
+    will-change:transform;
+  }
+  @keyframes drift{
+    0%{transform:translate3d(0,0,0) scale(1)}
+    100%{transform:translate3d(3%,-2.5%,0) scale(1.1)}
+  }
+  /* faint grain/vignette so glass has something to sit on */
+  .bg::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 0%,transparent 55%,rgba(0,0,0,0.55) 100%)}
+
+  /* ---------- glass primitive ---------- */
+  .glass{
+    background:var(--glass);
+    -webkit-backdrop-filter:blur(24px) saturate(1.3);
+    backdrop-filter:blur(24px) saturate(1.3);
+    border:1px solid var(--glass-border);
+    border-radius:var(--radius);
+    box-shadow:0 20px 50px -20px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+
+  /* gradient hairline border (gold -> transparent) via mask */
+  .featured{position:relative}
+  .featured::before{
+    content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;
+    background:linear-gradient(135deg, var(--gold) 0%, rgba(224,182,101,0.25) 30%, transparent 60%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;
+    pointer-events:none;
+  }
+
+  .eyebrow{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:600}
+  .num{font-family:var(--serif);font-weight:300;letter-spacing:-0.01em}
+
+  /* ---------- shell ---------- */
+  .app{position:relative;z-index:1;display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+
+  /* ---------- sidebar ---------- */
+  .side{
+    margin:16px 0 16px 16px;
+    padding:26px 0 18px;
+    display:flex;flex-direction:column;
+    position:sticky;top:16px;height:calc(100vh - 32px);
+    background:var(--glass);
+    -webkit-backdrop-filter:blur(24px) saturate(1.3);
+    backdrop-filter:blur(24px) saturate(1.3);
+    border:1px solid var(--glass-border);
+    border-radius:var(--radius);
+    box-shadow:0 20px 50px -20px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  .brand{display:flex;align-items:center;gap:12px;padding:0 24px 26px}
+  .brand .mark{
+    width:38px;height:38px;flex:0 0 auto;border-radius:11px;
+    display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 34% 28%, rgba(240,212,138,0.25), rgba(166,126,46,0.12) 70%);
+    border:1px solid rgba(224,182,101,0.35);
+    box-shadow:var(--glow);
+  }
+  .brand-name{font-size:15px;font-weight:600;letter-spacing:0.01em;color:var(--ink);line-height:1.15}
+  .brand-name span{display:block;font-size:9px;letter-spacing:0.26em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-top:3px}
+
+  .nav{display:flex;flex-direction:column;gap:2px;padding:0 14px;margin-top:4px;flex:1}
+  .nav-label{padding:0 12px 10px;margin-top:6px}
+  .nav a{
+    display:flex;align-items:center;gap:13px;
+    padding:10px 12px;color:var(--ink-2);text-decoration:none;
+    border-radius:var(--radius-sm);font-size:13.5px;letter-spacing:0.01em;
+    transition:color .18s,background .18s;position:relative;
+  }
+  .nav a svg{flex:0 0 auto;opacity:.85}
+  .nav a:hover{color:var(--ink);background:rgba(255,255,255,0.04)}
+  .nav a.active{
+    color:var(--ink);
+    background:linear-gradient(100deg, rgba(224,182,101,0.16), rgba(224,182,101,0.03));
+    box-shadow:inset 0 0 0 1px rgba(224,182,101,0.22);
+  }
+  .nav a.active svg{opacity:1;color:var(--gold)}
+  .nav a.active::before{content:"";position:absolute;left:-14px;top:9px;bottom:9px;width:3px;border-radius:3px;background:linear-gradient(180deg,var(--gold-lite),var(--gold-deep));box-shadow:var(--glow)}
+
+  .chip{
+    margin:14px 16px 0;padding:12px 14px;
+    border:1px solid var(--glass-border);border-radius:var(--radius-sm);
+    display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.02);
+  }
+  .avatar{
+    width:36px;height:36px;flex:0 0 auto;border-radius:50%;
+    background:radial-gradient(circle at 34% 28%, var(--gold-lite), var(--gold) 48%, var(--gold-deep) 100%);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--serif);font-size:16px;font-weight:400;color:#1a1204;
+  }
+  .chip .who{overflow:hidden}
+  .chip .who b{font-weight:600;font-size:13px;color:var(--ink);display:block}
+  .chip .who small{font-size:11px;color:var(--ink-3);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* ---------- main ---------- */
+  .main{padding:34px 44px 60px;max-width:1240px}
+  .page-head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
+  .page-head h1{font-size:34px;font-weight:600;letter-spacing:-0.02em;line-height:1;color:var(--ink)}
+  .page-head .sub{color:var(--ink-2);font-size:14px;margin-top:10px}
+  .head-badge{display:inline-flex;align-items:center;gap:9px;padding:9px 15px;border-radius:100px;background:rgba(255,255,255,0.03);border:1px solid var(--glass-border)}
+  .head-badge svg{color:var(--gold)}
+  .head-badge span{font-size:12px;color:var(--ink-2)}
+  .head-badge b{color:var(--ink);font-weight:600}
+
+  @keyframes rise{0%{opacity:0;transform:translateY(14px) scale(.99)}100%{opacity:1;transform:none}}
+
+  section{margin-top:30px}
+  .sec-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px}
+  .sec-head .link{font-size:12px;color:var(--ink-3);text-decoration:none;letter-spacing:0.02em}
+  .sec-head .link:hover{color:var(--gold)}
+
+  /* ---------- HERO commission card ---------- */
+  .hero{
+    margin-top:26px;padding:36px 40px;
+    display:grid;grid-template-columns:auto 1px 1fr;gap:0 44px;align-items:center;
+    animation:rise .8s cubic-bezier(.2,.7,.2,1) both;animation-delay:.05s;
+  }
+  .hero .rank-side{display:flex;align-items:center;gap:22px}
+  .medallion{
+    width:72px;height:72px;flex:0 0 auto;border-radius:50%;
+    background:radial-gradient(circle at 34% 28%, var(--gold-lite), var(--gold) 46%, var(--gold-deep) 100%);
+    box-shadow:inset 0 2px 3px rgba(255,255,255,0.45), inset 0 -3px 6px rgba(90,60,10,0.5), var(--glow);
+    display:flex;align-items:center;justify-content:center;position:relative;
+  }
+  .medallion::before{content:"";position:absolute;inset:5px;border-radius:50%;border:1px solid rgba(90,60,10,0.4)}
+  .medallion svg{position:relative;color:#2a1d05}
+  .rank-side .rank-badge{display:inline-flex;align-items:center;gap:8px;padding:5px 11px;border-radius:100px;border:1px solid rgba(224,182,101,0.3);background:rgba(224,182,101,0.08);margin-bottom:11px}
+  .rank-side .rank-badge span{font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--gold);font-weight:600}
+  .rank-side .rank-name{font-family:var(--serif);font-weight:300;font-size:32px;line-height:1.02;letter-spacing:-0.015em;color:var(--ink)}
+  .rank-side .rank-meta{color:var(--ink-2);font-size:12.5px;margin-top:9px}
+  .rank-side .rank-meta b{color:var(--ink);font-weight:600}
+
+  .hero .vrule{align-self:stretch;background:linear-gradient(180deg,transparent,rgba(224,182,101,0.28),transparent)}
+
+  .hero .comm{text-align:left}
+  .hero .comm .lbl{margin-bottom:10px}
+  .hero .comm .fig{
+    font-family:var(--serif);font-weight:300;font-size:56px;line-height:.95;letter-spacing:-0.02em;
+    background:linear-gradient(135deg, var(--gold), var(--gold-lite));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 18px rgba(224,182,101,0.35));
+    width:max-content;
+  }
+  .hero .comm .note{color:var(--ink-2);font-size:13px;margin-top:12px}
+  .hero .comm .note b{color:var(--gold);font-weight:600}
+  .hero .mini{grid-column:3;display:flex;gap:34px;margin-top:24px;padding-top:22px;border-top:1px solid var(--glass-border)}
+  .hero .mini .m .v{font-family:var(--serif);font-weight:300;font-size:24px;color:var(--ink);line-height:1}
+  .hero .mini .m .v small{font-family:var(--sans);font-size:13px;color:var(--ink-3)}
+  .hero .mini .m .k{margin-top:9px}
+
+  /* ---------- stat tiles ---------- */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+  .tile{padding:24px 24px 22px;display:flex;flex-direction:column;justify-content:space-between;min-height:158px}
+  .tile .v{font-family:var(--serif);font-weight:300;font-size:36px;line-height:1;letter-spacing:-0.01em;color:var(--ink)}
+  .tile.gold .v{
+    background:linear-gradient(135deg, var(--gold), var(--gold-lite));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 12px rgba(224,182,101,0.28));
+    width:max-content;
+  }
+  .tile .v small{font-family:var(--sans);font-size:13px;color:var(--ink-3)}
+  .tile .foot{margin-top:22px}
+  .tile .foot .note{font-size:11.5px;color:var(--ink-3);margin-top:5px}
+  .tile .ico{position:absolute;top:22px;right:22px;color:var(--ink-3);opacity:.6}
+  .tile{position:relative}
+  .tile.gold .ico{color:var(--gold);opacity:.7}
+
+  /* ---------- structures ---------- */
+  .structures{display:flex;gap:14px}
+  .struct{
+    flex:1;min-width:0;padding:20px 18px;position:relative;
+    display:flex;flex-direction:column;min-height:150px;
+    background:var(--glass);
+    -webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);
+    border:1px solid var(--glass-border);border-radius:var(--radius-sm);
+  }
+  .struct .idx{font-family:var(--serif);font-size:15px;color:var(--ink-3);font-weight:400}
+  .struct .nm{font-size:12.5px;color:var(--ink-2);margin-top:auto;letter-spacing:0.01em}
+  .struct .st{margin-top:14px;display:flex;align-items:center;gap:7px}
+  .struct.locked{opacity:.4}
+  .struct.active{border-color:rgba(224,182,101,0.32);box-shadow:inset 0 0 0 1px rgba(224,182,101,0.12), 0 8px 30px -18px rgba(224,182,101,0.4)}
+  .struct .check{color:var(--gold)}
+  .bar{height:5px;background:rgba(255,255,255,0.07);border-radius:3px;margin-top:12px;overflow:hidden}
+  .bar > i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--gold-deep),var(--gold-lite));box-shadow:0 0 10px rgba(224,182,101,0.5)}
+  .struct .prog{font-size:11px;color:var(--ink-3);margin-top:9px;font-family:var(--mono);letter-spacing:0.02em}
+  .badge-sm{display:inline-flex;align-items:center;gap:6px;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);font-weight:600}
+  .lock-ico{position:absolute;top:18px;right:16px;color:var(--ink-3)}
+  .struct.ultimate{
+    flex:1.2;
+    background:linear-gradient(150deg, rgba(224,182,101,0.14), rgba(15,22,41,0.6) 60%);
+    border-color:rgba(224,182,101,0.3);
+  }
+  .struct.ultimate .idx{color:var(--gold)}
+  .struct.ultimate .nm{color:var(--ink);font-family:var(--serif);font-size:16px;font-weight:300}
+  .struct.ultimate .pct{font-family:var(--serif);font-size:26px;color:var(--gold-lite);font-weight:300;margin-top:6px}
+
+  /* ---------- lower two-column ---------- */
+  .lower{display:grid;grid-template-columns:1.55fr 1fr;gap:28px;align-items:start}
+  .class{
+    display:flex;align-items:center;gap:20px;padding:20px 22px;margin-bottom:14px;
+    background:var(--glass);
+    -webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);
+    border:1px solid var(--glass-border);border-radius:var(--radius-sm);
+  }
+  .class:last-child{margin-bottom:0}
+  .class.is-live{border-color:rgba(224,182,101,0.28)}
+  .class .when{flex:0 0 58px;text-align:center;padding-right:18px;border-right:1px solid var(--glass-border)}
+  .class .when .d{font-family:var(--serif);font-size:26px;font-weight:300;color:var(--ink);line-height:1}
+  .class .when .mo{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-3);margin-top:5px}
+  .class .body{flex:1;min-width:0}
+  .class .body h4{font-size:15.5px;font-weight:600;color:var(--ink);letter-spacing:0.005em}
+  .class .body .meta{font-size:12px;color:var(--ink-3);margin-top:6px}
+  .class .body .badge-line{margin-top:10px}
+
+  /* ---------- badges ---------- */
+  .badge{display:inline-flex;align-items:center;gap:7px;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;padding:5px 11px;border-radius:100px;border:1px solid var(--glass-border);color:var(--ink-2);font-weight:600}
+  /* LIVE: red dot + gold shimmer border */
+  .badge.live{position:relative;color:var(--gold);border-color:transparent;background:rgba(224,182,101,0.06)}
+  .badge.live::before{
+    content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;
+    background:conic-gradient(from 0deg, transparent 0%, var(--gold-lite) 18%, transparent 38%, transparent 100%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;
+    animation:shimmer 3.2s linear infinite;
+  }
+  @keyframes shimmer{to{transform:rotate(360deg)}}
+  .badge.live .dot{width:6px;height:6px;border-radius:50%;background:var(--red);position:relative;box-shadow:0 0 8px rgba(240,85,78,0.9)}
+  .badge.live .dot::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:1px solid var(--red);opacity:.6;animation:pulse 2.2s ease-out infinite}
+  @keyframes pulse{0%{transform:scale(.55);opacity:.7}100%{transform:scale(1.9);opacity:0}}
+  .badge.upcoming{color:var(--ink-2)}
+
+  .btn{
+    flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:0.03em;
+    padding:10px 18px;border-radius:var(--radius-sm);cursor:pointer;border:1px solid transparent;
+    text-decoration:none;white-space:nowrap;transition:transform .16s,box-shadow .18s,background .18s;
+  }
+  .btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-lite));color:#1a1204;box-shadow:var(--glow)}
+  .btn-gold:hover{transform:translateY(-1px)}
+  .btn-outline{background:rgba(255,255,255,0.02);border-color:var(--glass-border);color:var(--ink-2)}
+  .btn-outline:hover{border-color:rgba(224,182,101,0.35);color:var(--ink)}
+
+  /* ---------- wallet ---------- */
+  .wallet{padding:var(--pad-card)}
+  .wallet .amt{
+    font-family:var(--serif);font-weight:300;font-size:38px;letter-spacing:-0.01em;line-height:1;margin-top:16px;
+    background:linear-gradient(135deg,var(--gold),var(--gold-lite));
+    -webkit-background-clip:text;background-clip:text;color:transparent;width:max-content;
+    filter:drop-shadow(0 0 14px rgba(224,182,101,0.3));
+  }
+  .wallet .amt small{font-family:var(--sans);font-size:13px;color:var(--ink-3);-webkit-text-fill-color:var(--ink-3)}
+  .wallet .chain{display:flex;align-items:center;gap:8px;margin-top:18px}
+  .wallet .chain .net{font-size:11.5px;color:var(--ink-2)}
+  .wallet .chain .net b{color:var(--ink);font-weight:600}
+  .wallet .addr{margin-top:20px;padding-top:18px;border-top:1px solid var(--glass-border);display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .wallet .addr .k{font-family:var(--mono);font-size:13px;color:var(--ink);letter-spacing:0.01em}
+  .pill{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);border:1px solid rgba(224,182,101,0.3);border-radius:100px;padding:3px 9px;font-weight:600}
+  .referrals-note{font-size:12px;color:var(--ink-3);margin-top:18px;line-height:1.7}
+  .referrals-note b{color:var(--ink);font-weight:600}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation:none!important}
+  }
+</style>
+</head>
+<body>
+
+<div class="bg"><div class="mesh"></div></div>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <div class="brand">
+      <div class="mark">
+        <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="11" stroke="#E0B665" stroke-width="1.5"/>
+          <circle cx="16" cy="16" r="3" stroke="#E0B665" stroke-width="1.5"/>
+          <path d="M16 2V8M16 24v6M2 16H8M24 16h6" stroke="#E0B665" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="brand-name">Snipers<span>Trading Academy</span></div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-label eyebrow">Overview</div>
+      <a href="#" class="active">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="#">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-5"/><path d="M22 10v5"/></svg>
+        Academy
+      </a>
+      <a href="#">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20"/><circle cx="10" cy="8" r="3.5"/><path d="M20 20v-1.5a3.5 3.5 0 0 0-2.7-3.4"/><path d="M15 4.6a3.5 3.5 0 0 1 0 6.8"/></svg>
+        My Team
+      </a>
+      <a href="#">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 6.5c0-2-2.2-3-5-3s-5 1-5 3 2.2 3 5 3.5 5 1.5 5 3.5-2.2 3-5 3-5-1-5-3"/></svg>
+        Finance
+      </a>
+      <a href="#">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
+        Payments
+      </a>
+      <a href="#">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>
+        Referrals
+      </a>
+      <a href="#">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5a6 6 0 0 0-12 0c0 6-2.5 7.5-2.5 7.5h17S18 14.5 18 8.5"/><path d="M10.5 20a1.9 1.9 0 0 0 3 0"/></svg>
+        Notifications
+      </a>
+      <a href="#">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H2a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 3.3 6.6l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 9 3.3V2a2 2 0 1 1 4 0v.1A1.6 1.6 0 0 0 15 3.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg>
+        Settings
+      </a>
+    </nav>
+
+    <div class="chip">
+      <div class="avatar">C</div>
+      <div class="who">
+        <b>Charlie R.</b>
+        <small>charlieram96@gmail.com</small>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <div class="page-head">
+      <div>
+        <h1>Dashboard</h1>
+        <div class="sub">Welcome back, Charlie</div>
+      </div>
+      <div class="head-badge">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <span>Cycle closes in <b>9 days</b></span>
+      </div>
+    </div>
+
+    <!-- HERO — YOUR COMMISSION -->
+    <div class="hero glass featured">
+      <div class="rank-side">
+        <div class="medallion">
+          <svg width="34" height="34" viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="10.5" stroke="currentColor" stroke-width="1.5"/>
+            <circle cx="16" cy="16" r="2.6" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M16 3V8M16 24v5M3 16H8M24 16h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <span class="rank-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="m8.5 12.5-1.5 8L12 18l5 2.5-1.5-8"/></svg>
+            <span>Current Rank</span>
+          </span>
+          <div class="rank-name">Delta Master Sniper</div>
+          <div class="rank-meta"><b>2 structures complete</b> · 3 of 6 unlocked</div>
+        </div>
+      </div>
+
+      <div class="vrule"></div>
+
+      <div class="comm">
+        <div class="lbl eyebrow">Your Commission</div>
+        <div class="fig">$5,797.80</div>
+        <div class="note">Earned this cycle at a <b>12% rate</b> · settles to USDC on Polygon</div>
+      </div>
+
+      <div class="mini">
+        <div class="m"><div class="v">12<small>%</small></div><div class="k eyebrow">Commission rate</div></div>
+        <div class="m"><div class="v">$48,315<small>.00</small></div><div class="k eyebrow">Team pool · monthly</div></div>
+        <div class="m"><div class="v">3 <small>of 6</small></div><div class="k eyebrow">Structures unlocked</div></div>
+      </div>
+    </div>
+
+    <!-- STAT TILES -->
+    <section>
+      <div class="sec-head"><span class="eyebrow">This month</span></div>
+      <div class="stats">
+        <div class="tile glass">
+          <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 19v-1a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v1"/><path d="M16 4a3.5 3.5 0 0 1 0 7"/><path d="M21 19v-1a4 4 0 0 0-3-3.8"/></svg></span>
+          <div><div class="v">$48,315<small>.00</small></div></div>
+          <div class="foot"><span class="eyebrow">Team Pool</span><div class="note">Monthly distributable</div></div>
+        </div>
+        <div class="tile glass gold featured">
+          <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 6.5c0-2-2.2-3-5-3s-5 1-5 3 2.2 3 5 3.5 5 1.5 5 3.5-2.2 3-5 3-5-1-5-3"/></svg></span>
+          <div><div class="v">$5,797<small>.80</small></div></div>
+          <div class="foot"><span class="eyebrow">Your Commission</span><div class="note">12% of team pool</div></div>
+        </div>
+        <div class="tile glass">
+          <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg></span>
+          <div><div class="v">7 <small>of 9</small></div></div>
+          <div class="foot"><span class="eyebrow">Active Direct Referrals</span><div class="note">2 slots available</div></div>
+        </div>
+        <div class="tile glass">
+          <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20"/><circle cx="10" cy="8" r="3.5"/><path d="M20 20v-1.5a3.5 3.5 0 0 0-2.7-3.4"/><path d="M15 4.6a3.5 3.5 0 0 1 0 6.8"/></svg></span>
+          <div><div class="v">2,560</div></div>
+          <div class="foot"><span class="eyebrow">Total Team</span><div class="note">2,415 active members</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STRUCTURES -->
+    <section>
+      <div class="sec-head">
+        <span class="eyebrow">Structures · Progression</span>
+        <a href="#" class="link">View all structures</a>
+      </div>
+      <div class="structures">
+        <div class="struct">
+          <div class="idx">01</div>
+          <div class="nm">First Structure</div>
+          <div class="st"><span class="check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="badge-sm">Complete</span></div>
+        </div>
+        <div class="struct">
+          <div class="idx">02</div>
+          <div class="nm">Second Structure</div>
+          <div class="st"><span class="check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="badge-sm">Complete</span></div>
+        </div>
+        <div class="struct active">
+          <div class="idx">03</div>
+          <div class="nm">Third Structure</div>
+          <div class="bar"><i style="width:21%"></i></div>
+          <div class="prog">231 / 1,092 members</div>
+        </div>
+        <div class="struct locked">
+          <div class="idx">04</div>
+          <span class="lock-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+          <div class="nm">Locked</div>
+        </div>
+        <div class="struct locked">
+          <div class="idx">05</div>
+          <span class="lock-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+          <div class="nm">Locked</div>
+        </div>
+        <div class="struct locked">
+          <div class="idx">06</div>
+          <span class="lock-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+          <div class="nm">Locked</div>
+        </div>
+        <div class="struct ultimate">
+          <span class="lock-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+          <div class="idx">Ultimate</div>
+          <div class="pct">16%</div>
+          <div class="nm">Lion Master Sniper</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LOWER TWO-COLUMN -->
+    <section class="lower">
+      <div>
+        <div class="sec-head">
+          <span class="eyebrow">Academy · Schedule</span>
+          <a href="#" class="link">Full calendar</a>
+        </div>
+
+        <div class="class glass is-live">
+          <div class="when"><div class="d">21</div><div class="mo">Jul</div></div>
+          <div class="body">
+            <h4>Live Market Session — NY Open</h4>
+            <div class="meta">Trading floor · streaming now</div>
+            <div class="badge-line"><span class="badge live"><span class="dot"></span>Live</span></div>
+          </div>
+          <a href="#" class="btn btn-gold">Join Class</a>
+        </div>
+
+        <div class="class glass">
+          <div class="when"><div class="d">22</div><div class="mo">Jul</div></div>
+          <div class="body">
+            <h4>London Session Breakdown</h4>
+            <div class="meta">Jul 22, 2026 · 3:00 AM EST</div>
+            <div class="badge-line"><span class="badge upcoming">Upcoming</span></div>
+          </div>
+          <a href="#" class="btn btn-outline">Remind me</a>
+        </div>
+
+        <div class="class glass">
+          <div class="when"><div class="d">23</div><div class="mo">Jul</div></div>
+          <div class="body">
+            <h4>Risk Management Masterclass</h4>
+            <div class="meta">Jul 23, 2026 · 7:00 PM EST</div>
+            <div class="badge-line"><span class="badge upcoming">Upcoming</span></div>
+          </div>
+          <a href="#" class="btn btn-outline">Remind me</a>
+        </div>
+      </div>
+
+      <div>
+        <div class="sec-head"><span class="eyebrow">Payout Wallet</span></div>
+        <div class="wallet glass featured">
+          <span class="eyebrow" style="color:var(--ink-3)">Estimated payout</span>
+          <div class="amt">$5,797.80 <small>USDC</small></div>
+          <div class="chain">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7l-9-5Z"/><path d="M12 22V12M3 7l9 5 9-5"/></svg>
+            <span class="net">Network · <b>Polygon</b></span>
+          </div>
+          <div class="addr">
+            <span class="k">0x7C4d…9E2a</span>
+            <span class="pill">Verified</span>
+          </div>
+          <div class="referrals-note">
+            <b>7 of 9</b> active direct referrals · <b>2,560</b> total team, 2,415 active. Structure 3 fills at 231 of 1,092 members.
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>
