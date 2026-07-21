@@ -1,0 +1,562 @@
+<!-- @dsCard group="Direction 2 — Modern Fintech Pro" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fintech — Dashboard</title>
+<style>
+  :root{
+    --bg:#05080F;
+    --surface:#0A0F1C;
+    --surface-raised:#101728;
+    --ink:#E6EAF2;
+    --ink-2:#8B95A9;
+    --ink-3:#525D73;
+    --gold:#D4A853;
+    --gold-bright:#E8C583;
+    --emerald:#34D399;
+    --red:#F87171;
+    --border:rgba(255,255,255,0.10);
+    --border-soft:rgba(255,255,255,0.055);
+    --ring:rgba(212,168,83,0.55);
+    --radius:10px;
+    --radius-sm:6px;
+    --pad-card:20px;
+    --sans:-apple-system,"SF Pro Text",Inter,"Segoe UI",sans-serif;
+    --mono:ui-monospace,"SF Mono","Geist Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:13px;
+    line-height:1.45;
+    min-height:100vh;
+    /* faint engineered grid texture */
+    background-image:
+      linear-gradient(rgba(255,255,255,0.014) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,0.014) 1px,transparent 1px);
+    background-size:40px 40px;
+  }
+  a{color:inherit}
+
+  /* ---------- primitives ---------- */
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+  .label{
+    font-family:var(--mono);font-size:10.5px;font-weight:600;
+    letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3);
+  }
+  .delta{
+    display:inline-flex;align-items:center;gap:4px;
+    font-family:var(--mono);font-size:11px;font-weight:600;
+    padding:2px 7px;border-radius:6px;
+    font-variant-numeric:tabular-nums;letter-spacing:-0.01em;white-space:nowrap;
+  }
+  .delta.up{color:var(--emerald);background:rgba(52,211,153,0.11);border:1px solid rgba(52,211,153,0.20)}
+  .delta.down{color:var(--red);background:rgba(248,113,113,0.11);border:1px solid rgba(248,113,113,0.20)}
+  .delta.flat{color:var(--ink-2);background:rgba(255,255,255,0.04);border:1px solid var(--border)}
+
+  /* ---------- shell ---------- */
+  .app{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+
+  /* ---------- sidebar ---------- */
+  .side{
+    background:var(--surface);
+    border-right:1px solid var(--border);
+    display:flex;flex-direction:column;
+    padding:20px 0 16px;
+    position:sticky;top:0;height:100vh;
+  }
+  .brand{display:flex;align-items:center;gap:11px;padding:2px 20px 22px}
+  .brand svg{flex:0 0 auto}
+  .brand-name{font-size:14px;font-weight:600;line-height:1.1;letter-spacing:0.01em;color:var(--ink)}
+  .brand-name span{display:block;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-3);margin-top:3px}
+
+  .nav{display:flex;flex-direction:column;gap:2px;padding:0 12px;flex:1}
+  .nav-label{padding:14px 10px 8px}
+  .nav a{
+    display:flex;align-items:center;gap:11px;
+    padding:8px 10px;color:var(--ink-2);text-decoration:none;
+    border-radius:var(--radius-sm);font-size:13px;font-weight:500;
+    position:relative;transition:color .15s,background .15s;
+  }
+  .nav a svg{flex:0 0 auto;opacity:.7}
+  .nav a .count{margin-left:auto;font-family:var(--mono);font-size:10px;font-weight:600;color:var(--ink-3);background:var(--surface-raised);border:1px solid var(--border);border-radius:5px;padding:1px 5px}
+  .nav a:hover{color:var(--ink);background:rgba(255,255,255,0.035)}
+  .nav a.active{color:var(--ink);background:var(--surface-raised)}
+  .nav a.active svg{opacity:1;color:var(--gold)}
+  .nav a.active::before{content:"";position:absolute;left:-12px;top:7px;bottom:7px;width:2px;background:var(--gold);border-radius:0 2px 2px 0}
+
+  .chip{
+    margin:12px 14px 0;padding:11px 12px;
+    border:1px solid var(--border);border-radius:var(--radius-sm);
+    display:flex;align-items:center;gap:10px;background:var(--surface-raised);
+  }
+  .avatar{
+    width:32px;height:32px;flex:0 0 auto;border-radius:var(--radius-sm);
+    background:linear-gradient(135deg,rgba(212,168,83,0.22),rgba(212,168,83,0.05));
+    border:1px solid rgba(212,168,83,0.30);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-weight:600;font-size:13px;color:var(--gold-bright);
+  }
+  .chip .who{overflow:hidden}
+  .chip .who b{font-weight:600;font-size:12.5px;color:var(--ink);display:block}
+  .chip .who small{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* ---------- main ---------- */
+  .main{padding:24px 32px 56px;max-width:1204px}
+
+  .page-head{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}
+  .page-head h1{font-size:24px;font-weight:600;letter-spacing:-0.02em;line-height:1;color:var(--ink)}
+  .page-head .sub{color:var(--ink-2);font-size:13px;margin-top:7px}
+  .head-right{display:flex;align-items:center;gap:12px}
+  .clock{font-family:var(--mono);font-size:11px;color:var(--ink-2);font-variant-numeric:tabular-nums;letter-spacing:0.02em}
+  .clock b{color:var(--gold);font-weight:600}
+  .live{
+    display:inline-flex;align-items:center;gap:7px;
+    padding:6px 11px;border:1px solid rgba(248,113,113,0.30);border-radius:100px;
+    background:rgba(248,113,113,0.07);
+  }
+  .live .dot{width:6px;height:6px;border-radius:50%;background:var(--red);position:relative}
+  .live .dot::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:1px solid var(--red);opacity:.6;animation:pulse 2s ease-out infinite}
+  @keyframes pulse{0%{transform:scale(.5);opacity:.7}100%{transform:scale(1.9);opacity:0}}
+  .live .txt{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--red)}
+
+  /* ---------- section heads ---------- */
+  section{margin-top:22px}
+  .sec-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px}
+  .sec-head .link{font-family:var(--mono);font-size:11px;color:var(--ink-3);text-decoration:none;letter-spacing:0.02em}
+  .sec-head .link:hover{color:var(--gold)}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+
+  /* ---------- rank console ---------- */
+  .console{margin-top:22px;padding:var(--pad-card) 22px}
+  .console-top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}
+  .rank-badge{
+    display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:6px;
+    background:var(--surface-raised);border:1px solid var(--border);
+  }
+  .rank-badge svg{color:var(--gold)}
+  .rank-badge span{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-2)}
+  .rank-name{font-size:22px;font-weight:600;letter-spacing:-0.02em;color:var(--ink);margin-top:12px}
+  .rank-meta{color:var(--ink-2);font-size:12.5px;margin-top:7px}
+  .rank-meta b{color:var(--ink);font-weight:600}
+  .commission-block{text-align:right;flex:0 0 auto}
+  .commission-block .amt{font-family:var(--mono);font-size:28px;font-weight:600;color:var(--gold-bright);line-height:1;letter-spacing:-0.02em;font-variant-numeric:tabular-nums}
+  .commission-block .cap{margin-top:8px;display:flex;align-items:center;gap:8px;justify-content:flex-end}
+
+  .band{display:grid;grid-template-columns:repeat(3,1fr);margin-top:20px;padding-top:18px;border-top:1px solid var(--border)}
+  .band .cell{padding:0 22px;border-left:1px solid var(--border-soft)}
+  .band .cell:first-child{padding-left:0;border-left:0}
+  .band .cell .v{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+  .band .cell .v small{font-family:var(--sans);font-size:12px;color:var(--ink-3);font-weight:500}
+  .band .cell .r{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:11px}
+
+  /* ---------- stat tiles ---------- */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:var(--pad-card);display:flex;flex-direction:column;min-height:148px}
+  .tile .t-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .tile .v{font-family:var(--mono);font-size:26px;font-weight:600;line-height:1;letter-spacing:-0.02em;color:var(--ink);margin-top:14px;font-variant-numeric:tabular-nums}
+  .tile.gold .v{color:var(--gold-bright)}
+  .tile .v small{font-family:var(--sans);font-size:13px;color:var(--ink-3);font-weight:500}
+  .tile .foot{margin-top:auto;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;padding-top:14px}
+  .tile .foot .note{font-size:11px;color:var(--ink-3)}
+  .spark{width:88px;height:32px;flex:0 0 auto}
+  .minibar{display:flex;align-items:flex-end;gap:3px;height:30px}
+  .minibar i{width:6px;background:var(--surface-raised);border:1px solid var(--border);border-bottom:0;border-radius:2px 2px 0 0}
+  .minibar i.on{background:rgba(52,211,153,0.22);border-color:rgba(52,211,153,0.35)}
+
+  /* ---------- area chart card ---------- */
+  .chart-card{margin-top:16px;padding:var(--pad-card) 22px 16px}
+  .chart-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:6px}
+  .chart-head .hv{font-family:var(--mono);font-size:22px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-0.02em;margin-top:8px}
+  .chart-head .cap{display:flex;align-items:center;gap:9px;margin-top:8px}
+  .chart-legend{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10.5px;color:var(--ink-2);letter-spacing:0.04em}
+  .chart-legend .sw{width:16px;height:3px;border-radius:2px;background:var(--gold)}
+  .area-svg{width:100%;height:auto;display:block;margin-top:4px}
+  .axis-t{font-family:var(--mono);font-size:9.5px;fill:var(--ink-3);letter-spacing:0.04em}
+
+  /* ---------- structures ---------- */
+  .structures{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
+  .struct{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 13px;position:relative;display:flex;flex-direction:column;min-height:128px}
+  .struct .idx{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink-3);letter-spacing:0.04em}
+  .struct .nm{font-size:11.5px;color:var(--ink-2);margin-top:auto}
+  .struct.locked{opacity:.4}
+  .struct.active{border-color:rgba(212,168,83,0.35);background:linear-gradient(180deg,rgba(212,168,83,0.05),transparent)}
+  .struct .st{margin-top:10px}
+  .badge-cmp{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--gold);background:rgba(212,168,83,0.10);border:1px solid rgba(212,168,83,0.28);border-radius:5px;padding:2px 6px}
+  .bar{height:5px;background:rgba(255,255,255,0.06);border-radius:3px;margin-top:10px;overflow:hidden}
+  .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-bright));border-radius:3px}
+  .struct .prog{font-family:var(--mono);font-size:10px;color:var(--ink-2);margin-top:7px;font-variant-numeric:tabular-nums;letter-spacing:0.01em}
+  .struct .pct-lbl{font-family:var(--mono);font-size:9.5px;color:var(--gold);font-weight:600;margin-top:9px}
+  .lock-ico{position:absolute;top:13px;right:12px;color:var(--ink-3)}
+  .struct.ultimate{background:var(--surface-raised);border-color:var(--border)}
+  .struct.ultimate .nm{color:var(--ink);font-weight:600;font-size:12px}
+  .struct.ultimate .pct{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--ink-2);letter-spacing:-0.02em}
+
+  /* ---------- lower two-column ---------- */
+  .lower{display:grid;grid-template-columns:1.55fr 1fr;gap:24px;align-items:start}
+  .class{display:flex;align-items:center;gap:16px;padding:15px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:10px}
+  .class:last-child{margin-bottom:0}
+  .class.live-row{border-color:rgba(248,113,113,0.28);background:linear-gradient(90deg,rgba(248,113,113,0.05),transparent 60%)}
+  .class .when{flex:0 0 50px;text-align:center;padding-right:16px;border-right:1px solid var(--border)}
+  .class .when .d{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--ink);line-height:1}
+  .class .when .mo{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3);margin-top:4px}
+  .class .body{flex:1;min-width:0}
+  .class .body h4{font-size:14px;font-weight:600;color:var(--ink);letter-spacing:-0.01em}
+  .class .body .meta{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:5px;font-variant-numeric:tabular-nums}
+  .class .body .badge-line{margin-top:8px}
+  .badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;padding:3px 8px;border-radius:5px;border:1px solid var(--border);color:var(--ink-2);background:var(--surface-raised)}
+  .badge.live{border-color:rgba(248,113,113,0.30);color:var(--red);background:rgba(248,113,113,0.07)}
+  .badge.live .dot{width:5px;height:5px;border-radius:50%;background:var(--red);position:relative}
+  .badge.live .dot::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1px solid var(--red);opacity:.6;animation:pulse 2s ease-out infinite}
+
+  .btn{flex:0 0 auto;font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:0.01em;padding:8px 14px;border-radius:var(--radius-sm);cursor:pointer;border:1px solid transparent;text-decoration:none;white-space:nowrap;transition:background .15s,border-color .15s}
+  .btn-gold{background:var(--gold);color:#0A0F1C}
+  .btn-gold:hover{background:var(--gold-bright)}
+  .btn-outline{background:transparent;border-color:var(--border);color:var(--ink-2)}
+  .btn-outline:hover{border-color:rgba(255,255,255,0.22);color:var(--ink)}
+
+  /* wallet */
+  .wallet{padding:var(--pad-card)}
+  .wallet .amt{font-family:var(--mono);font-size:26px;font-weight:600;color:var(--gold-bright);letter-spacing:-0.02em;line-height:1;margin-top:12px;font-variant-numeric:tabular-nums}
+  .wallet .amt small{font-family:var(--sans);font-size:12px;color:var(--ink-3);font-weight:500}
+  .wallet .row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+  .wallet .row:first-of-type{border-top:0;padding-top:0;margin-top:14px}
+  .wallet .k{font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+  .wallet .kv{font-family:var(--mono);font-size:11px;color:var(--ink-2)}
+  .wallet .kv b{color:var(--ink);font-weight:600}
+  .pill{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--emerald);border:1px solid rgba(52,211,153,0.30);background:rgba(52,211,153,0.08);border-radius:5px;padding:3px 7px}
+  .chain-ico{color:var(--ink-2)}
+  .wallet .note{font-size:11.5px;color:var(--ink-3);margin-top:16px;line-height:1.65}
+  .wallet .note b{color:var(--ink-2);font-weight:600}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <div class="brand">
+      <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="11.5" stroke="#D4A853" stroke-width="1.5"/>
+        <circle cx="16" cy="16" r="3" stroke="#D4A853" stroke-width="1.5"/>
+        <path d="M16 1.5V8M16 24v6.5M1.5 16H8M24 16h6.5" stroke="#D4A853" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <div class="brand-name">Snipers<span>Trading Academy</span></div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-label label">Workspace</div>
+      <a href="#" class="active">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="#">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-5"/><path d="M22 10v5"/></svg>
+        Academy
+      </a>
+      <a href="#">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20"/><circle cx="10" cy="8" r="3.5"/><path d="M20 20v-1.5a3.5 3.5 0 0 0-2.7-3.4"/><path d="M15 4.6a3.5 3.5 0 0 1 0 6.8"/></svg>
+        My Team
+        <span class="count">2.5k</span>
+      </a>
+      <a href="#">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 6.5c0-2-2.2-3-5-3s-5 1-5 3 2.2 3 5 3.5 5 1.5 5 3.5-2.2 3-5 3-5-1-5-3"/></svg>
+        Finance
+      </a>
+      <a href="#">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
+        Payments
+      </a>
+      <a href="#">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>
+        Referrals
+      </a>
+      <a href="#">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5a6 6 0 0 0-12 0c0 6-2.5 7.5-2.5 7.5h17S18 14.5 18 8.5"/><path d="M10.5 20a1.9 1.9 0 0 0 3 0"/></svg>
+        Notifications
+        <span class="count">3</span>
+      </a>
+      <a href="#">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H2a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 3.3 6.6l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 9 3.3V2a2 2 0 1 1 4 0v.1A1.6 1.6 0 0 0 15 3.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg>
+        Settings
+      </a>
+    </nav>
+
+    <div class="chip">
+      <div class="avatar">CR</div>
+      <div class="who">
+        <b>Charlie R.</b>
+        <small>charlieram96@gmail.com</small>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <div class="page-head">
+      <div>
+        <h1>Dashboard</h1>
+        <div class="sub">Welcome back, Charlie</div>
+      </div>
+      <div class="head-right">
+        <div class="clock">09:32:14 EST · <b>NY OPEN</b></div>
+        <div class="live"><span class="dot"></span><span class="txt">Live</span></div>
+      </div>
+    </div>
+
+    <!-- RANK CONSOLE -->
+    <div class="card console">
+      <div class="console-top">
+        <div>
+          <span class="rank-badge">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="m8.5 12.5-1.5 8L12 18l5 2.5-1.5-8"/></svg>
+            <span>Rank</span>
+          </span>
+          <div class="rank-name">Delta Master Sniper</div>
+          <div class="rank-meta"><b>2 structures complete</b> &nbsp;·&nbsp; 3 of 6 structures unlocked</div>
+        </div>
+        <div class="commission-block">
+          <div class="amt">$5,797.80</div>
+          <div class="cap">
+            <span class="label">Your commission · 12%</span>
+            <span class="delta up">▲ 8.3%</span>
+          </div>
+        </div>
+      </div>
+      <div class="band">
+        <div class="cell">
+          <div class="v">12<small>%</small></div>
+          <div class="r"><span class="label">Commission rate</span><span class="delta flat">10 + 2</span></div>
+        </div>
+        <div class="cell">
+          <div class="v">$48,315<small>.00</small></div>
+          <div class="r"><span class="label">Team pool · monthly</span><span class="delta up">▲ 8.3%</span></div>
+        </div>
+        <div class="cell">
+          <div class="v">3 <small>of 6</small></div>
+          <div class="r"><span class="label">Structures unlocked</span><span class="delta up">▲ 1</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STAT TILES -->
+    <section>
+      <div class="sec-head"><span class="label">Performance · This month</span></div>
+      <div class="stats">
+        <div class="tile">
+          <div class="t-head"><span class="label">Team Pool</span><span class="delta up">▲ 8.3%</span></div>
+          <div class="v">$48,315<small>.00</small></div>
+          <div class="foot">
+            <span class="note">Monthly distributable</span>
+            <svg class="spark" viewBox="0 0 120 36" fill="none" preserveAspectRatio="none">
+              <defs><linearGradient id="sp1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D4A853" stop-opacity="0.35"/><stop offset="1" stop-color="#D4A853" stop-opacity="0"/></linearGradient></defs>
+              <path d="M0,32 L24,26.1 L48,20.7 L72,16.1 L96,10.1 L120,4 L120,36 L0,36 Z" fill="url(#sp1)"/>
+              <path d="M0,32 L24,26.1 L48,20.7 L72,16.1 L96,10.1 L120,4" stroke="#D4A853" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="tile gold">
+          <div class="t-head"><span class="label">Your Commission</span><span class="delta up">▲ 8.3%</span></div>
+          <div class="v">$5,797<small>.80</small></div>
+          <div class="foot">
+            <span class="note">12% of team pool</span>
+            <svg class="spark" viewBox="0 0 120 36" fill="none" preserveAspectRatio="none">
+              <defs><linearGradient id="sp2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D4A853" stop-opacity="0.40"/><stop offset="1" stop-color="#D4A853" stop-opacity="0"/></linearGradient></defs>
+              <path d="M0,32 L24,26.1 L48,20.7 L72,16.1 L96,10.1 L120,4 L120,36 L0,36 Z" fill="url(#sp2)"/>
+              <path d="M0,32 L24,26.1 L48,20.7 L72,16.1 L96,10.1 L120,4" stroke="#E8C583" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="tile">
+          <div class="t-head"><span class="label">Active Direct Referrals</span><span class="delta up">▲ 1</span></div>
+          <div class="v">7 <small>of 9</small></div>
+          <div class="foot">
+            <span class="note">2 slots available</span>
+            <div class="minibar" aria-hidden="true"><i class="on" style="height:60%"></i><i class="on" style="height:72%"></i><i class="on" style="height:52%"></i><i class="on" style="height:88%"></i><i class="on" style="height:66%"></i><i class="on" style="height:94%"></i><i class="on" style="height:78%"></i><i style="height:40%"></i><i style="height:40%"></i></div>
+          </div>
+        </div>
+        <div class="tile">
+          <div class="t-head"><span class="label">Total Team</span><span class="delta up">▲ 231</span></div>
+          <div class="v">2,560</div>
+          <div class="foot">
+            <span class="note">2,415 active members</span>
+            <div class="minibar" aria-hidden="true"><i class="on" style="height:44%"></i><i class="on" style="height:52%"></i><i class="on" style="height:58%"></i><i class="on" style="height:64%"></i><i class="on" style="height:70%"></i><i class="on" style="height:80%"></i><i class="on" style="height:92%"></i></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6-MONTH AREA CHART -->
+    <div class="card chart-card">
+      <div class="chart-head">
+        <div>
+          <span class="label">Team pool — last 6 months</span>
+          <div class="hv">$48,315.00</div>
+          <div class="cap"><span class="delta up">▲ 8.3% MoM</span><span class="note" style="font-size:11px;color:var(--ink-3)">+$17,115 since Feb</span></div>
+        </div>
+        <div class="chart-legend"><span class="sw"></span>Monthly pool (USDC)</div>
+      </div>
+      <svg class="area-svg" viewBox="0 0 560 224" fill="none" preserveAspectRatio="none" role="img" aria-label="Team pool growth over six months, from 31.2k in February to 48.3k in July">
+        <defs>
+          <linearGradient id="area1" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#D4A853" stop-opacity="0.30"/>
+            <stop offset="1" stop-color="#D4A853" stop-opacity="0.01"/>
+          </linearGradient>
+        </defs>
+        <!-- gridlines -->
+        <g stroke="rgba(255,255,255,0.06)" stroke-width="1">
+          <line x1="44" y1="16" x2="544" y2="16"/>
+          <line x1="44" y1="56" x2="544" y2="56"/>
+          <line x1="44" y1="96" x2="544" y2="96"/>
+          <line x1="44" y1="136" x2="544" y2="136"/>
+          <line x1="44" y1="176" x2="544" y2="176"/>
+        </g>
+        <!-- y labels -->
+        <g class="axis-t" text-anchor="end">
+          <text x="36" y="19">50k</text>
+          <text x="36" y="59">45k</text>
+          <text x="36" y="99">40k</text>
+          <text x="36" y="139">35k</text>
+          <text x="36" y="179">30k</text>
+        </g>
+        <!-- area + line -->
+        <path d="M44,166.4 L144,137.6 L244,111.2 L344,88.8 L444,59.2 L544,29.6 L544,192 L44,192 Z" fill="url(#area1)"/>
+        <path d="M44,166.4 L144,137.6 L244,111.2 L344,88.8 L444,59.2 L544,29.6" stroke="#D4A853" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- points -->
+        <g fill="#05080F" stroke="#D4A853" stroke-width="1.5">
+          <circle cx="44" cy="166.4" r="3"/><circle cx="144" cy="137.6" r="3"/><circle cx="244" cy="111.2" r="3"/><circle cx="344" cy="88.8" r="3"/><circle cx="444" cy="59.2" r="3"/>
+        </g>
+        <circle cx="544" cy="29.6" r="4" fill="#E8C583" stroke="#05080F" stroke-width="1.5"/>
+        <!-- x labels -->
+        <g class="axis-t" text-anchor="middle">
+          <text x="44" y="212">Feb</text>
+          <text x="144" y="212">Mar</text>
+          <text x="244" y="212">Apr</text>
+          <text x="344" y="212">May</text>
+          <text x="444" y="212">Jun</text>
+          <text x="544" y="212">Jul</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- STRUCTURES -->
+    <section>
+      <div class="sec-head">
+        <span class="label">Structures · Progression</span>
+        <a href="#" class="link">View all structures</a>
+      </div>
+      <div class="structures">
+        <div class="struct">
+          <div class="idx">01</div>
+          <div class="nm">First Structure</div>
+          <div class="st"><span class="badge-cmp"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Complete</span></div>
+        </div>
+        <div class="struct">
+          <div class="idx">02</div>
+          <div class="nm">Second Structure</div>
+          <div class="st"><span class="badge-cmp"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Complete</span></div>
+        </div>
+        <div class="struct active">
+          <div class="idx">03</div>
+          <div class="nm">Third Structure</div>
+          <div class="pct-lbl">21% FILLED</div>
+          <div class="bar"><i style="width:21%"></i></div>
+          <div class="prog">231 / 1,092 members</div>
+        </div>
+        <div class="struct locked">
+          <div class="idx">04</div>
+          <span class="lock-ico"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+          <div class="nm">Locked</div>
+        </div>
+        <div class="struct locked">
+          <div class="idx">05</div>
+          <span class="lock-ico"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+          <div class="nm">Locked</div>
+        </div>
+        <div class="struct locked">
+          <div class="idx">06</div>
+          <span class="lock-ico"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+          <div class="nm">Locked</div>
+        </div>
+        <div class="struct ultimate locked">
+          <span class="lock-ico"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+          <div class="idx">Ultimate</div>
+          <div class="pct">16%</div>
+          <div class="nm">Lion Master Sniper</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LOWER TWO-COLUMN -->
+    <section class="lower">
+      <div>
+        <div class="sec-head">
+          <span class="label">Academy · Schedule</span>
+          <a href="#" class="link">Full calendar</a>
+        </div>
+
+        <div class="class live-row">
+          <div class="when"><div class="d">21</div><div class="mo">Jul</div></div>
+          <div class="body">
+            <h4>Live Market Session — NY Open</h4>
+            <div class="meta">Trading floor · streaming now</div>
+            <div class="badge-line"><span class="badge live"><span class="dot"></span>Live</span></div>
+          </div>
+          <a href="#" class="btn btn-gold">Join Class</a>
+        </div>
+
+        <div class="class">
+          <div class="when"><div class="d">22</div><div class="mo">Jul</div></div>
+          <div class="body">
+            <h4>London Session Breakdown</h4>
+            <div class="meta">Jul 22, 2026 · 3:00 AM EST</div>
+            <div class="badge-line"><span class="badge">Upcoming</span></div>
+          </div>
+          <a href="#" class="btn btn-outline">Remind me</a>
+        </div>
+
+        <div class="class">
+          <div class="when"><div class="d">23</div><div class="mo">Jul</div></div>
+          <div class="body">
+            <h4>Risk Management Masterclass</h4>
+            <div class="meta">Jul 23, 2026 · 7:00 PM EST</div>
+            <div class="badge-line"><span class="badge">Upcoming</span></div>
+          </div>
+          <a href="#" class="btn btn-outline">Remind me</a>
+        </div>
+      </div>
+
+      <div>
+        <div class="sec-head"><span class="label">Payout Wallet</span></div>
+        <div class="card wallet">
+          <span class="label">Estimated payout</span>
+          <div class="amt">$5,797.80 <small>USDC est.</small></div>
+          <div class="row">
+            <span class="k">0x7C4d…9E2a</span>
+            <span class="pill">Verified</span>
+          </div>
+          <div class="row">
+            <span class="kv" style="display:flex;align-items:center;gap:8px">
+              <svg class="chain-ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7l-9-5Z"/><path d="M12 22V12M3 7l9 5 9-5"/></svg>
+              Network · <b>Polygon</b>
+            </span>
+            <span class="delta flat">USDC</span>
+          </div>
+          <div class="note">
+            <b>7 of 9</b> active direct referrals · <b>2,560</b> total team, 2,415 active. Structure 3 fills at 231 of 1,092 members.
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>

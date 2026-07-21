@@ -1,0 +1,497 @@
+<!-- @dsCard group="Direction 2 — Modern Fintech Pro" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fintech — Components</title>
+<style>
+  :root{
+    --bg:#05080F;
+    --surface:#0A0F1C;
+    --surface-raised:#101728;
+    --ink:#E6EAF2;
+    --ink-2:#8B95A9;
+    --ink-3:#525D73;
+    --gold:#D4A853;
+    --gold-bright:#E8C583;
+    --emerald:#34D399;
+    --red:#F87171;
+    --border:rgba(255,255,255,0.10);
+    --border-soft:rgba(255,255,255,0.055);
+    --ring:rgba(212,168,83,0.55);
+    --radius:10px;
+    --radius-sm:6px;
+    --pad-card:20px;
+    --sans:-apple-system,"SF Pro Text",Inter,"Segoe UI",sans-serif;
+    --mono:ui-monospace,"SF Mono","Geist Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:var(--sans);font-size:13px;line-height:1.45;min-height:100vh;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.014) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,0.014) 1px,transparent 1px);
+    background-size:40px 40px;
+  }
+  a{color:inherit}
+
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+  .label{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3)}
+
+  /* ---------- page frame ---------- */
+  .wrap{max-width:1080px;margin:0 auto;padding:40px 40px 80px}
+  .masthead{display:flex;align-items:center;gap:14px;padding-bottom:28px;border-bottom:1px solid var(--border);margin-bottom:8px}
+  .masthead .brand-name{font-size:15px;font-weight:600;line-height:1.1;color:var(--ink)}
+  .masthead .brand-name span{display:block;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-3);margin-top:3px}
+  .masthead .tag{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+  .masthead .tag b{color:var(--gold);font-weight:600}
+
+  section{margin-top:44px}
+  .sec-title{display:flex;align-items:baseline;gap:12px;margin-bottom:20px}
+  .sec-title .n{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--gold);letter-spacing:0.04em}
+  .sec-title h2{font-size:16px;font-weight:600;letter-spacing:-0.01em;color:var(--ink)}
+  .sec-title .line{flex:1;height:1px;background:var(--border)}
+  .sub-label{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3);margin-bottom:11px}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+
+  /* ---------- type scale ---------- */
+  .type-row{display:flex;align-items:baseline;gap:22px;padding:14px 0;border-bottom:1px solid var(--border-soft)}
+  .type-row:last-child{border-bottom:0}
+  .type-row .meta{flex:0 0 150px;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:0.02em}
+  .t-display{font-size:44px;font-weight:600;letter-spacing:-0.03em;line-height:1;color:var(--ink)}
+  .t-h1{font-size:28px;font-weight:600;letter-spacing:-0.02em;color:var(--ink)}
+  .t-h2{font-size:20px;font-weight:600;letter-spacing:-0.01em;color:var(--ink)}
+  .t-h3{font-size:16px;font-weight:600;color:var(--ink)}
+  .t-body{font-size:13px;color:var(--ink-2);max-width:520px}
+  .t-caption{font-size:11px;color:var(--ink-3)}
+  .t-num{font-family:var(--mono);font-size:28px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;color:var(--ink)}
+  .t-num .g{color:var(--gold-bright)}
+
+  /* ---------- buttons ---------- */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-family:var(--sans);font-weight:600;letter-spacing:0.01em;border-radius:var(--radius-sm);cursor:pointer;border:1px solid transparent;text-decoration:none;white-space:nowrap;transition:background .15s,border-color .15s,color .15s;line-height:1}
+  .btn.sm{font-size:11.5px;padding:6px 11px}
+  .btn.md{font-size:12.5px;padding:8px 15px}
+  .btn.lg{font-size:14px;padding:11px 20px}
+  .btn-primary{background:var(--gold);color:#0A0F1C}
+  .btn-primary.hov,.btn-primary:hover{background:var(--gold-bright)}
+  .btn-secondary{background:var(--surface-raised);color:var(--ink);border-color:var(--border)}
+  .btn-secondary.hov,.btn-secondary:hover{background:#161f33;border-color:rgba(255,255,255,0.20)}
+  .btn-outline{background:transparent;color:var(--ink-2);border-color:var(--border)}
+  .btn-outline.hov,.btn-outline:hover{color:var(--ink);border-color:rgba(255,255,255,0.24)}
+  .btn-ghost{background:transparent;color:var(--ink-2)}
+  .btn-ghost.hov,.btn-ghost:hover{background:rgba(255,255,255,0.05);color:var(--ink)}
+  .btn-destructive{background:rgba(248,113,113,0.12);color:var(--red);border-color:rgba(248,113,113,0.30)}
+  .btn-destructive.hov,.btn-destructive:hover{background:rgba(248,113,113,0.20)}
+  .btn[disabled],.btn.disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+  .btn.focus{outline:2px solid var(--ring);outline-offset:2px}
+  .btn.active{transform:translateY(1px);filter:brightness(.94)}
+  .btn-grid{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .btn-grid.stack{gap:12px}
+  .spinner{width:13px;height:13px;border:2px solid rgba(10,15,28,0.35);border-top-color:#0A0F1C;border-radius:50%;animation:spin .7s linear infinite}
+  .btn-outline .spinner,.btn-ghost .spinner{border-color:rgba(255,255,255,0.25);border-top-color:var(--ink)}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .state-tag{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);letter-spacing:0.06em;text-transform:uppercase;margin-top:7px}
+  .state-cell{text-align:center}
+
+  /* ---------- stat tiles ---------- */
+  .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .tile{padding:var(--pad-card);display:flex;flex-direction:column;min-height:150px}
+  .tile .t-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .tile .v{font-family:var(--mono);font-size:26px;font-weight:600;line-height:1;letter-spacing:-0.02em;color:var(--ink);margin-top:14px;font-variant-numeric:tabular-nums}
+  .tile.gold .v{color:var(--gold-bright)}
+  .tile .v small{font-family:var(--sans);font-size:13px;color:var(--ink-3);font-weight:500}
+  .tile .foot{margin-top:auto;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;padding-top:14px}
+  .tile .note{font-size:11px;color:var(--ink-3)}
+  .spark{width:88px;height:32px;flex:0 0 auto}
+
+  .delta{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;font-variant-numeric:tabular-nums;letter-spacing:-0.01em;white-space:nowrap}
+  .delta.up{color:var(--emerald);background:rgba(52,211,153,0.11);border:1px solid rgba(52,211,153,0.20)}
+  .delta.down{color:var(--red);background:rgba(248,113,113,0.11);border:1px solid rgba(248,113,113,0.20)}
+  .delta.flat{color:var(--ink-2);background:rgba(255,255,255,0.04);border:1px solid var(--border)}
+
+  /* ---------- cards ---------- */
+  .demo-card{padding:var(--pad-card);position:relative}
+  .demo-card h4{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:6px}
+  .demo-card p{font-size:12px;color:var(--ink-2);line-height:1.55}
+  .card.elevated{background:var(--surface-raised);box-shadow:0 12px 30px -12px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.02) inset}
+  .card.signature{position:relative;overflow:hidden;background:linear-gradient(180deg,rgba(212,168,83,0.06),transparent 55%),var(--surface);border-color:rgba(212,168,83,0.30)}
+  .card.signature::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:linear-gradient(180deg,var(--gold-bright),var(--gold))}
+  .card.signature h4{color:var(--gold-bright)}
+  .card-tag{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3);position:absolute;top:14px;right:16px}
+
+  /* ---------- inputs ---------- */
+  .field{margin-bottom:16px}
+  .field > label{display:block;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:7px}
+  .input{width:100%;font-family:var(--sans);font-size:13px;color:var(--ink);background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;transition:border-color .15s}
+  .input::placeholder{color:var(--ink-3)}
+  .input.focused{border-color:var(--gold);outline:2px solid var(--ring);outline-offset:1px}
+  .input.error{border-color:var(--red)}
+  .err-msg{font-family:var(--mono);font-size:11px;color:var(--red);margin-top:7px;display:flex;align-items:center;gap:5px}
+  .sel{position:relative}
+  .sel svg{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--ink-3);pointer-events:none}
+  select.input{appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:34px}
+  .toggle-row{display:flex;align-items:center;gap:12px}
+  .toggle{width:40px;height:22px;border-radius:100px;background:var(--surface-raised);border:1px solid var(--border);position:relative;cursor:pointer;flex:0 0 auto;transition:background .18s,border-color .18s}
+  .toggle i{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--ink-3);transition:transform .18s,background .18s}
+  .toggle.on{background:rgba(212,168,83,0.22);border-color:rgba(212,168,83,0.45)}
+  .toggle.on i{transform:translateX(18px);background:var(--gold-bright)}
+  .toggle-lbl{font-size:12.5px;color:var(--ink-2)}
+
+  /* ---------- badges ---------- */
+  .badge-grid{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;padding:4px 9px;border-radius:5px;border:1px solid var(--border);color:var(--ink-2);background:var(--surface-raised)}
+  .badge.live{border-color:rgba(248,113,113,0.30);color:var(--red);background:rgba(248,113,113,0.07)}
+  .badge.live .dot{width:5px;height:5px;border-radius:50%;background:var(--red);position:relative}
+  .badge.live .dot::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1px solid var(--red);opacity:.6;animation:pulse 2s ease-out infinite}
+  @keyframes pulse{0%{transform:scale(.5);opacity:.7}100%{transform:scale(1.9);opacity:0}}
+  .badge.complete{border-color:rgba(212,168,83,0.28);color:var(--gold);background:rgba(212,168,83,0.10)}
+  .badge.upcoming{color:var(--ink-2)}
+  .badge.locked{color:var(--ink-3);opacity:.6}
+  .badge.rank{border-color:var(--border);color:var(--ink);background:var(--surface-raised);gap:7px}
+  .badge.rank svg{color:var(--gold)}
+
+  /* ---------- progress ---------- */
+  .bar{height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden}
+  .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-bright));border-radius:3px}
+  .bar-meta{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
+  .bar-meta .k{font-size:12px;color:var(--ink-2)}
+  .bar-meta .v{font-family:var(--mono);font-size:11px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .seg{display:flex;gap:4px;margin-top:18px}
+  .seg i{flex:1;height:6px;border-radius:2px;background:rgba(255,255,255,0.06)}
+  .seg i.on{background:linear-gradient(90deg,var(--gold),var(--gold-bright))}
+  .seg i.part{background:linear-gradient(90deg,var(--gold) 21%,rgba(255,255,255,0.06) 21%)}
+  .seg-cap{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:9px;letter-spacing:0.04em}
+
+  /* ---------- table ---------- */
+  table{width:100%;border-collapse:collapse}
+  thead th{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:0 var(--pad-card) 12px;border-bottom:1px solid var(--border)}
+  thead th.right,tbody td.right{text-align:right}
+  tbody td{padding:14px var(--pad-card);border-bottom:1px solid var(--border-soft);font-size:13px;color:var(--ink-2)}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:hover td{background:rgba(255,255,255,0.02)}
+  tbody td .date{font-family:var(--mono);color:var(--ink);font-variant-numeric:tabular-nums}
+  tbody td .amt{font-family:var(--mono);color:var(--ink);font-variant-numeric:tabular-nums;font-weight:600}
+  .st-badge{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--emerald);background:rgba(52,211,153,0.10);border:1px solid rgba(52,211,153,0.24);border-radius:5px;padding:2px 7px}
+
+  /* ---------- empty state ---------- */
+  .empty{padding:44px 24px;text-align:center}
+  .empty .ico{width:48px;height:48px;border-radius:12px;background:var(--surface-raised);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:var(--ink-3)}
+  .empty h4{font-size:14px;font-weight:600;color:var(--ink)}
+  .empty p{font-size:12px;color:var(--ink-3);margin-top:6px;max-width:280px;margin-left:auto;margin-right:auto;line-height:1.55}
+  .empty .btn{margin-top:18px}
+
+  /* ---------- skeleton ---------- */
+  .sk-tile{padding:var(--pad-card);min-height:150px;display:flex;flex-direction:column}
+  .sk{position:relative;overflow:hidden;background:var(--surface-raised);border-radius:5px}
+  .sk::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent);animation:shimmer 1.5s ease-in-out infinite}
+  @keyframes shimmer{100%{transform:translateX(100%)}}
+  .sk.line-sm{height:11px;width:38%}
+  .sk.line-lg{height:26px;width:62%;margin-top:16px}
+  .sk.line-md{height:11px;width:50%;margin-top:auto}
+  .sk.block{height:32px;width:88px;margin-top:14px;align-self:flex-end}
+  .sk-foot{margin-top:auto;display:flex;align-items:flex-end;justify-content:space-between;padding-top:14px}
+
+  /* ---------- charts section ---------- */
+  .chart-box{padding:var(--pad-card)}
+  .chart-box .cb-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .chart-box .hv{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-0.02em;margin-top:8px}
+  .area-svg{width:100%;height:auto;display:block}
+  .axis-t{font-family:var(--mono);font-size:9.5px;fill:var(--ink-3);letter-spacing:0.04em}
+  .ring-wrap{display:flex;align-items:center;gap:18px}
+  .ring-num{font-family:var(--mono);font-size:20px;font-weight:600;fill:var(--ink);font-variant-numeric:tabular-nums}
+  .ring-meta .v{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+  .ring-meta .k{font-size:11.5px;color:var(--ink-2);margin-top:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="11.5" stroke="#D4A853" stroke-width="1.5"/>
+      <circle cx="16" cy="16" r="3" stroke="#D4A853" stroke-width="1.5"/>
+      <path d="M16 1.5V8M16 24v6.5M1.5 16H8M24 16h6.5" stroke="#D4A853" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <div class="brand-name">Snipers<span>Trading Academy</span></div>
+    <div class="tag">Component Sheet · <b>Modern Fintech Pro</b></div>
+  </div>
+
+  <!-- 1. TYPE SCALE -->
+  <section>
+    <div class="sec-title"><span class="n">01</span><h2>Type scale</h2><span class="line"></span></div>
+    <div class="card" style="padding:6px var(--pad-card)">
+      <div class="type-row"><span class="meta">Display · 44 / 600</span><span class="t-display">Delta Master Sniper</span></div>
+      <div class="type-row"><span class="meta">H1 · 28 / 600</span><span class="t-h1">Your commission this month</span></div>
+      <div class="type-row"><span class="meta">H2 · 20 / 600</span><span class="t-h2">Structures &amp; progression</span></div>
+      <div class="type-row"><span class="meta">H3 · 16 / 600</span><span class="t-h3">Live Market Session — NY Open</span></div>
+      <div class="type-row"><span class="meta">Body · 13 / 400</span><span class="t-body">Commission scales with completed structures — each structure holds 1,092 members and adds one point to your rate.</span></div>
+      <div class="type-row"><span class="meta">Caption · 11 / 400</span><span class="t-caption">Estimated payout, updated every 60 seconds</span></div>
+      <div class="type-row"><span class="meta">Mono numerals · tabular</span><span class="t-num"><span class="g">$5,797.80</span> · 48,315.00 · 12%</span></div>
+    </div>
+  </section>
+
+  <!-- 2. BUTTONS -->
+  <section>
+    <div class="sec-title"><span class="n">02</span><h2>Buttons</h2><span class="line"></span></div>
+
+    <div class="sub-label">Variants — small / medium / large</div>
+    <div class="card" style="padding:20px;margin-bottom:16px">
+      <div class="btn-grid stack" style="flex-direction:column;align-items:flex-start">
+        <div class="btn-grid"><a class="btn primary sm btn-primary">Join Class</a><a class="btn secondary sm btn-secondary">Remind me</a><a class="btn outline sm btn-outline">View all</a><a class="btn ghost sm btn-ghost">Dismiss</a><a class="btn destructive sm btn-destructive">Remove wallet</a></div>
+        <div class="btn-grid"><a class="btn primary md btn-primary">Join Class</a><a class="btn secondary md btn-secondary">Remind me</a><a class="btn outline md btn-outline">View all</a><a class="btn ghost md btn-ghost">Dismiss</a><a class="btn destructive md btn-destructive">Remove wallet</a></div>
+        <div class="btn-grid"><a class="btn primary lg btn-primary">Join Class</a><a class="btn secondary lg btn-secondary">Remind me</a><a class="btn outline lg btn-outline">View all</a><a class="btn ghost lg btn-ghost">Dismiss</a><a class="btn destructive lg btn-destructive">Remove wallet</a></div>
+      </div>
+    </div>
+
+    <div class="sub-label">States — labeled examples</div>
+    <div class="card" style="padding:22px 20px">
+      <div class="btn-grid" style="gap:26px">
+        <div class="state-cell"><a class="btn md btn-primary">Join Class</a><div class="state-tag">Default</div></div>
+        <div class="state-cell"><a class="btn md btn-primary hov">Join Class</a><div class="state-tag">Hover</div></div>
+        <div class="state-cell"><a class="btn md btn-primary active">Join Class</a><div class="state-tag">Active</div></div>
+        <div class="state-cell"><a class="btn md btn-primary focus">Join Class</a><div class="state-tag">Focus ring</div></div>
+        <div class="state-cell"><a class="btn md btn-primary"><span class="spinner"></span>Joining…</a><div class="state-tag">Loading</div></div>
+        <div class="state-cell"><a class="btn md btn-primary disabled">Join Class</a><div class="state-tag">Disabled</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. STAT TILES -->
+  <section>
+    <div class="sec-title"><span class="n">03</span><h2>Stat tiles</h2><span class="line"></span></div>
+    <div class="grid-2">
+      <div class="card tile gold">
+        <div class="t-head"><span class="label">Your Commission</span><span class="delta up">▲ 8.3%</span></div>
+        <div class="v">$5,797<small>.80</small></div>
+        <div class="foot">
+          <span class="note">12% of team pool</span>
+          <svg class="spark" viewBox="0 0 120 36" fill="none" preserveAspectRatio="none">
+            <defs><linearGradient id="c1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D4A853" stop-opacity="0.40"/><stop offset="1" stop-color="#D4A853" stop-opacity="0"/></linearGradient></defs>
+            <path d="M0,32 L24,26.1 L48,20.7 L72,16.1 L96,10.1 L120,4 L120,36 L0,36 Z" fill="url(#c1)"/>
+            <path d="M0,32 L24,26.1 L48,20.7 L72,16.1 L96,10.1 L120,4" stroke="#E8C583" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+      <div class="card tile">
+        <div class="t-head"><span class="label">Total Team</span><span class="delta up">▲ 231</span></div>
+        <div class="v">2,560</div>
+        <div class="foot">
+          <span class="note">2,415 active members</span>
+          <svg class="spark" viewBox="0 0 120 36" fill="none" preserveAspectRatio="none">
+            <defs><linearGradient id="c2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D4A853" stop-opacity="0.32"/><stop offset="1" stop-color="#D4A853" stop-opacity="0"/></linearGradient></defs>
+            <path d="M0,33 L24,29 L48,24 L72,18 L96,11 L120,4 L120,36 L0,36 Z" fill="url(#c2)"/>
+            <path d="M0,33 L24,29 L48,24 L72,18 L96,11 L120,4" stroke="#D4A853" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. CARDS -->
+  <section>
+    <div class="sec-title"><span class="n">04</span><h2>Cards</h2><span class="line"></span></div>
+    <div class="grid-3">
+      <div class="card demo-card">
+        <span class="card-tag">Default</span>
+        <h4>London Session Breakdown</h4>
+        <p>Flat surface, crisp 1px border. The workhorse container for lists, schedules and tables.</p>
+      </div>
+      <div class="card elevated demo-card">
+        <span class="card-tag">Elevated</span>
+        <h4>Payout confirmed</h4>
+        <p>Raised surface with a soft drop shadow — used for modals, popovers and transient overlays.</p>
+      </div>
+      <div class="card signature demo-card">
+        <span class="card-tag">Signature</span>
+        <h4>Active structure</h4>
+        <p>Gold left rail and a top-down wash. Reserved for the one card that needs to lead the eye.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. INPUTS -->
+  <section>
+    <div class="sec-title"><span class="n">05</span><h2>Inputs</h2><span class="line"></span></div>
+    <div class="card" style="padding:24px 20px">
+      <div class="grid-2">
+        <div>
+          <div class="field">
+            <label>Payout wallet</label>
+            <input class="input" type="text" value="0x7C4d…9E2a" />
+          </div>
+          <div class="field">
+            <label>Wallet label — focused</label>
+            <input class="input focused" type="text" value="Polygon · primary" />
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>Withdrawal amount — error</label>
+            <input class="input error" type="text" value="$52,000.00" />
+            <div class="err-msg"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Exceeds available balance of $5,797.80.</div>
+          </div>
+        </div>
+        <div>
+          <div class="field">
+            <label>Network</label>
+            <div class="sel">
+              <select class="input"><option>Polygon</option><option>Ethereum</option><option>Arbitrum</option></select>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
+          </div>
+          <div class="field">
+            <label>Notifications</label>
+            <div class="toggle-row"><span class="toggle on"><i></i></span><span class="toggle-lbl">Email me before every live session</span></div>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>Auto-payout</label>
+            <div class="toggle-row"><span class="toggle"><i></i></span><span class="toggle-lbl">Off — release funds manually</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. BADGES -->
+  <section>
+    <div class="sec-title"><span class="n">06</span><h2>Badges</h2><span class="line"></span></div>
+    <div class="card" style="padding:22px 20px">
+      <div class="badge-grid">
+        <span class="badge live"><span class="dot"></span>Live</span>
+        <span class="badge complete"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Complete</span>
+        <span class="badge upcoming">Upcoming</span>
+        <span class="badge locked"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Locked</span>
+        <span class="badge rank"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="m8.5 12.5-1.5 8L12 18l5 2.5-1.5-8"/></svg>Delta Master Sniper</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. PROGRESS -->
+  <section>
+    <div class="sec-title"><span class="n">07</span><h2>Progress</h2><span class="line"></span></div>
+    <div class="grid-2">
+      <div class="card" style="padding:24px 20px">
+        <div class="sub-label">Linear bar · 21%</div>
+        <div class="bar-meta"><span class="k">Structure 3</span><span class="v">231 / 1,092</span></div>
+        <div class="bar"><i style="width:21%"></i></div>
+      </div>
+      <div class="card" style="padding:24px 20px">
+        <div class="sub-label">Segmented · structures unlocked</div>
+        <div class="seg"><i class="on"></i><i class="on"></i><i class="part"></i><i></i><i></i><i></i></div>
+        <div class="seg-cap">3 OF 6 UNLOCKED · STRUCTURE 3 AT 21%</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. TABLE -->
+  <section>
+    <div class="sec-title"><span class="n">08</span><h2>Table — payout history</h2><span class="line"></span></div>
+    <div class="card" style="overflow:hidden">
+      <table>
+        <thead><tr><th>Date</th><th>Network</th><th>Status</th><th class="right">Amount</th></tr></thead>
+        <tbody>
+          <tr><td><span class="date">Jul 1, 2026</span></td><td>Polygon · USDC</td><td><span class="st-badge">Paid</span></td><td class="right"><span class="amt">$5,412.00</span></td></tr>
+          <tr><td><span class="date">Jun 1, 2026</span></td><td>Polygon · USDC</td><td><span class="st-badge">Paid</span></td><td class="right"><span class="amt">$4,988.50</span></td></tr>
+          <tr><td><span class="date">May 1, 2026</span></td><td>Polygon · USDC</td><td><span class="st-badge">Paid</span></td><td class="right"><span class="amt">$4,750.25</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 9. EMPTY STATE -->
+  <section>
+    <div class="sec-title"><span class="n">09</span><h2>Empty state</h2><span class="line"></span></div>
+    <div class="card empty">
+      <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+      <h4>No classes scheduled</h4>
+      <p>Nothing on the calendar yet. New live sessions appear here as soon as they're announced.</p>
+      <a class="btn md btn-secondary">Browse the archive</a>
+    </div>
+  </section>
+
+  <!-- 10. SKELETON -->
+  <section>
+    <div class="sec-title"><span class="n">10</span><h2>Skeleton / loading</h2><span class="line"></span></div>
+    <div class="grid-2">
+      <div class="card sk-tile">
+        <div class="sk line-sm"></div>
+        <div class="sk line-lg"></div>
+        <div class="sk-foot"><div class="sk line-md" style="margin-top:0;width:44%"></div><div class="sk block"></div></div>
+      </div>
+      <div class="card tile gold">
+        <div class="t-head"><span class="label">Your Commission</span><span class="delta up">▲ 8.3%</span></div>
+        <div class="v">$5,797<small>.80</small></div>
+        <div class="foot"><span class="note">Loaded state, for reference</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11. CHARTS -->
+  <section>
+    <div class="sec-title"><span class="n">11</span><h2>Charts</h2><span class="line"></span></div>
+    <div class="grid-2" style="margin-bottom:16px">
+      <div class="card chart-box">
+        <div class="sub-label">Sparkline</div>
+        <div class="hv">$48,315.00</div>
+        <svg class="area-svg" viewBox="0 0 240 60" fill="none" preserveAspectRatio="none" style="margin-top:8px">
+          <defs><linearGradient id="ch-sp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D4A853" stop-opacity="0.34"/><stop offset="1" stop-color="#D4A853" stop-opacity="0"/></linearGradient></defs>
+          <path d="M0,52 L48,43 L96,34 L144,26 L192,15 L240,6 L240,60 L0,60 Z" fill="url(#ch-sp)"/>
+          <path d="M0,52 L48,43 L96,34 L144,26 L192,15 L240,6" stroke="#D4A853" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="240" cy="6" r="3.5" fill="#E8C583" stroke="#05080F" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="card chart-box">
+        <div class="sub-label">Progress ring · 21%</div>
+        <div class="ring-wrap" style="margin-top:12px">
+          <svg width="72" height="72" viewBox="0 0 72 72">
+            <circle cx="36" cy="36" r="26" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="6"/>
+            <circle cx="36" cy="36" r="26" fill="none" stroke="#D4A853" stroke-width="6" stroke-linecap="round" stroke-dasharray="163.36" stroke-dashoffset="129.05" transform="rotate(-90 36 36)"/>
+            <text x="36" y="41" text-anchor="middle" class="ring-num">21%</text>
+          </svg>
+          <div class="ring-meta">
+            <div class="v">231 / 1,092</div>
+            <div class="k">Structure 3 members</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card chart-box">
+      <div class="cb-head">
+        <div>
+          <div class="sub-label" style="margin-bottom:0">Area chart · Team pool — last 6 months</div>
+          <div class="hv">$48,315.00</div>
+        </div>
+        <span class="delta up">▲ 8.3% MoM</span>
+      </div>
+      <svg class="area-svg" viewBox="0 0 640 220" fill="none" preserveAspectRatio="none" role="img" aria-label="Team pool from 31.2k in February to 48.3k in July">
+        <defs><linearGradient id="ch-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D4A853" stop-opacity="0.28"/><stop offset="1" stop-color="#D4A853" stop-opacity="0.01"/></linearGradient></defs>
+        <g stroke="rgba(255,255,255,0.06)" stroke-width="1">
+          <line x1="44" y1="16" x2="624" y2="16"/>
+          <line x1="44" y1="56" x2="624" y2="56"/>
+          <line x1="44" y1="96" x2="624" y2="96"/>
+          <line x1="44" y1="136" x2="624" y2="136"/>
+          <line x1="44" y1="176" x2="624" y2="176"/>
+        </g>
+        <g class="axis-t" text-anchor="end">
+          <text x="36" y="19">50k</text><text x="36" y="59">45k</text><text x="36" y="99">40k</text><text x="36" y="139">35k</text><text x="36" y="179">30k</text>
+        </g>
+        <path d="M44,166.4 L160,137.6 L276,111.2 L392,88.8 L508,59.2 L624,29.6 L624,192 L44,192 Z" fill="url(#ch-area)"/>
+        <path d="M44,166.4 L160,137.6 L276,111.2 L392,88.8 L508,59.2 L624,29.6" stroke="#D4A853" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <g fill="#05080F" stroke="#D4A853" stroke-width="1.5">
+          <circle cx="44" cy="166.4" r="3"/><circle cx="160" cy="137.6" r="3"/><circle cx="276" cy="111.2" r="3"/><circle cx="392" cy="88.8" r="3"/><circle cx="508" cy="59.2" r="3"/>
+        </g>
+        <circle cx="624" cy="29.6" r="4" fill="#E8C583" stroke="#05080F" stroke-width="1.5"/>
+        <g class="axis-t" text-anchor="middle">
+          <text x="44" y="210">Feb</text><text x="160" y="210">Mar</text><text x="276" y="210">Apr</text><text x="392" y="210">May</text><text x="508" y="210">Jun</text><text x="624" y="210">Jul</text>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
