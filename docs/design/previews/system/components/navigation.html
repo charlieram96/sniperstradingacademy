@@ -1,0 +1,392 @@
+<!-- @dsCard group="Components" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Navigation</title>
+<style>
+:root {
+  /* Base */
+  --bg:#05080F; --surface:#0A0F1C; --surface-raised:#101728; --surface-overlay:#151D33;
+  --ink:#E6EAF2; --ink-2:#8B95A9; --ink-3:#525D73;
+  --border:rgba(255,255,255,0.10); --border-subtle:rgba(255,255,255,0.05); --border-strong:rgba(255,255,255,0.16);
+  /* Brand gold ramp */
+  --gold-50:#FDF8ED; --gold-100:#F9ECCC; --gold-200:#F0D48A; --gold-300:#E5C06A;
+  --gold-400:#D4A853; --gold-500:#C49B3E; --gold-600:#A67E2E; --gold-700:#856420; --gold-800:#6B4D18;
+  --gold:var(--gold-400); --ring:rgba(212,168,83,0.55);
+  /* Status */
+  --emerald:#34D399; --emerald-dim:rgba(52,211,153,0.12);
+  --red:#F87171; --red-dim:rgba(248,113,113,0.12);
+  --amber:#FBBF24; --amber-dim:rgba(251,191,36,0.12);
+  --blue:#60A5FA; --blue-dim:rgba(96,165,250,0.12);
+  /* Charts (series order) */
+  --chart-1:var(--gold-400); --chart-2:#60A5FA; --chart-3:#34D399; --chart-4:#A78BFA; --chart-5:#8B95A9;
+  /* Spacing (4px grid) */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px; --sp-10:40px; --sp-12:48px; --sp-16:64px;
+  /* Radius */
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-pill:999px;
+  /* Shadows */
+  --sh-sm:0 1px 2px rgba(0,0,0,0.35);
+  --sh-md:0 4px 12px rgba(0,0,0,0.28),0 1px 3px rgba(0,0,0,0.3);
+  --sh-lg:0 12px 32px rgba(0,0,0,0.35),0 4px 8px rgba(0,0,0,0.25);
+  --sh-gold:0 2px 12px rgba(212,168,83,0.18);
+  /* Type scale */
+  --t-xs:11px; --t-sm:12px; --t-base:13px; --t-md:14px; --t-lg:16px; --t-xl:18px; --t-2xl:22px; --t-3xl:28px; --t-4xl:36px;
+  /* Motion */
+  --dur-micro:120ms; --dur-std:200ms; --dur-enter:320ms;
+  --ease-out:cubic-bezier(0.2,0.8,0.2,1); --ease-spring:cubic-bezier(0.34,1.4,0.44,1);
+}
+:root{ --sans:-apple-system,"SF Pro Text",Inter,"Segoe UI",sans-serif; --mono:ui-monospace,"SF Mono","Geist Mono",Menlo,monospace; }
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:var(--t-base);line-height:1.45;min-height:100vh;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.014) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.014) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.label{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3)}
+
+/* ---------- page frame ---------- */
+.wrap{max-width:1200px;margin:0 auto;padding:40px 40px 80px}
+.masthead{display:flex;align-items:center;gap:14px;padding-bottom:28px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.masthead .brand-name{font-size:15px;font-weight:600;line-height:1.1;color:var(--ink)}
+.masthead .brand-name span{display:block;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-3);margin-top:3px}
+.masthead .tag{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.masthead .tag b{color:var(--gold);font-weight:600}
+.page-title{margin-top:26px}
+.page-title h1{font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1;color:var(--ink)}
+.page-title p{color:var(--ink-2);font-size:13px;margin-top:9px;max-width:660px;line-height:1.55}
+
+section{margin-top:44px}
+.sec-title{display:flex;align-items:baseline;gap:12px;margin-bottom:20px}
+.sec-title .n{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--gold);letter-spacing:0.04em}
+.sec-title h2{font-size:16px;font-weight:600;letter-spacing:-0.01em;color:var(--ink)}
+.sec-title .line{flex:1;height:1px;background:var(--border)}
+.sec-title .note{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:0.02em}
+.sub-label{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md)}
+.stag{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3);margin-top:12px}
+.stag i{width:5px;height:5px;border-radius:50%;background:var(--ink-3);flex:0 0 auto}
+.stag.on i{background:var(--gold)}
+.stag.on{color:var(--gold)}
+
+/* ---------- 01 sidebar shell ---------- */
+.shell{display:grid;grid-template-columns:240px 64px 1fr;height:640px;overflow:hidden}
+.side{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:20px 0 16px}
+.brand{display:flex;align-items:center;gap:11px;padding:2px 20px 22px}
+.brand svg{flex:0 0 auto}
+.brand-name2{font-size:14px;font-weight:600;line-height:1.1;letter-spacing:0.01em;color:var(--ink)}
+.brand-name2 span{display:block;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-3);margin-top:3px}
+.nav{display:flex;flex-direction:column;gap:2px;padding:0 12px;flex:1}
+.nav-label{padding:14px 10px 8px}
+.nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;color:var(--ink-2);text-decoration:none;border-radius:var(--r-sm);font-size:13px;font-weight:500;position:relative;transition:color var(--dur-micro) var(--ease-out),background var(--dur-micro) var(--ease-out)}
+.nav a svg{flex:0 0 auto;opacity:.7}
+.nav a .count{margin-left:auto;font-family:var(--mono);font-size:10px;font-weight:600;color:var(--ink-3);background:var(--surface-raised);border:1px solid var(--border);border-radius:5px;padding:1px 5px}
+.nav a.is-hover{color:var(--ink);background:rgba(255,255,255,0.035)}
+.nav a.active{color:var(--ink);background:var(--surface-raised)}
+.nav a.active svg{opacity:1;color:var(--gold)}
+.nav a.active::before{content:"";position:absolute;left:-12px;top:7px;bottom:7px;width:2px;background:var(--gold);border-radius:0 2px 2px 0}
+.uchip{margin:12px 14px 0;padding:11px 12px;border:1px solid var(--border);border-radius:var(--r-sm);display:flex;align-items:center;gap:10px;background:var(--surface-raised)}
+.avatar{width:32px;height:32px;flex:0 0 auto;border-radius:var(--r-sm);background:linear-gradient(135deg,rgba(212,168,83,0.22),rgba(212,168,83,0.05));border:1px solid rgba(212,168,83,0.30);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-size:13px;color:var(--gold-200)}
+.uchip .who{overflow:hidden}
+.uchip .who b{font-weight:600;font-size:12.5px;color:var(--ink);display:block}
+.uchip .who small{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* collapsed 64px rail */
+.rail{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:20px 0 16px}
+.rail .brand-mark{margin-bottom:20px}
+.rail .rnav{display:flex;flex-direction:column;gap:6px;flex:1;align-items:center}
+.rail .rnav a{position:relative;width:40px;height:40px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;color:var(--ink-2);text-decoration:none;transition:color var(--dur-micro) var(--ease-out),background var(--dur-micro) var(--ease-out)}
+.rail .rnav a svg{opacity:.7}
+.rail .rnav a.is-hover{background:rgba(255,255,255,0.035);color:var(--ink)}
+.rail .rnav a.active{background:var(--surface-raised);color:var(--ink)}
+.rail .rnav a.active svg{opacity:1;color:var(--gold)}
+.rail .rnav a.active::before{content:"";position:absolute;left:-12px;top:9px;bottom:9px;width:2px;background:var(--gold);border-radius:0 2px 2px 0}
+.rail .ravatar{width:34px;height:34px;border-radius:var(--r-sm);background:linear-gradient(135deg,rgba(212,168,83,0.22),rgba(212,168,83,0.05));border:1px solid rgba(212,168,83,0.30);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-size:13px;color:var(--gold-200)}
+
+/* shell notes panel */
+.shell-notes{padding:26px 28px;display:flex;flex-direction:column;gap:0;background:var(--surface)}
+.shell-notes .sub-label{margin-bottom:16px}
+.nnote{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border-subtle)}
+.nnote:last-child{border-bottom:0}
+.nnote .k{flex:0 0 18px;display:flex}
+.nnote .d{font-size:12px;color:var(--ink-2);line-height:1.55}
+.nnote .d b{color:var(--ink);font-weight:600}
+.nnote .d code{font-family:var(--mono);font-size:11px;color:var(--gold)}
+.ntag{display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;font-weight:600;color:#0A0F1C;background:var(--gold);border-radius:3px;width:15px;height:15px}
+.col-cap{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
+
+/* ---------- 02 tabs ---------- */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.pad{padding:24px 22px}
+.set-cap{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:14px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border)}
+.tab{position:relative;display:inline-flex;align-items:center;gap:8px;padding:10px 14px 13px;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;background:transparent;border:0;font-family:var(--sans);transition:color var(--dur-micro) var(--ease-out)}
+.tab .count{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--ink-3);background:var(--surface-raised);border:1px solid var(--border);border-radius:5px;padding:1px 5px}
+.tab.is-hover{color:var(--ink)}
+.tab.active{color:var(--ink)}
+.tab.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--gold);border-radius:2px 2px 0 0}
+.tab.active .count{color:var(--gold);background:rgba(212,168,83,0.10);border-color:rgba(212,168,83,0.28)}
+
+/* ---------- 03 breadcrumb ---------- */
+.crumb{display:flex;align-items:center;gap:9px;font-size:13px}
+.crumb a{color:var(--ink-2);text-decoration:none;display:inline-flex;align-items:center;gap:7px;transition:color var(--dur-micro) var(--ease-out)}
+.crumb a svg{opacity:.7}
+.crumb a.is-hover{color:var(--ink)}
+.crumb .sep{color:var(--ink-3);display:inline-flex}
+.crumb .here{color:var(--ink);font-weight:600}
+
+/* ---------- 04 pagination ---------- */
+.pager{display:inline-flex;align-items:center;gap:4px}
+.pg{min-width:32px;height:32px;padding:0 8px;display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink-2);background:transparent;border:1px solid transparent;border-radius:var(--r-sm);cursor:pointer;transition:color var(--dur-micro) var(--ease-out),background var(--dur-micro) var(--ease-out),border-color var(--dur-micro) var(--ease-out)}
+.pg.is-hover{color:var(--ink);background:rgba(255,255,255,0.04);border-color:var(--border)}
+.pg.active{color:#0A0F1C;background:var(--gold);border-color:transparent}
+.pg.gap{cursor:default;color:var(--ink-3)}
+.pg.arrow{color:var(--ink-2)}
+.pg.is-disabled{opacity:.35;cursor:not-allowed}
+
+/* ---------- 05 dropdown ---------- */
+.menu{width:238px;background:var(--surface-overlay);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--sh-lg);padding:6px;overflow:hidden}
+.menu-head{display:flex;align-items:center;gap:10px;padding:10px 10px 12px;border-bottom:1px solid var(--border-subtle);margin-bottom:6px}
+.menu-head .avatar{width:34px;height:34px}
+.menu-head .who b{font-weight:600;font-size:12.5px;color:var(--ink);display:block}
+.menu-head .who small{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.menu-item{display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:var(--r-sm);color:var(--ink-2);text-decoration:none;font-size:13px;cursor:pointer;transition:color var(--dur-micro) var(--ease-out),background var(--dur-micro) var(--ease-out)}
+.menu-item svg{flex:0 0 auto;opacity:.75}
+.menu-item .kbd{margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ink-3)}
+.menu-item.is-hover{background:rgba(255,255,255,0.05);color:var(--ink)}
+.menu-item.is-hover svg{opacity:1}
+.menu-sep{height:1px;background:var(--border-subtle);margin:6px 4px}
+.menu-item.danger{color:var(--red)}
+.menu-item.danger.is-hover{background:var(--red-dim);color:var(--red)}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="11.5" stroke="#D4A853" stroke-width="1.5"/>
+      <circle cx="16" cy="16" r="3" stroke="#D4A853" stroke-width="1.5"/>
+      <path d="M16 1.5V8M16 24v6.5M1.5 16H8M24 16h6.5" stroke="#D4A853" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <div class="brand-name">Snipers<span>Trading Academy</span></div>
+    <div class="tag">Components · <b>Navigation</b></div>
+  </div>
+
+  <div class="page-title">
+    <h1>Navigation</h1>
+    <p>Every way through the product: the primary sidebar and its collapsed icon rail, tabs for switching a view, breadcrumbs and pagination for depth and length, and the account menu. The active state is always the gold left-bar or underline; hover states are shown as static, labeled specimens.</p>
+  </div>
+
+  <!-- 01 SIDEBAR -->
+  <section>
+    <div class="sec-title"><span class="n">01</span><h2>Sidebar &amp; icon rail</h2><span class="line"></span><span class="note">240px expanded · 64px collapsed</span></div>
+    <div class="card" style="overflow:hidden;position:relative">
+      <div class="shell">
+
+        <!-- expanded 240 -->
+        <aside class="side">
+          <div class="brand">
+            <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+              <circle cx="16" cy="16" r="11.5" stroke="#D4A853" stroke-width="1.5"/>
+              <circle cx="16" cy="16" r="3" stroke="#D4A853" stroke-width="1.5"/>
+              <path d="M16 1.5V8M16 24v6.5M1.5 16H8M24 16h6.5" stroke="#D4A853" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <div class="brand-name2">Snipers<span>Trading Academy</span></div>
+          </div>
+          <nav class="nav">
+            <div class="nav-label label">Workspace</div>
+            <a href="#" class="active">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+              Dashboard
+            </a>
+            <a href="#">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-5"/><path d="M22 10v5"/></svg>
+              Academy
+            </a>
+            <a href="#" class="is-hover">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20"/><circle cx="10" cy="8" r="3.5"/><path d="M20 20v-1.5a3.5 3.5 0 0 0-2.7-3.4"/><path d="M15 4.6a3.5 3.5 0 0 1 0 6.8"/></svg>
+              My Team
+              <span class="count">2.5k</span>
+            </a>
+            <a href="#">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 6.5c0-2-2.2-3-5-3s-5 1-5 3 2.2 3 5 3.5 5 1.5 5 3.5-2.2 3-5 3-5-1-5-3"/></svg>
+              Finance
+            </a>
+            <a href="#">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
+              Payments
+            </a>
+            <a href="#">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>
+              Referrals
+            </a>
+            <a href="#">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5a6 6 0 0 0-12 0c0 6-2.5 7.5-2.5 7.5h17S18 14.5 18 8.5"/><path d="M10.5 20a1.9 1.9 0 0 0 3 0"/></svg>
+              Notifications
+            </a>
+            <a href="#">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H2a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 3.3 6.6l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 9 3.3V2a2 2 0 1 1 4 0v.1A1.6 1.6 0 0 0 15 3.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg>
+              Settings
+            </a>
+          </nav>
+          <div class="uchip">
+            <div class="avatar">CR</div>
+            <div class="who">
+              <b>Charlie R.</b>
+              <small>charlieram96@gmail.com</small>
+            </div>
+          </div>
+        </aside>
+
+        <!-- collapsed 64 rail -->
+        <aside class="rail">
+          <div class="brand-mark">
+            <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
+              <circle cx="16" cy="16" r="11.5" stroke="#D4A853" stroke-width="1.5"/>
+              <circle cx="16" cy="16" r="3" stroke="#D4A853" stroke-width="1.5"/>
+              <path d="M16 1.5V8M16 24v6.5M1.5 16H8M24 16h6.5" stroke="#D4A853" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="rnav">
+            <a href="#" class="active" aria-label="Dashboard"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></a>
+            <a href="#" aria-label="Academy"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-5"/><path d="M22 10v5"/></svg></a>
+            <a href="#" class="is-hover" aria-label="My Team"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20"/><circle cx="10" cy="8" r="3.5"/><path d="M20 20v-1.5a3.5 3.5 0 0 0-2.7-3.4"/><path d="M15 4.6a3.5 3.5 0 0 1 0 6.8"/></svg></a>
+            <a href="#" aria-label="Finance"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 6.5c0-2-2.2-3-5-3s-5 1-5 3 2.2 3 5 3.5 5 1.5 5 3.5-2.2 3-5 3-5-1-5-3"/></svg></a>
+            <a href="#" aria-label="Payments"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg></a>
+            <a href="#" aria-label="Referrals"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg></a>
+            <a href="#" aria-label="Notifications"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5a6 6 0 0 0-12 0c0 6-2.5 7.5-2.5 7.5h17S18 14.5 18 8.5"/><path d="M10.5 20a1.9 1.9 0 0 0 3 0"/></svg></a>
+            <a href="#" aria-label="Settings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H2a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 3.3 6.6l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 9 3.3V2a2 2 0 1 1 4 0v.1A1.6 1.6 0 0 0 15 3.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg></a>
+          </div>
+          <div class="ravatar">CR</div>
+        </aside>
+
+        <!-- notes -->
+        <div class="shell-notes">
+          <div class="sub-label">Anatomy</div>
+          <div class="nnote"><span class="k"><span class="ntag">1</span></span><span class="d"><b>Logo</b> — crosshair mark with the wordmark; collapses to the mark alone in the rail.</span></div>
+          <div class="nnote"><span class="k"><span class="ntag">2</span></span><span class="d"><b>8 items</b> in canonical order: Dashboard, Academy, My&nbsp;Team, Finance, Payments, Referrals, Notifications, Settings.</span></div>
+          <div class="nnote"><span class="k"><span class="ntag">3</span></span><span class="d"><b>Active</b> — 2px <code>--gold</code> left-bar, <code>--surface-raised</code> fill, gold icon. Hover lifts ink and adds a 3.5% wash.</span></div>
+          <div class="nnote"><span class="k"><span class="ntag">4</span></span><span class="d"><b>User chip</b> — avatar, name and wallet email pinned to the base of both widths.</span></div>
+          <div class="nnote" style="border-bottom:0"><span class="k"><span class="ntag">5</span></span><span class="d"><b>Rail</b> — 64px collapsed footprint keeps icons and active state, drops labels.</span></div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 TABS -->
+  <section>
+    <div class="sec-title"><span class="n">02</span><h2>Tabs</h2><span class="line"></span><span class="note">active gold underline</span></div>
+    <div class="split">
+      <div class="card pad">
+        <div class="set-cap">Default · Overview active</div>
+        <div class="tabs">
+          <button class="tab active">Overview</button>
+          <button class="tab">Payouts <span class="count">3</span></button>
+          <button class="tab">Settings</button>
+        </div>
+        <div class="stag on"><i></i>Active · 2px --gold underline</div>
+      </div>
+      <div class="card pad">
+        <div class="set-cap">Hover · Payouts</div>
+        <div class="tabs">
+          <button class="tab">Overview</button>
+          <button class="tab is-hover">Payouts <span class="count">3</span></button>
+          <button class="tab">Settings</button>
+        </div>
+        <div class="stag"><i></i>Hover · ink lifts to --ink</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 BREADCRUMB + 04 PAGINATION -->
+  <section>
+    <div class="sec-title"><span class="n">03</span><h2>Breadcrumb &amp; pagination</h2><span class="line"></span><span class="note">location &amp; length</span></div>
+    <div class="split">
+      <div class="card pad">
+        <div class="set-cap">Breadcrumb · current page in --ink</div>
+        <nav class="crumb" aria-label="Breadcrumb">
+          <a href="#"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-5"/></svg>Academy</a>
+          <span class="sep"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+          <a href="#" class="is-hover">Module 3</a>
+          <span class="sep"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+          <span class="here">Lesson 2</span>
+        </nav>
+        <div class="stag"><i></i>Module 3 shown in hover</div>
+      </div>
+      <div class="card pad">
+        <div class="set-cap">Pagination · page 1 of 12</div>
+        <div class="pager">
+          <button class="pg arrow is-disabled" aria-label="Previous">‹</button>
+          <button class="pg active">1</button>
+          <button class="pg">2</button>
+          <button class="pg is-hover">3</button>
+          <button class="pg gap">…</button>
+          <button class="pg">12</button>
+          <button class="pg arrow" aria-label="Next">›</button>
+        </div>
+        <div class="stag"><i></i>‹ disabled on first page · 3 shown in hover</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 DROPDOWN -->
+  <section>
+    <div class="sec-title"><span class="n">04</span><h2>Account menu</h2><span class="line"></span><span class="note">--surface-overlay · --sh-lg</span></div>
+    <div class="split">
+      <div class="card pad">
+        <div class="set-cap">Dropdown panel · Settings hovered</div>
+        <div class="menu">
+          <div class="menu-head">
+            <div class="avatar">CR</div>
+            <div class="who">
+              <b>Charlie R.</b>
+              <small>charlieram96@gmail.com</small>
+            </div>
+          </div>
+          <a href="#" class="menu-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></svg>
+            Profile
+          </a>
+          <a href="#" class="menu-item is-hover">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H2a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 3.3 6.6l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 9 3.3V2a2 2 0 1 1 4 0v.1A1.6 1.6 0 0 0 15 3.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg>
+            Settings
+            <span class="kbd">⌘,</span>
+          </a>
+          <div class="menu-sep"></div>
+          <a href="#" class="menu-item danger">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+            Sign out
+          </a>
+        </div>
+      </div>
+      <div class="card pad" style="display:flex;flex-direction:column;justify-content:center">
+        <div class="sub-label">Anatomy</div>
+        <div class="nnote"><span class="k"><span class="ntag">A</span></span><span class="d"><b>Overlay surface</b> — <code>--surface-overlay</code> on <code>--sh-lg</code>, the transient-layer elevation.</span></div>
+        <div class="nnote"><span class="k"><span class="ntag">B</span></span><span class="d"><b>Header</b> — the same avatar and identity as the sidebar chip, so the menu reads as the account.</span></div>
+        <div class="nnote"><span class="k"><span class="ntag">C</span></span><span class="d"><b>Items</b> — 16px line icon, label, optional shortcut. Hover fills a 5% wash.</span></div>
+        <div class="nnote" style="border-bottom:0"><span class="k"><span class="ntag">D</span></span><span class="d"><b>Sign out</b> — split by a divider and tinted <code>--red</code> as the one destructive action.</span></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

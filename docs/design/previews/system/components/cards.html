@@ -1,0 +1,374 @@
+<!-- @dsCard group="Components" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cards &amp; Surfaces</title>
+<style>
+:root {
+  /* Base */
+  --bg:#05080F; --surface:#0A0F1C; --surface-raised:#101728; --surface-overlay:#151D33;
+  --ink:#E6EAF2; --ink-2:#8B95A9; --ink-3:#525D73;
+  --border:rgba(255,255,255,0.10); --border-subtle:rgba(255,255,255,0.05); --border-strong:rgba(255,255,255,0.16);
+  /* Brand gold ramp */
+  --gold-50:#FDF8ED; --gold-100:#F9ECCC; --gold-200:#F0D48A; --gold-300:#E5C06A;
+  --gold-400:#D4A853; --gold-500:#C49B3E; --gold-600:#A67E2E; --gold-700:#856420; --gold-800:#6B4D18;
+  --gold:var(--gold-400); --ring:rgba(212,168,83,0.55);
+  /* Status */
+  --emerald:#34D399; --emerald-dim:rgba(52,211,153,0.12);
+  --red:#F87171; --red-dim:rgba(248,113,113,0.12);
+  --amber:#FBBF24; --amber-dim:rgba(251,191,36,0.12);
+  --blue:#60A5FA; --blue-dim:rgba(96,165,250,0.12);
+  /* Charts (series order) */
+  --chart-1:var(--gold-400); --chart-2:#60A5FA; --chart-3:#34D399; --chart-4:#A78BFA; --chart-5:#8B95A9;
+  /* Spacing (4px grid) */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px; --sp-10:40px; --sp-12:48px; --sp-16:64px;
+  /* Radius */
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-pill:999px;
+  /* Shadows */
+  --sh-sm:0 1px 2px rgba(0,0,0,0.35);
+  --sh-md:0 4px 12px rgba(0,0,0,0.28),0 1px 3px rgba(0,0,0,0.3);
+  --sh-lg:0 12px 32px rgba(0,0,0,0.35),0 4px 8px rgba(0,0,0,0.25);
+  --sh-gold:0 2px 12px rgba(212,168,83,0.18);
+  /* Type scale */
+  --t-xs:11px; --t-sm:12px; --t-base:13px; --t-md:14px; --t-lg:16px; --t-xl:18px; --t-2xl:22px; --t-3xl:28px; --t-4xl:36px;
+  /* Motion */
+  --dur-micro:120ms; --dur-std:200ms; --dur-enter:320ms;
+  --ease-out:cubic-bezier(0.2,0.8,0.2,1); --ease-spring:cubic-bezier(0.34,1.4,0.44,1);
+}
+:root{ --sans:-apple-system,"SF Pro Text",Inter,"Segoe UI",sans-serif; --mono:ui-monospace,"SF Mono","Geist Mono",Menlo,monospace; }
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:var(--t-base);line-height:1.45;min-height:100vh;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.014) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.014) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.label{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3)}
+
+/* ---------- page frame ---------- */
+.wrap{max-width:1200px;margin:0 auto;padding:40px 40px 80px}
+.masthead{display:flex;align-items:center;gap:14px;padding-bottom:28px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.masthead .brand-name{font-size:15px;font-weight:600;line-height:1.1;color:var(--ink)}
+.masthead .brand-name span{display:block;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-3);margin-top:3px}
+.masthead .tag{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.masthead .tag b{color:var(--gold);font-weight:600}
+.page-title{margin-top:26px}
+.page-title h1{font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1;color:var(--ink)}
+.page-title p{color:var(--ink-2);font-size:13px;margin-top:9px;max-width:660px;line-height:1.55}
+
+section{margin-top:44px}
+.sec-title{display:flex;align-items:baseline;gap:12px;margin-bottom:20px}
+.sec-title .n{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--gold);letter-spacing:0.04em}
+.sec-title h2{font-size:16px;font-weight:600;letter-spacing:-0.01em;color:var(--ink)}
+.sec-title .line{flex:1;height:1px;background:var(--border)}
+.sec-title .note{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:0.02em}
+.sub-label{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md)}
+
+.delta{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;font-variant-numeric:tabular-nums;letter-spacing:-0.01em;white-space:nowrap}
+.delta.up{color:var(--emerald);background:var(--emerald-dim);border:1px solid rgba(52,211,153,0.22)}
+.delta.flat{color:var(--ink-2);background:rgba(255,255,255,0.04);border:1px solid var(--border)}
+
+/* state caption tag under specimens */
+.stag{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3);margin-top:12px}
+.stag i{width:5px;height:5px;border-radius:50%;background:var(--ink-3);flex:0 0 auto}
+.stag.on i{background:var(--gold)}
+.stag.on{color:var(--gold)}
+
+/* ---------- 01 base card + anatomy ---------- */
+.anat{display:grid;grid-template-columns:1fr 300px;gap:36px;align-items:center;padding:30px 28px}
+.spec-card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--sh-sm);padding:var(--sp-5)}
+.spec-card .eyebrow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.spec-card h4{font-size:14px;font-weight:600;color:var(--ink);margin-top:12px}
+.spec-card p{font-size:12px;color:var(--ink-2);line-height:1.55;margin-top:6px}
+.spec-card .foot{display:flex;align-items:center;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border-subtle)}
+.spec-card .foot .k{font-family:var(--mono);font-size:11px;color:var(--ink);font-variant-numeric:tabular-nums}
+.anat-tag{display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;font-weight:600;color:#0A0F1C;background:var(--gold);border-radius:3px;width:15px;height:15px;vertical-align:1px}
+.anat-tag.pin{position:absolute}
+.anat-notes{display:flex;flex-direction:column}
+.anat-note{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--border-subtle)}
+.anat-note:last-child{border-bottom:0}
+.anat-note .k{flex:0 0 18px;display:flex}
+.anat-note .d{font-size:11.5px;color:var(--ink-2);line-height:1.5}
+.anat-note .d b{color:var(--ink);font-weight:600}
+.anat-note .d code{font-family:var(--mono);font-size:11px;color:var(--gold)}
+
+/* ---------- 02 raised / interactive ---------- */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.demo-card{background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--sh-sm);padding:var(--sp-5);transition:border-color var(--dur-std) var(--ease-out),box-shadow var(--dur-std) var(--ease-out)}
+.demo-card .eyebrow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.demo-card h4{font-size:14px;font-weight:600;color:var(--ink);margin-top:12px}
+.demo-card p{font-size:12px;color:var(--ink-2);line-height:1.55;margin-top:6px}
+.demo-card .chev{color:var(--ink-3)}
+.demo-card.is-hover{border-color:var(--border-strong);box-shadow:var(--sh-md)}
+.demo-card.is-hover .chev{color:var(--gold)}
+.card-eyebrow{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3)}
+
+/* ---------- 03 featured ---------- */
+.featured{position:relative;background:linear-gradient(180deg,rgba(212,168,83,0.07),transparent 52%),var(--surface);border:1px solid rgba(212,168,83,0.28);border-radius:var(--r-md);box-shadow:var(--sh-gold);padding:22px var(--sp-5) var(--sp-5);overflow:hidden}
+.featured::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,var(--gold-300),var(--gold-500))}
+.featured .card-eyebrow{color:var(--gold)}
+.featured .amt{font-family:var(--mono);font-size:34px;font-weight:600;color:var(--gold-100);letter-spacing:-0.02em;line-height:1;margin-top:14px;font-variant-numeric:tabular-nums}
+.featured .amt small{font-family:var(--sans);font-size:13px;color:var(--ink-3);font-weight:500}
+.featured .sub{display:flex;align-items:center;gap:9px;margin-top:14px}
+.featured .sub .note{font-size:11.5px;color:var(--ink-2)}
+
+/* ---------- 04 stat tile (reference) ---------- */
+.tile-cols{display:grid;grid-template-columns:300px 1fr;gap:32px;align-items:center;padding:26px 28px}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--sh-sm);padding:var(--sp-5);display:flex;flex-direction:column;min-height:150px}
+.tile .t-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tile .v{font-family:var(--mono);font-size:26px;font-weight:600;line-height:1;letter-spacing:-0.02em;color:var(--gold-100);margin-top:14px;font-variant-numeric:tabular-nums}
+.tile .v small{font-family:var(--sans);font-size:13px;color:var(--ink-3);font-weight:500}
+.tile .foot{margin-top:auto;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;padding-top:14px}
+.tile .foot .note{font-size:11px;color:var(--ink-3)}
+.spark{width:96px;height:34px;flex:0 0 auto}
+.tile-notes{display:flex;flex-direction:column}
+
+/* ---------- 05 accordion ---------- */
+.accordion{border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;background:var(--surface)}
+.acc-item{border-bottom:1px solid var(--border-subtle)}
+.acc-item:last-child{border-bottom:0}
+.acc-head{display:flex;align-items:center;gap:14px;padding:16px var(--sp-5);cursor:pointer}
+.acc-head .q{flex:1;font-size:13.5px;font-weight:600;color:var(--ink)}
+.acc-item.open .q{color:var(--gold-100)}
+.acc-chev{color:var(--ink-3);transition:transform var(--dur-std) var(--ease-out);flex:0 0 auto}
+.acc-item.open .acc-chev{transform:rotate(180deg);color:var(--gold)}
+.acc-body{padding:0 var(--sp-5) 18px;font-size:12.5px;color:var(--ink-2);line-height:1.6;max-width:560px}
+.acc-body b{color:var(--ink);font-weight:600}
+
+/* ---------- 06 separators ---------- */
+.sep-list{display:flex;flex-direction:column;gap:0;padding:8px 22px}
+.sep-row{display:grid;grid-template-columns:180px 1fr;gap:24px;align-items:center;padding:20px 0;border-bottom:1px solid var(--border-subtle)}
+.sep-row:last-child{border-bottom:0}
+.sep-row .meta{font-family:var(--mono);font-size:11px;color:var(--ink);font-weight:600}
+.sep-row .meta small{display:block;font-weight:400;color:var(--ink-3);margin-top:4px;letter-spacing:0.02em}
+.sep-demo{min-height:24px;display:flex;align-items:center}
+.rule{width:100%;height:1px;background:var(--border)}
+.rule.subtle{background:var(--border-subtle)}
+.rule.strong{background:var(--border-strong)}
+.rule-label{display:flex;align-items:center;gap:14px;width:100%}
+.rule-label::before,.rule-label::after{content:"";flex:1;height:1px;background:var(--border-subtle)}
+.rule-label span{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3)}
+.vsep{display:flex;align-items:center;gap:16px;height:24px}
+.vsep .txt{font-family:var(--mono);font-size:11px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.vsep .bar{width:1px;height:100%;background:var(--border)}
+
+/* ---------- 07 scroll-area ---------- */
+.scroll-cols{display:grid;grid-template-columns:1fr 300px;gap:36px;align-items:start;padding:26px 28px}
+.scroll-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.scroll-hint{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);letter-spacing:0.06em;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.scroll-area{height:208px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface)}
+.scroll-area::-webkit-scrollbar{width:8px}
+.scroll-area::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:99px;border:2px solid var(--surface)}
+.scroll-area::-webkit-scrollbar-track{background:transparent}
+.rank-row{display:flex;align-items:center;gap:13px;padding:13px 16px;border-bottom:1px solid var(--border-subtle)}
+.rank-row:last-child{border-bottom:0}
+.rank-ico{width:30px;height:30px;flex:0 0 auto;border-radius:var(--r-sm);background:var(--surface-raised);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--ink-3)}
+.rank-row.current .rank-ico{background:rgba(212,168,83,0.12);border-color:rgba(212,168,83,0.35);color:var(--gold)}
+.rank-row.locked{opacity:.55}
+.rank-row .nm{flex:1;font-size:13px;font-weight:500;color:var(--ink-2)}
+.rank-row.current .nm{color:var(--ink);font-weight:600}
+.rank-row .st{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3)}
+.rank-row.current .st{color:var(--gold);background:rgba(212,168,83,0.10);border:1px solid rgba(212,168,83,0.28);border-radius:5px;padding:2px 7px}
+.rank-row.done .st{color:var(--emerald)}
+.scroll-notes{display:flex;flex-direction:column}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="11.5" stroke="#D4A853" stroke-width="1.5"/>
+      <circle cx="16" cy="16" r="3" stroke="#D4A853" stroke-width="1.5"/>
+      <path d="M16 1.5V8M16 24v6.5M1.5 16H8M24 16h6.5" stroke="#D4A853" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <div class="brand-name">Snipers<span>Trading Academy</span></div>
+    <div class="tag">Components · <b>Cards &amp; Surfaces</b></div>
+  </div>
+
+  <div class="page-title">
+    <h1>Cards &amp; Surfaces</h1>
+    <p>The container family every panel in the system is built from — a flat resting card, a raised interactive variant, and one featured surface that leads the eye with a gold hairline. Stat tile, accordion, separators and a scrolling list round out the anatomy. States are static specimens; each is labeled with the token that produces it.</p>
+  </div>
+
+  <!-- 01 BASE CARD + ANATOMY -->
+  <section>
+    <div class="sec-title"><span class="n">01</span><h2>Base card &amp; anatomy</h2><span class="line"></span><span class="note">--surface · 1px --border · --r-md · --sh-sm</span></div>
+    <div class="card anat">
+      <div class="spec-card">
+        <span class="anat-tag pin" style="top:-8px;left:-8px">1</span>
+        <span class="anat-tag pin" style="top:14px;right:-8px">3</span>
+        <span class="anat-tag pin" style="bottom:-8px;left:50%">4</span>
+        <div class="eyebrow"><span class="card-eyebrow">Upcoming class<span style="margin-left:6px"><span class="anat-tag" style="width:14px;height:14px">2</span></span></span><span class="delta flat">Jul 22</span></div>
+        <h4>London Session Breakdown</h4>
+        <p>The workhorse container for lists, schedules and detail panels. Flat on the resting plane, no lift.</p>
+        <div class="foot"><span class="k">Jul 22, 2026 · 3:00 AM EST</span></div>
+      </div>
+      <div class="anat-notes">
+        <div class="anat-note"><span class="k"><span class="anat-tag">1</span></span><span class="d"><b>Surface</b> — fill <code>--surface</code> #0A0F1C, the resting plane, on a 1px <code>--border</code> outline.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">2</span></span><span class="d"><b>Padding</b> — <code>--sp-5</code> (20px) all sides; content never touches the border.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">3</span></span><span class="d"><b>Radius</b> — <code>--r-md</code> (10px) corners; the system's default container round.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">4</span></span><span class="d"><b>Shadow</b> — <code>--sh-sm</code>, a barely-there lift that separates the card from the canvas.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 RAISED / INTERACTIVE -->
+  <section>
+    <div class="sec-title"><span class="n">02</span><h2>Raised · interactive</h2><span class="line"></span><span class="note">hover lifts to --border-strong + --sh-md</span></div>
+    <div class="split">
+      <div>
+        <div class="demo-card">
+          <div class="eyebrow"><span class="card-eyebrow">Structure 03</span><span class="chev"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></div>
+          <h4>Third Structure</h4>
+          <p>Raised onto <code style="font-family:var(--mono);color:var(--ink-3)">--surface-raised</code>. The whole card is a target — click to open the structure.</p>
+        </div>
+        <div class="stag"><i></i>Default · --surface-raised · --sh-sm</div>
+      </div>
+      <div>
+        <div class="demo-card is-hover">
+          <div class="eyebrow"><span class="card-eyebrow">Structure 03</span><span class="chev"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></div>
+          <h4>Third Structure</h4>
+          <p>On hover the border strengthens and the shadow deepens — a clear affordance that the surface is pressable.</p>
+        </div>
+        <div class="stag on"><i></i>Hover · --border-strong · --sh-md</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 FEATURED -->
+  <section>
+    <div class="sec-title"><span class="n">03</span><h2>Featured surface</h2><span class="line"></span><span class="note">gold top hairline + --sh-gold</span></div>
+    <div class="split">
+      <div class="featured">
+        <span class="card-eyebrow">Your commission · July</span>
+        <div class="amt">$5,797.80 <small>USDC est.</small></div>
+        <div class="sub"><span class="delta up">▲ 8.3% MoM</span><span class="note">12% of the $48,315.00 team pool</span></div>
+      </div>
+      <div class="card" style="padding:var(--sp-5);display:flex;flex-direction:column;justify-content:center;gap:14px">
+        <div class="anat-note" style="padding-top:0"><span class="k"><span class="anat-tag">A</span></span><span class="d"><b>Top hairline</b> — a 2px gold gradient rule pins the eye to the surface that matters most.</span></div>
+        <div class="anat-note" style="border-bottom:0;padding-bottom:0"><span class="k"><span class="anat-tag">B</span></span><span class="d"><b>Elevation</b> — <code>--sh-gold</code> casts a warm glow instead of a neutral drop shadow. Reserved for one card per view.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 STAT TILE -->
+  <section>
+    <div class="sec-title"><span class="n">04</span><h2>Stat tile</h2><span class="line"></span><span class="note">reference spec · reused across the system</span></div>
+    <div class="card tile-cols">
+      <div class="tile">
+        <div class="t-head"><span class="label">Your Commission</span><span class="delta up">▲ 8.3%</span></div>
+        <div class="v">$5,797<small>.80</small></div>
+        <div class="foot">
+          <span class="note">12% of team pool</span>
+          <svg class="spark" viewBox="0 0 128 40" fill="none" preserveAspectRatio="none">
+            <defs><linearGradient id="sp1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D4A853" stop-opacity="0.40"/><stop offset="1" stop-color="#D4A853" stop-opacity="0"/></linearGradient></defs>
+            <path d="M0,34 L23,28.4 L46,22.6 L69,17.2 L92,10.6 L116,4 L116,40 L0,40 Z" fill="url(#sp1)"/>
+            <path d="M0,34 L23,28.4 L46,22.6 L69,17.2 L92,10.6 L116,4" stroke="#E8C583" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="116" cy="4" r="3" fill="#E8C583" stroke="#05080F" stroke-width="1.5"/>
+          </svg>
+        </div>
+      </div>
+      <div class="tile-notes">
+        <div class="anat-note"><span class="k"><span class="anat-tag">1</span></span><span class="d"><b>Label</b> — 10.5px uppercase mono, <code>--ink-3</code>. Names the metric.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">2</span></span><span class="d"><b>Delta chip</b> — sanctioned <code>▲ 8.3%</code>, emerald on <code>--emerald-dim</code>.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">3</span></span><span class="d"><b>Numeral</b> — 26px mono tabular, gold for the headline figure; cents step down in <code>--ink-3</code>.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">4</span></span><span class="d"><b>Sparkline</b> — six-point pool trend; the endpoint dot keeps right-margin headroom inside the viewBox.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 ACCORDION -->
+  <section>
+    <div class="sec-title"><span class="n">05</span><h2>Accordion</h2><span class="line"></span><span class="note">one open · one closed</span></div>
+    <div class="accordion">
+      <div class="acc-item open">
+        <div class="acc-head">
+          <span class="q">How are commissions calculated?</span>
+          <span class="acc-chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+        </div>
+        <div class="acc-body">Your rate is <b>10% plus 1% per completed structure</b>, paid monthly in USDC.</div>
+      </div>
+      <div class="acc-item">
+        <div class="acc-head">
+          <span class="q">When do payouts settle?</span>
+          <span class="acc-chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 SEPARATORS -->
+  <section>
+    <div class="sec-title"><span class="n">06</span><h2>Separators</h2><span class="line"></span><span class="note">rules, labeled dividers &amp; inline splits</span></div>
+    <div class="card sep-list">
+      <div class="sep-row">
+        <div class="meta">Hairline rule<small>--border · 10%</small></div>
+        <div class="sep-demo"><span class="rule"></span></div>
+      </div>
+      <div class="sep-row">
+        <div class="meta">Subtle rule<small>--border-subtle · 5%</small></div>
+        <div class="sep-demo"><span class="rule subtle"></span></div>
+      </div>
+      <div class="sep-row">
+        <div class="meta">Emphasis rule<small>--border-strong · 16%</small></div>
+        <div class="sep-demo"><span class="rule strong"></span></div>
+      </div>
+      <div class="sep-row">
+        <div class="meta">Labeled divider<small>section break</small></div>
+        <div class="sep-demo"><span class="rule-label"><span>Payout history</span></span></div>
+      </div>
+      <div class="sep-row">
+        <div class="meta">Inline split<small>metadata rows</small></div>
+        <div class="sep-demo"><span class="vsep"><span class="txt">Polygon</span><span class="bar"></span><span class="txt">USDC</span><span class="bar"></span><span class="txt">0x7C4d…9E2a</span></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 07 SCROLL AREA -->
+  <section>
+    <div class="sec-title"><span class="n">07</span><h2>Scroll area</h2><span class="line"></span><span class="note">fixed height · overflow-y auto · 7 ranks</span></div>
+    <div class="card scroll-cols">
+      <div>
+        <div class="scroll-head">
+          <span class="sub-label" style="margin-bottom:0">Rank ladder</span>
+          <span class="scroll-hint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m18 9-6 6-6-6"/></svg>Scroll for all 7</span>
+        </div>
+        <div class="scroll-area">
+          <div class="rank-row done"><span class="rank-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg></span><span class="nm">Unranked</span><span class="st">Start</span></div>
+          <div class="rank-row done"><span class="rank-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="nm">Delta Master</span><span class="st">Achieved</span></div>
+          <div class="rank-row current"><span class="rank-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="m8.5 12.5-1.5 8L12 18l5 2.5-1.5-8"/></svg></span><span class="nm">Delta Master Sniper</span><span class="st">Current</span></div>
+          <div class="rank-row locked"><span class="rank-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span><span class="nm">Trend Master</span><span class="st">Locked</span></div>
+          <div class="rank-row locked"><span class="rank-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span><span class="nm">Trend Master Sniper</span><span class="st">Locked</span></div>
+          <div class="rank-row locked"><span class="rank-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span><span class="nm">Lion Master</span><span class="st">Locked</span></div>
+          <div class="rank-row locked"><span class="rank-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span><span class="nm">Lion Master Sniper</span><span class="st">Ultimate</span></div>
+        </div>
+      </div>
+      <div class="scroll-notes">
+        <div class="anat-note"><span class="k"><span class="anat-tag">1</span></span><span class="d"><b>Fixed height</b> — the container is capped at 208px so the seven-rank ladder overflows.</span></div>
+        <div class="anat-note"><span class="k"><span class="anat-tag">2</span></span><span class="d"><b>overflow-y: auto</b> — scrolling stays inside the card; the page never grows.</span></div>
+        <div class="anat-note" style="border-bottom:0"><span class="k"><span class="anat-tag">3</span></span><span class="d"><b>Slim thumb</b> — <code>--border-strong</code> rail, inset from the surface, appears only while scrolling.</span></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
