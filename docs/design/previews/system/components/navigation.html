@@ -88,7 +88,7 @@ section{margin-top:44px}
 .nav-label{padding:14px 10px 8px}
 .nav a{display:flex;align-items:center;gap:11px;padding:8px 10px;color:var(--ink-2);text-decoration:none;border-radius:var(--r-sm);font-size:13px;font-weight:500;position:relative;transition:color var(--dur-micro) var(--ease-out),background var(--dur-micro) var(--ease-out)}
 .nav a svg{flex:0 0 auto;opacity:.7}
-.nav a .count{margin-left:auto;font-family:var(--mono);font-size:10px;font-weight:600;color:var(--ink-3);background:var(--surface-raised);border:1px solid var(--border);border-radius:5px;padding:1px 5px}
+.nav a .count{margin-left:auto;font-family:var(--mono);font-size:10px;font-weight:600;color:var(--ink-3);background:var(--surface-raised);border:1px solid var(--border);border-radius:5px;padding:1px 5px;font-variant-numeric:tabular-nums}
 .nav a.is-hover{color:var(--ink);background:rgba(255,255,255,0.035)}
 .nav a.active{color:var(--ink);background:var(--surface-raised)}
 .nav a.active svg{opacity:1;color:var(--gold)}
@@ -129,14 +129,14 @@ section{margin-top:44px}
 .set-cap{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:14px}
 .tabs{display:flex;gap:4px;border-bottom:1px solid var(--border)}
 .tab{position:relative;display:inline-flex;align-items:center;gap:8px;padding:10px 14px 13px;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;background:transparent;border:0;font-family:var(--sans);transition:color var(--dur-micro) var(--ease-out)}
-.tab .count{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--ink-3);background:var(--surface-raised);border:1px solid var(--border);border-radius:5px;padding:1px 5px}
+.tab .count{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--ink-3);background:var(--surface-raised);border:1px solid var(--border);border-radius:5px;padding:1px 5px;font-variant-numeric:tabular-nums}
 .tab.is-hover{color:var(--ink)}
 .tab.active{color:var(--ink)}
 .tab.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--gold);border-radius:2px 2px 0 0}
 .tab.active .count{color:var(--gold);background:rgba(212,168,83,0.10);border-color:rgba(212,168,83,0.28)}
 
 /* ---------- 03 breadcrumb ---------- */
-.crumb{display:flex;align-items:center;gap:9px;font-size:13px}
+.crumb{display:flex;align-items:center;gap:9px;font-size:13px;font-variant-numeric:tabular-nums}
 .crumb a{color:var(--ink-2);text-decoration:none;display:inline-flex;align-items:center;gap:7px;transition:color var(--dur-micro) var(--ease-out)}
 .crumb a svg{opacity:.7}
 .crumb a.is-hover{color:var(--ink)}
