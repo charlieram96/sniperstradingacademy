@@ -10,6 +10,7 @@ import { useTranslation } from "@/components/language-provider"
 import { AcademySidebar } from "@/components/academy/academy-sidebar"
 import { LessonContent } from "@/components/academy/lesson-content"
 import { LiveClassCard } from "@/components/academy/live-class-card"
+import { SkeletonClassCard } from "@/components/patterns/skeleton"
 
 interface AcademyClass {
   id: string
@@ -304,8 +305,17 @@ export default function AcademyPage() {
           description={t("academy.description")}
           className="flex-1 min-w-0 !border-b-0 !pb-0 !mb-0"
         />
-        {/* Class cards are only shown to active users */}
-        {!classesLoading && activeStatusLoaded && isUserActive && <LiveClassCard classes={academyClasses} />}
+        {/* Class cards are only shown to active users. Same gate drives the
+            loading placeholder so inactive users never see a card flash. */}
+        {activeStatusLoaded && isUserActive && (
+          classesLoading ? (
+            <div className="w-full sm:w-[380px] flex-shrink-0">
+              <SkeletonClassCard />
+            </div>
+          ) : (
+            <LiveClassCard classes={academyClasses} />
+          )
+        )}
       </div>
 
       {/* Two-panel body */}
