@@ -478,7 +478,7 @@ export default function AdminPayoutsPage() {
                             {t("admin.payouts.failedStatus")}
                           </Badge>
                         ) : commission.status === "paid" ? (
-                          <Badge className="bg-[#D4A853]">
+                          <Badge variant="success">
                             {t("admin.payouts.paidStatus")}
                           </Badge>
                         ) : (
@@ -543,7 +543,7 @@ export default function AdminPayoutsPage() {
                             </Button>
                           </div>
                         ) : (
-                          <Badge className="bg-[#D4A853]">
+                          <Badge variant="success">
                             <CheckCircle className="h-3 w-3 mr-1" />
                             {t("admin.payouts.completed")}
                           </Badge>
@@ -578,7 +578,7 @@ export default function AdminPayoutsPage() {
             </div>
             <div className="flex items-center justify-between p-4 bg-surface-2 rounded-lg">
               <span className="text-sm font-medium">{t("admin.payouts.payoutWalletBalance")}:</span>
-              <span className={`text-lg font-bold ${balanceWarning ? 'text-red-500' : 'text-[#D4A853]'}`}>
+              <span className={`text-lg font-bold ${balanceWarning ? 'text-red-500' : 'text-gold-400'}`}>
                 ${payoutWalletBalance?.toFixed(2) || "0.00"} USDC
               </span>
             </div>
@@ -616,7 +616,7 @@ export default function AdminPayoutsPage() {
               <div
                 key={result.commissionId}
                 className={`flex items-center justify-between p-3 rounded-lg border ${
-                  result.success ? 'bg-[#D4A853]/10 border-[#D4A853]/20' :
+                  result.success ? 'bg-gold-400/10 border-gold-400/20' :
                   result.skipped ? 'bg-gray-500/10 border-gray-500/20' :
                   'bg-red-500/10 border-red-500/20'
                 }`}
@@ -641,7 +641,7 @@ export default function AdminPayoutsPage() {
                 </div>
                 <div>
                   {result.success ? (
-                    <CheckCircle className="h-5 w-5 text-[#D4A853]" />
+                    <CheckCircle className="h-5 w-5 text-gold-400" />
                   ) : result.skipped ? (
                     <Badge variant="outline">{t("admin.payouts.skipped")}</Badge>
                   ) : (

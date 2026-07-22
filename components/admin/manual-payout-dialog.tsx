@@ -189,7 +189,7 @@ export function ManualPayoutDialog({
                 </div>
                 <div className="border-t pt-1 mt-1 flex justify-between">
                   <span className="font-medium">Amount:</span>
-                  <span className="font-bold text-[#D4A853]">${amountNumber.toFixed(2)} USDC</span>
+                  <span className="font-bold text-gold-400">${amountNumber.toFixed(2)} USDC</span>
                 </div>
               </div>
             </Card>

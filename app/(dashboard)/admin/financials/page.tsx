@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { TrendingUp, DollarSign, ArrowDownCircle, ArrowUpCircle, Users, Search, Wallet, Settings, CheckCircle2, AlertCircle, Loader2, AlertTriangle, RefreshCw, Calendar, Play, Eye, ArrowRightLeft } from "lucide-react"
+import { TrendingUp, ArrowDownCircle, ArrowUpCircle, Search, Wallet, Settings, CheckCircle2, AlertCircle, Loader2, AlertTriangle, RefreshCw, Calendar, Play, Eye, ArrowRightLeft } from "lucide-react"
 import { formatDollars } from "@/lib/utils"
 import { useTranslation } from "@/components/language-provider"
 import {
@@ -26,6 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { StatTile } from "@/components/patterns/stat-tile"
 
 interface TreasurySettings {
   treasuryWalletAddress: string
@@ -974,8 +975,8 @@ export default function AdminFinancialsPage() {
               <div className="flex items-center gap-2">
                 {treasurySettings?.isConfigured ? (
                   <>
-                    <CheckCircle2 className="h-5 w-5 text-[#D4A853]" />
-                    <span className="text-sm text-[#D4A853] font-medium">{t("admin.financials.treasuryConfiguredReady")}</span>
+                    <CheckCircle2 className="h-5 w-5 text-gold-400" />
+                    <span className="text-sm text-gold-400 font-medium">{t("admin.financials.treasuryConfiguredReady")}</span>
                   </>
                 ) : (
                   <>
@@ -1005,7 +1006,7 @@ export default function AdminFinancialsPage() {
                       {treasuryBalanceLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin mt-1" />
                       ) : (
-                        <p className="text-lg font-semibold text-[#D4A853]">
+                        <p className="text-lg font-semibold text-gold-400">
                           {treasuryWalletBalance ? `$${parseFloat(treasuryWalletBalance.usdc).toFixed(2)}` : '-'}
                         </p>
                       )}
@@ -1074,7 +1075,7 @@ export default function AdminFinancialsPage() {
                 <Label htmlFor="masterXprv">{t("admin.financials.masterXprv")}</Label>
                 <div className="flex items-center gap-2">
                   {treasurySettings?.hasMasterXprv && (
-                    <Badge variant="outline" className="text-[#D4A853] border-[#D4A853]/30">
+                    <Badge variant="outline" className="text-gold-400 border-gold-400/30">
                       <CheckCircle2 className="h-3 w-3 mr-1" />
                       {t("admin.financials.configured")}
                     </Badge>
@@ -1126,9 +1127,9 @@ export default function AdminFinancialsPage() {
               )}
 
               {treasurySuccess && (
-                <div className="flex items-center gap-2 p-3 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-lg">
-                  <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
-                  <span className="text-sm text-[#D4A853]">{t("admin.financials.treasurySavedSuccess")}</span>
+                <div className="flex items-center gap-2 p-3 bg-gold-400/10 border border-gold-400/20 rounded-lg">
+                  <CheckCircle2 className="h-4 w-4 text-gold-400" />
+                  <span className="text-sm text-gold-400">{t("admin.financials.treasurySavedSuccess")}</span>
                 </div>
               )}
 
@@ -1173,8 +1174,8 @@ export default function AdminFinancialsPage() {
               <div className="flex items-center gap-2">
                 {treasurySettings?.isPayoutWalletConfigured ? (
                   <>
-                    <CheckCircle2 className="h-5 w-5 text-[#D4A853]" />
-                    <span className="text-sm text-[#D4A853] font-medium">{t("admin.financials.payoutWalletConfiguredReady")}</span>
+                    <CheckCircle2 className="h-5 w-5 text-gold-400" />
+                    <span className="text-sm text-gold-400 font-medium">{t("admin.financials.payoutWalletConfiguredReady")}</span>
                   </>
                 ) : (
                   <>
@@ -1192,7 +1193,7 @@ export default function AdminFinancialsPage() {
                     {payoutBalanceLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin mt-1" />
                     ) : (
-                      <p className="text-lg font-semibold text-[#D4A853]">
+                      <p className="text-lg font-semibold text-gold-400">
                         {payoutWalletBalance ? `$${parseFloat(payoutWalletBalance.usdc).toFixed(2)}` : '-'}
                       </p>
                     )}
@@ -1261,9 +1262,9 @@ export default function AdminFinancialsPage() {
               )}
 
               {payoutSuccess && (
-                <div className="flex items-center gap-2 p-3 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-lg">
-                  <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
-                  <span className="text-sm text-[#D4A853]">{t("admin.financials.payoutSavedSuccess")}</span>
+                <div className="flex items-center gap-2 p-3 bg-gold-400/10 border border-gold-400/20 rounded-lg">
+                  <CheckCircle2 className="h-4 w-4 text-gold-400" />
+                  <span className="text-sm text-gold-400">{t("admin.financials.payoutSavedSuccess")}</span>
                 </div>
               )}
 
@@ -1318,8 +1319,8 @@ export default function AdminFinancialsPage() {
               <div className="flex items-center gap-2">
                 {sweepStatus?.configured ? (
                   <>
-                    <CheckCircle2 className="h-5 w-5 text-[#D4A853]" />
-                    <span className="text-sm text-[#D4A853] font-medium">{t("admin.financials.sweepConfiguredReady")}</span>
+                    <CheckCircle2 className="h-5 w-5 text-gold-400" />
+                    <span className="text-sm text-gold-400 font-medium">{t("admin.financials.sweepConfiguredReady")}</span>
                   </>
                 ) : (
                   <>
@@ -1338,7 +1339,7 @@ export default function AdminFinancialsPage() {
                 </div>
                 <div className="p-4 bg-surface-2 rounded-lg">
                   <p className="text-sm text-muted-foreground">{t("admin.financials.pendingUsdc")}</p>
-                  <p className="text-2xl font-semibold text-[#D4A853]">
+                  <p className="text-2xl font-semibold text-gold-400">
                     ${(sweepStatus?.pendingUsdc || 0).toFixed(2)}
                   </p>
                   <p className="text-xs text-muted-foreground">{t("admin.financials.waitingToSweep")}</p>
@@ -1364,23 +1365,23 @@ export default function AdminFinancialsPage() {
               {sweepResult && (
                 <div className={`p-4 rounded-lg border ${
                   sweepResult.success
-                    ? "bg-[#D4A853]/10 border-[#D4A853]/20"
+                    ? "bg-gold-400/10 border-gold-400/20"
                     : "bg-red-50 border-red-200"
                 }`}>
                   <div className="flex items-start gap-3">
                     {sweepResult.success ? (
-                      <CheckCircle2 className="h-5 w-5 text-[#D4A853] mt-0.5" />
+                      <CheckCircle2 className="h-5 w-5 text-gold-400 mt-0.5" />
                     ) : (
                       <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
                     )}
                     <div className="flex-1">
                       <p className={`font-medium ${
-                        sweepResult.success ? "text-[#C49B3E]" : "text-red-700"
+                        sweepResult.success ? "text-gold-500" : "text-red-700"
                       }`}>
                         {sweepResult.message}
                       </p>
                       {sweepResult.details && sweepResult.success && (
-                        <div className="mt-2 text-sm text-[#D4A853] space-y-1">
+                        <div className="mt-2 text-sm text-gold-400 space-y-1">
                           <p>{t("admin.financials.successful")}: {sweepResult.details.successful} {t("admin.financials.deposits")}</p>
                           <p>{t("admin.payouts.failed")}: {sweepResult.details.failed} {t("admin.financials.deposits")}</p>
                           <p>{t("admin.financials.totalSwept")}: ${sweepResult.details.totalSweptUsdc.toFixed(2)} USDC</p>
@@ -1440,9 +1441,9 @@ export default function AdminFinancialsPage() {
                       <p className="text-lg font-semibold text-blue-600">{sweepPipelineStats.funding_sent}</p>
                       <p className="text-xs text-blue-600">{t("admin.financials.fundingSent")}</p>
                     </div>
-                    <div className="p-2 bg-[#D4A853]/10 rounded text-center">
-                      <p className="text-lg font-semibold text-[#D4A853]">{sweepPipelineStats.ready}</p>
-                      <p className="text-xs text-[#D4A853]">{t("admin.financials.ready")}</p>
+                    <div className="p-2 bg-gold-400/10 rounded text-center">
+                      <p className="text-lg font-semibold text-gold-400">{sweepPipelineStats.ready}</p>
+                      <p className="text-xs text-gold-400">{t("admin.financials.ready")}</p>
                     </div>
                     <div className="p-2 bg-purple-50 rounded text-center">
                       <p className="text-lg font-semibold text-purple-600">{sweepPipelineStats.sweeping}</p>
@@ -1720,15 +1721,15 @@ export default function AdminFinancialsPage() {
                         {formatDollars(monthlyPreview.totalVolumeToArchive)}
                       </p>
                     </div>
-                    <div className="p-3 bg-[#D4A853]/10 rounded-lg">
-                      <p className="text-xs text-[#D4A853]">{t("admin.financials.commissions")}</p>
-                      <p className="text-lg font-semibold text-[#C49B3E]">
+                    <div className="p-3 bg-gold-400/10 rounded-lg">
+                      <p className="text-xs text-gold-400">{t("admin.financials.commissions")}</p>
+                      <p className="text-lg font-semibold text-gold-500">
                         {monthlyPreview.commissionsToCreate.count}
                       </p>
                     </div>
-                    <div className="p-3 bg-[#D4A853]/10 rounded-lg">
-                      <p className="text-xs text-[#D4A853]">{t("admin.financials.totalPayout")}</p>
-                      <p className="text-lg font-semibold text-[#C49B3E]">
+                    <div className="p-3 bg-gold-400/10 rounded-lg">
+                      <p className="text-xs text-gold-400">{t("admin.financials.totalPayout")}</p>
+                      <p className="text-lg font-semibold text-gold-500">
                         {formatDollars(monthlyPreview.commissionsToCreate.totalAmount)}
                       </p>
                     </div>
@@ -1768,7 +1769,7 @@ export default function AdminFinancialsPage() {
                                 </TableCell>
                                 <TableCell className="text-center">
                                   {user.isQualified ? (
-                                    <Badge variant="default" className="bg-[#D4A853] hover:bg-[#C49B3E]">
+                                    <Badge variant="default">
                                       <CheckCircle2 className="h-3 w-3 mr-1" />
                                       Yes
                                     </Badge>
@@ -1785,7 +1786,7 @@ export default function AdminFinancialsPage() {
                                 <TableCell className="text-right">
                                   {user.commissionRate.toFixed(0)}%
                                 </TableCell>
-                                <TableCell className="text-right font-mono font-semibold text-[#D4A853]">
+                                <TableCell className="text-right font-mono font-semibold text-gold-400">
                                   {formatDollars(user.commissionAmount)}
                                 </TableCell>
                               </TableRow>
@@ -1857,23 +1858,23 @@ export default function AdminFinancialsPage() {
               {monthlyProcessResult && (
                 <div className={`p-4 rounded-lg border ${
                   monthlyProcessResult.success
-                    ? "bg-[#D4A853]/10 border-[#D4A853]/20"
+                    ? "bg-gold-400/10 border-gold-400/20"
                     : "bg-red-50 border-red-200"
                 }`}>
                   <div className="flex items-start gap-3">
                     {monthlyProcessResult.success ? (
-                      <CheckCircle2 className="h-5 w-5 text-[#D4A853] mt-0.5" />
+                      <CheckCircle2 className="h-5 w-5 text-gold-400 mt-0.5" />
                     ) : (
                       <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
                     )}
                     <div className="flex-1">
                       <p className={`font-medium ${
-                        monthlyProcessResult.success ? "text-[#C49B3E]" : "text-red-700"
+                        monthlyProcessResult.success ? "text-gold-500" : "text-red-700"
                       }`}>
                         {monthlyProcessResult.message}
                       </p>
                       {monthlyProcessResult.details && monthlyProcessResult.success && (
-                        <div className="mt-2 text-sm text-[#D4A853] space-y-1">
+                        <div className="mt-2 text-sm text-gold-400 space-y-1">
                           <p>{t("admin.financials.archived")}: {(monthlyProcessResult.details.archiveStep as { usersProcessed?: number })?.usersProcessed || 0}</p>
                           <p>{t("admin.financials.commissionsCreated")}: {(monthlyProcessResult.details.commissionStep as { commissionsCreated?: number })?.commissionsCreated || 0}</p>
                           <p>{t("admin.financials.totalPayout")}: {formatDollars((monthlyProcessResult.details.commissionStep as { totalPayoutAmount?: number })?.totalPayoutAmount || 0)}</p>
@@ -1949,7 +1950,7 @@ export default function AdminFinancialsPage() {
                         <TableCell className="font-mono">
                           {formatDollars(item.expectedAmount)}
                         </TableCell>
-                        <TableCell className="font-mono text-[#D4A853] font-semibold">
+                        <TableCell className="font-mono text-gold-400 font-semibold">
                           {formatDollars(item.receivedAmount)}
                         </TableCell>
                         <TableCell className="font-mono text-amber-600 font-semibold">
@@ -2027,50 +2028,23 @@ export default function AdminFinancialsPage() {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.financials.totalRevenue")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <ArrowUpCircle className="h-5 w-5 text-[#D4A853]" />
-              <p className="text-2xl font-bold text-[#D4A853]">{formatDollars(stats.totalRevenue)}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.financials.totalPayouts")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <ArrowDownCircle className="h-5 w-5 text-red-600" />
-              <p className="text-2xl font-bold text-red-600">{formatDollars(stats.totalPayouts)}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.financials.netProfit")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-primary" />
-              <p className="text-2xl font-bold text-primary">{formatDollars(stats.netProfit)}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.financials.activeSubscriptions")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-muted-foreground" />
-              <p className="text-2xl font-bold">{stats.activeSubscriptions}</p>
-            </div>
-          </CardContent>
-        </Card>
+        <StatTile
+          tone="gold"
+          label={t("admin.financials.totalRevenue")}
+          value={formatDollars(stats.totalRevenue)}
+        />
+        <StatTile
+          label={t("admin.financials.totalPayouts")}
+          value={formatDollars(stats.totalPayouts)}
+        />
+        <StatTile
+          label={t("admin.financials.netProfit")}
+          value={formatDollars(stats.netProfit)}
+        />
+        <StatTile
+          label={t("admin.financials.activeSubscriptions")}
+          value={stats.activeSubscriptions}
+        />
       </div>
 
       {/* Users Without Payout Wallets */}
@@ -2147,7 +2121,7 @@ export default function AdminFinancialsPage() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ArrowUpCircle className="h-5 w-5 text-[#D4A853]" />
+            <ArrowUpCircle className="h-5 w-5 text-gold-400" />
             {t("admin.financials.incomingPayments").replace("{count}", String(filteredPayments.length))}
           </CardTitle>
           <CardDescription>{t("admin.financials.incomingPaymentsDesc")}</CardDescription>
@@ -2216,7 +2190,7 @@ export default function AdminFinancialsPage() {
                           <p className="text-sm text-muted-foreground">{payment.user_email}</p>
                         </div>
                       </TableCell>
-                      <TableCell className="font-mono font-semibold text-[#D4A853]">
+                      <TableCell className="font-mono font-semibold text-gold-400">
                         {formatDollars(payment.amount)}
                       </TableCell>
                       <TableCell>
@@ -2226,13 +2200,13 @@ export default function AdminFinancialsPage() {
                       </TableCell>
                       <TableCell>
                         {payment.status === "succeeded" ? (
-                          <Badge className="bg-[#D4A853] text-white">Succeeded</Badge>
+                          <Badge variant="success">Succeeded</Badge>
                         ) : payment.status === "bypassed" ? (
-                          <Badge className="bg-amber-500 text-white">Bypassed</Badge>
+                          <Badge variant="warning">Bypassed</Badge>
                         ) : payment.status === "pending" ? (
-                          <Badge className="bg-yellow-500 text-white">Pending</Badge>
+                          <Badge variant="warning">Pending</Badge>
                         ) : (
-                          <Badge className="bg-red-500 text-white">Failed</Badge>
+                          <Badge variant="destructive">Failed</Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
@@ -2318,11 +2292,11 @@ export default function AdminFinancialsPage() {
                       </TableCell>
                       <TableCell>
                         {commission.status === "paid" ? (
-                          <Badge className="bg-[#D4A853] text-white">Paid</Badge>
+                          <Badge variant="success">Paid</Badge>
                         ) : commission.status === "pending" ? (
-                          <Badge className="bg-yellow-500 text-white">Pending</Badge>
+                          <Badge variant="warning">Pending</Badge>
                         ) : (
-                          <Badge className="bg-gray-500 text-white">Cancelled</Badge>
+                          <Badge variant="secondary">Cancelled</Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">

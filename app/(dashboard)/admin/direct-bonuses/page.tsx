@@ -267,7 +267,7 @@ export default function DirectBonusesPage() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-[#D4A853]" />
+              <DollarSign className="h-5 w-5 text-gold-400" />
               <span className="text-2xl font-bold">{summary.totalPayments}</span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">{t("admin.directBonuses.last90Days")}</p>
@@ -306,8 +306,8 @@ export default function DirectBonusesPage() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-[#D4A853]" />
-              <span className="text-2xl font-bold text-[#D4A853]">{summary.paidBonuses}</span>
+              <CheckCircle className="h-5 w-5 text-gold-400" />
+              <span className="text-2xl font-bold text-gold-400">{summary.paidBonuses}</span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">{t("admin.directBonuses.completed")}</p>
           </CardContent>
@@ -440,7 +440,7 @@ export default function DirectBonusesPage() {
                           </div>
                         ) : payment.bonus.status === "paid" ? (
                           <div>
-                            <Badge className="bg-[#D4A853]">
+                            <Badge variant="success">
                               <CheckCircle className="h-3 w-3 mr-1" />
                               {t("admin.directBonuses.paidStatus")}
                             </Badge>
@@ -507,7 +507,7 @@ export default function DirectBonusesPage() {
                             </Button>
                           </div>
                         ) : (
-                          <Badge className="bg-[#D4A853]">
+                          <Badge variant="success">
                             <CheckCircle className="h-3 w-3 mr-1" />
                             {t("admin.directBonuses.completedBadge")}
                           </Badge>
@@ -546,7 +546,7 @@ export default function DirectBonusesPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-[#D4A853]" />
+              <DollarSign className="h-5 w-5 text-gold-400" />
               {t("admin.directBonuses.confirmPayout")}
             </DialogTitle>
             <DialogDescription>
@@ -557,9 +557,9 @@ export default function DirectBonusesPage() {
           {selectedPaymentForPayout && (
             <div className="space-y-4 py-4">
               {/* Payout Amount */}
-              <div className="bg-[#D4A853]/10 border border-[#D4A853]/30 rounded-lg p-4 text-center">
-                <p className="text-sm text-[#D4A853] mb-1">{t("admin.directBonuses.payoutAmount")}</p>
-                <p className="text-3xl font-bold text-[#D4A853]">
+              <div className="bg-gold-400/10 border border-gold-400/30 rounded-lg p-4 text-center">
+                <p className="text-sm text-gold-400 mb-1">{t("admin.directBonuses.payoutAmount")}</p>
+                <p className="text-3xl font-bold text-gold-400">
                   ${selectedPaymentForPayout.bonus?.amount || 249} USDC
                 </p>
               </div>
@@ -626,7 +626,6 @@ export default function DirectBonusesPage() {
             </Button>
             <Button
               onClick={handleConfirmPayout}
-              className="bg-[#D4A853] hover:bg-[#B38A30]"
             >
               <DollarSign className="h-4 w-4 mr-1" />
               {t("admin.directBonuses.confirmAndSend").replace("{amount}", String(selectedPaymentForPayout?.bonus?.amount || 249))}
