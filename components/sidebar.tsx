@@ -141,13 +141,13 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
   const sidebarContent = (
     <nav className="flex-1 py-4 overflow-y-auto">
       <div className="px-2 pb-[5px]">
-        <p className={`text-[10px] uppercase tracking-[0.15em] text-muted-foreground/50 px-3 whitespace-nowrap h-4 mb-px transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>{t("nav.navigation")}</p>
+        <p className={`font-mono font-semibold text-[10px] uppercase tracking-[0.1em] text-foreground-tertiary px-3 whitespace-nowrap h-4 mb-px transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>{t("nav.navigation")}</p>
         {navItems.map((item) => (
           <NavigationLink
             key={item.href}
             href={item.href}
             isLocked={item.requiresActive && !isActive}
-            className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer relative whitespace-nowrap"
+            className="flex items-center gap-2.5 pl-4 pr-3 py-2.5 mx-1 rounded-sm text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer relative whitespace-nowrap"
           >
             <item.icon className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
             <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t(item.labelKey)}</span>
@@ -158,13 +158,13 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
       <div className={`mx-3 border-t border-border-subtle my-3`} />
 
       <div className="px-2 pb-[5px]">
-        <p className={`text-[10px] uppercase tracking-[0.15em] text-muted-foreground/50 px-3 whitespace-nowrap h-4 mb-px transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>{t("nav.general")}</p>
+        <p className={`font-mono font-semibold text-[10px] uppercase tracking-[0.1em] text-foreground-tertiary px-3 whitespace-nowrap h-4 mb-px transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>{t("nav.general")}</p>
         {secondaryItems.map((item) => (
           <NavigationLink
             key={item.href}
             href={item.href}
             isLocked={item.requiresActive && !isActive}
-            className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+            className="flex items-center gap-2.5 pl-4 pr-3 py-2.5 mx-1 rounded-sm text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
           >
             <item.icon className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
             <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t(item.labelKey)}</span>
@@ -177,13 +177,13 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
         <>
           <div className={`mx-3 border-t border-border-subtle my-3`} />
           <div className="px-2 pb-[5px]">
-            <p className={`text-[10px] uppercase tracking-[0.15em] text-muted-foreground/50 px-3 whitespace-nowrap h-4 mb-px transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>{t("nav.admin")}</p>
+            <p className={`font-mono font-semibold text-[10px] uppercase tracking-[0.1em] text-foreground-tertiary px-3 whitespace-nowrap h-4 mb-px transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>{t("nav.admin")}</p>
 
             <Accordion type="multiple" className="mx-1">
               {showNotifiersGroup && (
               <AccordionItem value="notifiers" className="border-b-0">
-                <AccordionTrigger className={`flex items-center gap-[10px] pl-4 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-gold-400 transition-all duration-150 hover:no-underline whitespace-nowrap ${!isExpanded ? '[&>svg]:hidden pointer-events-none' : ''}`}>
-                  <div className="flex items-center gap-[10px] flex-1">
+                <AccordionTrigger className={`flex items-center gap-2.5 pl-4 pr-3 py-2.5 rounded-sm text-sidebar-foreground hover:text-gold-400 transition-all duration-150 hover:no-underline whitespace-nowrap ${!isExpanded ? '[&>svg]:hidden pointer-events-none' : ''}`}>
+                  <div className="flex items-center gap-2.5 flex-1">
                     <Bell className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t("nav.notifiers")}</span>
                   </div>
@@ -193,7 +193,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
                     {canClasses && (
                     <NavigationLink
                       href="/admin/classes"
-                      className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+                      className="flex items-center gap-2.5 pl-8 pr-3 py-2.5 rounded-sm text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
                     >
                       <Shield className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
                       <span className="text-sm font-medium">{t("nav.adminPanel")}</span>
@@ -202,7 +202,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
                     {canNotifications && (
                       <NavigationLink
                         href="/admin/notifications"
-                        className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+                        className="flex items-center gap-2.5 pl-8 pr-3 py-2.5 rounded-sm text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
                       >
                         <Bell className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
                         <span className="text-sm font-medium">{t("nav.notificationsManager")}</span>
@@ -215,8 +215,8 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
 
               {showNetworkGroup && (
               <AccordionItem value="network" className="border-b-0">
-                <AccordionTrigger className={`flex items-center gap-[10px] pl-4 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-gold-400 transition-all duration-150 hover:no-underline whitespace-nowrap ${!isExpanded ? '[&>svg]:hidden pointer-events-none' : ''}`}>
-                  <div className="flex items-center gap-[10px] flex-1">
+                <AccordionTrigger className={`flex items-center gap-2.5 pl-4 pr-3 py-2.5 rounded-sm text-sidebar-foreground hover:text-gold-400 transition-all duration-150 hover:no-underline whitespace-nowrap ${!isExpanded ? '[&>svg]:hidden pointer-events-none' : ''}`}>
+                  <div className="flex items-center gap-2.5 flex-1">
                     <Network className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t("nav.network")}</span>
                   </div>
@@ -226,7 +226,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
                     {canNetwork && (
                     <NavigationLink
                       href="/admin/network"
-                      className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+                      className="flex items-center gap-2.5 pl-8 pr-3 py-2.5 rounded-sm text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
                     >
                       <Network className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
                       <span className="text-sm font-medium">{t("nav.networkView")}</span>
@@ -235,7 +235,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
                     {canVisualizer && (
                       <NavigationLink
                         href="/admin/network-visualizer"
-                        className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+                        className="flex items-center gap-2.5 pl-8 pr-3 py-2.5 rounded-sm text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
                       >
                         <GitBranch className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
                         <span className="text-sm font-medium">{t("nav.networkVisualizer")}</span>
@@ -248,8 +248,8 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
 
               {showPaymentsGroup && (
                 <AccordionItem value="payments" className="border-b-0">
-                  <AccordionTrigger className={`flex items-center gap-[10px] pl-4 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-gold-400 transition-all duration-150 hover:no-underline whitespace-nowrap ${!isExpanded ? '[&>svg]:hidden pointer-events-none' : ''}`}>
-                    <div className="flex items-center gap-[10px] flex-1">
+                  <AccordionTrigger className={`flex items-center gap-2.5 pl-4 pr-3 py-2.5 rounded-sm text-sidebar-foreground hover:text-gold-400 transition-all duration-150 hover:no-underline whitespace-nowrap ${!isExpanded ? '[&>svg]:hidden pointer-events-none' : ''}`}>
+                    <div className="flex items-center gap-2.5 flex-1">
                       <Wallet className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t("nav.payments")}</span>
                     </div>
@@ -259,7 +259,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
                       {canFinancials && (
                       <NavigationLink
                         href="/admin/financials"
-                        className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+                        className="flex items-center gap-2.5 pl-8 pr-3 py-2.5 rounded-sm text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
                       >
                         <TrendingUp className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
                         <span className="text-sm font-medium">{t("nav.financials")}</span>
@@ -268,7 +268,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
                       {canPayouts && (
                       <NavigationLink
                         href="/admin/payouts"
-                        className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+                        className="flex items-center gap-2.5 pl-8 pr-3 py-2.5 rounded-sm text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
                       >
                         <Wallet className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
                         <span className="text-sm font-medium">{t("nav.payouts")}</span>
@@ -277,7 +277,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
                       {canDirectBonuses && (
                       <NavigationLink
                         href="/admin/direct-bonuses"
-                        className="flex items-center gap-[10px] pl-8 pr-3 py-[10px] rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+                        className="flex items-center gap-2.5 pl-8 pr-3 py-2.5 rounded-sm text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
                       >
                         <Gift className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary" />
                         <span className="text-sm font-medium">{t("nav.directBonuses")}</span>
@@ -292,7 +292,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
             {canTxLogs && (
               <NavigationLink
                 href="/admin/transaction-logs"
-                className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+                className="flex items-center gap-2.5 pl-4 pr-3 py-2.5 mx-1 rounded-sm text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
               >
                 <Activity className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
                 <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t("nav.transactionLogs")}</span>
@@ -301,7 +301,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
             {canFlagged && (
               <NavigationLink
                 href="/admin/flagged-reviews"
-                className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+                className="flex items-center gap-2.5 pl-4 pr-3 py-2.5 mx-1 rounded-sm text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
               >
                 <AlertTriangle className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
                 <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t("nav.flaggedReviews")}</span>
@@ -310,7 +310,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
             {canAcademy && (
               <NavigationLink
                 href="/admin/academy-manager"
-                className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+                className="flex items-center gap-2.5 pl-4 pr-3 py-2.5 mx-1 rounded-sm text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
               >
                 <BookOpen className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
                 <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>{t("nav.academyManager")}</span>
@@ -319,7 +319,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
             {canPrivileges && (
               <NavigationLink
                 href="/admin/privileges"
-                className="flex items-center gap-[10px] pl-4 pr-3 py-[10px] mx-1 rounded-[6px] text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
+                className="flex items-center gap-2.5 pl-4 pr-3 py-2.5 mx-1 rounded-sm text-sidebar-foreground hover:text-sidebar-accent-foreground transition-all duration-150 group cursor-pointer whitespace-nowrap"
               >
                 <Shield className="h-4 w-4 text-muted-foreground group-hover:text-sidebar-primary flex-shrink-0" />
                 <span className={`text-sm font-medium whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>Privileges</span>
@@ -335,8 +335,8 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
     <div className="p-3 border-t border-border-subtle">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex items-center gap-3 w-full rounded-[6px] px-2 py-2 hover:bg-white/[0.04] transition-colors duration-150 whitespace-nowrap">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gold-400 to-gold-500 flex items-center justify-center text-primary-foreground text-sm font-medium shadow-[var(--shadow-gold-sm)] flex-shrink-0">
+          <button className="flex items-center gap-2.5 w-full rounded-sm border border-sidebar-border bg-surface-2 px-2 py-2 hover:border-border-strong transition-colors duration-150 whitespace-nowrap">
+            <div className="w-8 h-8 rounded-sm bg-gradient-to-br from-gold-400/20 to-gold-400/5 border border-gold-400/30 flex items-center justify-center text-gold-200 text-sm font-mono font-semibold flex-shrink-0">
               {user.email?.[0]?.toUpperCase() || "U"}
             </div>
             <div className={`flex-1 min-w-0 text-left whitespace-nowrap transition-opacity duration-150 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>
@@ -375,7 +375,7 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
       {/* Mobile hamburger trigger */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed top-3 left-3 z-[55] p-2 rounded-[6px] bg-surface-2 border border-border shadow-[var(--shadow-sm)] lg:hidden"
+        className="fixed top-3 left-3 z-[55] p-2 rounded-sm bg-surface-2 border border-border shadow-[var(--shadow-sm)] lg:hidden"
         style={{ top: 'calc(var(--banner-height, 0px) + 10px)' }}
       >
         <Menu className="h-5 w-5" />
@@ -398,14 +398,14 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="fixed top-0 left-0 bottom-0 z-[60] w-[260px] flex flex-col bg-[#080C1A] border-r border-border-subtle lg:hidden"
+              className="fixed top-0 left-0 bottom-0 z-[60] w-[260px] flex flex-col bg-sidebar border-r border-sidebar-border lg:hidden"
               style={{ paddingTop: 'calc(var(--banner-height, 0px) + var(--inactive-banner-height, 0px) + var(--wallet-banner-height, 0px))' }}
             >
               <div className="flex items-center justify-between px-3 h-14 flex-shrink-0">
                 <Link href="/dashboard" className="flex items-center justify-center hover:opacity-80 transition-opacity">
                   <Image src="/gold-logo.svg" alt="Logo" width={28} height={28} />
                 </Link>
-                <button onClick={() => setMobileOpen(false)} className="p-1 rounded-[4px] hover:bg-white/[0.06]">
+                <button onClick={() => setMobileOpen(false)} className="p-1 rounded-sm hover:bg-white/[0.06]">
                   <X className="h-5 w-5" />
                 </button>
               </div>
@@ -422,13 +422,9 @@ export function Sidebar({ user, isActive, isAdminOrSuper, isSuperAdmin, isSuperA
         animate={!isExpanded ? "collapsed" : "expanded"}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        className="hidden lg:flex flex-col fixed left-0 bottom-0 z-50 bg-[#080C1A] overflow-hidden"
+        className="hidden lg:flex flex-col fixed left-0 bottom-0 z-50 bg-sidebar border-r border-sidebar-border overflow-hidden"
         style={{
           top: 'calc(var(--banner-height, 0px) + var(--inactive-banner-height, 0px) + var(--wallet-banner-height, 0px))',
-          borderRight: '1px solid transparent',
-          backgroundImage: 'linear-gradient(#080C1A, #080C1A), linear-gradient(to bottom, rgba(212,168,83,0.15), transparent 60%)',
-          backgroundOrigin: 'border-box',
-          backgroundClip: 'padding-box, border-box',
           boxShadow: isExpanded ? 'var(--shadow-xl)' : 'none',
         }}
       >

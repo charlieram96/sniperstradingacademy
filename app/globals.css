@@ -22,9 +22,9 @@
 
   /* ─── Card / Popover ─── */
   --card: #0A0F1C;
-  --card-foreground: #E2E8F0;
+  --card-foreground: #E6EAF2;
   --popover: #151D33;
-  --popover-foreground: #E2E8F0;
+  --popover-foreground: #E6EAF2;
 
   /* ─── Gold palette (8 stops) ─── */
   --gold-50: #FDF8ED;
@@ -46,7 +46,7 @@
 
   /* ─── Secondary ─── */
   --secondary: #151D33;
-  --secondary-foreground: #E2E8F0;
+  --secondary-foreground: #E6EAF2;
 
   /* ─── Muted ─── */
   --muted: #101728;
@@ -119,14 +119,14 @@
   --chart-4: #A78BFA;
   --chart-5: #8B95A9;
 
-  /* ─── Sidebar ─── */
-  --sidebar: #080C1A;
-  --sidebar-foreground: #CBD5E1;
+  /* ─── Sidebar (bg = --surface #0A0F1C per system/components/navigation.html) ─── */
+  --sidebar: #0A0F1C;
+  --sidebar-foreground: #8B95A9;
   --sidebar-primary: #D4A853;
   --sidebar-primary-foreground: #05080F;
-  --sidebar-accent: #151D33;
-  --sidebar-accent-foreground: #E2E8F0;
-  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-accent: #101728;
+  --sidebar-accent-foreground: #E6EAF2;
+  --sidebar-border: rgba(255, 255, 255, 0.10);
   --sidebar-ring: #D4A853;
 }
 
@@ -349,8 +349,9 @@
     box-shadow: 0 0 20px rgba(212, 168, 83, 0.15), 0 0 40px rgba(212, 168, 83, 0.05);
   }
 
+  /* Canonical spinner rotation — 0.6s linear per system/foundations/motion.html */
   .animate-fast-spin {
-    animation: fast-spin 0.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    animation: fast-spin 0.6s linear infinite;
   }
 
   .animate-gentle-pulse {

@@ -60,7 +60,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
 
   return (
     <header
-      className="h-14 fixed right-0 left-0 lg:left-[72px] z-40 flex items-center justify-between px-6 bg-background/80 backdrop-blur-xl border-b border-white/[0.06]"
+      className="h-14 fixed right-0 left-0 lg:left-[72px] z-40 flex items-center justify-between px-6 bg-background/80 backdrop-blur-xl border-b border-border-subtle"
       style={{
         top: 'var(--banner-height, 0px)',
       }}
@@ -70,7 +70,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
         {/* Search trigger */}
         <button
           onClick={() => setIsSearchOpen(true)}
-          className="hidden md:flex items-center gap-2 h-8 px-3 rounded-[6px] border border-border bg-surface-1 text-foreground-tertiary text-sm hover:border-border-strong transition-colors duration-150"
+          className="hidden md:flex items-center gap-2 h-8 px-3 rounded-sm border border-border bg-surface-1 text-foreground-tertiary text-sm hover:border-border-strong transition-colors duration-150"
         >
           <Search className="h-3.5 w-3.5" />
           <span>{t("common.search")}</span>

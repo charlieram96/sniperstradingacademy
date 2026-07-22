@@ -15,7 +15,7 @@ export function PageHeader({ title, description, badge, action, className }: Pag
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-[32px] font-semibold tracking-tight text-foreground">{title}</h1>
+            <h1 className="text-[28px] font-semibold tracking-tight text-foreground">{title}</h1>
             {badge && <Badge variant="default">{badge}</Badge>}
           </div>
           {description && (
