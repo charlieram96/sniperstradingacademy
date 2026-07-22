@@ -10,6 +10,12 @@ interface StatTileProps {
   deltaDirection?: "up" | "down"
   sparklineData?: number[]
   footnote?: string
+  /**
+   * Value emphasis. `"default"` renders the figure in ink (app-signatures §01
+   * default tile); `"gold"` opts into the gold-100 lead treatment reserved for
+   * a single hero figure per row.
+   */
+  tone?: "default" | "gold"
   className?: string
 }
 
@@ -24,6 +30,7 @@ export function StatTile({
   deltaDirection = "up",
   sparklineData,
   footnote,
+  tone = "default",
   className,
 }: StatTileProps) {
   const up = deltaDirection === "up"
@@ -52,7 +59,12 @@ export function StatTile({
         )}
       </div>
 
-      <div className="mt-3.5 font-mono text-[26px] font-semibold leading-none tracking-tight tabular-nums text-gold-100">
+      <div
+        className={cn(
+          "mt-3.5 font-mono text-[26px] font-semibold leading-none tracking-tight tabular-nums",
+          tone === "gold" ? "text-gold-100" : "text-foreground"
+        )}
+      >
         {value}
       </div>
 

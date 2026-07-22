@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { formatCurrency } from "@/lib/utils"
 import { Lock, Unlock, CreditCard, AlertTriangle, Medal, Trophy, Star, Award, Target, Crown, GraduationCap, BookOpen, PlayCircle, CheckCircle2, Wallet, ExternalLink, Calendar } from "lucide-react"
 import { StatTile } from "@/components/patterns/stat-tile"
-import { SkeletonClassCard } from "@/components/patterns/skeleton"
+import { SkeletonClassRow } from "@/components/patterns/skeleton"
 import { EmptyState } from "@/components/patterns/empty-state"
 import { NavigationLink } from "@/components/navigation-link"
 import { isTestUser } from "@/lib/mock-data"
@@ -300,9 +300,9 @@ export function DashboardClient({
         </CardHeader>
         <CardContent>
           {classesLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex flex-col gap-2.5">
               {Array.from({ length: 3 }).map((_, i) => (
-                <SkeletonClassCard key={i} />
+                <SkeletonClassRow key={i} />
               ))}
             </div>
           ) : academyClasses.length === 0 ? (
@@ -311,7 +311,7 @@ export function DashboardClient({
               title={t("dashboard.noClasses")}
             />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex flex-col gap-2.5">
               {academyClasses.map((classItem) => {
                 const isLive = classItem.is_live
                 const scheduledDate = new Date(classItem.scheduled_at)
@@ -323,47 +323,47 @@ export function DashboardClient({
                   minute: "2-digit",
                   timeZone: "America/New_York"
                 })
+                const dayNum = scheduledDate.toLocaleString("en-US", { day: "numeric", timeZone: "America/New_York" })
+                const monthAbbr = scheduledDate.toLocaleString("en-US", { month: "short", timeZone: "America/New_York" })
 
                 return (
                   <div
                     key={classItem.id}
-                    className={`relative overflow-hidden p-4 pl-5 rounded-xl border transition-colors ${
+                    className={`flex items-center gap-4 rounded-[10px] border p-4 transition-colors ${
                       isLive
-                        ? "border-red/30 bg-gradient-to-br from-red-dim to-transparent shadow-sm"
+                        ? "border-red/30 bg-gradient-to-r from-red-dim to-transparent"
                         : "border-border bg-surface-1 hover:border-border-strong"
                     }`}
                   >
-                    {/* Accent bar for live classes */}
-                    {isLive && (
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-red" />
-                    )}
-
-                    <div className="flex items-center justify-between mb-2">
-                      {isLive ? (
-                        <Badge variant="live">Live</Badge>
-                      ) : (
-                        <Badge variant="secondary">{t("dashboard.upcoming")}</Badge>
-                      )}
-                      <PlayCircle className={`h-5 w-5 ${isLive ? "text-red" : "text-muted-foreground"}`} />
+                    {/* Date column */}
+                    <div className="flex shrink-0 flex-col items-center border-r border-border pr-4 text-center">
+                      <span className="font-mono text-xl font-semibold leading-none tabular-nums text-foreground">{dayNum}</span>
+                      <span className="mt-1 font-mono text-[9px] font-semibold uppercase tracking-[0.1em] text-foreground-tertiary">{monthAbbr}</span>
                     </div>
 
-                    <h3 className="font-semibold text-base mb-1 truncate">{classItem.title}</h3>
-                    {classItem.description && (
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                        {classItem.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-                      <Calendar className="h-3.5 w-3.5" />
-                      <span>{formattedDate} EST</span>
+                    {/* Body */}
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-sm font-semibold text-foreground">{classItem.title}</h3>
+                      <div className="mt-1 flex items-center gap-1.5 font-mono text-[11px] tabular-nums text-foreground-tertiary">
+                        <Calendar className="h-3 w-3" />
+                        <span className="truncate">{formattedDate} EST</span>
+                      </div>
+                      <div className="mt-2">
+                        {isLive ? (
+                          <Badge variant="live">Live</Badge>
+                        ) : (
+                          <Badge variant="secondary">{t("dashboard.upcoming")}</Badge>
+                        )}
+                      </div>
                     </div>
-                    <a href={classItem.meeting_link} target="_blank" rel="noopener noreferrer" className="block">
+
+                    {/* CTA */}
+                    <a href={classItem.meeting_link} target="_blank" rel="noopener noreferrer" className="shrink-0">
                       <Button
                         size="sm"
-                        className="w-full"
                         variant={isLive ? "default" : "outline"}
                       >
-                        <ExternalLink className="h-4 w-4 mr-2" />
+                        <ExternalLink className="h-4 w-4" />
                         {isLive ? t("dashboard.joinClass") : t("dashboard.viewDetails")}
                       </Button>
                     </a>
@@ -732,6 +732,7 @@ export function DashboardClient({
             label={t("dashboard.yourCommission")}
             value={<AnimatedNumber value={data.monthlyCommission} prefix="$" decimals={2} />}
             footnote={t("dashboard.ofTeamPool", { rate: 10 + data.completedStructures })}
+            tone="gold"
           />
         </motion.div>
 

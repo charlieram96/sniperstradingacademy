@@ -52,6 +52,32 @@ export function SkeletonRows({ n = 3, className }: { n?: number; className?: str
   )
 }
 
+/**
+ * Class-row loading composition (app-signatures §02): a date/time column, a
+ * title + meta + badge body, and a right-aligned CTA — the row-list anatomy.
+ */
+export function SkeletonClassRow({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-4 rounded-[10px] border border-border bg-surface-0 p-4",
+        className
+      )}
+    >
+      <div className="flex shrink-0 flex-col items-center gap-1.5 border-r border-border pr-4">
+        <Skeleton className="h-5 w-6" />
+        <Skeleton className="h-2 w-6" />
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <Skeleton className="h-[13px] w-[52%]" />
+        <Skeleton className="h-2.5 w-[36%]" />
+        <Skeleton className="mt-0.5 h-[18px] w-16 rounded-md" />
+      </div>
+      <Skeleton className="h-[34px] w-24 shrink-0 rounded-md" />
+    </div>
+  )
+}
+
 /** Class-card loading composition: media block, title, meta and a CTA. */
 export function SkeletonClassCard({ className }: { className?: string }) {
   return (
