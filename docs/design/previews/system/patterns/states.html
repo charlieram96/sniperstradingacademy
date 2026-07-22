@@ -1,0 +1,328 @@
+<!-- @dsCard group="Patterns" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Empty, Loading &amp; Error States</title>
+<style>
+:root {
+  /* Base */
+  --bg:#05080F; --surface:#0A0F1C; --surface-raised:#101728; --surface-overlay:#151D33;
+  --ink:#E6EAF2; --ink-2:#8B95A9; --ink-3:#525D73;
+  --border:rgba(255,255,255,0.10); --border-subtle:rgba(255,255,255,0.05); --border-strong:rgba(255,255,255,0.16);
+  /* Brand gold ramp */
+  --gold-50:#FDF8ED; --gold-100:#F9ECCC; --gold-200:#F0D48A; --gold-300:#E5C06A;
+  --gold-400:#D4A853; --gold-500:#C49B3E; --gold-600:#A67E2E; --gold-700:#856420; --gold-800:#6B4D18;
+  --gold:var(--gold-400); --ring:rgba(212,168,83,0.55);
+  /* Status */
+  --emerald:#34D399; --emerald-dim:rgba(52,211,153,0.12);
+  --red:#F87171; --red-dim:rgba(248,113,113,0.12);
+  --amber:#FBBF24; --amber-dim:rgba(251,191,36,0.12);
+  --blue:#60A5FA; --blue-dim:rgba(96,165,250,0.12);
+  /* Charts (series order) */
+  --chart-1:var(--gold-400); --chart-2:#60A5FA; --chart-3:#34D399; --chart-4:#A78BFA; --chart-5:#8B95A9;
+  /* Spacing (4px grid) */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px; --sp-10:40px; --sp-12:48px; --sp-16:64px;
+  /* Radius */
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-pill:999px;
+  /* Shadows */
+  --sh-sm:0 1px 2px rgba(0,0,0,0.35);
+  --sh-md:0 4px 12px rgba(0,0,0,0.28),0 1px 3px rgba(0,0,0,0.3);
+  --sh-lg:0 12px 32px rgba(0,0,0,0.35),0 4px 8px rgba(0,0,0,0.25);
+  --sh-gold:0 2px 12px rgba(212,168,83,0.18);
+  /* Type scale */
+  --t-xs:11px; --t-sm:12px; --t-base:13px; --t-md:14px; --t-lg:16px; --t-xl:18px; --t-2xl:22px; --t-3xl:28px; --t-4xl:36px;
+  /* Motion */
+  --dur-micro:120ms; --dur-std:200ms; --dur-enter:320ms;
+  --ease-out:cubic-bezier(0.2,0.8,0.2,1); --ease-spring:cubic-bezier(0.34,1.4,0.44,1);
+}
+:root{ --sans:-apple-system,"SF Pro Text",Inter,"Segoe UI",sans-serif; --mono:ui-monospace,"SF Mono","Geist Mono",Menlo,monospace; }
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:var(--t-base);line-height:1.45;min-height:100vh;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.014) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.014) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.label{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3)}
+
+/* ---------- page frame ---------- */
+.wrap{max-width:1200px;margin:0 auto;padding:40px 40px 80px}
+.masthead{display:flex;align-items:center;gap:14px;padding-bottom:28px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.masthead .brand-name{font-size:15px;font-weight:600;line-height:1.1;color:var(--ink)}
+.masthead .brand-name span{display:block;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-3);margin-top:3px}
+.masthead .tag{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.masthead .tag b{color:var(--gold);font-weight:600}
+.page-title{margin-top:26px}
+.page-title h1{font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1;color:var(--ink)}
+.page-title p{color:var(--ink-2);font-size:13px;margin-top:9px;max-width:660px;line-height:1.55}
+
+section{margin-top:44px}
+.sec-title{display:flex;align-items:baseline;gap:12px;margin-bottom:20px}
+.sec-title .n{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--gold);letter-spacing:0.04em}
+.sec-title h2{font-size:16px;font-weight:600;letter-spacing:-0.01em;color:var(--ink)}
+.sec-title .line{flex:1;height:1px;background:var(--border)}
+.sec-title .note{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:0.02em}
+.sub-label{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md)}
+
+/* state chip — labels each specimen (EMPTY / LOADING / ERROR / DEFAULT / DISABLED) */
+.state-tag{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;padding:3px 8px;border-radius:var(--r-pill);color:var(--ink-3);background:var(--surface-raised);border:1px solid var(--border)}
+
+/* ---------- button core (from Components · Buttons, verbatim) ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-family:var(--sans);font-weight:600;letter-spacing:0.01em;border-radius:var(--r-sm);border:1px solid transparent;white-space:nowrap;line-height:1;cursor:pointer;text-decoration:none;transition:background var(--dur-micro) var(--ease-out),border-color var(--dur-micro) var(--ease-out),color var(--dur-micro) var(--ease-out)}
+.btn.sm{height:28px;padding:0 12px;font-size:11.5px}
+.btn.md{height:34px;padding:0 16px;font-size:12.5px}
+.btn svg{flex:0 0 auto}
+.btn-primary{background:var(--gold);color:#0A0F1C}
+.btn-secondary{background:var(--surface-raised);color:var(--ink);border-color:var(--border)}
+.btn-outline{background:transparent;color:var(--ink-2);border-color:var(--border)}
+.btn-ghost{background:transparent;color:var(--ink-2)}
+.btn.is-disabled{opacity:.4;cursor:not-allowed}
+
+/* loading spinner — 16px · 0.6s linear (from Components · Buttons, verbatim) */
+.spinner{width:16px;height:16px;border:2px solid rgba(10,15,28,0.30);border-top-color:#0A0F1C;border-radius:50%;animation:spin 0.6s linear infinite;flex:0 0 auto}
+.spinner.static{animation:none}
+.btn-secondary .spinner,.btn-outline .spinner,.btn-ghost .spinner{border-color:rgba(255,255,255,0.22);border-top-color:var(--ink)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- skeleton shimmer (from Foundations · Motion, verbatim) ---------- */
+.sk{position:relative;overflow:hidden;background:var(--surface-raised);border-radius:5px}
+.sk::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent);animation:shimmer 1.5s ease-in-out infinite}
+@keyframes shimmer{100%{transform:translateX(100%)}}
+.sk.line-lg{height:26px;width:66%}
+/* composition skeletons hold still — one live .sk is shown above; the rest inherit the same sweep */
+.sk.still::after{animation:none}
+
+/* ---------- 01 empty states ---------- */
+.empty-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.empty{padding:36px 26px 30px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:13px;min-height:250px;justify-content:center}
+.empty-ico{width:52px;height:52px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;background:var(--surface-raised);border:1px solid var(--border);color:var(--ink-3)}
+.empty h3{font-size:14px;font-weight:600;color:var(--ink)}
+.empty p{font-size:12px;color:var(--ink-2);line-height:1.55;max-width:210px}
+.empty .top-tag{position:absolute;top:14px;left:14px}
+.empty-cell{position:relative;display:flex}
+.empty-cell .card{flex:1}
+
+/* ---------- 02 skeletons ---------- */
+.shim-lead{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;align-items:stretch}
+.shim-demo{padding:22px 20px;display:flex;flex-direction:column;justify-content:center;gap:12px}
+.shim-cap{font-size:11px;color:var(--ink-3);line-height:1.55;margin-top:2px}
+.shim-cap b{font-family:var(--mono);color:var(--ink-2);font-weight:600}
+.sk-grid{display:grid;grid-template-columns:1fr 1.5fr 1.15fr;gap:16px;align-items:start}
+.sk-pane{padding:18px}
+.sk-pane .sub-label{margin-bottom:14px;display:flex;align-items:center;gap:9px}
+/* stat-tile composition */
+.sk-stat{display:flex;flex-direction:column;gap:14px}
+/* table-row composition */
+.sk-rows{display:flex;flex-direction:column}
+.sk-row{display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid var(--border-subtle)}
+.sk-row:last-child{border-bottom:0}
+/* class-card composition */
+.sk-class{display:flex;flex-direction:column;gap:12px}
+
+/* ---------- 03 error states ---------- */
+.err-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:16px;align-items:start}
+.err-card{position:relative;padding:34px 26px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;min-height:236px;justify-content:center}
+.err-medallion{width:52px;height:52px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;color:var(--red);background:var(--red-dim);border:1px solid rgba(248,113,113,0.30)}
+.err-card h3{font-size:14px;font-weight:600;color:var(--ink)}
+.err-card p{font-size:12px;color:var(--ink-2);line-height:1.55;max-width:250px}
+/* inline field error */
+.field-pane{padding:24px 22px;display:flex;flex-direction:column;gap:22px}
+.field{display:flex;flex-direction:column;gap:8px}
+.field-head{display:flex;align-items:center;justify-content:space-between}
+.field-label{font-size:12px;font-weight:600;color:var(--ink)}
+.field-input{font-family:var(--mono);font-size:12px;color:var(--ink);background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 12px;font-variant-numeric:tabular-nums}
+.field-input.error{border-color:var(--red);background:linear-gradient(0deg,var(--red-dim),var(--red-dim)),var(--surface-raised)}
+.field-msg{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--red);line-height:1.4}
+.field-msg svg{flex:0 0 auto}
+.field-help{font-size:11.5px;color:var(--ink-3);line-height:1.4}
+/* page-level banner (from Components · Feedback) */
+.alert{display:flex;gap:13px;align-items:flex-start;border:1px solid var(--border);border-radius:var(--r-md);padding:14px 16px;width:100%}
+.alert .a-ico{flex:0 0 auto;margin-top:1px}
+.alert .a-body{flex:1;min-width:0}
+.alert .a-title{font-size:13px;font-weight:600;color:var(--ink);line-height:1.4;font-variant-numeric:tabular-nums}
+.alert .a-desc{font-size:12px;color:var(--ink-2);margin-top:3px;line-height:1.55;font-variant-numeric:tabular-nums}
+.alert .a-tag{flex:0 0 auto;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;border-radius:var(--r-pill);align-self:center}
+.alert.error{border-color:rgba(248,113,113,0.30);background:var(--red-dim)} .alert.error .a-ico{color:var(--red)} .alert.error .a-tag{color:var(--red);background:rgba(248,113,113,0.14)}
+
+/* ---------- 04 loading button ---------- */
+.load-pane{padding:24px 22px}
+.load-row{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.load-cell{display:flex;flex-direction:column;gap:11px;align-items:flex-start}
+.rules-note{display:flex;flex-wrap:wrap;gap:10px;padding:16px 20px;border-top:1px solid var(--border)}
+.rule-chip{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;color:var(--ink-2);background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--r-pill);padding:6px 13px;font-variant-numeric:tabular-nums}
+.rule-chip b{color:var(--gold);font-weight:600}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="11.5" stroke="#D4A853" stroke-width="1.5"/>
+      <circle cx="16" cy="16" r="3" stroke="#D4A853" stroke-width="1.5"/>
+      <path d="M16 1.5V8M16 24v6.5M1.5 16H8M24 16h6.5" stroke="#D4A853" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <div class="brand-name">Snipers<span>Trading Academy</span></div>
+    <div class="tag">Patterns · <b>Empty, Loading &amp; Error States</b></div>
+  </div>
+
+  <div class="page-title">
+    <h1>Empty, Loading &amp; Error States</h1>
+    <p>The three moments where a screen has nothing to show yet, is still fetching, or has failed. Each is an invitation to act — a clear next step, an honest wait, or a plain account of what broke and how to fix it. Skeletons share the one canonical shimmer; the loading button reuses the 16px spinner.</p>
+  </div>
+
+  <!-- 01 EMPTY STATES -->
+  <section>
+    <div class="sec-title"><span class="n">01</span><h2>Empty states</h2><span class="line"></span><span class="note">icon · one line · one clear step</span></div>
+    <div class="empty-grid">
+      <div class="empty-cell">
+        <div class="card empty">
+          <span class="state-tag top-tag">Empty</span>
+          <span class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+          <h3>No classes scheduled</h3>
+          <p>Nothing on the calendar this week. Browse the academy to pick up a recorded session in the meantime.</p>
+          <a class="btn md btn-ghost">Browse academy</a>
+        </div>
+      </div>
+      <div class="empty-cell">
+        <div class="card empty">
+          <span class="state-tag top-tag">Empty</span>
+          <span class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20"/><circle cx="10" cy="8" r="3.5"/><path d="M20 20v-1.5a3.5 3.5 0 0 0-2.7-3.4"/><path d="M15 4.6a3.5 3.5 0 0 1 0 6.8"/></svg></span>
+          <h3>No team members yet</h3>
+          <p>Share your referral link to start building Structure 3 — every sign-up lands here.</p>
+          <a class="btn md btn-primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>Share referral link</a>
+        </div>
+      </div>
+      <div class="empty-cell">
+        <div class="card empty">
+          <span class="state-tag top-tag">Empty</span>
+          <span class="empty-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5a6 6 0 0 0-12 0c0 6-2.5 7.5-2.5 7.5h17S18 14.5 18 8.5"/><path d="M10.5 20a1.9 1.9 0 0 0 3 0"/></svg></span>
+          <h3>No notifications</h3>
+          <p>You're all caught up.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 LOADING SKELETONS -->
+  <section>
+    <div class="sec-title"><span class="n">02</span><h2>Loading skeletons</h2><span class="line"></span><span class="note">one shimmer · 1.5s left-to-right</span></div>
+    <div class="shim-lead">
+      <div class="card shim-demo">
+        <div class="sub-label" style="margin-bottom:2px">Live skeleton</div>
+        <div class="sk line-lg"></div>
+        <div class="shim-cap">One bar sweeps — a single live <b>.sk</b> element. The compositions below hold still to keep one shimmer on screen; each placeholder inherits the same sweep in the app.</div>
+      </div>
+      <div class="card shim-demo">
+        <div class="sub-label" style="margin-bottom:2px">Anatomy</div>
+        <div class="shim-cap" style="margin-top:0"><b>.sk</b> = surface-raised block, radius 5px. Its <b>::after</b> runs the <b>shimmer</b> keyframe — a translucent white gradient swept translateX(-100% → 100%) over 1.5s. Reduced motion collapses it to a static block.</div>
+      </div>
+    </div>
+    <div class="sk-grid">
+      <div class="card sk-pane">
+        <div class="sub-label">Stat-tile <span class="state-tag">Loading</span></div>
+        <div class="sk-stat">
+          <div class="sk still" style="width:44%;height:9px"></div>
+          <div class="sk still" style="width:70%;height:26px"></div>
+          <div class="sk still" style="width:34%;height:18px;border-radius:6px"></div>
+        </div>
+      </div>
+      <div class="card sk-pane">
+        <div class="sub-label">Table rows · &times;3 <span class="state-tag">Loading</span></div>
+        <div class="sk-rows">
+          <div class="sk-row"><span class="sk still" style="width:28px;height:28px;border-radius:50%;flex:0 0 auto"></span><span class="sk still" style="width:32%;height:10px"></span><span class="sk still" style="width:16%;height:10px;margin-left:auto"></span><span class="sk still" style="width:18%;height:10px"></span></div>
+          <div class="sk-row"><span class="sk still" style="width:28px;height:28px;border-radius:50%;flex:0 0 auto"></span><span class="sk still" style="width:26%;height:10px"></span><span class="sk still" style="width:16%;height:10px;margin-left:auto"></span><span class="sk still" style="width:18%;height:10px"></span></div>
+          <div class="sk-row"><span class="sk still" style="width:28px;height:28px;border-radius:50%;flex:0 0 auto"></span><span class="sk still" style="width:36%;height:10px"></span><span class="sk still" style="width:16%;height:10px;margin-left:auto"></span><span class="sk still" style="width:18%;height:10px"></span></div>
+        </div>
+      </div>
+      <div class="card sk-pane">
+        <div class="sub-label">Class card <span class="state-tag">Loading</span></div>
+        <div class="sk-class">
+          <div class="sk still" style="height:92px;border-radius:8px"></div>
+          <div class="sk still" style="width:74%;height:13px"></div>
+          <div class="sk still" style="width:48%;height:10px"></div>
+          <div class="sk still" style="width:96px;height:30px;border-radius:6px;margin-top:2px"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 ERROR STATES -->
+  <section>
+    <div class="sec-title"><span class="n">03</span><h2>Error states</h2><span class="line"></span><span class="note">say what broke · offer the fix</span></div>
+    <div class="err-grid">
+      <div class="card err-card">
+        <span class="state-tag" style="position:absolute;top:14px;left:14px">Error</span>
+        <span class="err-medallion"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg></span>
+        <h3>Couldn't load payouts</h3>
+        <p>We couldn't reach the payout ledger. Check your connection and try again — nothing was lost.</p>
+        <a class="btn md btn-outline"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>Retry</a>
+      </div>
+      <div class="card field-pane">
+        <div class="field">
+          <div class="field-head"><span class="field-label">Payout wallet address</span><span class="state-tag" style="color:var(--red);border-color:rgba(248,113,113,0.30);background:var(--red-dim)">Error</span></div>
+          <input class="field-input error" value="0x7C4d…9E2z" spellcheck="false">
+          <span class="field-msg"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Enter a valid Polygon address — this one ends in an invalid character.</span>
+        </div>
+        <div class="field">
+          <div class="field-head"><span class="field-label">Payout wallet address</span><span class="state-tag" style="color:var(--emerald);border-color:rgba(52,211,153,0.28);background:var(--emerald-dim)">Valid</span></div>
+          <input class="field-input" value="0x7C4d…9E2a" spellcheck="false">
+          <span class="field-help">Checksummed Polygon address · USDC settles here.</span>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:16px">
+      <div class="sub-label">Page-level banner <span class="state-tag" style="margin-left:6px">Error</span></div>
+      <div class="alert error">
+        <span class="a-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg></span>
+        <div class="a-body">
+          <div class="a-title">We're having trouble reaching the network</div>
+          <div class="a-desc">Some figures may be out of date. We'll refresh automatically once the connection is back — no action needed.</div>
+        </div>
+        <span class="a-tag">Error</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 LOADING BUTTON -->
+  <section>
+    <div class="sec-title"><span class="n">04</span><h2>Loading button</h2><span class="line"></span><span class="note">16px spinner · 0.6s linear</span></div>
+    <div class="card">
+      <div class="load-pane">
+        <div class="load-row">
+          <div class="load-cell"><span class="state-tag">Default</span><a class="btn md btn-primary">Send payout</a></div>
+          <div class="load-cell"><span class="state-tag">Loading</span><a class="btn md btn-primary"><span class="spinner"></span>Sending…</a></div>
+          <div class="load-cell"><span class="state-tag">Loading · secondary</span><a class="btn md btn-secondary"><span class="spinner static"></span>Saving…</a></div>
+          <div class="load-cell"><span class="state-tag">Disabled</span><a class="btn md btn-primary is-disabled">Send payout</a></div>
+        </div>
+      </div>
+      <div class="rules-note">
+        <span class="rule-chip">Spinner <b>16px · 2px stroke</b></span>
+        <span class="rule-chip">Spin <b>0.6s · linear · infinite</b></span>
+        <span class="rule-chip">Label <b>verb + …</b> — "Send" → "Sending…"</span>
+        <span class="rule-chip">Ink <b>#0A0F1C on gold · --ink on raised</b></span>
+        <span class="rule-chip">Reduced motion <b>spinner holds static</b></span>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

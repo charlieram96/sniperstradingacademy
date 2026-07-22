@@ -1,0 +1,334 @@
+<!-- @dsCard group="Patterns" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hero &amp; Celebration Moments</title>
+<style>
+:root {
+  /* Base */
+  --bg:#05080F; --surface:#0A0F1C; --surface-raised:#101728; --surface-overlay:#151D33;
+  --ink:#E6EAF2; --ink-2:#8B95A9; --ink-3:#525D73;
+  --border:rgba(255,255,255,0.10); --border-subtle:rgba(255,255,255,0.05); --border-strong:rgba(255,255,255,0.16);
+  /* Brand gold ramp */
+  --gold-50:#FDF8ED; --gold-100:#F9ECCC; --gold-200:#F0D48A; --gold-300:#E5C06A;
+  --gold-400:#D4A853; --gold-500:#C49B3E; --gold-600:#A67E2E; --gold-700:#856420; --gold-800:#6B4D18;
+  --gold:var(--gold-400); --ring:rgba(212,168,83,0.55);
+  /* Status */
+  --emerald:#34D399; --emerald-dim:rgba(52,211,153,0.12);
+  --red:#F87171; --red-dim:rgba(248,113,113,0.12);
+  --amber:#FBBF24; --amber-dim:rgba(251,191,36,0.12);
+  --blue:#60A5FA; --blue-dim:rgba(96,165,250,0.12);
+  /* Charts (series order) */
+  --chart-1:var(--gold-400); --chart-2:#60A5FA; --chart-3:#34D399; --chart-4:#A78BFA; --chart-5:#8B95A9;
+  /* Spacing (4px grid) */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px; --sp-10:40px; --sp-12:48px; --sp-16:64px;
+  /* Radius */
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-pill:999px;
+  /* Shadows */
+  --sh-sm:0 1px 2px rgba(0,0,0,0.35);
+  --sh-md:0 4px 12px rgba(0,0,0,0.28),0 1px 3px rgba(0,0,0,0.3);
+  --sh-lg:0 12px 32px rgba(0,0,0,0.35),0 4px 8px rgba(0,0,0,0.25);
+  --sh-gold:0 2px 12px rgba(212,168,83,0.18);
+  /* Type scale */
+  --t-xs:11px; --t-sm:12px; --t-base:13px; --t-md:14px; --t-lg:16px; --t-xl:18px; --t-2xl:22px; --t-3xl:28px; --t-4xl:36px;
+  /* Motion */
+  --dur-micro:120ms; --dur-std:200ms; --dur-enter:320ms;
+  --ease-out:cubic-bezier(0.2,0.8,0.2,1); --ease-spring:cubic-bezier(0.34,1.4,0.44,1);
+}
+:root{ --sans:-apple-system,"SF Pro Text",Inter,"Segoe UI",sans-serif; --mono:ui-monospace,"SF Mono","Geist Mono",Menlo,monospace; }
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:var(--t-base);line-height:1.45;min-height:100vh;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.014) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.014) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.label{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3)}
+
+/* ---------- page frame ---------- */
+.wrap{max-width:1200px;margin:0 auto;padding:40px 40px 80px}
+.masthead{display:flex;align-items:center;gap:14px;padding-bottom:28px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.masthead .brand-name{font-size:15px;font-weight:600;line-height:1.1;color:var(--ink)}
+.masthead .brand-name span{display:block;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-3);margin-top:3px}
+.masthead .tag{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.masthead .tag b{color:var(--gold);font-weight:600}
+.page-title{margin-top:26px}
+.page-title h1{font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1;color:var(--ink)}
+.page-title p{color:var(--ink-2);font-size:13px;margin-top:9px;max-width:660px;line-height:1.55}
+
+section{margin-top:44px}
+.sec-title{display:flex;align-items:baseline;gap:12px;margin-bottom:20px}
+.sec-title .n{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--gold);letter-spacing:0.04em}
+.sec-title h2{font-size:16px;font-weight:600;letter-spacing:-0.01em;color:var(--ink)}
+.sec-title .line{flex:1;height:1px;background:var(--border)}
+.sec-title .note{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:0.02em}
+.sub-label{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md)}
+
+/* button core (from Components · Buttons) */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-family:var(--sans);font-weight:600;letter-spacing:0.01em;border-radius:var(--r-sm);border:1px solid transparent;white-space:nowrap;line-height:1;cursor:pointer;text-decoration:none;transition:background var(--dur-micro) var(--ease-out),border-color var(--dur-micro) var(--ease-out),color var(--dur-micro) var(--ease-out)}
+.btn.md{height:34px;padding:0 16px;font-size:12.5px}
+.btn.lg{height:40px;padding:0 20px;font-size:14px}
+.btn svg{flex:0 0 auto}
+.btn-primary{background:var(--gold);color:#0A0F1C}
+.btn-ghost{background:transparent;color:var(--ink-2)}
+.btn-ghost svg{color:var(--ink-3)}
+
+/* delta chip (sanctioned) */
+.delta{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:11px;font-weight:600;padding:4px 9px;border-radius:var(--r-sm);font-variant-numeric:tabular-nums;color:var(--emerald);background:var(--emerald-dim);border:1px solid rgba(52,211,153,0.22)}
+
+/* rank star (from Components · Feedback) */
+.rank-star{color:var(--gold-100)}
+
+/* =========================================================
+   01 RANK-UP CELEBRATION — gold wash + one-shot confetti
+   ========================================================= */
+.hero-grid{display:grid;grid-template-columns:1.15fr 1fr;gap:16px;align-items:stretch}
+.rankup{position:relative;overflow:hidden;padding:38px 34px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:16px;justify-content:center;min-height:300px;
+  border-color:rgba(212,168,83,0.32);
+  background:
+    radial-gradient(120% 90% at 50% -10%,rgba(212,168,83,0.22),rgba(212,168,83,0) 60%),
+    linear-gradient(180deg,rgba(212,168,83,0.06),rgba(212,168,83,0) 55%),
+    var(--surface);
+  box-shadow:var(--sh-gold)}
+.rankup .eyebrow{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--gold);position:relative;z-index:2}
+/* 48px rank medallion */
+.rank-medallion{position:relative;z-index:2;width:48px;height:48px;border-radius:var(--r-pill);display:flex;align-items:center;justify-content:center;
+  background:rgba(212,168,83,0.20);border:1px solid rgba(212,168,83,0.60);color:var(--gold-100);box-shadow:var(--sh-gold);
+  animation:medal-pop var(--dur-enter) var(--ease-spring) both}
+@keyframes medal-pop{from{opacity:0;transform:scale(0.6)}to{opacity:1;transform:scale(1)}}
+.rankup h3{position:relative;z-index:2;font-size:22px;font-weight:600;letter-spacing:-0.01em;color:var(--ink)}
+.rankup .rank-name{position:relative;z-index:2;display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:0.04em;color:var(--gold-200);background:rgba(212,168,83,0.14);border:1px solid rgba(212,168,83,0.40);border-radius:var(--r-pill);padding:6px 14px}
+.rankup .sub{position:relative;z-index:2;font-size:12.5px;color:var(--ink-2);line-height:1.55;max-width:320px}
+.rankup .sub b{color:var(--ink);font-weight:600}
+/* confetti — 12 dots, one-shot rise + fade-in, CSS-only, animation-fill-mode:both */
+.confetti{position:absolute;inset:0;z-index:1;pointer-events:none}
+.confetti i{position:absolute;width:7px;height:7px;border-radius:2px;opacity:0;animation:confetti-rise 620ms var(--ease-spring) both}
+@keyframes confetti-rise{from{opacity:0;transform:translateY(16px) rotate(0deg)}60%{opacity:1}to{opacity:1;transform:translateY(0) rotate(28deg)}}
+.confetti i:nth-child(1){left:9%;top:24%;background:var(--gold-300);animation-delay:60ms}
+.confetti i:nth-child(2){left:20%;top:12%;background:var(--emerald);animation-delay:150ms}
+.confetti i:nth-child(3){left:30%;top:30%;background:var(--gold-200);animation-delay:230ms}
+.confetti i:nth-child(4){left:41%;top:9%;background:var(--blue);animation-delay:110ms}
+.confetti i:nth-child(5){left:52%;top:22%;background:var(--gold-400);animation-delay:300ms}
+.confetti i:nth-child(6){left:60%;top:11%;background:var(--gold-100);animation-delay:190ms}
+.confetti i:nth-child(7){left:69%;top:28%;background:var(--emerald);animation-delay:340ms}
+.confetti i:nth-child(8){left:78%;top:15%;background:var(--gold-300);animation-delay:90ms}
+.confetti i:nth-child(9){left:87%;top:26%;background:var(--blue);animation-delay:270ms}
+.confetti i:nth-child(10){left:15%;top:40%;background:var(--gold-200);animation-delay:210ms}
+.confetti i:nth-child(11){left:73%;top:40%;background:var(--gold-400);animation-delay:380ms}
+.confetti i:nth-child(12){left:47%;top:38%;background:var(--gold-100);animation-delay:130ms}
+
+/* =========================================================
+   02 PAYOUT RECEIVED HERO
+   ========================================================= */
+.payout{padding:32px 30px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:15px;justify-content:center;min-height:300px}
+.check-medallion{width:52px;height:52px;border-radius:var(--r-pill);display:flex;align-items:center;justify-content:center;color:var(--emerald);background:var(--emerald-dim);border:1px solid rgba(52,211,153,0.40);
+  animation:medal-pop var(--dur-enter) var(--ease-spring) both}
+.payout .eyebrow{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--emerald)}
+.payout .amount{font-family:var(--mono);font-size:32px;font-weight:600;letter-spacing:-0.02em;color:var(--ink);font-variant-numeric:tabular-nums}
+.payout .amount span{color:var(--ink-2);font-size:16px;font-weight:600;margin-left:4px}
+.payout .sub{font-size:12.5px;color:var(--ink-2);line-height:1.55;max-width:300px}
+.tx-row{display:inline-flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11.5px;color:var(--ink-2);background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 13px;font-variant-numeric:tabular-nums;margin-top:2px}
+.tx-row .k{color:var(--ink-3);letter-spacing:0.04em}
+.tx-row .hash{color:var(--ink);font-weight:600}
+.tx-row .net{color:var(--gold);font-weight:600}
+
+/* =========================================================
+   03 MILESTONE PROGRESS MOMENT
+   ========================================================= */
+.mile{padding:28px 30px;display:flex;align-items:center;gap:30px;flex-wrap:wrap}
+.mile-ring{flex:0 0 auto}
+.ring-num{font-family:var(--mono);font-size:19px;font-weight:600;fill:var(--gold-100);font-variant-numeric:tabular-nums}
+.mile-body{flex:1;min-width:240px;display:flex;flex-direction:column;gap:10px}
+.mile-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.mile-head .k{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3)}
+.mile-count{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+.mile-count b{color:var(--ink-3);font-weight:600}
+.mile-line{font-size:13px;color:var(--ink-2);line-height:1.5}
+.mile-line b{color:var(--ink);font-weight:600}
+.bar{height:8px;background:rgba(255,255,255,0.06);border-radius:var(--r-pill);overflow:hidden;margin-top:2px}
+.bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-300));border-radius:var(--r-pill)}
+.chip-togo{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:11px;font-weight:600;padding:4px 10px;border-radius:var(--r-sm);font-variant-numeric:tabular-nums;color:var(--gold);background:rgba(212,168,83,0.12);border:1px solid rgba(212,168,83,0.30)}
+
+/* =========================================================
+   04 ONBOARDING WELCOME HERO
+   ========================================================= */
+.onboard{padding:32px 34px;display:flex;flex-direction:column;gap:22px}
+.onboard-head{display:flex;align-items:center;gap:16px}
+.onboard-logo{width:44px;height:44px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;border-radius:var(--r-md);background:rgba(212,168,83,0.10);border:1px solid rgba(212,168,83,0.30)}
+.onboard h3{font-size:20px;font-weight:600;letter-spacing:-0.01em;color:var(--ink);line-height:1.2}
+.onboard .sub{font-size:12.5px;color:var(--ink-2);margin-top:5px;line-height:1.5}
+.checklist{display:flex;flex-direction:column;gap:10px}
+.step{display:flex;align-items:center;gap:14px;padding:13px 16px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-raised)}
+.step-box{width:22px;height:22px;flex:0 0 auto;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;border:1.5px solid var(--border-strong);color:var(--ink-3)}
+.step.done .step-box{background:var(--gold);border-color:var(--gold);color:#0A0F1C}
+.step-body{flex:1;min-width:0}
+.step-title{font-size:13px;font-weight:600;color:var(--ink)}
+.step.done .step-title{color:var(--ink-2)}
+.step-desc{font-size:11.5px;color:var(--ink-3);margin-top:2px;line-height:1.45;font-variant-numeric:tabular-nums}
+.step-n{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.step.done .step-n{color:var(--gold)}
+
+/* =========================================================
+   05 GOLD SATURATION BUDGET — do / don't
+   ========================================================= */
+.dd-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.dd-cell{padding:20px}
+.dd-cell.do{border-color:rgba(52,211,153,0.28)}
+.dd-cell.dont{border-color:rgba(248,113,113,0.28)}
+.dd-tag{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:4px 9px;border-radius:5px;margin-bottom:14px}
+.dd-tag.do{color:var(--emerald);background:var(--emerald-dim);border:1px solid rgba(52,211,153,0.24)}
+.dd-tag.dont{color:var(--red);background:var(--red-dim);border:1px solid rgba(248,113,113,0.24)}
+.dd-stage{display:flex;flex-direction:column;gap:8px;height:118px;padding:12px;border-radius:var(--r-sm);background:var(--surface-raised);border:1px solid var(--border-subtle)}
+.mini{height:30px;border-radius:5px;display:flex;align-items:center;padding:0 11px;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.04em}
+.mini.gold{background:linear-gradient(90deg,rgba(212,168,83,0.28),rgba(212,168,83,0.14));border:1px solid rgba(212,168,83,0.44);color:var(--gold-100)}
+.mini.quiet{background:var(--surface);border:1px solid var(--border);color:var(--ink-3)}
+.mini.flex{flex:1}
+.dd-copy{font-size:11.5px;color:var(--ink-2);line-height:1.55;margin-top:13px}
+.dd-copy b{color:var(--ink);font-weight:600}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="11.5" stroke="#D4A853" stroke-width="1.5"/>
+      <circle cx="16" cy="16" r="3" stroke="#D4A853" stroke-width="1.5"/>
+      <path d="M16 1.5V8M16 24v6.5M1.5 16H8M24 16h6.5" stroke="#D4A853" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <div class="brand-name">Snipers<span>Trading Academy</span></div>
+    <div class="tag">Patterns · <b>Hero &amp; Celebration Moments</b></div>
+  </div>
+
+  <div class="page-title">
+    <h1>Hero &amp; Celebration Moments</h1>
+    <p>The handful of screens that get to feel like an occasion — a rank earned, a payout landed, a milestone in sight, a first welcome. Gold is spent here, deliberately and once per view. Celebration motion plays a single time on arrival and then rests; nothing loops.</p>
+  </div>
+
+  <!-- 01 & 02 CELEBRATION HEROES -->
+  <section>
+    <div class="sec-title"><span class="n">01</span><h2>Rank-up &amp; payout heroes</h2><span class="line"></span><span class="note">one-shot · confetti ≤12 · settles on load</span></div>
+    <div class="hero-grid">
+      <!-- rank-up -->
+      <div class="card rankup">
+        <div class="confetti">
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+        <div class="eyebrow">Rank up!</div>
+        <span class="rank-medallion"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="m8.5 12.5-1.5 8L12 18l5 2.5-1.5-8"/></svg></span>
+        <h3>Rank up!</h3>
+        <span class="rank-name"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="m8.5 12.5-1.5 8L12 18l5 2.5-1.5-8"/></svg>Delta Master Sniper</span>
+        <div class="sub">You reached <b>Delta Master Sniper</b> — two structures complete, your rate is now <b>12%</b>. Structure 3 is where the next rank is won.</div>
+      </div>
+      <!-- payout received -->
+      <div class="card payout">
+        <span class="check-medallion"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div class="eyebrow">Payout received</div>
+        <div class="amount">$5,412.00<span>USDC sent</span></div>
+        <div class="sub">Your July commission settled to your wallet on Polygon. Funds are available now.</div>
+        <div class="tx-row"><span class="k">TX</span><span class="hash">0x7C4d…9E2a</span><span class="net">Polygon</span></div>
+        <a class="btn md btn-ghost" href="#"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>View on Polygonscan</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 MILESTONE MOMENT -->
+  <section>
+    <div class="sec-title"><span class="n">02</span><h2>Milestone moment</h2><span class="line"></span><span class="note">progress with a forward-looking nudge</span></div>
+    <div class="card mile">
+      <div class="mile-ring">
+        <svg width="88" height="88" viewBox="0 0 88 88">
+          <circle cx="44" cy="44" r="32" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7"/>
+          <circle cx="44" cy="44" r="32" fill="none" stroke="#D4A853" stroke-width="7" stroke-linecap="round" stroke-dasharray="201.06" stroke-dashoffset="158.84" transform="rotate(-90 44 44)"/>
+          <text x="44" y="49" text-anchor="middle" class="ring-num">21%</text>
+        </svg>
+      </div>
+      <div class="mile-body">
+        <div class="mile-head">
+          <span class="k">Structure 3</span>
+          <span class="mile-count">231<b> / 1,092</b></span>
+          <span class="chip-togo"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>861 to go</span>
+        </div>
+        <div class="bar"><i style="width:21%"></i></div>
+        <div class="mile-line">You've filled the first fifth of Structure 3. <b>On pace for August</b> — keep the referral flow steady and the third structure closes on schedule.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 ONBOARDING WELCOME -->
+  <section>
+    <div class="sec-title"><span class="n">03</span><h2>Onboarding welcome</h2><span class="line"></span><span class="note">first-run hero · three steps to value</span></div>
+    <div class="card onboard">
+      <div class="onboard-head">
+        <span class="onboard-logo"><svg width="26" height="26" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="11.5" stroke="#D4A853" stroke-width="1.5"/><circle cx="16" cy="16" r="3" stroke="#D4A853" stroke-width="1.5"/><path d="M16 1.5V8M16 24v6.5M1.5 16H8M24 16h6.5" stroke="#D4A853" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+        <div>
+          <h3>Welcome to Snipers Trading Academy, Charlie</h3>
+          <div class="sub">Three steps and your workspace is ready. Here's where to start.</div>
+        </div>
+      </div>
+      <div class="checklist">
+        <div class="step done">
+          <span class="step-box"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <div class="step-body"><div class="step-title">Create your account</div><div class="step-desc">Done — you're signed in as charlieram96@gmail.com.</div></div>
+          <span class="step-n">1/3</span>
+        </div>
+        <div class="step">
+          <span class="step-box"></span>
+          <div class="step-body"><div class="step-title">Connect your payout wallet</div><div class="step-desc">Add a Polygon address so USDC commissions land automatically.</div></div>
+          <span class="step-n">2/3</span>
+        </div>
+        <div class="step">
+          <span class="step-box"></span>
+          <div class="step-body"><div class="step-title">Join your first live session</div><div class="step-desc">The NY Open session is live now — jump in and get oriented.</div></div>
+          <span class="step-n">3/3</span>
+        </div>
+      </div>
+      <div><a class="btn lg btn-primary">Connect payout wallet</a></div>
+    </div>
+  </section>
+
+  <!-- 05 GOLD SATURATION BUDGET -->
+  <section>
+    <div class="sec-title"><span class="n">04</span><h2>Gold saturation budget</h2><span class="line"></span><span class="note">one hero per screen — max</span></div>
+    <div class="dd-grid">
+      <div class="card dd-cell do">
+        <span class="dd-tag do">✓ Do</span>
+        <div class="dd-stage">
+          <div class="mini gold">Payout received · $5,412.00</div>
+          <div class="mini quiet">Structure 3 · 231 / 1,092</div>
+          <div class="mini quiet flex">Team members · recent activity</div>
+        </div>
+        <div class="dd-copy">Spend the gold on <b>one hero</b>. Everything around it stays on quiet surfaces so the celebration reads as the single most important thing on the screen.</div>
+      </div>
+      <div class="card dd-cell dont">
+        <span class="dd-tag dont">✕ Don't</span>
+        <div class="dd-stage">
+          <div class="mini gold">Payout received · $5,412.00</div>
+          <div class="mini gold">Rank up · Delta Master Sniper</div>
+          <div class="mini gold flex">Milestone · 861 to go</div>
+        </div>
+        <div class="dd-copy">Never stack <b>multiple gold heroes</b> in one view. When everything shouts, nothing lands — and the gold stops signalling importance at all.</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
