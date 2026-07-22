@@ -13,6 +13,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  tableCellNumeric,
 } from "@/components/ui/table"
 import {
   Dialog,
@@ -412,7 +413,7 @@ export default function AdminPayoutsPage() {
                 <TableRow>
                   <TableHead>{t("admin.payouts.user")}</TableHead>
                   <TableHead>{t("admin.payouts.type")}</TableHead>
-                  <TableHead>{t("admin.payouts.amount")}</TableHead>
+                  <TableHead className="text-right">{t("admin.payouts.amount")}</TableHead>
                   <TableHead>{t("admin.payouts.wallet")}</TableHead>
                   <TableHead>{t("admin.payouts.status")}</TableHead>
                   <TableHead>{t("admin.payouts.txHash")}</TableHead>
@@ -456,7 +457,7 @@ export default function AdminPayoutsPage() {
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell className="font-mono font-semibold">
+                      <TableCell className={`${tableCellNumeric} font-semibold`}>
                         ${commission.amount.toFixed(2)}
                       </TableCell>
                       <TableCell>
@@ -574,11 +575,11 @@ export default function AdminPayoutsPage() {
             </div>
             <div className="flex items-center justify-between p-4 bg-surface-2 rounded-lg">
               <span className="text-sm font-medium">{t("admin.payouts.totalAmount")}:</span>
-              <span className="text-lg font-bold text-primary">${summary.totalAmount.toFixed(2)} USDC</span>
+              <span className="text-lg font-bold text-primary font-mono tabular-nums">${summary.totalAmount.toFixed(2)} USDC</span>
             </div>
             <div className="flex items-center justify-between p-4 bg-surface-2 rounded-lg">
               <span className="text-sm font-medium">{t("admin.payouts.payoutWalletBalance")}:</span>
-              <span className={`text-lg font-bold ${balanceWarning ? 'text-red-500' : 'text-gold-400'}`}>
+              <span className={`text-lg font-bold font-mono tabular-nums ${balanceWarning ? 'text-red-500' : 'text-gold-400'}`}>
                 ${payoutWalletBalance?.toFixed(2) || "0.00"} USDC
               </span>
             </div>

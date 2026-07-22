@@ -100,7 +100,7 @@ export function LiveClassIndicator() {
                   </div>
                 </div>
                 <a href={cls.meeting_link} target="_blank" rel="noopener noreferrer">
-                  <Button size="sm" className="w-full bg-gold-400 hover:bg-gold-500 text-primary-foreground h-8 text-xs mt-2">
+                  <Button size="sm" className="w-full mt-2">
                     <ExternalLink className="h-3 w-3 mr-1.5" />
                     Join Class
                   </Button>

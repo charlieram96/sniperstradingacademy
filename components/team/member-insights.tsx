@@ -643,10 +643,10 @@ export function MemberInsights({ userId }: { userId: string }) {
                             {m.is_active ? "Active" : "Inactive"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-muted-foreground">
+                        <TableCell className="text-muted-foreground font-mono tabular-nums">
                           {formatDate(m.last_payment_date)}
                         </TableCell>
-                        <TableCell className="text-muted-foreground">
+                        <TableCell className="text-muted-foreground font-mono tabular-nums">
                           {formatDate(m.next_payment_due_date)}
                         </TableCell>
                         <TableCell>
@@ -654,7 +654,7 @@ export function MemberInsights({ userId }: { userId: string }) {
                             {formatSchedule(m.payment_schedule)}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-muted-foreground">
+                        <TableCell className="text-muted-foreground font-mono tabular-nums">
                           {formatDate(m.created_at)}
                         </TableCell>
                       </TableRow>

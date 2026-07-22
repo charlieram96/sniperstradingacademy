@@ -467,7 +467,7 @@ export default function FinancePage() {
                       <span className="text-sm text-muted-foreground">{t("finance.currentMonthVolume")}</span>
                       <Badge variant="outline">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</Badge>
                     </div>
-                    <div className="text-3xl font-bold">
+                    <div className="text-3xl font-bold font-mono tabular-nums">
                       ${financialStats.currentMonthVolume.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                     </div>
                     <div className="flex items-center gap-2 mt-2">
@@ -485,7 +485,7 @@ export default function FinancePage() {
                         <Badge className="bg-amber-500/10 text-amber-400">Not Qualified</Badge>
                       )}
                     </div>
-                    <div className="text-3xl font-bold text-primary">
+                    <div className="text-3xl font-bold text-primary font-mono tabular-nums">
                       ${financialStats.isQualified ? financialStats.currentMonthResidual.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : "0"}
                     </div>
                     <div className="text-sm text-primary/80 mt-2">
@@ -508,7 +508,7 @@ export default function FinancePage() {
                     <div className="border-t pt-2 mt-2">
                       <div className="flex items-center justify-between">
                         <span className="font-medium">{t("finance.monthlyResidualIncome")}</span>
-                        <span className="font-bold text-primary">
+                        <span className="font-bold text-primary font-mono tabular-nums">
                           ${financialStats.currentMonthResidual.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                         </span>
                       </div>
@@ -580,7 +580,7 @@ export default function FinancePage() {
                                 </div>
                               </div>
                               <div className="text-right">
-                                <div className="text-xl font-bold">${bonus.bonusAmount.toFixed(2)}</div>
+                                <div className="text-xl font-bold font-mono tabular-nums">${bonus.bonusAmount.toFixed(2)}</div>
                               </div>
                             </div>
 
@@ -641,7 +641,7 @@ export default function FinancePage() {
                           <Badge className="bg-primary/10 text-primary">Current</Badge>
                         )}
                       </div>
-                      <div className="text-xl font-bold">
+                      <div className="text-xl font-bold font-mono tabular-nums">
                         ${earning.totalEarning.toLocaleString()}
                       </div>
                     </div>

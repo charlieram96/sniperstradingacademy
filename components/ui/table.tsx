@@ -105,6 +105,12 @@ const TableCaption = React.forwardRef<
 ))
 TableCaption.displayName = "TableCaption"
 
+/**
+ * Numeric/money/date table cell className: right-aligned mono tabular figures
+ * so digits line up column-to-column. Apply to a `TableCell`/`TableHead`.
+ */
+const tableCellNumeric = "text-right font-mono tabular-nums"
+
 export {
   Table,
   TableHeader,
@@ -114,4 +120,5 @@ export {
   TableRow,
   TableCell,
   TableCaption,
+  tableCellNumeric,
 }

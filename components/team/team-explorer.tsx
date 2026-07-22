@@ -176,7 +176,7 @@ export function TeamExplorer({ rootUserId }: TeamExplorerProps) {
                         <Badge
                           className={`mt-1 text-[10px] ${
                             focus?.is_active
-                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                              ? "bg-emerald-500/10 text-emerald border-emerald-500/20"
                               : "bg-surface-2 text-muted-foreground border-border"
                           }`}
                         >

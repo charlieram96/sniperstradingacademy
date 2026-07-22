@@ -72,7 +72,7 @@ function ClassCard({ cls }: { cls: AcademyClass }) {
 
       {/* CTA */}
       <a href={cls.meeting_link} target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
-        <Button size="sm" className="bg-gold-400 hover:bg-gold-500 text-primary-foreground h-8 text-xs">
+        <Button size="sm">
           <ExternalLink className="h-3 w-3 mr-1.5" />
           Join Class
         </Button>

@@ -11,6 +11,7 @@ import { Copy, Check, Share2, Users, Globe, Link2, Edit } from "lucide-react"
 import { motion } from "framer-motion"
 import { isTestUser, mockReferrals } from "@/lib/mock-data"
 import { PageHeader } from "@/components/page-header"
+import { EmptyState } from "@/components/patterns/empty-state"
 import { useTranslation } from "@/components/language-provider"
 
 export default function ReferralsPage() {
@@ -329,13 +330,11 @@ export default function ReferralsPage() {
         </CardHeader>
         <CardContent>
           {referrals.length === 0 ? (
-            <div className="text-center py-12">
-              <Users className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-              <p className="text-muted-foreground">{t("referrals.noReferrals")}</p>
-              <p className="text-sm text-muted-foreground/70 mt-2">
-                {t("referrals.shareToEarn")}
-              </p>
-            </div>
+            <EmptyState
+              icon={<Users />}
+              title={t("referrals.noReferrals")}
+              description={t("referrals.shareToEarn")}
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {referrals.map((referral) => (

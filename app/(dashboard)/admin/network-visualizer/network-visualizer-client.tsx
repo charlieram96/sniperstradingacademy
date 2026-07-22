@@ -461,7 +461,7 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers, viewerRole }
                   <div className="text-sm text-emerald-400 font-medium mb-1">
                     Direct Referrals
                   </div>
-                  <div className="text-2xl font-bold text-emerald-300">
+                  <div className="text-2xl font-bold text-emerald">
                     {selectedUser.active_direct_referrals_count}/{selectedUser.direct_referrals_count}
                   </div>
                   <div className="text-xs text-emerald-400/80 mt-1">

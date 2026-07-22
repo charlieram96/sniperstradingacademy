@@ -631,10 +631,10 @@ export default function AcademyManagerPage() {
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-medium text-gold-400 uppercase tracking-wider">{t("admin.academyManager.editingModule")}</p>
                     <div className="flex items-center gap-2">
-                      <Button size="sm" variant="ghost" onClick={cancelEditModule} className="h-8 px-3 text-muted-foreground hover:text-foreground">
+                      <Button size="sm" variant="ghost" onClick={cancelEditModule}>
                         <X className="h-3.5 w-3.5 mr-1" /> Cancel
                       </Button>
-                      <Button size="sm" onClick={saveEditModule} className="h-8 px-3 bg-gold-400 hover:bg-gold-500 text-primary-foreground">
+                      <Button size="sm" onClick={saveEditModule}>
                         <Check className="h-3.5 w-3.5 mr-1" /> Save
                       </Button>
                     </div>
@@ -755,10 +755,10 @@ export default function AcademyManagerPage() {
                               <div className="flex items-center justify-between">
                                 <p className="text-xs font-medium text-gold-400 uppercase tracking-wider">{t("admin.academyManager.editingLesson")}</p>
                                 <div className="flex items-center gap-2">
-                                  <Button size="sm" variant="ghost" onClick={cancelEditLesson} disabled={uploading} className="h-7 px-2 text-xs text-muted-foreground">
+                                  <Button size="sm" variant="ghost" onClick={cancelEditLesson} disabled={uploading}>
                                     <X className="h-3 w-3 mr-1" /> Cancel
                                   </Button>
-                                  <Button size="sm" onClick={saveEditLesson} disabled={uploading || !!fileSizeError} className="h-7 px-2 text-xs bg-gold-400 hover:bg-gold-500 text-primary-foreground">
+                                  <Button size="sm" onClick={saveEditLesson} disabled={uploading || !!fileSizeError}>
                                     {uploading ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" />{t("admin.academyManager.uploading")}</> : <><Check className="h-3 w-3 mr-1" />{t("common.save")}</>}
                                   </Button>
                                 </div>
@@ -873,10 +873,10 @@ export default function AcademyManagerPage() {
                           <div className="flex items-center justify-between">
                             <p className="text-xs font-medium text-gold-400 uppercase tracking-wider">{t("admin.academyManager.newLesson")}</p>
                             <div className="flex items-center gap-2">
-                              <Button size="sm" variant="ghost" onClick={cancelAddLesson} disabled={uploading} className="h-7 px-2 text-xs text-muted-foreground">
+                              <Button size="sm" variant="ghost" onClick={cancelAddLesson} disabled={uploading}>
                                 <X className="h-3 w-3 mr-1" /> Cancel
                               </Button>
-                              <Button size="sm" onClick={saveNewLesson} disabled={uploading || !!fileSizeError} className="h-7 px-2 text-xs bg-gold-400 hover:bg-gold-500 text-primary-foreground">
+                              <Button size="sm" onClick={saveNewLesson} disabled={uploading || !!fileSizeError}>
                                 {uploading ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" />{t("admin.academyManager.uploading")}</> : <><Check className="h-3 w-3 mr-1" />{t("admin.academyManager.create")}</>}
                               </Button>
                             </div>
@@ -959,10 +959,10 @@ export default function AcademyManagerPage() {
             <div className="flex items-center justify-between">
               <p className="text-xs font-medium text-gold-400 uppercase tracking-wider">{t("admin.academyManager.newModule")}</p>
               <div className="flex items-center gap-2">
-                <Button size="sm" variant="ghost" onClick={cancelAddModule} className="h-8 px-3 text-muted-foreground hover:text-foreground">
+                <Button size="sm" variant="ghost" onClick={cancelAddModule}>
                   <X className="h-3.5 w-3.5 mr-1" /> Cancel
                 </Button>
-                <Button size="sm" onClick={saveNewModule} className="h-8 px-3 bg-gold-400 hover:bg-gold-500 text-primary-foreground">
+                <Button size="sm" onClick={saveNewModule}>
                   <Check className="h-3.5 w-3.5 mr-1" /> {t("admin.academyManager.create")}
                 </Button>
               </div>
