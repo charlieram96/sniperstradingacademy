@@ -47,7 +47,11 @@ export default function ForgotPasswordPage() {
     return (
       <div className="min-h-screen flex">
         {/* Left Side - Visual */}
-        <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-[#0F1629]/80 via-[#162044]/80 to-[#1A2550]/80 p-12 flex-col justify-between">
+        <div className="hidden lg:flex lg:w-1/2 relative bg-surface-0 p-12 flex-col justify-between overflow-hidden">
+        <div className="absolute inset-0 opacity-30" aria-hidden="true">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-gold-400/20 rounded-full blur-3xl animate-float-slow" />
+          <div className="absolute bottom-0 right-0 w-80 h-80 bg-blue-500/15 rounded-full blur-3xl animate-float-slower" />
+        </div>
           <NavigationLink href="/" className="flex items-center space-x-3">
             <Image src="/gold-logo.svg" alt="Trading Hub" width={48} height={48} className="w-12 h-12" />
             <span className="font-bold text-2xl text-white">{t("common.brandName")}</span>
@@ -81,8 +85,8 @@ export default function ForgotPasswordPage() {
             <Card className="border-border-subtle">
               <CardHeader className="space-y-1 pb-4">
                 <div className="flex justify-center mb-4">
-                  <div className="h-16 w-16 rounded-full bg-[#D4A853]/10 flex items-center justify-center">
-                    <CheckCircle className="h-8 w-8 text-[#D4A853]" />
+                  <div className="h-16 w-16 rounded-full bg-emerald-dim flex items-center justify-center">
+                    <CheckCircle className="h-8 w-8 text-emerald" />
                   </div>
                 </div>
                 <CardTitle className="text-3xl font-bold text-center">
@@ -141,7 +145,11 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Visual */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-[#0F1629]/80 via-[#162044]/80 to-[#1A2550]/80 p-12 flex-col justify-between">
+      <div className="hidden lg:flex lg:w-1/2 relative bg-surface-0 p-12 flex-col justify-between overflow-hidden">
+        <div className="absolute inset-0 opacity-30" aria-hidden="true">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-gold-400/20 rounded-full blur-3xl animate-float-slow" />
+          <div className="absolute bottom-0 right-0 w-80 h-80 bg-blue-500/15 rounded-full blur-3xl animate-float-slower" />
+        </div>
         <NavigationLink href="/" className="flex items-center space-x-3">
           <Image src="/gold-logo.svg" alt="Trading Hub" width={48} height={48} className="w-12 h-12" />
           <span className="font-bold text-2xl text-white">{t("common.brandName")}</span>
@@ -197,7 +205,7 @@ export default function ForgotPasswordPage() {
                 </div>
 
                 {error && (
-                  <div className="p-3 text-sm text-red-400 bg-red-500/10 rounded-md">
+                  <div className="p-3 text-sm text-red bg-red-dim rounded-md">
                     {error}
                   </div>
                 )}

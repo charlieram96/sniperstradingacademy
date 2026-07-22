@@ -128,8 +128,8 @@ export function MFAChallenge() {
         </CardHeader>
         <CardContent className="space-y-4">
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-600 flex items-center gap-2">
+            <div className="p-3 bg-red-dim border border-red/30 rounded-md">
+              <p className="text-sm text-red flex items-center gap-2">
                 <AlertCircle className="h-4 w-4" />
                 {error}
               </p>

@@ -119,8 +119,8 @@ export function MFAEnrollment({ onEnrolled, onCancelled }: MFAEnrollmentProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-600 flex items-center gap-2">
+          <div className="p-3 bg-red-dim border border-red/30 rounded-md">
+            <p className="text-sm text-red flex items-center gap-2">
               <AlertCircle className="h-4 w-4" />
               {error}
             </p>
@@ -193,8 +193,8 @@ export function MFAEnrollment({ onEnrolled, onCancelled }: MFAEnrollmentProps) {
               )}
             </div>
 
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <p className="text-xs text-blue-600">
+            <div className="p-3 bg-blue-dim border border-blue-400/30 rounded-md">
+              <p className="text-xs text-blue-400">
                 <strong>Important:</strong> Make sure to save this secret in a secure location or add a backup device.
                 You&apos;ll need it to access your account if you lose your primary authenticator.
               </p>

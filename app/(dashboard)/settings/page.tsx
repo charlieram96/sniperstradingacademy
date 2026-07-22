@@ -439,10 +439,10 @@ export default function SettingsPage() {
                     type="email"
                     value={user?.email || ""}
                     disabled
-                    className="max-w-md bg-surface-2"
+                    className="max-w-md"
                   />
                   {user?.email_confirmed_at && (
-                    <div className="flex items-center gap-1 text-[#D4A853] text-sm">
+                    <div className="flex items-center gap-1 text-emerald text-sm">
                       <CheckCircle className="h-4 w-4" />
                       <span>{t("settings.verified")}</span>
                     </div>
@@ -454,8 +454,8 @@ export default function SettingsPage() {
               </div>
 
               {nameSuccess && (
-                <div className="p-3 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-md">
-                  <p className="text-sm text-[#D4A853] flex items-center gap-2">
+                <div className="p-3 bg-emerald-dim border border-emerald/30 rounded-md">
+                  <p className="text-sm text-emerald flex items-center gap-2">
                     <CheckCircle className="h-4 w-4" />
                     {nameSuccess}
                   </p>
@@ -463,8 +463,8 @@ export default function SettingsPage() {
               )}
 
               {nameError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                  <p className="text-sm text-red-600">{nameError}</p>
+                <div className="p-3 bg-red-dim border border-red/30 rounded-md">
+                  <p className="text-sm text-red">{nameError}</p>
                 </div>
               )}
 
@@ -642,8 +642,8 @@ export default function SettingsPage() {
               </div>
 
               {passwordSuccess && (
-                <div className="p-3 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-md">
-                  <p className="text-sm text-[#D4A853] flex items-center gap-2">
+                <div className="p-3 bg-emerald-dim border border-emerald/30 rounded-md">
+                  <p className="text-sm text-emerald flex items-center gap-2">
                     <CheckCircle className="h-4 w-4" />
                     {passwordSuccess}
                   </p>
@@ -651,8 +651,8 @@ export default function SettingsPage() {
               )}
 
               {passwordError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                  <p className="text-sm text-red-600">{passwordError}</p>
+                <div className="p-3 bg-red-dim border border-red/30 rounded-md">
+                  <p className="text-sm text-red">{passwordError}</p>
                 </div>
               )}
 
@@ -680,8 +680,8 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             {mfaFactorsCount > 0 ? (
               <>
-                <div className="p-4 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-lg">
-                  <p className="text-sm text-[#D4A853] flex items-center gap-2">
+                <div className="p-4 bg-emerald-dim border border-emerald/30 rounded-lg">
+                  <p className="text-sm text-emerald flex items-center gap-2">
                     <CheckCircle className="h-4 w-4" />
                     {t("settings.twoFactorEnabled")}
                   </p>
@@ -748,8 +748,8 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             {/* Success/Error messages */}
             {beneficiarySuccess && (
-              <div className="p-3 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-md">
-                <p className="text-sm text-[#D4A853] flex items-center gap-2">
+              <div className="p-3 bg-emerald-dim border border-emerald/30 rounded-md">
+                <p className="text-sm text-emerald flex items-center gap-2">
                   <CheckCircle className="h-4 w-4" />
                   {beneficiarySuccess}
                 </p>
@@ -757,8 +757,8 @@ export default function SettingsPage() {
             )}
 
             {beneficiaryError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-600">{beneficiaryError}</p>
+              <div className="p-3 bg-red-dim border border-red/30 rounded-md">
+                <p className="text-sm text-red">{beneficiaryError}</p>
               </div>
             )}
 
@@ -817,7 +817,7 @@ export default function SettingsPage() {
                           size="sm"
                           onClick={() => deleteBeneficiary(beneficiary.id)}
                           disabled={beneficiaryUpdating}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="text-red hover:text-red/80 hover:bg-red-dim"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -960,7 +960,7 @@ export default function SettingsPage() {
                   type="email"
                   value="support@sniperstradingacademy.com"
                   disabled
-                  className="max-w-md bg-surface-2"
+                  className="max-w-md"
                 />
                 <Button
                   variant="outline"

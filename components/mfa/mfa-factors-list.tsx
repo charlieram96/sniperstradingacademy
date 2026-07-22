@@ -114,8 +114,8 @@ export function MFAFactorsList({ onFactorsChange }: MFAFactorsListProps) {
   return (
     <div className="space-y-4">
       {error && (
-        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-md">
-          <p className="text-sm text-red-400 flex items-center gap-2">
+        <div className="p-3 bg-red-dim border border-red/30 rounded-md">
+          <p className="text-sm text-red flex items-center gap-2">
             <AlertCircle className="h-4 w-4" />
             {error}
           </p>
@@ -123,8 +123,8 @@ export function MFAFactorsList({ onFactorsChange }: MFAFactorsListProps) {
       )}
 
       {success && (
-        <div className="p-3 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-md">
-          <p className="text-sm text-[#D4A853] flex items-center gap-2">
+        <div className="p-3 bg-emerald-dim border border-emerald/30 rounded-md">
+          <p className="text-sm text-emerald flex items-center gap-2">
             <CheckCircle className="h-4 w-4" />
             {success}
           </p>
@@ -165,7 +165,7 @@ export function MFAFactorsList({ onFactorsChange }: MFAFactorsListProps) {
               size="sm"
               onClick={() => setFactorToRemove(factor.id)}
               disabled={unenrolling}
-              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+              className="text-red hover:text-red/80 hover:bg-red-dim"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -173,7 +173,7 @@ export function MFAFactorsList({ onFactorsChange }: MFAFactorsListProps) {
         ))}
       </div>
 
-      <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-md">
+      <div className="p-3 bg-blue-dim border border-blue-400/30 rounded-md">
         <p className="text-xs text-blue-400">
           <strong>Tip:</strong> Add a backup authenticator on a different device
           to ensure you don&apos;t lose access to your account.

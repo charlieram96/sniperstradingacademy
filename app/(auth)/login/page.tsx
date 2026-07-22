@@ -201,12 +201,12 @@ function LoginForm() {
                   </div>
                 </div>
                 {success && (
-                  <div className="p-3 text-sm text-emerald-400 bg-emerald-500/10 rounded-md">
+                  <div className="p-3 text-sm text-emerald bg-emerald-dim rounded-md">
                     {success}
                   </div>
                 )}
                 {error && (
-                  <div className="p-3 text-sm text-red-400 bg-red-500/10 rounded-md">
+                  <div className="p-3 text-sm text-red bg-red-dim rounded-md">
                     {error}
                   </div>
                 )}

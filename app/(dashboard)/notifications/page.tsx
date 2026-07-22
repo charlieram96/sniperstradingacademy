@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { Bell, BellOff, Mail, MessageSquare, Clock, CheckCircle2, XCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { Mail, MessageSquare, Clock, CheckCircle2, XCircle, AlertCircle, Loader2, UserPlus, Gift, TrendingUp, Send, AlertTriangle, Trophy } from 'lucide-react'
 import { motion } from "framer-motion"
 import { PageHeader } from "@/components/page-header"
 import { SectionHeader } from "@/components/section-header"
@@ -270,13 +270,22 @@ export default function NotificationsPage() {
     )
   }
 
+  // Semantic icon tile per notification type — mirrors the app-signatures notifications-list language
+  const toneClass: Record<string, string> = {
+    emerald: "bg-emerald-dim text-emerald",
+    blue: "bg-blue-dim text-blue-400",
+    gold: "bg-primary/15 text-primary",
+    amber: "bg-amber-dim text-amber",
+    red: "bg-red-dim text-red",
+  }
+
   const notificationTypes = [
-    { id: 'referral_signups', label: t("notifications.typeReferralSignups"), description: t("notifications.typeReferralSignupsDesc") },
-    { id: 'direct_bonus', label: t("notifications.typeDirectBonuses"), description: t("notifications.typeDirectBonusesDesc") },
-    { id: 'monthly_commission', label: t("notifications.typeMonthlyCommissions"), description: t("notifications.typeMonthlyCommissionsDesc") },
-    { id: 'payouts', label: t("notifications.typePayouts"), description: t("notifications.typePayoutsDesc") },
-    { id: 'payment_failed', label: t("notifications.typePaymentFailures"), description: t("notifications.typePaymentFailuresDesc") },
-    { id: 'structure_milestones', label: t("notifications.typeNetworkMilestones"), description: t("notifications.typeNetworkMilestonesDesc") }
+    { id: 'referral_signups', label: t("notifications.typeReferralSignups"), description: t("notifications.typeReferralSignupsDesc"), icon: UserPlus, tone: 'blue' },
+    { id: 'direct_bonus', label: t("notifications.typeDirectBonuses"), description: t("notifications.typeDirectBonusesDesc"), icon: Gift, tone: 'emerald' },
+    { id: 'monthly_commission', label: t("notifications.typeMonthlyCommissions"), description: t("notifications.typeMonthlyCommissionsDesc"), icon: TrendingUp, tone: 'emerald' },
+    { id: 'payouts', label: t("notifications.typePayouts"), description: t("notifications.typePayoutsDesc"), icon: Send, tone: 'emerald' },
+    { id: 'payment_failed', label: t("notifications.typePaymentFailures"), description: t("notifications.typePaymentFailuresDesc"), icon: AlertTriangle, tone: 'red' },
+    { id: 'structure_milestones', label: t("notifications.typeNetworkMilestones"), description: t("notifications.typeNetworkMilestonesDesc"), icon: Trophy, tone: 'gold' }
   ]
 
   return (
@@ -287,8 +296,8 @@ export default function NotificationsPage() {
       />
 
       {message && (
-        <div className={`mb-6 p-4 rounded-lg flex items-center gap-2 ${
-          message.type === 'success' ? 'bg-[#D4A853]/10 text-[#C49B3E]' : 'bg-red-50 text-red-900'
+        <div className={`mb-6 p-4 rounded-lg border flex items-center gap-2 ${
+          message.type === 'success' ? 'bg-emerald-dim border-emerald/30 text-emerald' : 'bg-red-dim border-red/30 text-red'
         }`}>
           {message.type === 'success' ? (
             <CheckCircle2 className="h-5 w-5" />
@@ -301,14 +310,14 @@ export default function NotificationsPage() {
 
       {/* Notification Health Status */}
       {notificationHealth && (notificationHealth.email_disabled || notificationHealth.sms_disabled) && (
-        <Card className="mb-6 border-yellow-200 bg-yellow-50">
+        <Card className="mb-6 border-amber/30 bg-amber-dim">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-yellow-600" />
-              <CardTitle className="text-yellow-900">Notification Health Alert</CardTitle>
+              <AlertCircle className="h-5 w-5 text-amber" />
+              <CardTitle className="text-amber">Notification Health Alert</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="text-yellow-800">
+          <CardContent className="text-foreground-secondary">
             {notificationHealth.email_disabled && (
               <p className="mb-2">
                 ⚠️ Email notifications have been automatically disabled due to bounces or complaints.
@@ -452,9 +461,9 @@ export default function NotificationsPage() {
             )}
 
             {smsConsent?.is_verified && (
-              <div className="ml-8 p-3 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-lg flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
-                <span className="text-sm text-[#C49B3E]">
+              <div className="ml-8 p-3 bg-emerald-dim border border-emerald/30 rounded-lg flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald" />
+                <span className="text-sm text-emerald">
                   SMS verified for {phoneNumber.slice(-4) ? `•••• ${phoneNumber.slice(-4)}` : 'your phone'}
                 </span>
               </div>
@@ -475,11 +484,16 @@ export default function NotificationsPage() {
           <div className="space-y-4">
             {notificationTypes.map((type) => (
               <div key={type.id} className="border rounded-lg p-4">
-                <div className="mb-3">
-                  <h4 className="font-medium">{type.label}</h4>
-                  <p className="text-sm text-muted-foreground">{type.description}</p>
+                <div className="mb-3 flex items-start gap-3">
+                  <span className={`flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[8px] ${toneClass[type.tone]}`}>
+                    <type.icon className="h-[17px] w-[17px]" />
+                  </span>
+                  <div className="min-w-0">
+                    <h4 className="font-medium">{type.label}</h4>
+                    <p className="text-sm text-muted-foreground">{type.description}</p>
+                  </div>
                 </div>
-                <div className="flex gap-6">
+                <div className="flex gap-6 pl-[46px]">
                   <div className="flex items-center gap-2">
                     <Switch
                       checked={preferences?.email[type.id as keyof Omit<NotificationPreferences['email'], 'enabled'>] || false}
@@ -635,13 +649,13 @@ export default function NotificationsPage() {
                 <div className="flex items-center gap-2">
                   {!notificationHealth.email_disabled && !notificationHealth.sms_disabled ? (
                     <>
-                      <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
-                      <span className="text-[#D4A853] font-medium">{t("notifications.healthy")}</span>
+                      <CheckCircle2 className="h-4 w-4 text-emerald" />
+                      <span className="text-emerald font-medium">{t("notifications.healthy")}</span>
                     </>
                   ) : (
                     <>
-                      <AlertCircle className="h-4 w-4 text-yellow-600" />
-                      <span className="text-yellow-600 font-medium">{t("notifications.issuesDetected")}</span>
+                      <AlertCircle className="h-4 w-4 text-amber" />
+                      <span className="text-amber font-medium">{t("notifications.issuesDetected")}</span>
                     </>
                   )}
                 </div>
