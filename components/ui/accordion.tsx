@@ -35,13 +35,13 @@ function AccordionTrigger({
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
         className={cn(
-          "focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-start justify-between gap-4 rounded-[6px] py-4 text-left text-sm font-semibold text-foreground transition-colors duration-[var(--dur-std)] outline-none hover:text-gold-300 data-[state=open]:text-gold-100 focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180 [&[data-state=open]>svg]:text-gold-400",
+          "focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-start justify-between gap-4 rounded-[6px] py-4 text-left text-sm font-semibold text-foreground transition-colors duration-[var(--dur-std)] ease-[var(--ease-out)] outline-none hover:text-gold-300 data-[state=open]:text-gold-100 focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180 [&[data-state=open]>svg]:text-gold-400",
           className
         )}
         {...props}
       >
         {children}
-        <ChevronDownIcon className="text-foreground-tertiary pointer-events-none size-4 shrink-0 translate-y-0.5 transition-transform duration-[var(--dur-std)]" />
+        <ChevronDownIcon className="text-foreground-tertiary pointer-events-none size-4 shrink-0 translate-y-0.5 transition-transform duration-[var(--dur-std)] ease-[var(--ease-out)]" />
       </AccordionPrimitive.Trigger>
     </AccordionPrimitive.Header>
   )

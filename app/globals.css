@@ -230,6 +230,17 @@
   }
 }
 
+/* ─── Reduced motion (system-wide; covers LIVE pulse et al.) ─── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* ─── Keyframe Animations (kept/refined) ─── */
 
 /* Canonical skeleton shimmer — from system/foundations/motion.html */

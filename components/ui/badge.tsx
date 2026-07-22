@@ -54,13 +54,17 @@ function Badge({
       className={cn(badgeVariants({ variant }), className)}
       {...props}
     >
-      {showLiveDot && (
-        <span className="relative flex size-[5px] shrink-0">
-          <span className="absolute inline-flex size-full rounded-full bg-red opacity-60 animate-ping" />
-          <span className="relative inline-flex size-[5px] rounded-full bg-red" />
-        </span>
+      {showLiveDot ? (
+        <>
+          <span className="relative flex size-[5px] shrink-0">
+            <span className="absolute inline-flex size-full rounded-full bg-red opacity-60 animate-[ping_2s_ease-out_infinite]" />
+            <span className="relative inline-flex size-[5px] rounded-full bg-red" />
+          </span>
+          {children}
+        </>
+      ) : (
+        children
       )}
-      {children}
     </Comp>
   )
 }

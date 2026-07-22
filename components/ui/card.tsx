@@ -9,12 +9,12 @@ const cardVariants = cva(
     variants: {
       variant: {
         default: "bg-surface-0 border-border shadow-[var(--sh-sm)]",
-        elevated: "bg-surface-2 border-border shadow-[var(--sh-md)]",
+        elevated: "bg-surface-2 border-border shadow-[var(--sh-sm)]",
         highlighted: "bg-surface-0 border-border-accent shadow-[var(--shadow-gold-sm)]",
         interactive:
-          "bg-surface-0 border-border shadow-[var(--sh-sm)] hover:border-border-strong hover:shadow-[var(--sh-md)] cursor-pointer transition-all duration-[var(--dur-std)] ease-[var(--ease-out)]",
+          "bg-surface-2 border-border shadow-[var(--sh-sm)] hover:border-border-strong hover:shadow-[var(--sh-md)] cursor-pointer transition-all duration-[var(--dur-std)] ease-[var(--ease-out)]",
         featured:
-          "relative isolate overflow-hidden bg-surface-0 border-gold-400/30 shadow-[var(--sh-gold)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:z-10 before:h-0.5 before:bg-gradient-to-r before:from-gold-300 before:to-gold-500 after:content-[''] after:absolute after:inset-0 after:-z-10 after:bg-gradient-to-b after:from-gold-400/[0.07] after:to-transparent",
+          "relative isolate overflow-hidden bg-surface-0 border-gold-400/[0.28] shadow-[var(--sh-gold)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:z-10 before:h-0.5 before:bg-gradient-to-r before:from-gold-300 before:to-gold-500 after:content-[''] after:absolute after:inset-0 after:-z-10 after:bg-gradient-to-b after:from-gold-400/[0.07] after:to-transparent after:to-[52%]",
       },
     },
     defaultVariants: {
