@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
 import { Wallet, CheckCircle2, AlertCircle, Loader2, ExternalLink } from "lucide-react"
 
 interface PayoutWalletSetupProps {
@@ -140,14 +141,15 @@ export default function PayoutWalletSetup({
 
       {/* Current wallet status */}
       {walletStatus?.isConfigured && walletStatus.payoutWalletAddress && (
-        <div className="flex items-center gap-2 p-3 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-lg">
-          <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
+        <div className="flex items-center gap-3 p-3 bg-emerald-dim border border-emerald/20 rounded-lg">
+          <CheckCircle2 className="h-4 w-4 text-emerald flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm text-[#D4A853] font-medium">Wallet configured</p>
-            <p className="text-xs text-[#D4A853] font-mono truncate">
+            <p className="text-sm text-emerald font-medium">Wallet configured</p>
+            <p className="text-xs text-emerald/80 font-mono truncate">
               {walletStatus.payoutWalletAddress}
             </p>
           </div>
+          <Badge variant="success" className="shrink-0">Verified</Badge>
         </div>
       )}
 
@@ -191,9 +193,9 @@ export default function PayoutWalletSetup({
 
       {/* Success message */}
       {success && (
-        <div className="flex items-center gap-2 p-3 bg-[#D4A853]/10 border border-[#D4A853]/20 rounded-lg">
-          <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
-          <span className="text-sm text-[#D4A853]">Payout wallet saved successfully!</span>
+        <div className="flex items-center gap-2 p-3 bg-emerald-dim border border-emerald/20 rounded-lg">
+          <CheckCircle2 className="h-4 w-4 text-emerald" />
+          <span className="text-sm text-emerald">Payout wallet saved successfully!</span>
         </div>
       )}
 

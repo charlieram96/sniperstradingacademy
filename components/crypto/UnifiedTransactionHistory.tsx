@@ -5,12 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SkeletonRows } from '@/components/patterns/skeleton';
+import { EmptyState } from '@/components/patterns/empty-state';
 import {
   ArrowDownLeft,
   ArrowUpRight,
   ExternalLink,
   History,
-  Loader2,
   RefreshCw,
 } from 'lucide-react';
 
@@ -104,13 +105,13 @@ export function UnifiedTransactionHistory({
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', label: string }> = {
-      completed: { variant: 'default', label: 'Completed' },
-      succeeded: { variant: 'default', label: 'Completed' },
-      confirmed: { variant: 'default', label: 'Confirmed' },
-      paid: { variant: 'default', label: 'Paid' },
-      pending: { variant: 'secondary', label: 'Pending' },
-      processing: { variant: 'secondary', label: 'Processing' },
+    const statusConfig: Record<string, { variant: 'success' | 'warning' | 'destructive' | 'outline', label: string }> = {
+      completed: { variant: 'success', label: 'Completed' },
+      succeeded: { variant: 'success', label: 'Completed' },
+      confirmed: { variant: 'success', label: 'Confirmed' },
+      paid: { variant: 'success', label: 'Paid' },
+      pending: { variant: 'warning', label: 'Pending' },
+      processing: { variant: 'warning', label: 'Processing' },
       failed: { variant: 'destructive', label: 'Failed' },
       cancelled: { variant: 'outline', label: 'Cancelled' },
     };
@@ -122,14 +123,14 @@ export function UnifiedTransactionHistory({
   const getTransactionIcon = (direction: 'in' | 'out') => {
     if (direction === 'out') {
       return (
-        <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-          <ArrowUpRight className="h-5 w-5 text-red-500" />
+        <div className="w-10 h-10 rounded-full bg-red-dim flex items-center justify-center">
+          <ArrowUpRight className="h-5 w-5 text-red" />
         </div>
       );
     }
     return (
-      <div className="w-10 h-10 rounded-full bg-[#D4A853]/10 dark:bg-[#D4A853]/10 flex items-center justify-center">
-        <ArrowDownLeft className="h-5 w-5 text-[#D4A853]" />
+      <div className="w-10 h-10 rounded-full bg-emerald-dim flex items-center justify-center">
+        <ArrowDownLeft className="h-5 w-5 text-emerald" />
       </div>
     );
   };
@@ -155,8 +156,8 @@ export function UnifiedTransactionHistory({
   if (loading) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <CardContent className="py-4">
+          <SkeletonRows n={5} />
         </CardContent>
       </Card>
     );
@@ -207,10 +208,11 @@ export function UnifiedTransactionHistory({
 
         {/* Empty State */}
         {!error && transactions.length === 0 && (
-          <div className="text-center py-12">
-            <History className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-            <p className="text-muted-foreground">No transactions yet</p>
-          </div>
+          <EmptyState
+            icon={<History />}
+            title="No transactions yet"
+            description="Your payments, commissions and payouts will appear here once activity begins."
+          />
         )}
 
         {/* Grouped Transaction List */}
@@ -258,13 +260,13 @@ export function UnifiedTransactionHistory({
 
                       <div className="text-right">
                         <p
-                          className={`font-semibold ${
-                            tx.direction === 'out' ? 'text-red-500' : 'text-[#D4A853]'
+                          className={`font-mono tabular-nums font-semibold ${
+                            tx.direction === 'out' ? 'text-red' : 'text-emerald'
                           }`}
                         >
                           {tx.direction === 'out' ? '-' : '+'}${formatAmount(tx.amount)}
                         </p>
-                        <p className="text-xs text-muted-foreground">USDC</p>
+                        <p className="font-mono text-xs text-foreground-tertiary">USDC</p>
                       </div>
                     </div>
                   ))}

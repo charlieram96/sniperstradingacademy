@@ -8,8 +8,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-  DollarSign,
-  TrendingUp,
   Users,
   Calendar,
   CheckCircle,
@@ -21,6 +19,9 @@ import {
 } from "lucide-react"
 import { AccountStatusCard } from "@/components/account-status-card"
 import PayoutWalletSetup from "@/components/crypto/PayoutWalletSetup"
+import { StatTile } from "@/components/patterns/stat-tile"
+import { EmptyState } from "@/components/patterns/empty-state"
+import { Skeleton, SkeletonTile } from "@/components/patterns/skeleton"
 import { motion } from "framer-motion"
 import { staggerContainer, staggerItem } from "@/lib/motion"
 import { AnimatedNumber } from "@/components/motion/animated-number"
@@ -257,8 +258,17 @@ export default function FinancePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">{t("finance.loadingFinancialData")}</div>
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Skeleton className="h-[180px] rounded-[10px]" />
+          <Skeleton className="h-[180px] rounded-[10px]" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <SkeletonTile />
+          <SkeletonTile />
+          <SkeletonTile />
+          <SkeletonTile />
+        </div>
       </div>
     )
   }
@@ -398,73 +408,36 @@ export default function FinancePage() {
         animate="show"
       >
         <motion.div variants={staggerItem}>
-          <Card variant="elevated" className="relative overflow-hidden border-l-2 border-l-emerald-500">
-            <DollarSign className="absolute top-3 right-3 h-12 w-12 text-emerald-500/5" />
-            <CardHeader className="pb-3">
-              <CardTitle className="text-[11px] uppercase tracking-wide font-semibold text-foreground-tertiary">
-                {t("finance.lifetimeEarnings")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                <AnimatedNumber value={financialStats.lifetimeEarnings} prefix="$" />
-              </div>
-              <p className="text-xs text-foreground-tertiary">{t("finance.allTimeTotal")}</p>
-            </CardContent>
-          </Card>
+          <StatTile
+            label={t("finance.lifetimeEarnings")}
+            value={<AnimatedNumber value={financialStats.lifetimeEarnings} prefix="$" />}
+            footnote={t("finance.allTimeTotal")}
+          />
         </motion.div>
 
         <motion.div variants={staggerItem}>
-          <Card variant="elevated" className="relative overflow-hidden border-l-2 border-l-blue-500">
-            <TrendingUp className="absolute top-3 right-3 h-12 w-12 text-blue-500/5" />
-            <CardHeader className="pb-3">
-              <CardTitle className="text-[11px] uppercase tracking-wide font-semibold text-foreground-tertiary">
-                {t("finance.currentMonthResidual")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-400">
-                <AnimatedNumber value={financialStats.currentMonthResidual} prefix="$" />
-              </div>
-              <p className="text-xs text-foreground-tertiary">{(financialStats.commissionRate * 100).toFixed(0)}% of team volume</p>
-            </CardContent>
-          </Card>
+          <StatTile
+            label={t("finance.currentMonthResidual")}
+            value={<AnimatedNumber value={financialStats.currentMonthResidual} prefix="$" />}
+            footnote={`${(financialStats.commissionRate * 100).toFixed(0)}% of team volume`}
+          />
         </motion.div>
 
         <motion.div variants={staggerItem}>
-          <Card variant="elevated" className="relative overflow-hidden border-l-2 border-l-purple-500">
-            <Users className="absolute top-3 right-3 h-12 w-12 text-purple-500/5" />
-            <CardHeader className="pb-3">
-              <CardTitle className="text-[11px] uppercase tracking-wide font-semibold text-foreground-tertiary">
-                {t("finance.directBonuses")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                <AnimatedNumber value={financialStats.totalDirectBonuses} prefix="$" />
-              </div>
-              <p className="text-xs text-foreground-tertiary">
-                ${financialStats.pendingBonuses} pending
-              </p>
-            </CardContent>
-          </Card>
+          <StatTile
+            label={t("finance.directBonuses")}
+            value={<AnimatedNumber value={financialStats.totalDirectBonuses} prefix="$" />}
+            footnote={`$${financialStats.pendingBonuses} pending`}
+          />
         </motion.div>
 
         <motion.div variants={staggerItem}>
-          <Card variant="highlighted" className="relative overflow-hidden border-l-2 border-l-gold-400">
-            <Wallet className="absolute top-3 right-3 h-12 w-12 text-gold-400/5" />
-            <CardHeader className="pb-3">
-              <CardTitle className="text-[11px] uppercase tracking-wide font-semibold text-gold-400">
-                {t("finance.nextPayout")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-gold-400">
-                <AnimatedNumber value={financialStats.nextPayoutAmount} prefix="$" />
-              </div>
-              <p className="text-xs text-gold-400/80">{financialStats.nextPayoutDate}</p>
-            </CardContent>
-          </Card>
+          <StatTile
+            label={t("finance.nextPayout")}
+            value={<AnimatedNumber value={financialStats.nextPayoutAmount} prefix="$" />}
+            footnote={financialStats.nextPayoutDate}
+            tone="gold"
+          />
         </motion.div>
       </motion.div>
 
@@ -572,11 +545,11 @@ export default function FinancePage() {
                 </div>
 
                 {directBonuses.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Users className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-                    <p>{t("finance.noDirectBonuses")}</p>
-                    <p className="text-sm mt-2">{t("finance.shareToEarnBonuses")}</p>
-                  </div>
+                  <EmptyState
+                    icon={<Users />}
+                    title={t("finance.noDirectBonuses")}
+                    description={t("finance.shareToEarnBonuses")}
+                  />
                 ) : (
                   <>
                     <div className="grid grid-cols-3 gap-4 mb-6">
@@ -614,7 +587,7 @@ export default function FinancePage() {
                             <div className="flex items-center mt-3 pt-3 border-t">
                               {bonus.status === "paid" ? (
                                 <div>
-                                  <Badge className="bg-[#D4A853] text-white">
+                                  <Badge variant="success">
                                     <CheckCircle className="h-3 w-3 mr-1" />
                                     Paid
                                   </Badge>
@@ -626,7 +599,7 @@ export default function FinancePage() {
                                 </div>
                               ) : (
                                 <div>
-                                  <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20">
+                                  <Badge variant="warning">
                                     <Clock className="h-3 w-3 mr-1" />
                                     Pending Monthly Payout
                                   </Badge>
@@ -724,7 +697,7 @@ export default function FinancePage() {
                           </div>
                         </div>
                         {accountStatus.payoutWalletAddress && (
-                          <Badge className="bg-[#D4A853] text-white">
+                          <Badge variant="success">
                             <CheckCircle className="h-3 w-3 mr-1" />
                             Connected
                           </Badge>

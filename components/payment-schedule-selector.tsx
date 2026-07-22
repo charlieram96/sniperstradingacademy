@@ -47,15 +47,15 @@ export function PaymentScheduleSelector({ value, onChange }: PaymentScheduleSele
                     </div>
                     <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
                       <li className="flex items-start gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-[#D4A853] flex-shrink-0 mt-0.5" />
+                        <CheckCircle2 className="h-4 w-4 text-emerald flex-shrink-0 mt-0.5" />
                         <span className="text-muted-foreground">Easier on your budget</span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-[#D4A853] flex-shrink-0 mt-0.5" />
+                        <CheckCircle2 className="h-4 w-4 text-emerald flex-shrink-0 mt-0.5" />
                         <span className="text-muted-foreground">Billed every 7 days</span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-[#D4A853] flex-shrink-0 mt-0.5" />
+                        <CheckCircle2 className="h-4 w-4 text-emerald flex-shrink-0 mt-0.5" />
                         <span className="text-muted-foreground">~$199/mo total</span>
                       </li>
                     </ul>
@@ -88,15 +88,15 @@ export function PaymentScheduleSelector({ value, onChange }: PaymentScheduleSele
                     </div>
                     <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
                       <li className="flex items-start gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-[#D4A853] flex-shrink-0 mt-0.5" />
+                        <CheckCircle2 className="h-4 w-4 text-emerald flex-shrink-0 mt-0.5" />
                         <span className="text-muted-foreground">One payment per month</span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-[#D4A853] flex-shrink-0 mt-0.5" />
+                        <CheckCircle2 className="h-4 w-4 text-emerald flex-shrink-0 mt-0.5" />
                         <span className="text-muted-foreground">Billed every 30 days</span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-[#D4A853] flex-shrink-0 mt-0.5" />
+                        <CheckCircle2 className="h-4 w-4 text-emerald flex-shrink-0 mt-0.5" />
                         <span className="text-muted-foreground">Simpler to manage</span>
                       </li>
                     </ul>

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils"
 import {
   CheckCircle,
@@ -344,10 +345,10 @@ function PaymentsContent() {
 
       {/* Success/Cancel Messages */}
       {success && (
-        <Card className="mb-6 border-[#D4A853]/20 bg-[#D4A853]/5">
+        <Card className="mb-6 border-emerald/20 bg-emerald-dim">
           <CardHeader>
             <CardTitle className="text-foreground flex items-center">
-              <CheckCircle className="h-5 w-5 mr-2 text-[#D4A853]" />
+              <CheckCircle className="h-5 w-5 mr-2 text-emerald" />
               {t("payments.paymentSuccessful")}
             </CardTitle>
             <CardDescription className="text-muted-foreground">
@@ -427,9 +428,9 @@ function PaymentsContent() {
                   </p>
                   <p className="text-sm text-muted-foreground">Trading Hub Premium</p>
                 </div>
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#D4A853]/10 text-[#C49B3E]">
+                <Badge variant="success">
                   Active
-                </span>
+                </Badge>
               </div>
               <div className="space-y-2 text-sm">
                 {!bypassSubscription && nextPaymentDueDate && (
@@ -512,14 +513,14 @@ function PaymentsContent() {
               )}
             </div>
           ) : bypassSubscription ? (
-            <div className="p-4 bg-[#D4A853]/10 dark:bg-[#D4A853]/10 rounded-lg border-2 border-[#D4A853]/20 dark:border-[#D4A853]/30">
+            <div className="p-4 bg-emerald-dim rounded-lg border border-emerald/20">
               <div className="flex items-center gap-2 mb-2">
-                <CheckCircle className="h-5 w-5 text-[#D4A853] dark:text-[#D4A853]" />
-                <p className="font-semibold text-[#C49B3E] dark:text-[#D4A853]">
+                <CheckCircle className="h-5 w-5 text-emerald" />
+                <p className="font-semibold text-emerald">
                   Subscription Bypass Active
                 </p>
               </div>
-              <p className="text-sm text-[#C49B3E] dark:text-[#D4A853]">
+              <p className="text-sm text-emerald/80">
                 You have been granted subscription bypass. You do not need to pay the monthly subscription fee.
               </p>
             </div>
@@ -561,10 +562,10 @@ function PaymentsContent() {
                   </Button>
                 </div>
               ) : (
-                <div className="p-4 bg-[#D4A853]/10 dark:bg-[#D4A853]/10 rounded-lg">
+                <div className="p-4 bg-emerald-dim rounded-lg border border-emerald/20">
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-[#D4A853]" />
-                    <p className="font-medium text-[#C49B3E] dark:text-[#D4A853]">All payments up to date</p>
+                    <CheckCircle className="h-5 w-5 text-emerald" />
+                    <p className="font-medium text-emerald">All payments up to date</p>
                   </div>
                 </div>
               )}
@@ -603,11 +604,11 @@ function PaymentsContent() {
 
               {/* Funds Detected Status */}
               {paymentStatus?.fundsDetected && (
-                <div className="flex items-center gap-3 p-4 bg-[#D4A853]/10 dark:bg-[#D4A853]/10 rounded-lg border border-[#D4A853]/20 dark:border-[#D4A853]/30">
-                  <Loader2 className="h-5 w-5 text-[#D4A853] animate-spin" />
+                <div className="flex items-center gap-3 p-4 bg-emerald-dim rounded-lg border border-emerald/20">
+                  <Loader2 className="h-5 w-5 text-emerald animate-spin" />
                   <div>
-                    <p className="font-medium text-[#C49B3E] dark:text-[#D4A853]">Payment Detected!</p>
-                    <p className="text-sm text-[#C49B3E] dark:text-[#D4A853]">
+                    <p className="font-medium text-emerald">Payment Detected!</p>
+                    <p className="text-sm text-emerald/80">
                       Processing your payment now...
                     </p>
                   </div>
@@ -655,7 +656,7 @@ function PaymentsContent() {
                           className="shrink-0"
                         >
                           {copied ? (
-                            <CheckCircle className="h-4 w-4 text-[#D4A853]" />
+                            <CheckCircle className="h-4 w-4 text-emerald" />
                           ) : (
                             <Copy className="h-4 w-4" />
                           )}
