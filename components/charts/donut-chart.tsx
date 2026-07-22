@@ -16,12 +16,11 @@ interface DonutChartProps {
   "aria-label"?: string
 }
 
-const R = 64
-const STROKE = 22
-
 /**
  * Ring chart with a center total (charts.html · 04). Segments are laid out with
- * `pathLength=100` so each arc length is just its percentage of the whole.
+ * `pathLength=100` so each arc length is just its percentage of the whole. The
+ * ring radius and stroke scale with `size` (from the canonical 180 → R64/S22)
+ * so it never clips its viewBox at smaller sizes.
  */
 export function DonutChart({
   segments,
@@ -31,6 +30,8 @@ export function DonutChart({
   className,
   "aria-label": ariaLabel,
 }: DonutChartProps) {
+  const R = r2(size * (64 / 180))
+  const STROKE = r2(size * (22 / 180))
   const total = segments.reduce((sum, s) => sum + s.value, 0) || 1
   let offset = 0
   const arcs = segments.map((s) => {
