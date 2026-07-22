@@ -38,7 +38,7 @@ export function Footer() {
             <div className="flex items-center gap-3">
               <a
                 href="#"
-                className="w-8 h-8 rounded-[6px] bg-surface-2 border border-border flex items-center justify-center text-foreground-quaternary hover:text-gold-300 hover:border-border-accent transition-colors"
+                className="w-8 h-8 rounded-sm bg-surface-2 border border-border flex items-center justify-center text-foreground-quaternary hover:text-gold-300 hover:border-border-accent transition-colors"
                 aria-label="Twitter"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -47,7 +47,7 @@ export function Footer() {
               </a>
               <a
                 href="#"
-                className="w-8 h-8 rounded-[6px] bg-surface-2 border border-border flex items-center justify-center text-foreground-quaternary hover:text-gold-300 hover:border-border-accent transition-colors"
+                className="w-8 h-8 rounded-sm bg-surface-2 border border-border flex items-center justify-center text-foreground-quaternary hover:text-gold-300 hover:border-border-accent transition-colors"
                 aria-label="Discord"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -56,7 +56,7 @@ export function Footer() {
               </a>
               <a
                 href="#"
-                className="w-8 h-8 rounded-[6px] bg-surface-2 border border-border flex items-center justify-center text-foreground-quaternary hover:text-gold-300 hover:border-border-accent transition-colors"
+                className="w-8 h-8 rounded-sm bg-surface-2 border border-border flex items-center justify-center text-foreground-quaternary hover:text-gold-300 hover:border-border-accent transition-colors"
                 aria-label="YouTube"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">

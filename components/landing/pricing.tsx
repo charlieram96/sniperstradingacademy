@@ -60,7 +60,7 @@ export function Pricing() {
           className="text-center mb-16"
         >
           <Badge className="mb-4">{t("landing.pricing.badge")}</Badge>
-          <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+          <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground to-foreground-tertiary bg-clip-text text-transparent">
             {t("landing.pricing.heading")}
           </h2>
           <p className="text-xl text-foreground-tertiary">
@@ -115,7 +115,7 @@ export function Pricing() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  <div className="bg-gold-400/8 rounded-[8px] p-4 border border-border-accent">
+                  <div className="bg-gold-400/8 rounded-md p-4 border border-border-accent">
                     <p className="text-gold-300 font-semibold text-center">
                       {t("landing.pricing.earnReferrals")}
                     </p>

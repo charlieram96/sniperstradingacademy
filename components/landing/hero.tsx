@@ -41,7 +41,7 @@ export function Hero() {
       />
 
       {/* Grid Pattern */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(212,175,55,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(212,175,55,0.015)_1px,transparent_1px)] bg-[size:64px_64px]" />
+      <div className="absolute inset-0 bg-[linear-gradient(color-mix(in_srgb,var(--gold-400)_2%,transparent)_1px,transparent_1px),linear-gradient(90deg,color-mix(in_srgb,var(--gold-400)_2%,transparent)_1px,transparent_1px)] bg-[size:64px_64px]" />
 
       <div className="container mx-auto text-center relative pt-20">
         <div className="max-w-5xl mx-auto">
@@ -65,7 +65,7 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-6xl md:text-8xl xl:text-9xl font-bold mb-8 leading-tight"
           >
-            <span className="bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-foreground via-foreground-secondary to-foreground-tertiary bg-clip-text text-transparent">
               {t("landing.hero.headingLine1")}
             </span>
             <br />
@@ -122,7 +122,7 @@ export function Hero() {
               <motion.div
                 key={stat.label}
                 variants={staggerItem}
-                className="group p-6 rounded-[12px] bg-surface-1 border border-border hover:border-border-accent hover:shadow-[var(--shadow-gold-sm)] transition-all duration-200"
+                className="group p-6 rounded-lg bg-surface-1 border border-border hover:border-border-accent hover:shadow-[var(--shadow-gold-sm)] transition-all duration-200"
               >
                 <div className="flex items-center justify-center mb-3">
                   <stat.icon className="h-8 w-8 text-gold-400/60" />

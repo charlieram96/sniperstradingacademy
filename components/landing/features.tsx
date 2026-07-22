@@ -86,7 +86,7 @@ export function Features() {
           className="text-center mb-16"
         >
           <Badge className="mb-4">{t("landing.features.badge")}</Badge>
-          <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+          <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground to-foreground-tertiary bg-clip-text text-transparent">
             {t("landing.features.heading")}
           </h2>
           <p className="text-xl text-foreground-tertiary max-w-3xl mx-auto">
@@ -105,7 +105,7 @@ export function Features() {
           <TiltCard>
             <Card variant="interactive" className="p-8 md:p-10 gradient-border">
               <div className="flex flex-col md:flex-row items-center gap-8">
-                <div className="w-20 h-20 rounded-[16px] bg-gradient-to-br from-gold-400 to-gold-500 flex items-center justify-center flex-shrink-0 group-hover:shadow-[var(--shadow-gold-sm)] transition-shadow">
+                <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-gold-400 to-gold-500 flex items-center justify-center flex-shrink-0 group-hover:shadow-[var(--shadow-gold-sm)] transition-shadow">
                   <Brain className="h-10 w-10 text-primary-foreground" />
                 </div>
                 <div>
@@ -134,7 +134,7 @@ export function Features() {
               <TiltCard className="h-full">
                 <Card variant="interactive" className="h-full group">
                   <CardHeader>
-                    <div className="w-14 h-14 rounded-[12px] bg-gradient-to-br from-gold-400 to-gold-500 flex items-center justify-center mb-4 group-hover:shadow-[var(--shadow-gold-sm)] transition-shadow">
+                    <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-gold-400 to-gold-500 flex items-center justify-center mb-4 group-hover:shadow-[var(--shadow-gold-sm)] transition-shadow">
                       <feature.icon className="h-7 w-7 text-primary-foreground" />
                     </div>
                     <CardTitle className="text-xl text-foreground">
@@ -165,7 +165,7 @@ export function Features() {
               <TiltCard className="h-full">
                 <Card variant="interactive" className="h-full group">
                   <CardHeader>
-                    <div className="w-12 h-12 rounded-[8px] bg-gold-400/10 flex items-center justify-center mb-3 group-hover:shadow-[var(--shadow-gold-sm)] transition-shadow">
+                    <div className="w-12 h-12 rounded-md bg-gold-400/10 flex items-center justify-center mb-3 group-hover:shadow-[var(--shadow-gold-sm)] transition-shadow">
                       <feature.icon className="h-6 w-6 text-gold-400" />
                     </div>
                     <CardTitle className="text-lg text-foreground">

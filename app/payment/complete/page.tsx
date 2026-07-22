@@ -88,49 +88,99 @@ function PaymentCompleteContent() {
     }
   }, [status, countdown, router]);
 
+  const toneStyles = {
+    gold: {
+      text: 'text-gold-400',
+      medallion: {
+        background: 'color-mix(in srgb, var(--gold-400) 12%, transparent)',
+        borderColor: 'color-mix(in srgb, var(--gold-400) 40%, transparent)',
+      },
+    },
+    emerald: {
+      text: 'text-emerald',
+      medallion: {
+        background: 'var(--emerald-dim)',
+        borderColor: 'color-mix(in srgb, var(--emerald) 40%, transparent)',
+      },
+    },
+    amber: {
+      text: 'text-amber',
+      medallion: {
+        background: 'var(--amber-dim)',
+        borderColor: 'color-mix(in srgb, var(--amber) 40%, transparent)',
+      },
+    },
+    red: {
+      text: 'text-red',
+      medallion: {
+        background: 'var(--red-dim)',
+        borderColor: 'color-mix(in srgb, var(--red) 40%, transparent)',
+      },
+    },
+  } as const;
+
   const statusConfig = {
     loading: {
-      icon: <Loader2 className="h-16 w-16 text-primary animate-spin" />,
+      icon: <Loader2 className="h-7 w-7 animate-spin" strokeWidth={1.5} />,
       title: 'Checking Payment Status',
       description: 'Please wait while we verify your payment...',
-      color: 'text-primary',
+      tone: 'gold',
     },
     success: {
-      icon: <CheckCircle className="h-16 w-16 text-[#D4A853]" />,
+      icon: <CheckCircle className="h-7 w-7" strokeWidth={1.5} />,
       title: 'Payment Successful!',
       description: 'Your payment has been confirmed. Your account is now active.',
-      color: 'text-[#D4A853]',
+      tone: 'emerald',
     },
     pending: {
-      icon: <Clock className="h-16 w-16 text-yellow-500" />,
+      icon: <Clock className="h-7 w-7" strokeWidth={1.5} />,
       title: 'Payment Processing',
       description: 'Your payment is being processed. This may take a few minutes.',
-      color: 'text-yellow-500',
+      tone: 'amber',
     },
     failed: {
-      icon: <XCircle className="h-16 w-16 text-red-500" />,
+      icon: <XCircle className="h-7 w-7" strokeWidth={1.5} />,
       title: 'Payment Failed',
       description: 'There was an issue with your payment. Please try again.',
-      color: 'text-red-500',
+      tone: 'red',
     },
     error: {
-      icon: <XCircle className="h-16 w-16 text-red-500" />,
+      icon: <XCircle className="h-7 w-7" strokeWidth={1.5} />,
       title: 'Error',
       description: 'We could not verify your payment status. Please contact support.',
-      color: 'text-red-500',
+      tone: 'red',
     },
-  };
+  } as const;
 
   const config = statusConfig[status];
+  const tone = toneStyles[config.tone];
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      {/* One-shot medallion pop (moments.html · celebration). Collapsed by the
+          global reduced-motion rule in globals.css. */}
+      <style>{`@keyframes pmt-medal-pop{from{opacity:0;transform:scale(0.6)}to{opacity:1;transform:scale(1)}}`}</style>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            {config.icon}
+            <span
+              className={`flex h-[52px] w-[52px] items-center justify-center rounded-full border ${tone.text}`}
+              style={{
+                ...tone.medallion,
+                ...(status === 'success'
+                  ? { animation: 'pmt-medal-pop var(--dur-enter) var(--ease-spring) both' }
+                  : {}),
+              }}
+            >
+              {config.icon}
+            </span>
           </div>
-          <CardTitle className={`text-2xl ${config.color}`}>
+          {status === 'success' && (
+            <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald mb-1">
+              Payment received
+            </div>
+          )}
+          <CardTitle className={`text-2xl ${tone.text}`}>
             {config.title}
           </CardTitle>
           <CardDescription className="text-base">

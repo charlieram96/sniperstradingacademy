@@ -17,13 +17,13 @@ export function CTA() {
           initial="hidden"
           whileInView="visible"
           viewport={viewportOnce}
-          className="bg-surface-1 rounded-[24px] border border-border-accent p-12 md:p-16 relative overflow-hidden text-center"
+          className="bg-surface-1 rounded-xl border border-border-accent p-12 md:p-16 relative overflow-hidden text-center"
         >
           {/* Internal glow orb */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-gold-400/8 rounded-full blur-[100px] pointer-events-none" />
 
           <div className="relative">
-            <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+            <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground to-foreground-tertiary bg-clip-text text-transparent">
               {t("landing.cta.heading")}
             </h2>
             <p className="text-xl text-foreground-tertiary mb-10 max-w-2xl mx-auto">

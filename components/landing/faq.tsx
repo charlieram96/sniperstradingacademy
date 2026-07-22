@@ -33,7 +33,7 @@ export function FAQ() {
             className="lg:col-span-2 lg:sticky lg:top-32 lg:self-start"
           >
             <Badge className="mb-4">{t("landing.faq.badge")}</Badge>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-foreground to-foreground-tertiary bg-clip-text text-transparent">
               {t("landing.faq.heading")}{" "}
               <br className="hidden lg:block" />
               {t("landing.faq.headingLine2")}
@@ -51,7 +51,7 @@ export function FAQ() {
             viewport={viewportOnce}
             className="lg:col-span-3"
           >
-            <div className="bg-surface-1 rounded-[16px] border border-border p-6">
+            <div className="bg-surface-1 rounded-xl border border-border p-6">
               <Accordion type="single" collapsible className="w-full">
                 {faqItems.map((item, index) => (
                   <AccordionItem key={index} value={`item-${index}`}>

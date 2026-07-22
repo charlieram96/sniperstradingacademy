@@ -159,7 +159,7 @@ function renderPage(member: MemberProfile) {
           </p>
 
           {member.custom_message && (
-            <Card className="mb-8 max-w-2xl mx-auto  border-amber-400/20">
+            <Card className="mb-8 max-w-2xl mx-auto border-border-accent">
               <CardContent className="pt-6">
                 <p className="text-lg italic">&ldquo;{member.custom_message}&rdquo;</p>
                 <p className="text-sm text-muted-foreground mt-2">- {member.name}</p>
@@ -182,7 +182,7 @@ function renderPage(member: MemberProfile) {
 
           <div className="flex items-center justify-center gap-8 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-[#D4A853]" />
+              <CheckCircle className="h-4 w-4 text-gold-400" />
               <span>30-Day Money Back</span>
             </div>
             <div className="flex items-center gap-2">
@@ -190,7 +190,7 @@ function renderPage(member: MemberProfile) {
               <span>10,000+ Students</span>
             </div>
             <div className="flex items-center gap-2">
-              <Star className="h-4 w-4 text-yellow-500" />
+              <Star className="h-4 w-4 text-amber" />
               <span>4.9/5 Rating</span>
             </div>
           </div>
@@ -237,7 +237,7 @@ function renderPage(member: MemberProfile) {
             </p>
           </div>
 
-          <Card className=" border-amber-400/20">
+          <Card className="border-border-accent">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl">Full Academy Access</CardTitle>
               <CardDescription className="text-lg">
@@ -293,7 +293,7 @@ function renderPage(member: MemberProfile) {
       {/* Urgency Section */}
       <section className="py-20 px-4 bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto max-w-4xl text-center">
-          <Card className=" border-amber-400/20">
+          <Card className="border-border-accent">
             <CardHeader>
               <Zap className="h-12 w-12 text-primary mx-auto mb-4" />
               <CardTitle className="text-2xl">Limited Time Opportunity</CardTitle>

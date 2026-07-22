@@ -27,7 +27,7 @@ export function Curriculum() {
             viewport={viewportOnce}
           >
             <Badge className="mb-4">{t("landing.curriculum.badge")}</Badge>
-            <h2 className="text-4xl md:text-5xl font-bold mb-8 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+            <h2 className="text-4xl md:text-5xl font-bold mb-8 bg-gradient-to-r from-foreground to-foreground-tertiary bg-clip-text text-transparent">
               {t("landing.curriculum.heading")}
             </h2>
             <div className="space-y-6">
@@ -64,19 +64,19 @@ export function Curriculum() {
             viewport={viewportOnce}
             className="relative"
           >
-            <div className="aspect-video bg-surface-1 rounded-[20px] flex items-center justify-center border border-border relative overflow-hidden group">
+            <div className="aspect-video bg-surface-1 rounded-xl flex items-center justify-center border border-border relative overflow-hidden group">
               <div className="absolute inset-0 flex items-end justify-center p-8 opacity-20">
                 <svg viewBox="0 0 400 200" className="w-full h-full">
                   <defs>
                     <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stopColor="#D4A853" stopOpacity="0.4" />
-                      <stop offset="100%" stopColor="#D4A853" stopOpacity="0" />
+                      <stop offset="0%" stopColor="var(--gold-400)" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="var(--gold-400)" stopOpacity="0" />
                     </linearGradient>
                   </defs>
                   <motion.path
                     d="M0,150 Q50,140 100,100 T200,80 T300,40 T400,60"
                     fill="none"
-                    stroke="#D4A853"
+                    stroke="var(--gold-400)"
                     strokeWidth="3"
                     variants={pathDraw}
                     initial="hidden"
@@ -91,7 +91,7 @@ export function Curriculum() {
               </div>
               <LineChart className="h-32 w-32 text-gold-400/40 z-10 group-hover:scale-110 transition-transform" />
             </div>
-            <div className="absolute -bottom-6 -right-6 bg-gradient-to-br from-gold-400 to-gold-500 rounded-[12px] p-6 shadow-[var(--shadow-gold-lg)] border border-gold-300/20 animate-float">
+            <div className="absolute -bottom-6 -right-6 bg-gradient-to-br from-gold-400 to-gold-500 rounded-lg p-6 shadow-[var(--shadow-gold-lg)] border border-gold-300/20 animate-float">
               <Trophy className="h-10 w-10 mb-2 text-primary-foreground" />
               <p className="font-bold text-lg text-primary-foreground">
                 {t("landing.curriculum.certification")}
