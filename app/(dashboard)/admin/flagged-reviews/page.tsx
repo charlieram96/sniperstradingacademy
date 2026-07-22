@@ -380,7 +380,7 @@ export default function FlaggedReviewsPage() {
                           : t("admin.flaggedReviews.neverPaid")}
                       </TableCell>
                       <TableCell>
-                        <Badge className={u.is_active ? "bg-[#D4A853] text-white" : "bg-gray-500 text-white"}>
+                        <Badge variant={u.is_active ? "success" : "secondary"}>
                           {u.is_active ? t("admin.flaggedReviews.active") : t("admin.flaggedReviews.inactive")}
                         </Badge>
                       </TableCell>

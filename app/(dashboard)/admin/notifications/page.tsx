@@ -437,7 +437,7 @@ export default function AdminNotificationsPage() {
 
       {message && (
         <div className={`mb-6 p-4 rounded-lg flex items-center gap-2 ${
-          message.type === 'success' ? 'bg-[#D4A853]/10 text-[#D4A853]' : 'bg-red-500/10 text-red-400'
+          message.type === 'success' ? 'bg-gold-400/10 text-gold-400' : 'bg-red-500/10 text-red-400'
         }`}>
           {message.type === 'success' ? (
             <CheckCircle2 className="h-5 w-5" />
@@ -463,7 +463,7 @@ export default function AdminNotificationsPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.notificationsManager.enabled")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#D4A853]">{stats.enabled}</div>
+            <div className="text-2xl font-bold text-gold-400">{stats.enabled}</div>
           </CardContent>
         </Card>
         <Card>
@@ -506,11 +506,11 @@ export default function AdminNotificationsPage() {
                               {getNotificationLabel(setting.notification_type)}
                             </Label>
                             {setting.enabled ? (
-                              <Badge variant="outline" className="bg-[#D4A853]/10 text-[#C49B3E] border-[#D4A853]/20">
+                              <Badge variant="gold">
                                 {t("admin.notificationsManager.enabledBadge")}
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                              <Badge variant="destructive">
                                 {t("admin.notificationsManager.disabledBadge")}
                               </Badge>
                             )}

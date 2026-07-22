@@ -360,7 +360,7 @@ export default function AdminClassesPage() {
                     <SelectContent>
                       <SelectItem value="green">
                         <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded bg-[#D4A853]"></div>
+                          <div className="w-4 h-4 rounded bg-gold-400"></div>
                           <span>{t("admin.classes.colorGreen")}</span>
                         </div>
                       </SelectItem>
@@ -469,7 +469,7 @@ export default function AdminClassesPage() {
                 <div>
                   <Label>{t("admin.classes.preview")}</Label>
                   <div className={`mt-2 p-3 rounded-lg border flex items-center justify-center gap-2 ${
-                    bannerColor === "green" ? "bg-[#D4A853] border-[#D4A853]/30" :
+                    bannerColor === "green" ? "bg-gold-400 border-gold-400/30" :
                     bannerColor === "red" ? "bg-red-600 border-red-700" :
                     bannerColor === "purple" ? "bg-gradient-to-r from-purple-600 to-purple-700 border-purple-800" :
                     bannerColor === "gray" ? "bg-gray-700 border-gray-800" :
@@ -504,7 +504,7 @@ export default function AdminClassesPage() {
             <div>
               {banner ? (
                 <div className={`p-3 rounded-lg border flex items-center gap-2 ${
-                  bannerColor === "green" ? "bg-[#D4A853] border-[#D4A853]/30" :
+                  bannerColor === "green" ? "bg-gold-400 border-gold-400/30" :
                   bannerColor === "red" ? "bg-red-600 border-red-700" :
                   bannerColor === "purple" ? "bg-gradient-to-r from-purple-600 to-purple-700 border-purple-800" :
                   bannerColor === "gray" ? "bg-gray-700 border-gray-800" :
@@ -565,7 +565,7 @@ export default function AdminClassesPage() {
                     key={classItem.id}
                     className={`p-5 rounded-lg border-2 min-h-[320px] flex flex-col ${
                       isFirst
-                        ? "bg-[#D4A853]/10 border-[#D4A853] shadow-sm shadow-[#D4A853]/20"
+                        ? "bg-gold-400/10 border-gold-400 shadow-sm shadow-gold-400/20"
                         : "border-border-subtle"
                     }`}
                   >
@@ -692,7 +692,7 @@ export default function AdminClassesPage() {
                     <div className="flex flex-col h-full">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <Badge className={isFirst ? "bg-[#D4A853] text-white" : "bg-surface-2"}>
+                          <Badge className={isFirst ? "bg-gold-400 text-white" : "bg-surface-2"}>
                             {isFirst ? t("admin.classes.nextClass") : t("admin.classes.upcoming")}
                           </Badge>
                           {classItem.is_live && (
@@ -702,7 +702,7 @@ export default function AdminClassesPage() {
                             </div>
                           )}
                         </div>
-                        <PlayCircle className={`h-5 w-5 ${isFirst ? "text-[#D4A853]" : "text-muted-foreground"}`} />
+                        <PlayCircle className={`h-5 w-5 ${isFirst ? "text-gold-400" : "text-muted-foreground"}`} />
                       </div>
                       <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-lg border border-border-subtle bg-surface-0">
                         <span className="text-xs font-medium text-foreground">Show as live to users</span>
@@ -742,7 +742,7 @@ export default function AdminClassesPage() {
                           {isFirst && (
                             <Button
                               size="sm"
-                              className="w-full bg-[#D4A853] hover:bg-[#B38A30] text-white"
+                              className="w-full"
                               onClick={() => openCompleteDialog(classItem)}
                             >
                               <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
@@ -808,7 +808,6 @@ export default function AdminClassesPage() {
               {t("common.cancel")}
             </Button>
             <Button
-              className="bg-[#D4A853] hover:bg-[#B38A30] text-white"
               onClick={confirmMarkComplete}
             >
               <CheckCircle className="h-4 w-4 mr-2" />

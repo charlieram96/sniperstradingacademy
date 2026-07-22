@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -592,15 +593,16 @@ export default function AcademyManagerPage() {
           <motion.div
             key={stat.label}
             variants={staggerItem}
-            className="bg-surface-1 border border-border-subtle rounded-xl p-4 flex items-center gap-3"
           >
-            <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${stat.accent}`}>
-              <stat.icon className="h-4.5 w-4.5" />
-            </div>
-            <div>
-              <p className="text-xl font-bold text-foreground">{stat.value}</p>
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
-            </div>
+            <Card className="flex-row items-center gap-3 rounded-xl bg-surface-1 border-border-subtle p-4">
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${stat.accent}`}>
+                <stat.icon className="h-4.5 w-4.5" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-foreground">{stat.value}</p>
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
+              </div>
+            </Card>
           </motion.div>
         ))}
       </motion.div>
@@ -621,8 +623,8 @@ export default function AcademyManagerPage() {
             <motion.div
               key={mod.id}
               variants={staggerItem}
-              className="bg-surface-1 border border-border-subtle rounded-xl overflow-hidden"
             >
+              <Card className="gap-0 overflow-hidden rounded-xl bg-surface-1 border-border-subtle">
               {/* Module Header */}
               {isEditing ? (
                 <div className="p-5 space-y-4 border-l-2 border-gold-400">
@@ -749,7 +751,7 @@ export default function AcademyManagerPage() {
 
                         if (isEditingThis) {
                           return (
-                            <div key={lesson.id} className="rounded-xl border border-gold-400/30 bg-surface-0 p-4 space-y-3 border-l-2 border-l-gold-400">
+                            <Card key={lesson.id} className="gap-3 rounded-xl border-gold-400/30 bg-surface-0 p-4 border-l-2 border-l-gold-400">
                               <div className="flex items-center justify-between">
                                 <p className="text-xs font-medium text-gold-400 uppercase tracking-wider">{t("admin.academyManager.editingLesson")}</p>
                                 <div className="flex items-center gap-2">
@@ -813,14 +815,14 @@ export default function AcademyManagerPage() {
                                   />
                                 </div>
                               )}
-                            </div>
+                            </Card>
                           )
                         }
 
                         return (
-                          <div
+                          <Card
                             key={lesson.id}
-                            className="group flex items-center gap-3 px-4 py-3 rounded-xl bg-surface-0 border border-border-subtle hover:border-border transition-colors"
+                            className="group flex-row items-center gap-3 px-4 py-3 rounded-xl bg-surface-0 border-border-subtle hover:border-border transition-colors"
                           >
                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${typeColor(lesson.type)}`}>
                               {typeIcon(lesson.type)}
@@ -857,7 +859,7 @@ export default function AcademyManagerPage() {
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
                             </div>
-                          </div>
+                          </Card>
                         )
                       })}
 
@@ -867,7 +869,7 @@ export default function AcademyManagerPage() {
 
                       {/* Add Lesson inline form */}
                       {addingLessonModuleId === mod.id ? (
-                        <div className="rounded-xl border border-dashed border-gold-400/30 bg-surface-0 p-4 space-y-3">
+                        <Card className="gap-3 rounded-xl border-dashed border-gold-400/30 bg-surface-0 p-4">
                           <div className="flex items-center justify-between">
                             <p className="text-xs font-medium text-gold-400 uppercase tracking-wider">{t("admin.academyManager.newLesson")}</p>
                             <div className="flex items-center gap-2">
@@ -931,7 +933,7 @@ export default function AcademyManagerPage() {
                               />
                             </div>
                           )}
-                        </div>
+                        </Card>
                       ) : (
                         <button
                           onClick={() => startAddLesson(mod.id)}
@@ -945,13 +947,15 @@ export default function AcademyManagerPage() {
                   </motion.div>
                 )}
               </AnimatePresence>
+              </Card>
             </motion.div>
           )
         })}
 
         {/* Add Module Card */}
         {addingModule ? (
-          <motion.div variants={staggerItem} className="bg-surface-1 border border-dashed border-gold-400/30 rounded-xl p-5 space-y-4">
+          <motion.div variants={staggerItem}>
+            <Card className="gap-4 rounded-xl border-dashed border-gold-400/30 bg-surface-1 p-5">
             <div className="flex items-center justify-between">
               <p className="text-xs font-medium text-gold-400 uppercase tracking-wider">{t("admin.academyManager.newModule")}</p>
               <div className="flex items-center gap-2">
@@ -1014,6 +1018,7 @@ export default function AcademyManagerPage() {
                 onCheckedChange={(checked) => setNewModuleForm({ ...newModuleForm, allow_inactive_users: checked })}
               />
             </div>
+            </Card>
           </motion.div>
         ) : (
           <motion.button

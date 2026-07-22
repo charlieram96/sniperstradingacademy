@@ -446,14 +446,14 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers, viewerRole }
                     members in downline
                   </div>
                 </div>
-                <div className="p-4 bg-[#D4A853]/10 rounded-lg border-2 border-[#D4A853]/20">
-                  <div className="text-sm text-[#D4A853] font-medium mb-1">
+                <div className="p-4 bg-gold-400/10 rounded-lg border-2 border-gold-400/20">
+                  <div className="text-sm text-gold-400 font-medium mb-1">
                     Active Members
                   </div>
-                  <div className="text-2xl font-bold text-[#D4A853]">
+                  <div className="text-2xl font-bold text-gold-400">
                     {selectedUser.active_network_count}
                   </div>
-                  <div className="text-xs text-[#D4A853]/80 mt-1">
+                  <div className="text-xs text-gold-400/80 mt-1">
                     active in downline
                   </div>
                 </div>
@@ -503,7 +503,7 @@ export function NetworkVisualizerClient({ usersByLevel, totalUsers, viewerRole }
                         key={child.positionId}
                         className={`p-4 rounded-lg border-2 ${
                           child.occupied
-                            ? "bg-[#D4A853]/10 border-[#D4A853]/20 dark:bg-[#D4A853]/10 dark:border-[#D4A853]/30"
+                            ? "bg-gold-400/10 border-gold-400/20 dark:bg-gold-400/10 dark:border-gold-400/30"
                             : "bg-surface-2 border-border-subtle"
                         }`}
                       >

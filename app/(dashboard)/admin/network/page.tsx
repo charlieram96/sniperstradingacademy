@@ -915,7 +915,7 @@ export default function AdminNetworkPage() {
               </div>
             ) : orphanedUsers.length === 0 ? (
               <div className="text-center py-4 text-muted-foreground">
-                <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-[#D4A853]" />
+                <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-gold-400" />
                 <p>{t("admin.network.noOrphanedUsers")}</p>
               </div>
             ) : (
@@ -991,7 +991,7 @@ export default function AdminNetworkPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">{t("admin.network.activeUsers")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-[#D4A853]">
+            <p className="text-2xl font-bold text-gold-400">
               {users.filter((u) => u.is_active).length}
             </p>
           </CardContent>
@@ -1143,7 +1143,7 @@ export default function AdminNetworkPage() {
                               </Badge>
                             )}
                             {user.bypass_subscription && (
-                              <Badge className="bg-[#D4A853] text-white">
+                              <Badge className="bg-gold-400 text-white">
                                 <CheckCircle2 className="h-3 w-3 mr-1" />
                                 {t("admin.network.bypassSubscription")}
                               </Badge>
@@ -1330,7 +1330,7 @@ export default function AdminNetworkPage() {
                     </div>
                     <div>
                       <p className="text-muted-foreground">{t("admin.network.initialPayment")}</p>
-                      <p className={`font-medium ${selectedUser.initial_payment_completed ? 'text-[#D4A853]' : 'text-yellow-600'}`}>
+                      <p className={`font-medium ${selectedUser.initial_payment_completed ? 'text-gold-400' : 'text-yellow-600'}`}>
                         {selectedUser.initial_payment_completed ? t("admin.network.completed") : t("admin.payouts.pending")}
                       </p>
                     </div>
@@ -1651,7 +1651,7 @@ export default function AdminNetworkPage() {
                     <span className="text-purple-600 ml-2">({t("admin.network.alreadyBypassed")})</span>
                   )}
                   {userForBypass?.initialPaymentCompleted && !userForBypass?.currentBypasses.initialPayment && (
-                    <span className="text-[#D4A853] ml-2">({t("admin.network.alreadyPaid")})</span>
+                    <span className="text-gold-400 ml-2">({t("admin.network.alreadyPaid")})</span>
                   )}
                 </label>
                 <p className="text-sm text-muted-foreground">
@@ -1796,7 +1796,7 @@ export default function AdminNetworkPage() {
         <DialogContent className="max-w-xs">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-[#D4A853]" />
+              <DollarSign className="h-5 w-5 text-gold-400" />
               {t("admin.network.manualPayoutTitle")}
             </DialogTitle>
             <DialogDescription>
@@ -1972,7 +1972,7 @@ export default function AdminNetworkPage() {
                       className="shrink-0"
                     >
                       {copiedAddress ? (
-                        <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
+                        <CheckCircle2 className="h-4 w-4 text-gold-400" />
                       ) : (
                         <Copy className="h-4 w-4" />
                       )}
