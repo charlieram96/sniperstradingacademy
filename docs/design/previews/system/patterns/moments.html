@@ -107,7 +107,7 @@ section{margin-top:44px}
 @keyframes medal-pop{from{opacity:0;transform:scale(0.6)}to{opacity:1;transform:scale(1)}}
 .rankup h3{position:relative;z-index:2;font-size:22px;font-weight:600;letter-spacing:-0.01em;color:var(--ink)}
 .rankup .rank-name{position:relative;z-index:2;display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:0.04em;color:var(--gold-200);background:rgba(212,168,83,0.14);border:1px solid rgba(212,168,83,0.40);border-radius:var(--r-pill);padding:6px 14px}
-.rankup .sub{position:relative;z-index:2;font-size:12.5px;color:var(--ink-2);line-height:1.55;max-width:320px}
+.rankup .sub{position:relative;z-index:2;font-size:12.5px;color:var(--ink-2);line-height:1.55;max-width:320px;font-variant-numeric:tabular-nums}
 .rankup .sub b{color:var(--ink);font-weight:600}
 /* confetti — 12 dots, one-shot rise + fade-in, CSS-only, animation-fill-mode:both */
 .confetti{position:absolute;inset:0;z-index:1;pointer-events:none}
@@ -134,7 +134,7 @@ section{margin-top:44px}
   animation:medal-pop var(--dur-enter) var(--ease-spring) both}
 .payout .eyebrow{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--emerald)}
 .payout .amount{font-family:var(--mono);font-size:32px;font-weight:600;letter-spacing:-0.02em;color:var(--ink);font-variant-numeric:tabular-nums}
-.payout .amount span{color:var(--ink-2);font-size:16px;font-weight:600;margin-left:4px}
+.payout .amount span{color:var(--ink-2);font-size:16px;font-weight:600;margin-left:0}
 .payout .sub{font-size:12.5px;color:var(--ink-2);line-height:1.55;max-width:300px}
 .tx-row{display:inline-flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11.5px;color:var(--ink-2);background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 13px;font-variant-numeric:tabular-nums;margin-top:2px}
 .tx-row .k{color:var(--ink-3);letter-spacing:0.04em}
@@ -152,7 +152,7 @@ section{margin-top:44px}
 .mile-head .k{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.10em;text-transform:uppercase;color:var(--ink-3)}
 .mile-count{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
 .mile-count b{color:var(--ink-3);font-weight:600}
-.mile-line{font-size:13px;color:var(--ink-2);line-height:1.5}
+.mile-line{font-size:13px;color:var(--ink-2);line-height:1.5;font-variant-numeric:tabular-nums}
 .mile-line b{color:var(--ink);font-weight:600}
 .bar{height:8px;background:rgba(255,255,255,0.06);border-radius:var(--r-pill);overflow:hidden;margin-top:2px}
 .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-300));border-radius:var(--r-pill)}
@@ -232,16 +232,16 @@ section{margin-top:44px}
           <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
         </div>
         <div class="eyebrow">Rank up!</div>
-        <span class="rank-medallion"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="m8.5 12.5-1.5 8L12 18l5 2.5-1.5-8"/></svg></span>
+        <span class="rank-medallion"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="m8.5 12.5-1.5 8L12 18l5 2.5-1.5-8"/></svg></span>
         <h3>Rank up!</h3>
-        <span class="rank-name"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="m8.5 12.5-1.5 8L12 18l5 2.5-1.5-8"/></svg>Delta Master Sniper</span>
+        <span class="rank-name"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="m8.5 12.5-1.5 8L12 18l5 2.5-1.5-8"/></svg>Delta Master Sniper</span>
         <div class="sub">You reached <b>Delta Master Sniper</b> — two structures complete, your rate is now <b>12%</b>. Structure 3 is where the next rank is won.</div>
       </div>
       <!-- payout received -->
       <div class="card payout">
-        <span class="check-medallion"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <span class="check-medallion"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
         <div class="eyebrow">Payout received</div>
-        <div class="amount">$5,412.00<span>USDC sent</span></div>
+        <div class="amount">$5,412.00 <span>USDC sent</span></div>
         <div class="sub">Your July commission settled to your wallet on Polygon. Funds are available now.</div>
         <div class="tx-row"><span class="k">TX</span><span class="hash">0x7C4d…9E2a</span><span class="net">Polygon</span></div>
         <a class="btn md btn-ghost" href="#"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>View on Polygonscan</a>
@@ -263,8 +263,8 @@ section{margin-top:44px}
       <div class="mile-body">
         <div class="mile-head">
           <span class="k">Structure 3</span>
-          <span class="mile-count">231<b> / 1,092</b></span>
-          <span class="chip-togo"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>861 to go</span>
+          <span class="mile-count">231<b>/1,092</b></span>
+          <span class="chip-togo"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>861 to go</span>
         </div>
         <div class="bar"><i style="width:21%"></i></div>
         <div class="mile-line">You've filled the first fifth of Structure 3. <b>On pace for August</b> — keep the referral flow steady and the third structure closes on schedule.</div>
@@ -285,7 +285,7 @@ section{margin-top:44px}
       </div>
       <div class="checklist">
         <div class="step done">
-          <span class="step-box"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <span class="step-box"><svg width="15" height="15" viewBox="3 3 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
           <div class="step-body"><div class="step-title">Create your account</div><div class="step-desc">Done — you're signed in as charlieram96@gmail.com.</div></div>
           <span class="step-n">1/3</span>
         </div>
@@ -312,7 +312,7 @@ section{margin-top:44px}
         <span class="dd-tag do">✓ Do</span>
         <div class="dd-stage">
           <div class="mini gold">Payout received · $5,412.00</div>
-          <div class="mini quiet">Structure 3 · 231 / 1,092</div>
+          <div class="mini quiet">Structure 3 · 231/1,092</div>
           <div class="mini quiet flex">Team members · recent activity</div>
         </div>
         <div class="dd-copy">Spend the gold on <b>one hero</b>. Everything around it stays on quiet surfaces so the celebration reads as the single most important thing on the screen.</div>
