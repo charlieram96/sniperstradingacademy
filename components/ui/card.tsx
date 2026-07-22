@@ -4,14 +4,17 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const cardVariants = cva(
-  "text-card-foreground flex flex-col gap-4 rounded-[12px] border",
+  "text-card-foreground flex flex-col gap-4 rounded-[10px] border",
   {
     variants: {
       variant: {
-        default: "bg-surface-2 border-border shadow-[var(--shadow-sm)]",
-        elevated: "bg-surface-3 border-border shadow-[var(--shadow-md)]",
-        highlighted: "bg-surface-2 border-border-accent shadow-[var(--shadow-gold-sm)]",
-        interactive: "bg-surface-2 border-border shadow-[var(--shadow-sm)] hover:border-border-strong hover:shadow-[var(--shadow-md)] cursor-pointer transition-all duration-150",
+        default: "bg-surface-0 border-border shadow-[var(--sh-sm)]",
+        elevated: "bg-surface-2 border-border shadow-[var(--sh-md)]",
+        highlighted: "bg-surface-0 border-border-accent shadow-[var(--shadow-gold-sm)]",
+        interactive:
+          "bg-surface-0 border-border shadow-[var(--sh-sm)] hover:border-border-strong hover:shadow-[var(--sh-md)] cursor-pointer transition-all duration-[var(--dur-std)] ease-[var(--ease-out)]",
+        featured:
+          "relative isolate overflow-hidden bg-surface-0 border-gold-400/30 shadow-[var(--sh-gold)] before:content-[''] before:absolute before:inset-x-0 before:top-0 before:z-10 before:h-0.5 before:bg-gradient-to-r before:from-gold-300 before:to-gold-500 after:content-[''] after:absolute after:inset-0 after:-z-10 after:bg-gradient-to-b after:from-gold-400/[0.07] after:to-transparent",
       },
     },
     defaultVariants: {
