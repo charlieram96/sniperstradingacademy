@@ -4,26 +4,26 @@
 
 :root {
   /* ─── Background ─── */
-  --background: #060A16;
-  --foreground: #E2E8F0;
+  --background: #05080F;
+  --foreground: #E6EAF2;
 
   /* ─── Foreground tiers ─── */
-  --foreground-secondary: #94A3B8;
-  --foreground-tertiary: #64748B;
+  --foreground-secondary: #8B95A9;
+  --foreground-tertiary: #525D73;
   --foreground-quaternary: #475569;
 
   /* ─── Opaque surface elevation (no transparency) ─── */
-  --surface-0: #080C1A;
-  --surface-1: #0B1022;
-  --surface-2: #0F1629;
-  --surface-3: #151D33;
-  --surface-4: #1B2540;
-  --surface-overlay: #121A30;
+  --surface-0: #0A0F1C;
+  --surface-1: #0A0F1C;
+  --surface-2: #101728;
+  --surface-3: #101728;
+  --surface-4: #151D33;
+  --surface-overlay: #151D33;
 
   /* ─── Card / Popover ─── */
-  --card: #0F1629;
+  --card: #0A0F1C;
   --card-foreground: #E2E8F0;
-  --popover: #121A30;
+  --popover: #151D33;
   --popover-foreground: #E2E8F0;
 
   /* ─── Gold palette (8 stops) ─── */
@@ -39,9 +39,9 @@
 
   /* ─── Primary/accent = gold ─── */
   --primary: #D4A853;
-  --primary-foreground: #060A16;
+  --primary-foreground: #05080F;
   --accent: #D4A853;
-  --accent-foreground: #060A16;
+  --accent-foreground: #05080F;
   --accent-hover: #C49B3E;
 
   /* ─── Secondary ─── */
@@ -49,60 +49,81 @@
   --secondary-foreground: #E2E8F0;
 
   /* ─── Muted ─── */
-  --muted: #0F1629;
-  --muted-foreground: #64748B;
+  --muted: #101728;
+  --muted-foreground: #525D73;
 
   /* ─── Blue accent ─── */
   --blue-400: #60A5FA;
   --blue-500: #3B82F6;
   --blue-600: #2563EB;
 
-  /* ─── Destructive ─── */
-  --destructive: #DC2626;
-  --destructive-foreground: #ffffff;
+  /* ─── Status accents ─── */
+  --emerald: #34D399;
+  --emerald-dim: rgba(52, 211, 153, 0.12);
+  --red: #F87171;
+  --red-dim: rgba(248, 113, 113, 0.12);
+  --amber: #FBBF24;
+  --amber-dim: rgba(251, 191, 36, 0.12);
+  --blue-dim: rgba(96, 165, 250, 0.12);
+
+  /* ─── Destructive (semantic solid red = --red; button wash uses --red-dim/--red directly) ─── */
+  --destructive: #F87171;
+  --destructive-foreground: #05080F;
 
   /* ─── Border tiers ─── */
-  --border: rgba(255, 255, 255, 0.08);
-  --border-subtle: rgba(255, 255, 255, 0.04);
-  --border-strong: rgba(255, 255, 255, 0.14);
+  --border: rgba(255, 255, 255, 0.10);
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-strong: rgba(255, 255, 255, 0.16);
   --border-accent: rgba(212, 168, 83, 0.25);
   --border-interactive: rgba(212, 168, 83, 0.40);
 
   /* ─── Input ─── */
-  --input: #0B1022;
+  --input: #0A0F1C;
   --ring: #D4A853;
 
   /* ─── Radius ─── */
-  --radius: 0.75rem;
+  --radius: 10px;
   --radius-xs: 4px;
   --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
   --radius-xl: 16px;
   --radius-2xl: 20px;
 
-  /* ─── Shadows (layered) ─── */
+  /* ─── Shadows (canonical --sh-*; old names kept as aliases) ─── */
+  --sh-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --sh-md: 0 4px 12px rgba(0, 0, 0, 0.28), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --sh-lg: 0 12px 32px rgba(0, 0, 0, 0.35), 0 4px 8px rgba(0, 0, 0, 0.25);
+  --sh-gold: 0 2px 12px rgba(212, 168, 83, 0.18);
+
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
+  --shadow-sm: var(--sh-sm);
+  --shadow-md: var(--sh-md);
+  --shadow-lg: var(--sh-lg);
   --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.4), 0 8px 16px rgba(0, 0, 0, 0.25);
   --shadow-gold-sm: 0 2px 8px rgba(212, 168, 83, 0.08), 0 1px 2px rgba(212, 168, 83, 0.06);
   --shadow-gold-md: 0 4px 16px rgba(212, 168, 83, 0.12), 0 2px 4px rgba(212, 168, 83, 0.08);
   --shadow-gold-lg: 0 8px 32px rgba(212, 168, 83, 0.15), 0 4px 8px rgba(212, 168, 83, 0.1);
 
+  /* ─── Motion tokens ─── */
+  --dur-micro: 120ms;
+  --dur-std: 200ms;
+  --dur-enter: 320ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.44, 1);
+
   /* ─── Charts ─── */
   --chart-1: #D4A853;
-  --chart-2: #C49B3E;
-  --chart-3: #3B82F6;
-  --chart-4: #2563EB;
-  --chart-5: #1D4ED8;
+  --chart-2: #60A5FA;
+  --chart-3: #34D399;
+  --chart-4: #A78BFA;
+  --chart-5: #8B95A9;
 
   /* ─── Sidebar ─── */
   --sidebar: #080C1A;
   --sidebar-foreground: #CBD5E1;
   --sidebar-primary: #D4A853;
-  --sidebar-primary-foreground: #060A16;
+  --sidebar-primary-foreground: #05080F;
   --sidebar-accent: #151D33;
   --sidebar-accent-foreground: #E2E8F0;
   --sidebar-border: rgba(255, 255, 255, 0.06);
@@ -153,6 +174,14 @@
   --color-blue-400: var(--blue-400);
   --color-blue-500: var(--blue-500);
   --color-blue-600: var(--blue-600);
+  --color-blue-dim: var(--blue-dim);
+
+  --color-emerald: var(--emerald);
+  --color-emerald-dim: var(--emerald-dim);
+  --color-red: var(--red);
+  --color-red-dim: var(--red-dim);
+  --color-amber: var(--amber);
+  --color-amber-dim: var(--amber-dim);
 
   --color-border: var(--border);
   --color-border-subtle: var(--border-subtle);
@@ -203,12 +232,10 @@
 
 /* ─── Keyframe Animations (kept/refined) ─── */
 
+/* Canonical skeleton shimmer — from system/foundations/motion.html */
 @keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
   100% {
-    background-position: 200% 0;
+    transform: translateX(100%);
   }
 }
 
@@ -341,9 +368,16 @@
   }
 
   .animate-shimmer {
-    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.3), transparent);
-    background-size: 200% 100%;
-    animation: shimmer 3s ease-in-out infinite;
+    position: relative;
+    overflow: hidden;
+  }
+  .animate-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+    animation: shimmer 1.5s ease-in-out infinite;
   }
 
   .animate-glow {
