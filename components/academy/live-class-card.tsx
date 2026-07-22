@@ -3,6 +3,7 @@
 import { motion } from "framer-motion"
 import { Calendar, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { slideInFromRight } from "@/lib/motion"
 
 interface AcademyClass {
@@ -36,10 +37,7 @@ function ClassCard({ cls }: { cls: AcademyClass }) {
 
       {/* LIVE badge - only shown when class time has arrived */}
       {isLive && (
-        <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20">
-          <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-gentle-pulse" />
-          <span className="text-[10px] font-semibold text-red-400 uppercase tracking-wider">Live</span>
-        </div>
+        <Badge variant="live" className="absolute top-3 right-3">Live</Badge>
       )}
 
       <div className="pl-3">

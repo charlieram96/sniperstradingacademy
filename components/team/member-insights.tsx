@@ -35,6 +35,14 @@ import {
 } from "@/components/ui/select"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table"
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -448,19 +456,19 @@ export function MemberInsights({ userId }: { userId: string }) {
 
         {/* Revenue This Month */}
         <motion.div variants={staggerItem}>
-          <Card className="border-[#D4A853]/30">
+          <Card className="border-gold-400/30">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">
                     Revenue This Month
                   </p>
-                  <p className="text-2xl font-bold text-[#D4A853]">
+                  <p className="text-2xl font-bold text-gold-400">
                     {formatCurrency(stats.revenueThisMonth)}
                   </p>
                 </div>
-                <div className="rounded-full bg-[#D4A853]/10 p-2">
-                  <DollarSign className="size-5 text-[#D4A853]" />
+                <div className="rounded-full bg-gold-400/10 p-2">
+                  <DollarSign className="size-5 text-gold-400" />
                 </div>
               </div>
             </CardContent>
@@ -583,79 +591,77 @@ export function MemberInsights({ userId }: { userId: string }) {
               </div>
 
               {/* Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border text-muted-foreground">
-                      {(
-                        [
-                          ["name", "Name"],
-                          ["status", "Status"],
-                          ["lastPaid", "Last Paid"],
-                          ["nextDue", "Next Due"],
-                          ["schedule", "Schedule"],
-                          ["joined", "Joined"],
-                        ] as [SortColumn, string][]
-                      ).map(([col, label]) => (
-                        <th key={col} className="text-left py-2 px-2 font-medium">
-                          <button
-                            onClick={() => toggleSort(col)}
-                            className="hover:text-foreground transition-colors"
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {(
+                      [
+                        ["name", "Name"],
+                        ["status", "Status"],
+                        ["lastPaid", "Last Paid"],
+                        ["nextDue", "Next Due"],
+                        ["schedule", "Schedule"],
+                        ["joined", "Joined"],
+                      ] as [SortColumn, string][]
+                    ).map(([col, label]) => (
+                      <TableHead key={col}>
+                        <button
+                          onClick={() => toggleSort(col)}
+                          className="uppercase tracking-[0.08em] hover:text-foreground transition-colors"
+                        >
+                          {label}
+                          {sortArrow(col)}
+                        </button>
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedMembers.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={6}
+                        className="py-12 text-center text-muted-foreground"
+                      >
+                        No members found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedMembers.map((m) => (
+                      <TableRow
+                        key={m.id}
+                        onClick={() => openMemberDetail(m)}
+                        className="cursor-pointer"
+                      >
+                        <TableCell className="font-medium text-foreground">
+                          {m.name}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={m.is_active ? "success" : "secondary"}
                           >
-                            {label}
-                            {sortArrow(col)}
-                          </button>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedMembers.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={6}
-                          className="py-12 text-center text-muted-foreground"
-                        >
-                          No members found
-                        </td>
-                      </tr>
-                    ) : (
-                      paginatedMembers.map((m) => (
-                        <tr
-                          key={m.id}
-                          onClick={() => openMemberDetail(m)}
-                          className="border-b border-border/50 hover:bg-surface-2 cursor-pointer transition-colors"
-                        >
-                          <td className="py-2.5 px-2 font-medium">
-                            {m.name}
-                          </td>
-                          <td className="py-2.5 px-2">
-                            <Badge
-                              variant={m.is_active ? "success" : "secondary"}
-                            >
-                              {m.is_active ? "Active" : "Inactive"}
-                            </Badge>
-                          </td>
-                          <td className="py-2.5 px-2 text-muted-foreground">
-                            {formatDate(m.last_payment_date)}
-                          </td>
-                          <td className="py-2.5 px-2 text-muted-foreground">
-                            {formatDate(m.next_payment_due_date)}
-                          </td>
-                          <td className="py-2.5 px-2">
-                            <Badge variant="outline">
-                              {formatSchedule(m.payment_schedule)}
-                            </Badge>
-                          </td>
-                          <td className="py-2.5 px-2 text-muted-foreground">
-                            {formatDate(m.created_at)}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                            {m.is_active ? "Active" : "Inactive"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {formatDate(m.last_payment_date)}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {formatDate(m.next_payment_due_date)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {formatSchedule(m.payment_schedule)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {formatDate(m.created_at)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
 
               {/* Pagination */}
               {filteredMembers.length > 0 && (

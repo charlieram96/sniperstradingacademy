@@ -265,18 +265,18 @@ export default function TeamPage() {
       {/* Qualification Status Alert - TOP OF PAGE */}
       <Card className={`${
         isQualifiedForCurrentStructure
-          ? 'border-[#D4A853] bg-[#D4A853]/5'
+          ? 'border-gold-400 bg-gold-400/5'
           : 'border-amber-500 bg-amber-500/5'
       }`}>
         <CardHeader>
           <div className="flex items-start gap-3">
             {isQualifiedForCurrentStructure ? (
-              <CheckCircle className="h-6 w-6 text-[#D4A853] flex-shrink-0 mt-0.5" />
+              <CheckCircle className="h-6 w-6 text-gold-400 flex-shrink-0 mt-0.5" />
             ) : (
               <AlertCircle className="h-6 w-6 text-amber-500 flex-shrink-0 mt-0.5" />
             )}
             <div className="flex-1">
-              <CardTitle className={isQualifiedForCurrentStructure ? 'text-[#C49B3E] dark:text-[#D4A853]' : 'text-foreground'}>
+              <CardTitle className={isQualifiedForCurrentStructure ? 'text-gold-500 dark:text-gold-400' : 'text-foreground'}>
                 {isQualifiedForCurrentStructure
                   ? `✓ ${t("team.qualifiedForStructure")} ${teamStats.structures} ${t("team.payouts")}!`
                   : t("team.qualificationStatus")}
@@ -291,7 +291,7 @@ export default function TeamPage() {
                     ⚠️ You must be active (paid subscription) to qualify for payouts
                   </span>
                 ) : isQualifiedForCurrentStructure ? (
-                  <span className="text-[#D4A853] dark:text-[#D4A853]">
+                  <span className="text-gold-400">
                     You meet all requirements for Structure {teamStats.structures} earnings. Keep building to unlock higher structures!
                   </span>
                 ) : (
@@ -309,7 +309,7 @@ export default function TeamPage() {
             <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
               <div className="flex items-center gap-2">
                 {isUserActive ? (
-                  <CheckCircle className="h-4 w-4 text-[#D4A853]" />
+                  <CheckCircle className="h-4 w-4 text-gold-400" />
                 ) : (
                   <XCircle className="h-4 w-4 text-destructive" />
                 )}
@@ -327,7 +327,7 @@ export default function TeamPage() {
                   {t("team.activeDirectReferrals")} ({t("team.structure")} {teamStats.structures})
                 </span>
                 <span className={`text-sm font-bold ${
-                  activeDirectCount >= requiredActiveReferrals ? 'text-[#D4A853]' : 'text-muted-foreground'
+                  activeDirectCount >= requiredActiveReferrals ? 'text-gold-400' : 'text-muted-foreground'
                 }`}>
                   {activeDirectCount}/{requiredActiveReferrals}
                 </span>
@@ -336,7 +336,7 @@ export default function TeamPage() {
                 value={(activeDirectCount / requiredActiveReferrals) * 100}
                 className={`h-2 ${
                   activeDirectCount >= requiredActiveReferrals
-                    ? 'bg-[#D4A853]/10 dark:bg-[#D4A853]/10'
+                    ? 'bg-gold-400/10'
                     : 'bg-surface-2'
                 }`}
               />
@@ -559,9 +559,9 @@ export default function TeamPage() {
                     <div className="text-2xl font-bold mt-1">{selectedMember.total_network_count || 0}</div>
                     <div className="text-xs text-muted-foreground mt-1">{t("team.allMembersInStructure")}</div>
                   </div>
-                  <div className="p-3 rounded-lg bg-[#D4A853]/5 border border-[#D4A853]/20">
+                  <div className="p-3 rounded-lg bg-gold-400/5 border border-gold-400/20">
                     <div className="text-xs text-muted-foreground">{t("team.activeMembers")}</div>
-                    <div className="text-2xl font-bold text-[#D4A853] mt-1">{selectedMember.active_network_count || 0}</div>
+                    <div className="text-2xl font-bold text-gold-400 mt-1">{selectedMember.active_network_count || 0}</div>
                     <div className="text-xs text-muted-foreground mt-1">{t("team.withSubscription")}</div>
                   </div>
                 </div>
@@ -572,7 +572,7 @@ export default function TeamPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">{t("team.qualifiedForPayouts")}</span>
                   {selectedMember.is_active && (selectedMember.active_direct_referrals_count || 0) >= 3 ? (
-                    <div className="flex items-center gap-1 text-[#D4A853]">
+                    <div className="flex items-center gap-1 text-gold-400">
                       <CheckCircle className="h-4 w-4" />
                       <span className="text-sm font-medium">Yes</span>
                     </div>
@@ -590,7 +590,7 @@ export default function TeamPage() {
                     Needs {3 - (selectedMember.active_direct_referrals_count || 0)} more active direct referrals
                   </p>
                 ) : (
-                  <p className="text-xs text-[#D4A853] mt-2">Meets all requirements ✓</p>
+                  <p className="text-xs text-gold-400 mt-2">Meets all requirements ✓</p>
                 )}
               </div>
             </div>

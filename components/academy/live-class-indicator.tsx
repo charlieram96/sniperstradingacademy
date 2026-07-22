@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { GraduationCap, Calendar, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { createClient } from "@/lib/supabase/client"
 import { computeIsActive } from "@/lib/user-status"
@@ -78,10 +79,7 @@ export function LiveClassIndicator() {
       <PopoverContent align="end" className="w-72">
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20">
-              <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-gentle-pulse" />
-              <span className="text-[10px] font-semibold text-red-400 uppercase tracking-wider">{label}</span>
-            </div>
+            <Badge variant="live">{label}</Badge>
           </div>
           {classes.map((cls, index) => {
             const scheduledDate = new Date(cls.scheduled_at)

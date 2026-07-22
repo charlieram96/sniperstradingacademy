@@ -231,7 +231,7 @@ export default function ReferralsPage() {
                     size="icon"
                   >
                     {copied ? (
-                      <Check className="h-4 w-4 text-[#D4A853]" />
+                      <Check className="h-4 w-4 text-gold-400" />
                     ) : (
                       <Copy className="h-4 w-4" />
                     )}
@@ -275,7 +275,7 @@ export default function ReferralsPage() {
                     size="icon"
                   >
                     {copiedUrl ? (
-                      <Check className="h-4 w-4 text-[#D4A853]" />
+                      <Check className="h-4 w-4 text-gold-400" />
                     ) : (
                       <Copy className="h-4 w-4" />
                     )}

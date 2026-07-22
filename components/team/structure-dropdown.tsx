@@ -31,6 +31,21 @@ interface TeamMember {
   parent_id?: string | null
 }
 
+// Rank (network level) badge — gold intensity scales with rank, ported from the
+// system spec's 7-rank ladder (feedback.html §04). Levels 1-6 map to r1-r6.
+const RANK_BADGE_CLASSES: Record<number, string> = {
+  1: "bg-gold-400/[0.06] border-gold-400/[0.18] text-gold-600",
+  2: "bg-gold-400/10 border-gold-400/[0.28] text-gold-500",
+  3: "bg-gold-400/[0.14] border-gold-400/[0.36] text-gold-400",
+  4: "bg-gold-400/[0.19] border-gold-400/[0.44] text-gold-300",
+  5: "bg-gold-400/[0.25] border-gold-400/[0.54] text-gold-200",
+  6: "bg-gold-400/[0.33] border-gold-400/[0.64] text-gold-100 shadow-[var(--sh-gold)]",
+}
+
+function rankBadgeClass(level: number): string {
+  return RANK_BADGE_CLASSES[Math.min(6, Math.max(1, level))] ?? RANK_BADGE_CLASSES[1]
+}
+
 interface StructureDropdownProps {
   structureNum: number
   isActive: boolean
@@ -214,8 +229,10 @@ export function StructureDropdown({
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-muted-foreground">Rank</p>
-                  <p className="text-2xl font-bold text-primary">Level {selectedMember.level}</p>
+                  <p className="text-sm text-muted-foreground mb-1.5">Rank</p>
+                  <Badge className={rankBadgeClass(selectedMember.level)}>
+                    Level {selectedMember.level}
+                  </Badge>
                 </div>
               </div>
               
@@ -288,7 +305,7 @@ export function StructureDropdown({
                     <span className="text-sm">Qualification Status</span>
                     <span className="text-sm font-medium">
                       {(selectedMember.referrals_count || 0) >= 3 ? (
-                        <Badge className="bg-[#D4A853]/10 text-[#D4A853]">Qualified</Badge>
+                        <Badge variant="gold">Qualified</Badge>
                       ) : (
                         <Badge variant="outline">
                           {3 - (selectedMember.referrals_count || 0)} more needed

@@ -333,7 +333,9 @@ function TeamTreeVisualizationInner({ members, onMemberClick, showOnlyMembers = 
                 type: 'smoothstep',
                 animated: memberAtPosition?.subscription_status === 'active',
                 style: {
-                  stroke: memberAtPosition?.is_direct_referral ? '#D4A853' : 
+                  // stroke colours are applied to the SVG edge <path> (DOM), so CSS
+                  // custom properties resolve; gold uses the --gold-400 token.
+                  stroke: memberAtPosition?.is_direct_referral ? 'var(--gold-400)' :
                          memberAtPosition?.spillover_from ? '#3b82f6' : '#d1d5db',
                   strokeWidth: memberAtPosition ? 2 : 1,
                   opacity: memberAtPosition ? 1 : 0.3
@@ -390,7 +392,8 @@ function TeamTreeVisualizationInner({ members, onMemberClick, showOnlyMembers = 
                   type: 'smoothstep',
                   animated: member.subscription_status === 'active',
                   style: {
-                    stroke: member.is_direct_referral ? '#D4A853' : 
+                    // SVG edge <path> resolves CSS vars; gold uses the --gold-400 token.
+                    stroke: member.is_direct_referral ? 'var(--gold-400)' :
                            member.spillover_from ? '#3b82f6' : '#6b7280',
                     strokeWidth: 2
                   }
@@ -447,7 +450,9 @@ function TeamTreeVisualizationInner({ members, onMemberClick, showOnlyMembers = 
           <MiniMap 
             nodeColor={(node) => {
               const member = node.data?.member
-              if (member?.subscription_status === 'active') return '#D4A853'
+              // MiniMap paints to <canvas>, which cannot resolve CSS vars, so this
+              // must stay a literal; #D4A853 is the --gold-400 token value.
+              if (member?.subscription_status === 'active') return '#D4A853' /* --gold-400 */
               return '#6b7280'
             }}
             pannable
@@ -468,7 +473,7 @@ function TeamTreeVisualizationInner({ members, onMemberClick, showOnlyMembers = 
           <span className="text-xs">Spillover</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-12 h-0.5 bg-[#D4A853]" />
+          <div className="w-12 h-0.5 bg-gold-400" />
           <span className="text-xs">Direct connection</span>
         </div>
         <div className="flex items-center gap-2">
