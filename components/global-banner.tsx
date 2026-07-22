@@ -39,7 +39,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
 
 // Color styling mapping (all with white text)
 const COLOR_MAP: Record<string, string> = {
-  green: "bg-[#D4A853]/90 border-[#C49B3E]/50",
+  green: "bg-gold-400/90 border-gold-500/50",
   red: "bg-red-600/90 border-red-700/50",
   purple: "bg-gradient-to-r from-purple-600/90 to-purple-700/90 border-purple-800/50",
   gray: "bg-gray-700/90 border-gray-800/50",

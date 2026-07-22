@@ -42,20 +42,20 @@ export function BypassAccessBanner({
         </p>
         <div className="flex flex-wrap gap-2">
           {bypassInitialPayment && (
-            <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200">
-              <Unlock className="h-3 w-3 mr-1" />
+            <Badge variant="info">
+              <Unlock className="h-3 w-3" />
               {t("banners.bypassAccess.initialPayment")}
             </Badge>
           )}
           {bypassSubscription && (
-            <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-200">
-              <CreditCard className="h-3 w-3 mr-1" />
+            <Badge variant="secondary">
+              <CreditCard className="h-3 w-3" />
               {t("banners.bypassAccess.monthlySubscription")}
             </Badge>
           )}
           {bypassDirectReferrals > 0 && (
-            <Badge variant="secondary" className="bg-[#D4A853]/10 text-[#C49B3E] dark:bg-[#D4A853]/10 dark:text-[#D4A853]">
-              <Users className="h-3 w-3 mr-1" />
+            <Badge variant="gold">
+              <Users className="h-3 w-3" />
               {t("banners.bypassAccess.directReferralsBypassed", { count: bypassDirectReferrals, plural: bypassDirectReferrals !== 1 ? "s" : "" })}
             </Badge>
           )}

@@ -81,21 +81,21 @@ export function AccountStatusCard({
 
   const getStatusColor = () => {
     // Bypassed users always show green/active status
-    if (bypassSubscription) return "bg-[#D4A853]/10 text-[#D4A853] border-[#D4A853]/20"
+    if (bypassSubscription) return "bg-gold-400/10 text-gold-400 border-gold-400/20"
     if (!accountActive) return "bg-red-500/10 text-red-500 border-red-500/20"
     if (isOverdue) return "bg-red-500/10 text-red-500 border-red-500/20"
     if (daysUntilDue <= 3) return "bg-amber-500/10 text-amber-500 border-amber-500/20"
     if (daysUntilDue <= 7) return "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
-    return "bg-[#D4A853]/10 text-[#D4A853] border-[#D4A853]/20"
+    return "bg-gold-400/10 text-gold-400 border-gold-400/20"
   }
 
   const getStatusIcon = () => {
     // Bypassed users always show checkmark
-    if (bypassSubscription) return <CheckCircle className="h-5 w-5 text-[#D4A853]" />
+    if (bypassSubscription) return <CheckCircle className="h-5 w-5 text-gold-400" />
     if (!accountActive) return <XCircle className="h-5 w-5 text-red-500" />
     if (isOverdue) return <AlertTriangle className="h-5 w-5 text-red-500" />
     if (daysUntilDue <= 7) return <AlertTriangle className="h-5 w-5 text-amber-500" />
-    return <CheckCircle className="h-5 w-5 text-[#D4A853]" />
+    return <CheckCircle className="h-5 w-5 text-gold-400" />
   }
 
   const getStatusText = () => {
@@ -267,7 +267,7 @@ export function AccountStatusCard({
             </div>
             {payoutWalletAddress ? (
               <>
-                <p className="text-lg font-semibold text-[#D4A853]">
+                <p className="text-lg font-semibold text-gold-400">
                   Configured
                 </p>
                 <p className="text-xs text-muted-foreground font-mono">

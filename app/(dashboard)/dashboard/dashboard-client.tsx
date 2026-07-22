@@ -9,7 +9,10 @@ import { Progress } from "@/components/ui/progress"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { formatCurrency } from "@/lib/utils"
-import { Users, DollarSign, TrendingUp, UserPlus, Lock, Unlock, CreditCard, AlertTriangle, Medal, Trophy, Star, Award, Target, Crown, GraduationCap, BookOpen, PlayCircle, CheckCircle2, Wallet, ExternalLink, Clock, Calendar } from "lucide-react"
+import { Lock, Unlock, CreditCard, AlertTriangle, Medal, Trophy, Star, Award, Target, Crown, GraduationCap, BookOpen, PlayCircle, CheckCircle2, Wallet, ExternalLink, Calendar } from "lucide-react"
+import { StatTile } from "@/components/patterns/stat-tile"
+import { SkeletonClassCard } from "@/components/patterns/skeleton"
+import { EmptyState } from "@/components/patterns/empty-state"
 import { NavigationLink } from "@/components/navigation-link"
 import { isTestUser } from "@/lib/mock-data"
 import { createClient } from "@/lib/supabase/client"
@@ -238,19 +241,19 @@ export function DashboardClient({
                 <h3 className="font-semibold text-amber-900 dark:text-amber-200 mb-2">{t("dashboard.whatYouUnlock")}</h3>
                 <ul className="space-y-2 text-sm text-amber-800 dark:text-amber-300">
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
+                    <CheckCircle2 className="h-4 w-4 text-gold-400" />
                     {t("dashboard.unlockAcademy")}
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
+                    <CheckCircle2 className="h-4 w-4 text-gold-400" />
                     {t("dashboard.unlockReferrals")}
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
+                    <CheckCircle2 className="h-4 w-4 text-gold-400" />
                     {t("dashboard.unlockTeam")}
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
+                    <CheckCircle2 className="h-4 w-4 text-gold-400" />
                     {t("dashboard.unlockFinance")}
                   </li>
                 </ul>
@@ -297,15 +300,16 @@ export function DashboardClient({
         </CardHeader>
         <CardContent>
           {classesLoading ? (
-            <div className="flex items-center justify-center py-8 text-muted-foreground">
-              <Clock className="h-4 w-4 animate-pulse mr-2" />
-              {t("dashboard.loadingClasses")}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <SkeletonClassCard key={i} />
+              ))}
             </div>
           ) : academyClasses.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <PlayCircle className="h-12 w-12 text-muted-foreground/30 mb-4" />
-              <p className="text-sm text-muted-foreground">{t("dashboard.noClasses")}</p>
-            </div>
+            <EmptyState
+              icon={<PlayCircle />}
+              title={t("dashboard.noClasses")}
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {academyClasses.map((classItem) => {
@@ -325,25 +329,22 @@ export function DashboardClient({
                     key={classItem.id}
                     className={`relative overflow-hidden p-4 pl-5 rounded-xl border transition-colors ${
                       isLive
-                        ? "border-[#D4A853]/60 bg-gradient-to-br from-[#D4A853]/15 to-[#D4A853]/5 shadow-sm"
+                        ? "border-red/30 bg-gradient-to-br from-red-dim to-transparent shadow-sm"
                         : "border-border bg-surface-1 hover:border-border-strong"
                     }`}
                   >
-                    {/* Gold accent bar for live classes */}
+                    {/* Accent bar for live classes */}
                     {isLive && (
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-gold-400 to-gold-600" />
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-red" />
                     )}
 
                     <div className="flex items-center justify-between mb-2">
                       {isLive ? (
-                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-gentle-pulse" />
-                          <span className="text-[10px] font-semibold text-red-400 uppercase tracking-wider">Live</span>
-                        </div>
+                        <Badge variant="live">Live</Badge>
                       ) : (
-                        <Badge className="bg-surface-2">{t("dashboard.upcoming")}</Badge>
+                        <Badge variant="secondary">{t("dashboard.upcoming")}</Badge>
                       )}
-                      <PlayCircle className={`h-5 w-5 ${isLive ? "text-[#D4A853]" : "text-muted-foreground"}`} />
+                      <PlayCircle className={`h-5 w-5 ${isLive ? "text-red" : "text-muted-foreground"}`} />
                     </div>
 
                     <h3 className="font-semibold text-base mb-1 truncate">{classItem.title}</h3>
@@ -359,7 +360,7 @@ export function DashboardClient({
                     <a href={classItem.meeting_link} target="_blank" rel="noopener noreferrer" className="block">
                       <Button
                         size="sm"
-                        className={`w-full ${isLive ? "bg-[#D4A853] hover:bg-[#B38A30] text-white" : ""}`}
+                        className="w-full"
                         variant={isLive ? "default" : "outline"}
                       >
                         <ExternalLink className="h-4 w-4 mr-2" />
@@ -376,12 +377,12 @@ export function DashboardClient({
 
       {/* Payout Wallet Section - side by side with Academy */}
       {data.initialPaymentCompleted && (
-        <Card className={`${data.payoutWalletAddress ? 'border-[#D4A853]/20 bg-gradient-to-r from-[#D4A853]/5 to-[#C49B3E]/10' : 'border-amber-500/20 bg-gradient-to-r from-amber-500/5 to-amber-600/10'}`}>
+        <Card className={data.payoutWalletAddress ? 'border-gold-400/20 bg-gradient-to-r from-gold-400/5 to-gold-500/10' : 'border-amber-500/20 bg-gradient-to-r from-amber-500/5 to-amber-600/10'}>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <Wallet className={`h-5 w-5 ${data.payoutWalletAddress ? 'text-[#D4A853]' : 'text-amber-600'}`} />
+                  <Wallet className={`h-5 w-5 ${data.payoutWalletAddress ? 'text-gold-400' : 'text-amber-600'}`} />
                   {t("dashboard.payoutWallet")}
                 </CardTitle>
                 <CardDescription className="mt-1">
@@ -391,13 +392,13 @@ export function DashboardClient({
                 </CardDescription>
               </div>
               {data.payoutWalletAddress ? (
-                <Badge className="bg-[#D4A853] text-white">
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                <Badge variant="success">
+                  <CheckCircle2 className="h-3 w-3" />
                   {t("dashboard.configured")}
                 </Badge>
               ) : (
-                <Badge className="bg-amber-500 text-white">
-                  <AlertTriangle className="h-3 w-3 mr-1" />
+                <Badge variant="warning">
+                  <AlertTriangle className="h-3 w-3" />
                   {t("dashboard.notSet")}
                 </Badge>
               )}
@@ -422,8 +423,8 @@ export function DashboardClient({
                     <p className="text-sm font-medium mt-1 text-primary">{formatCurrency(data.monthlyCommission)} USDC</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 p-3 bg-[#D4A853]/10 rounded-lg">
-                  <CheckCircle2 className="h-4 w-4 text-[#D4A853]" />
+                <div className="flex items-center gap-2 p-3 bg-emerald-dim rounded-lg">
+                  <CheckCircle2 className="h-4 w-4 text-emerald" />
                   <p className="text-sm">
                     {t("dashboard.walletReady")}
                   </p>
@@ -555,9 +556,9 @@ export function DashboardClient({
                       {10 + data.completedStructures}%
                     </p>
                   </div>
-                  <div className={`p-3 rounded-lg ${data.directReferrals >= 3 ? 'bg-[#D4A853]/20 border-2 border-[#D4A853]' : 'bg-red-500/20 border-2 border-red-500'}`}>
+                  <div className={`p-3 rounded-lg ${data.directReferrals >= 3 ? 'bg-gold-400/20 border-2 border-gold-400' : 'bg-red-500/20 border-2 border-red-500'}`}>
                     <p className="text-sm text-muted-foreground">{t("dashboard.activeDirectReferrals")}</p>
-                    <p className={`text-2xl font-bold ${data.directReferrals >= 3 ? 'text-[#D4A853]' : 'text-red-600'}`}>{data.directReferrals}</p>
+                    <p className={`text-2xl font-bold ${data.directReferrals >= 3 ? 'text-gold-400' : 'text-red-600'}`}>{data.directReferrals}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-surface-2">
                     <p className="text-sm text-muted-foreground">{t("dashboard.totalTeam")}</p>
@@ -616,7 +617,7 @@ export function DashboardClient({
                                   {structureRank.name}
                                 </div>
                                 {isComplete && (
-                                  <Badge className="mt-1 text-xs bg-[#D4A853] text-white">{t("dashboard.complete")}</Badge>
+                                  <Badge variant="gold" className="mt-1">{t("dashboard.complete")}</Badge>
                                 )}
                                 {isUnlocked && !isComplete && (
                                   <div className="text-xs mt-1 text-muted-foreground">
@@ -719,79 +720,39 @@ export function DashboardClient({
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
       >
         <motion.div variants={staggerItem}>
-          <Card variant="elevated" className="relative overflow-hidden border-l-2 border-l-emerald-500">
-            <div className="absolute top-3 right-3 opacity-[0.05]">
-              <DollarSign className="h-12 w-12" />
-            </div>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-b-0">
-              <CardTitle className="text-[13px] font-medium text-foreground-secondary">{t("dashboard.teamPool")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                <AnimatedNumber value={data.teamPool} prefix="$" decimals={2} />
-              </div>
-              <p className="text-[12px] text-foreground-tertiary mt-1">
-                {t("dashboard.monthlyTeamRevenue")}
-              </p>
-            </CardContent>
-          </Card>
+          <StatTile
+            label={t("dashboard.teamPool")}
+            value={<AnimatedNumber value={data.teamPool} prefix="$" decimals={2} />}
+            footnote={t("dashboard.monthlyTeamRevenue")}
+          />
         </motion.div>
 
         <motion.div variants={staggerItem}>
-          <Card variant="elevated" className="relative overflow-hidden border-l-2 border-l-blue-500">
-            <div className="absolute top-3 right-3 opacity-[0.05]">
-              <TrendingUp className="h-12 w-12" />
-            </div>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-b-0">
-              <CardTitle className="text-[13px] font-medium text-foreground-secondary">{t("dashboard.yourCommission")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-gold-400">
-                <AnimatedNumber value={data.monthlyCommission} prefix="$" decimals={2} />
-              </div>
-              <p className="text-[12px] text-foreground-tertiary mt-1">
-                {t("dashboard.ofTeamPool", { rate: 10 + data.completedStructures })}
-              </p>
-            </CardContent>
-          </Card>
+          <StatTile
+            label={t("dashboard.yourCommission")}
+            value={<AnimatedNumber value={data.monthlyCommission} prefix="$" decimals={2} />}
+            footnote={t("dashboard.ofTeamPool", { rate: 10 + data.completedStructures })}
+          />
         </motion.div>
 
         <motion.div variants={staggerItem}>
-          <Card variant="elevated" className="relative overflow-hidden border-l-2 border-l-purple-500">
-            <div className="absolute top-3 right-3 opacity-[0.05]">
-              <UserPlus className="h-12 w-12" />
-            </div>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-b-0">
-              <CardTitle className="text-[13px] font-medium text-foreground-secondary">{t("dashboard.activeDirectReferrals")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${data.directReferrals >= 3 ? 'text-gold-400' : 'text-red-400'}`}>
+          <StatTile
+            label={t("dashboard.activeDirectReferrals")}
+            value={
+              <span className={data.directReferrals >= 3 ? undefined : "text-red-400"}>
                 {data.directReferrals}/{data.unlockedStructures * 3}
-              </div>
-              <p className="text-[12px] text-foreground-tertiary mt-1">
-                {t("dashboard.acrossStructures", { count: data.unlockedStructures })}
-              </p>
-            </CardContent>
-          </Card>
+              </span>
+            }
+            footnote={t("dashboard.acrossStructures", { count: data.unlockedStructures })}
+          />
         </motion.div>
 
         <motion.div variants={staggerItem}>
-          <Card variant="elevated" className="relative overflow-hidden border-l-2 border-l-gold-400">
-            <div className="absolute top-3 right-3 opacity-[0.05]">
-              <Users className="h-12 w-12" />
-            </div>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-b-0">
-              <CardTitle className="text-[13px] font-medium text-foreground-secondary">{t("dashboard.totalTeam")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                <AnimatedNumber value={data.totalTeamSize} />
-              </div>
-              <p className="text-[12px] text-foreground-tertiary mt-1">
-                {t("dashboard.yourEntireNetwork")}
-              </p>
-            </CardContent>
-          </Card>
+          <StatTile
+            label={t("dashboard.totalTeam")}
+            value={<AnimatedNumber value={data.totalTeamSize} />}
+            footnote={t("dashboard.yourEntireNetwork")}
+          />
         </motion.div>
       </motion.div>
 
